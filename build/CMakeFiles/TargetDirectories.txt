@@ -1,0 +1,8 @@
+C:/VULKAN/NeoRenderer/build/CMakeFiles/Experimental.dir
+C:/VULKAN/NeoRenderer/build/CMakeFiles/Nightly.dir
+C:/VULKAN/NeoRenderer/build/CMakeFiles/Continuous.dir
+C:/VULKAN/NeoRenderer/build/CMakeFiles/NightlyMemoryCheck.dir
+C:/VULKAN/NeoRenderer/build/CMakeFiles/NeoRenderer.dir
+C:/VULKAN/NeoRenderer/build/CMakeFiles/RUN_TESTS.dir
+C:/VULKAN/NeoRenderer/build/CMakeFiles/ALL_BUILD.dir
+C:/VULKAN/NeoRenderer/build/CMakeFiles/ZERO_CHECK.dir
