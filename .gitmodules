@@ -7,3 +7,15 @@
 [submodule "submodules/Vulkan-Headers"]
 	path = submodules/Vulkan-Headers
 	url = https://github.com/KhronosGroup/Vulkan-Headers.git
+[submodule "prebuild/include/glbind"]
+	path = prebuild/include/glbind
+	url = https://github.com/mackron/glbind.git
+[submodule "prebuild/include/vkbind"]
+	path = prebuild/include/vkbind
+	url = https://github.com/mackron/vkbind.git
+[submodule "prebuild/include/volk"]
+	path = prebuild/include/volk
+	url = https://github.com/zeux/volk.git
+[submodule "prebuild/include/xvk"]
+	path = prebuild/include/xvk
+	url = https://github.com/Vulkan4D/xvk.git

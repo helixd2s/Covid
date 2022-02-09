@@ -70,6 +70,10 @@
 				{
 					"backtrace" : 4,
 					"path" : "C:/VULKAN/NeoRenderer/prebuild/include"
+				},
+				{
+					"backtrace" : 4,
+					"path" : "C:/VULKAN/NeoRenderer/../external/include"
 				}
 			],
 			"language" : "CXX",
@@ -109,6 +113,11 @@
 			{
 				"backtrace" : 2,
 				"fragment" : "-LIBPATH:C:\\VULKAN\\NeoRenderer\\prebuild\\lib",
+				"role" : "libraryPath"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "-LIBPATH:C:\\VULKAN\\NeoRenderer\\..\\external\\lib",
 				"role" : "libraryPath"
 			},
 			{

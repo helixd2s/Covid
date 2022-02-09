@@ -17,8 +17,8 @@ file(GLOB_RECURSE _source_list
 
 add_executable(${PROJECT_NAME} ${_source_list})
 target_compile_definitions(${PROJECT_NAME} PUBLIC )
-target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/prebuild/include)
-target_link_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/prebuild/lib)
+target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/prebuild/include ${PROJECT_SOURCE_DIR}/../external/include)
+target_link_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/prebuild/lib ${PROJECT_SOURCE_DIR}/../external/lib)
 target_link_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS} glfw3)
 
 if (MSVC)
