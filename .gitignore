@@ -31,4 +31,26 @@
 *.out
 *.app
 
+# Ignore build directory
+
+build
+build/
+build/*
+
+/build
+/build/
+/build/*
+
+./build
+./build/
+./build/*
+
+*/build
+*/build/
+*/build/*
+
+
+
+
+
 
