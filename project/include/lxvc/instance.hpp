@@ -19,8 +19,8 @@ namespace lxvc {
   // 
   class InstanceObj : std::enable_shared_from_this<InstanceObj> {
   public:
-    using SI = std::shared_ptr<Instance>;
-    using ST = shared_from_this;
+    using tType = std::shared_ptr<Instance>;
+    using SFT = shared_from_this;
     friend DeviceObj;
 
     // 
@@ -99,7 +99,7 @@ namespace lxvc {
     };
 
     // 
-    virtual SI construct(stm::uni_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
+    virtual tType construct(stm::uni_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
       this->infoMap = {};
       this->extensionList = {};
       this->layerList = {};
@@ -130,7 +130,7 @@ namespace lxvc {
       this->instance = vk::createInstance(*instanceInfo);
 
       // 
-      return ST();
+      return SFT();
     };
   };
 

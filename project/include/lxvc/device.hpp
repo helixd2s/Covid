@@ -17,9 +17,9 @@ namespace lxvc {
   // 
   class DeviceObj : std::enable_shared_from_this<DeviceObj> {
   public:
-    using SD = std::shared_ptr<Device>;
-    using ST = shared_from_this;
-    using SID = stm::map_of_shared<vk::StructureType, vk::BaseInStructure>
+    using tType = std::shared_ptr<Device>;
+    using SFT = shared_from_this;
+    using MSS = stm::map_of_shared<vk::StructureType, vk::BaseInStructure>
     friend InstanceObj;
 
     //
@@ -31,14 +31,14 @@ namespace lxvc {
     // 
     vk::Device instance = {};
     vk::DeviceDispatch dispatch = {};
-    SID infoMap = {};
+    MSS infoMap = {};
 
     //
     std::vector<std::string> extensionList = {};
     std::string<std::string> layerList = {};
 
     //
-    std::vector<SID> queueInfoMaps = {};
+    std::vector<MSS> queueInfoMaps = {};
     std::vector<vk::DeviceQueueCreateInfo> queueInfoCache = {};
 
     //
@@ -71,7 +71,7 @@ namespace lxvc {
     };
 
     //
-    virtual std::vector<std::string> filterExtensions(std::vector<std::string> const& names) {
+    virtual std::vector<std::string>& filterExtensions(std::vector<std::string> const& names) {
       std::vector<vk::ExtensionProperties> props = vk::EnumerateDeviceExtensionProperties();
       std::vector<std::string>& selected = extensionList;
 
@@ -119,7 +119,7 @@ namespace lxvc {
     };
 
     // 
-    virtual SD filterQueueFamilyIndices(std::vector<uint32_t> const& queueFamilyIndices = {}) {
+    virtual tType filterQueueFamilyIndices(std::vector<uint32_t> const& queueFamilyIndices = {}) {
       queueInfoMaps = {};
       for (auto& queueFamilyIndex : queueFamilyIndices) {
         auto last = queueInfoMaps.size();
@@ -134,11 +134,11 @@ namespace lxvc {
           .pQueuePriorities = priorities.data()
         });
       };
-      return ST();
+      return SFT();
     };
 
     // 
-    virtual SD construct(stm::uni_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
+    virtual tType construct(stm::uni_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
       this->instanceObj = cInfo->instanceObj;
       this->infoMap = {};
       this->extensionList = {};
@@ -178,7 +178,7 @@ namespace lxvc {
       };
 
       // 
-      return ST();
+      return SFT();
     };
   };
 
