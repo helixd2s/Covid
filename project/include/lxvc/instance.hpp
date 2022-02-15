@@ -76,7 +76,7 @@ namespace lxvc {
         uintptr_t propIndex = 0ull;
         for (auto& prop : props) {
           std::string_view propName = { prop.extensionName };
-          if (std::compare(propName, name) == 0) {
+          if (std::string::compare(propName, name) == 0) {
             selected.push_back(name); break;
           };
           propIndex++;
@@ -100,7 +100,7 @@ namespace lxvc {
         uintptr_t propIndex = 0ull;
         for (auto& prop : props) {
           std::string_view propName = { prop.layerName };
-          if (std::compare(propName, name) == 0) {
+          if (std::string::compare(propName, name) == 0) {
             selected.push_back(name); break;
           };
           propIndex++;
