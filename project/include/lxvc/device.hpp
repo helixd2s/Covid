@@ -43,6 +43,7 @@ namespace lxvc {
 
     //
     std::vector<uint32_t> queueFamilyIndices = {};
+    std::vector<vk::Queue> queues = {};
 
     // 
     DeviceObj() {
