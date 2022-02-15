@@ -156,7 +156,7 @@ namespace lxvc {
       auto physicalDevice = this->filterPhysicalDevices(cInfo->physicalDeviceIndices)[0];
 
       //
-      physicalDevice.getFeatures2(infoMap.get<vk::StructureType::ePhysicalDeviceFeatures2>(vk::StructureType::ePhysicalDeviceFeatures2));
+      physicalDevice.getFeatures2(infoMap.get<vk::PhysicalDeviceFeatures2>(vk::StructureType::ePhysicalDeviceFeatures2));
 
       // 
       deviceInfo->setQueueCreateInfos(this->filterQueueInfo());
