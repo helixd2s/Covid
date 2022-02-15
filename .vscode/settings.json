@@ -2,6 +2,10 @@
   "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
   "files.associations": {
     "vector": "cpp",
-    "type_traits": "cpp"
+    "type_traits": "cpp",
+    "functional": "cpp",
+    "memory": "cpp",
+    "system_error": "cpp",
+    "xmemory": "cpp"
   }
 }

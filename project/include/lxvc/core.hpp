@@ -6,7 +6,7 @@
 // 
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan.hpp>
-#include <vulkan-utils/utils.hpp>
+#include <vk-utils/utils.hpp>
 
 // 
 namespace lxvc {

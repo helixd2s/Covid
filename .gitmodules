@@ -1,9 +1,6 @@
 [submodule "submodules/glm"]
 	path = submodules/glm
 	url = https://github.com/g-truc/glm.git
-[submodule "submodules/Vulkan-Headers"]
-	path = submodules/Vulkan-Headers
-	url = https://github.com/KhronosGroup/Vulkan-Headers.git
 [submodule "prebuild/include/glbind"]
 	path = prebuild/include/glbind
 	url = https://github.com/mackron/glbind.git
@@ -19,3 +16,6 @@
 [submodule "prebuild/include/vk-utils"]
 	path = prebuild/include/vk-utils
 	url = https://github.com/helixd2s/vk-utils
+[submodule "prebuild/include/interval-tree"]
+	path = prebuild/include/interval-tree
+	url = https://github.com/5cript/interval-tree.git
