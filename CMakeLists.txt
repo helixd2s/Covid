@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.17)
-project(NeoRenderer VERSION 0.1.0)
-set(PROJECT_NAME NeoRenderer)
+project(LXVC VERSION 0.1.0)
+set(PROJECT_NAME LXVC)
 
 include(CTest)
 enable_testing()

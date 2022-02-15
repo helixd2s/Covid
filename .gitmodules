@@ -1,6 +1,3 @@
-[submodule "prebuild/include/vulkan-utils"]
-	path = prebuild/include/vulkan-utils
-	url = https://github.com/helixd2s/vulkan-utils
 [submodule "submodules/glm"]
 	path = submodules/glm
 	url = https://github.com/g-truc/glm.git
@@ -19,3 +16,6 @@
 [submodule "prebuild/include/xvk"]
 	path = prebuild/include/xvk
 	url = https://github.com/Vulkan4D/xvk.git
+[submodule "prebuild/include/vk-utils"]
+	path = prebuild/include/vk-utils
+	url = https://github.com/helixd2s/vk-utils
