@@ -49,7 +49,7 @@ namespace lxvc {
     virtual std::vector<vk::PhysicalDevice>& filterPhysicalDevices(std::vector<uint32_t> const& indices = {0u}) {
       decltype(auto) instancePhysicalDevices = this->instanceObj->enumeratePhysicalDevices();
       for (auto& indice : indices) {
-        physicalDevices.push_back(instancePhysicalDevices[indices]);
+        physicalDevices.push_back(instancePhysicalDevices[indice]);
       };
       return physicalDevices;
     };
