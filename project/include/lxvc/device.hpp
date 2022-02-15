@@ -142,7 +142,7 @@ namespace lxvc {
       this->filterQueueFamilyIndices(this->queueFamilyIndices = cInfo->queueFamilyIndices);
 
       // TODO: get rid from spagetti code or nesting
-      auto deviceInfo = infoMap.set(vk::DeviceCreateInfo{
+      auto deviceInfo = infoMap.set(vk::StructureType::eDeviceCreateInfo, vk::DeviceCreateInfo{
           .pNext = infoMap.set(vk::StructureType::ePhysicalDeviceFeatures2, vk::PhysicalDeviceFeatures2{
           .pNext = infoMap.set(vk::StructureType::ePhysicalDeviceVulkan11Features, vk::PhysicalDeviceVulkan11Features{
           .pNext = infoMap.set(vk::StructureType::ePhysicalDeviceVulkan12Features, vk::PhysicalDeviceVulkan12Features{
