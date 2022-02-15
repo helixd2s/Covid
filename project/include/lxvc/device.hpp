@@ -25,7 +25,7 @@ namespace lxvc {
 
     // 
     vk::Device device = {};
-    vk::raii::DeviceDispatcher dispatch = {};
+    vk::raii::DeviceDispatcher dispatch;
     MSS infoMap = {};
 
     //
