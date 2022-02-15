@@ -7,13 +7,20 @@
 namespace lxvc {
 
   //
-  class DeviceObj;
+  class ContextObj : std::enable_shared_from_this<ContextObj> {
+  public:
+    using tType = std::shared_ptr<ContextObj>;
+    using SFT = shared_from_this;
 
-  // 
-  struct InstanceCreateInfo {
-    const std::string& appName = "LXVC_APP";
-    uint32_t appVersion = VK_MAKE_VERSION(1,0,0);
-    std::vector<std::string> instanceExtensionList = {};
+    // 
+    ContextObj(stm::uni_arg<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
+      this->construct(cInfo);
+    };
+
+    // 
+    virtual tType construct(stm::uni_arg<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
+      return SFT();
+    };
   };
 
   // 
@@ -22,6 +29,9 @@ namespace lxvc {
     using tType = std::shared_ptr<Instance>;
     using SFT = shared_from_this;
     friend DeviceObj;
+
+    //
+    std::shared_ptr<ContextObj> context = {};
 
     // 
     vk::Instance instance = {};
@@ -36,8 +46,8 @@ namespace lxvc {
     std::vector<vk::PhysicalDevice> physicalDevices = {};
 
     // 
-    InstanceObj(stm::uni_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
-      this->construct(cInfo);
+    InstanceObj(std::shared_ptr<ContextObj> context = {}, stm::uni_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
+      this->construct(context, cInfo);
     };
 
     //
@@ -99,7 +109,7 @@ namespace lxvc {
     };
 
     // 
-    virtual tType construct(stm::uni_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
+    virtual tType construct(std::shared_ptr<ContextObj> context = {}, stm::uni_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
       this->infoMap = {};
       this->extensionList = {};
       this->layerList = {};
@@ -118,16 +128,12 @@ namespace lxvc {
       });
 
       //
-      auto instanceInfo = infoMap->set(vk::StructureType::eInstanceCreateInfo, vk::InstanceCreateInfo{
-        .pApplicationInfo = appInfo->get()
-      });
-
-      // 
+      auto instanceInfo = infoMap->set(vk::StructureType::eInstanceCreateInfo, vk::InstanceCreateInfo{ .pApplicationInfo = appInfo });
       instanceInfo->setEnabledExtensionNames(this->filterExtensions());
       instanceInfo->setLayerExtensionNames(this->filterLayers());
 
       //
-      this->instance = vk::createInstance(*instanceInfo);
+      this->instance = vk::createInstance(instanceInfo);
 
       // 
       return SFT();

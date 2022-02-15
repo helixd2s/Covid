@@ -2,17 +2,10 @@
 
 // 
 #include "./core.hpp"
+#include "./instance.hpp"
 
 // 
 namespace lxvc {
-  
-  // 
-  struct DeviceCreateInfo {
-    std::shared_ptr<InstanceObj> instanceObj = {};
-    std::vector<std::string> deviceExtensionList = {};
-    std::vector<uint32_t> physicalDeviceIndices = {0u};
-    std::vector<uint32_t> queueFamilyIndices = {0u};
-  };
 
   // 
   class DeviceObj : std::enable_shared_from_this<DeviceObj> {
@@ -46,8 +39,8 @@ namespace lxvc {
     std::vector<vk::Queue> queues = {};
 
     // 
-    DeviceObj(stm::uni_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
-      this->construct(cInfo);
+    DeviceObj(std::shared_ptr<InstanceObj> instanceObj = {}, stm::uni_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
+      this->construct(instanceObj, cInfo);
     };
 
     //
@@ -138,8 +131,8 @@ namespace lxvc {
     };
 
     // 
-    virtual tType construct(stm::uni_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
-      this->instanceObj = cInfo->instanceObj;
+    virtual tType construct(std::shared_ptr<InstanceObj> instanceObj = {}, stm::uni_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
+      this->instanceObj = instanceObj;
       this->infoMap = {};
       this->extensionList = {};
       this->layerList = {};
