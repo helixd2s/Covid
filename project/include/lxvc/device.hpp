@@ -169,7 +169,7 @@ namespace lxvc {
 
       //
       if (!!physicalDevice) {
-        this->device = physicalDevice.createDevice(*deviceInfo);
+        this->device = physicalDevice.createDevice(deviceInfo);
       } else {
         std::cerr << "Physical Device Not Detected" << std::endl;
       };
