@@ -149,9 +149,9 @@ namespace lxvc {
       // TODO: get rid from spagetti code or nesting
       auto deviceInfo = infoMap->set(vk::DeviceCreateInfo{
           .pNext = infoMap->set(vk::StructureType::ePhysicalDeviceFeatures2, vk::PhysicalDeviceFeatures2{
-          .pNext = infoMap->set(vk::StructureType::ePhysicalDeviceVulkan11Features, vk::ePhysicalDeviceVulkan11Features{
-          .pNext = infoMap->set(vk::StructureType::ePhysicalDeviceVulkan12Features, vk::ePhysicalDeviceVulkan12Features{
-          .pNext = infoMap->set(vk::StructureType::ePhysicalDeviceVulkan13Features, vk::ePhysicalDeviceVulkan13Features{
+          .pNext = infoMap->set(vk::StructureType::ePhysicalDeviceVulkan11Features, vk::PhysicalDeviceVulkan11Features{
+          .pNext = infoMap->set(vk::StructureType::ePhysicalDeviceVulkan12Features, vk::PhysicalDeviceVulkan12Features{
+          .pNext = infoMap->set(vk::StructureType::ePhysicalDeviceVulkan13Features, vk::PhysicalDeviceVulkan13Features{
 
           })
           })
