@@ -11,7 +11,7 @@ namespace lxvc {
     std::shared_ptr<InstanceObj> instanceObj = {};
     std::vector<std::string> deviceExtensionList = {};
     std::vector<uint32_t> physicalDeviceIndices = {0u};
-    std::vector<uint32_t> queueFamilyIndices = {};
+    std::vector<uint32_t> queueFamilyIndices = {0u};
   };
 
   // 
