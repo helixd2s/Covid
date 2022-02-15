@@ -119,8 +119,8 @@ namespace lxvc {
     virtual tType construct(std::shared_ptr<ContextObj> contextObj = {}, stm::uni_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
       this->contextObj = contextObj;
       this->infoMap = {};
-      this->extensionList = {};
-      this->layerList = {};
+      this->extensionList = cInfo->extensionList;
+      this->layerList = cInfo->layerList;
       this->extensionNames = {};
       this->layerNames = {};
 
@@ -139,8 +139,8 @@ namespace lxvc {
 
       //
       auto instanceInfo = infoMap.set(vk::StructureType::eInstanceCreateInfo, vk::InstanceCreateInfo{ .pApplicationInfo = appInfo });
-      instanceInfo->setPEnabledExtensionNames(stm::toCString(this->extensionNames, this->filterExtensions(cInfo->extensionNames)));
-      instanceInfo->setPEnabledLayerNames(stm::toCString(this->layerNames, this->filterLayers(cInfo->layerNames)));
+      instanceInfo->setPEnabledExtensionNames(stm::toCString(this->extensionNames, this->filterExtensions(this->extensionList)));
+      instanceInfo->setPEnabledLayerNames(stm::toCString(this->layerNames, this->filterLayers(this->layerList)));
 
       //
       this->instance = vk::createInstance(instanceInfo);
