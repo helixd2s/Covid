@@ -57,12 +57,12 @@ namespace lxvc {
 
     //
     virtual std::vector<vk::PhysicalDevice>& enumeratePhysicalDevices() {
-      return (this->physicalDevices = (this->physicalDevices.size() <= 0 ? this->physicalDevices : instance.enumeratePhysicalDevices()));
+      return (this->physicalDevices = (this->physicalDevices.size() > 0 ? this->physicalDevices : instance.enumeratePhysicalDevices()));
     };
 
     //
-    virtual std::vector<vk::PhysicalDevice>& enumeratePhysicalDevices() const {
-      return (this->physicalDevices.size() <= 0 ? this->physicalDevices : instance.enumeratePhysicalDevices());
+    virtual std::vector<vk::PhysicalDevice> const& enumeratePhysicalDevices() const {
+      return (this->physicalDevices.size() > 0 ? this->physicalDevices : instance.enumeratePhysicalDevices());
     };
 
     //
