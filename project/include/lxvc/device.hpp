@@ -162,8 +162,8 @@ namespace lxvc {
 
       // 
       deviceInfo->setQueueCreateInfos(this->filterQueueInfo());
-      deviceInfo->setEnabledExtensionNames(this->filterExtensions(physicalDevice, cInfo->extensionNames));
-      deviceInfo->setLayerExtensionNames(this->filterLayers(physicalDevice, cInfo->layerNames));
+      deviceInfo->setPEnabledExtensionNames(this->filterExtensions(physicalDevice, cInfo->extensionNames));
+      deviceInfo->setPEnabledLayerNames(this->filterLayers(physicalDevice, cInfo->layerNames));
 
       //
       if (!!physicalDevice) {
