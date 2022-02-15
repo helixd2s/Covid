@@ -11,9 +11,11 @@ namespace lxvc {
   class DeviceObj : std::enable_shared_from_this<DeviceObj> {
   public:
     using tType = std::shared_ptr<DeviceObj>;
-    using SFT = shared_from_this;
     using MSS = stm::map_of_shared<vk::StructureType, vk::BaseInStructure>;
     friend InstanceObj;
+
+    // 
+    inline decltype(auto) SFT() { return shared_from_this(); };
 
     //
     std::shared_ptr<InstanceObj> instanceObj = {};
@@ -160,8 +162,8 @@ namespace lxvc {
 
       // 
       deviceInfo->setQueueCreateInfos(this->filterQueueInfo());
-      deviceInfo->setEnabledExtensionNames(this->filterExtensions());
-      deviceInfo->setLayerExtensionNames(this->filterLayers());
+      deviceInfo->setEnabledExtensionNames(this->filterExtensions(physicalDevice, cInfo->extensionNames));
+      deviceInfo->setLayerExtensionNames(this->filterLayers(physicalDevice, cInfo->layerNames));
 
       //
       if (!!physicalDevice) {

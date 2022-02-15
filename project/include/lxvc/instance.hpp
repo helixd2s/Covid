@@ -10,7 +10,10 @@ namespace lxvc {
   class ContextObj : std::enable_shared_from_this<ContextObj> {
   public:
     using tType = std::shared_ptr<ContextObj>;
-    using SFT = shared_from_this;
+    //using SFT = shared_from_this;
+
+    // 
+    inline decltype(auto) SFT() { return shared_from_this(); };
 
     // 
     ContextObj(stm::uni_arg<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
@@ -27,11 +30,13 @@ namespace lxvc {
   class InstanceObj : std::enable_shared_from_this<InstanceObj> {
   public:
     using tType = std::shared_ptr<InstanceObj>;
-    using SFT = shared_from_this;
     friend DeviceObj;
 
+    // 
+    inline decltype(auto) SFT() { return shared_from_this(); };
+
     //
-    std::shared_ptr<ContextObj> context = {};
+    std::shared_ptr<ContextObj> contextObj = {};
 
     // 
     vk::Instance instance = {};
@@ -46,23 +51,23 @@ namespace lxvc {
     std::vector<vk::PhysicalDevice> physicalDevices = {};
 
     // 
-    InstanceObj(std::shared_ptr<ContextObj> context = {}, stm::uni_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
-      this->construct(context, cInfo);
+    InstanceObj(std::shared_ptr<ContextObj> contextObj = {}, stm::uni_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
+      this->construct(contextObj, cInfo);
     };
 
     //
     virtual std::vector<vk::PhysicalDevice>& enumeratePhysicalDevices() {
-      return (this->physicalDevices = (this->physicalDevices ? this->physicalDevices : instance.enumeratePhysicalDevices()));
+      return (this->physicalDevices = (this->physicalDevices.size() <= 0 ? this->physicalDevices : instance.enumeratePhysicalDevices()));
     };
 
     //
     virtual std::vector<vk::PhysicalDevice>& enumeratePhysicalDevices() const {
-      return (this->physicalDevices ? this->physicalDevices : instance.enumeratePhysicalDevices());
+      return (this->physicalDevices.size() <= 0 ? this->physicalDevices : instance.enumeratePhysicalDevices());
     };
 
     //
     virtual std::vector<std::string>& filterExtensions(std::vector<std::string> const& names) {
-      std::vector<vk::ExtensionProperties> props = vk::EnumerateInstanceExtensionProperties();
+      std::vector<vk::ExtensionProperties> props = vk::enumerateInstanceExtensionProperties();
       std::vector<std::string>& selected = extensionList;
 
       // 
@@ -86,7 +91,7 @@ namespace lxvc {
 
     //
     virtual std::vector<std::string>& filterLayers(std::vector<std::string> const& names) {
-      std::vector<vk::LayerProperties> props = vk::EnumerateInstanceLayerProperties();
+      std::vector<vk::LayerProperties> props = vk::enumerateInstanceLayerProperties();
       std::vector<std::string>& selected = layerList;
 
       // 
@@ -109,13 +114,14 @@ namespace lxvc {
     };
 
     // 
-    virtual tType construct(std::shared_ptr<ContextObj> context = {}, stm::uni_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
+    virtual tType construct(std::shared_ptr<ContextObj> contextObj = {}, stm::uni_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
+      this->contextObj = contextObj;
       this->infoMap = {};
       this->extensionList = {};
       this->layerList = {};
 
       //
-      auto appInfo = infoMap->set(vk::StructureType::eApplicationInfo, vk::ApplicationInfo{
+      auto appInfo = infoMap.set(vk::StructureType::eApplicationInfo, vk::ApplicationInfo{
         .pApplicationName = cInfo->appName.c_str(),
         .applicationVersion = cInfo->appVersion,
 
@@ -128,9 +134,9 @@ namespace lxvc {
       });
 
       //
-      auto instanceInfo = infoMap->set(vk::StructureType::eInstanceCreateInfo, vk::InstanceCreateInfo{ .pApplicationInfo = appInfo });
-      instanceInfo->setEnabledExtensionNames(this->filterExtensions());
-      instanceInfo->setLayerExtensionNames(this->filterLayers());
+      auto instanceInfo = infoMap.set(vk::StructureType::eInstanceCreateInfo, vk::InstanceCreateInfo{ .pApplicationInfo = appInfo });
+      instanceInfo->setEnabledExtensionNames(this->filterExtensions(cInfo->extensionNames));
+      instanceInfo->setLayerExtensionNames(this->filterLayers(cInfo->layerNames));
 
       //
       this->instance = vk::createInstance(instanceInfo);
