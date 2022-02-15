@@ -40,7 +40,7 @@ namespace lxvc {
 
     // 
     vk::Instance instance = {};
-    vk::raii::InstanceDispatcher dispatch;
+    vk::DispatchLoaderDynamic dispatch = {};
     stm::map_of_shared<vk::StructureType, vk::BaseInStructure> infoMap = {};
 
     //
