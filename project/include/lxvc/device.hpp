@@ -29,6 +29,8 @@ namespace lxvc {
     MSS infoMap = {};
 
     //
+    std::vector<std::string> extensionList = {};
+    std::vector<std::string> layerList = {};
     std::vector<char const*> extensionNames = {};
     std::vector<char const*> layerNames = {};
 
@@ -138,6 +140,8 @@ namespace lxvc {
       this->infoMap = {};
       this->extensionList = {};
       this->layerList = {};
+      this->extensionNames = {};
+      this->layerNames = {};
       this->physicalDevices = {};
       this->filterQueueFamilyIndices(this->queueFamilyIndices = cInfo->queueFamilyIndices);
 

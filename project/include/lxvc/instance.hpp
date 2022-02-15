@@ -44,6 +44,8 @@ namespace lxvc {
     stm::map_of_shared<vk::StructureType, vk::BaseInStructure> infoMap = {};
 
     //
+    std::vector<std::string> extensionList = {};
+    std::vector<std::string> layerList = {};
     std::vector<char const*> extensionNames = {};
     std::vector<char const*> layerNames = {};
 
@@ -119,6 +121,8 @@ namespace lxvc {
       this->infoMap = {};
       this->extensionList = {};
       this->layerList = {};
+      this->extensionNames = {};
+      this->layerNames = {};
 
       //
       auto appInfo = infoMap.set(vk::StructureType::eApplicationInfo, vk::ApplicationInfo{
