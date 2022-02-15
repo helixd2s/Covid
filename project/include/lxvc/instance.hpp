@@ -51,7 +51,7 @@ namespace lxvc {
     };
 
     //
-    virtual std::vector<std::string> checkExtensions(std::vector<std::string> const& names) {
+    virtual std::vector<std::string>& filterExtensions(std::vector<std::string> const& names) {
       std::vector<vk::ExtensionProperties> props = vk::EnumerateInstanceExtensionProperties();
       std::vector<std::string>& selected = extensionList;
 
@@ -75,7 +75,7 @@ namespace lxvc {
     };
 
     //
-    virtual std::vector<std::string>& checkLayers(std::vector<std::string> const& names) {
+    virtual std::vector<std::string>& filterLayers(std::vector<std::string> const& names) {
       std::vector<vk::ExtensionProperties> props = vk::EnumerateInstanceLayerProperties();
       std::vector<std::string>& selected = layerList;
 
@@ -123,8 +123,8 @@ namespace lxvc {
       });
 
       // 
-      instanceInfo->setEnabledExtensionNames(extensionList);
-      instanceInfo->setLayerExtensionNames(layerList);
+      instanceInfo->setEnabledExtensionNames(this->filterExtensions());
+      instanceInfo->setLayerExtensionNames(this->filterLayers());
 
       //
       this->instance = vk::createInstance(*instanceInfo);

@@ -70,7 +70,7 @@ namespace lxvc {
     };
 
     //
-    virtual std::vector<std::string> checkExtensions(std::vector<std::string> const& names) {
+    virtual std::vector<std::string> filterExtensions(std::vector<std::string> const& names) {
       std::vector<vk::ExtensionProperties> props = vk::EnumerateDeviceExtensionProperties();
       std::vector<std::string>& selected = extensionList;
 
@@ -94,7 +94,7 @@ namespace lxvc {
     };
 
     //
-    virtual std::vector<std::string>& checkLayers(std::vector<std::string> const& names) {
+    virtual std::vector<std::string>& filterLayers(std::vector<std::string> const& names) {
       std::vector<vk::ExtensionProperties> props = vk::EnumerateDeviceLayerProperties();
       std::vector<std::string>& selected = layerList;
 
@@ -166,8 +166,8 @@ namespace lxvc {
 
       // 
       deviceInfo->setQueueCreateInfos(this->filterQueueInfo());
-      deviceInfo->setEnabledExtensionNames(this->checkExtensions());
-      deviceInfo->setLayerExtensionNames(this->checkLayers());
+      deviceInfo->setEnabledExtensionNames(this->filterExtensions());
+      deviceInfo->setLayerExtensionNames(this->filterLayers());
 
       //
       if (!!physicalDevice) {
