@@ -36,8 +36,8 @@ namespace lxvc {
     std::vector<vk::PhysicalDevice> physicalDevices = {};
 
     // 
-    InstanceObj() {
-      
+    InstanceObj(stm::uni_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
+      this->construct(cInfo);
     };
 
     //

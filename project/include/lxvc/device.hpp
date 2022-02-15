@@ -46,8 +46,8 @@ namespace lxvc {
     std::vector<vk::Queue> queues = {};
 
     // 
-    DeviceObj() {
-      
+    DeviceObj(stm::uni_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
+      this->construct(cInfo);
     };
 
     //
@@ -135,7 +135,7 @@ namespace lxvc {
         });
       };
       return ST();
-    }
+    };
 
     // 
     virtual SD construct(stm::uni_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
