@@ -51,7 +51,7 @@ namespace lxvc {
     };
 
     //
-    std::vector<vk::PhysicalDevice>& filterPhysicalDevices(std::vector<uint32_t> const& indices = {0u}) {
+    virtual std::vector<vk::PhysicalDevice>& filterPhysicalDevices(std::vector<uint32_t> const& indices = {0u}) {
       decltype(auto) instancePhysicalDevices = this->instanceObj->enumeratePhysicalDevices();
       for (auto& indice : indices) {
         physicalDevices.push_back(instancePhysicalDevices[indices]);
@@ -60,7 +60,7 @@ namespace lxvc {
     };
 
     //
-    std::vector<vk::DeviceQueueCreateInfo>& filterQueueInfo() {
+    virtual std::vector<vk::DeviceQueueCreateInfo>& filterQueueInfo() {
       uintptr_t queueInfoIndex = 0ull;
       std::vector<vk::DeviceQueueCreateInfo>& queueInfos = queueInfoCache;
       for (auto& queueInfoMap : this->queueInfoMaps) {
