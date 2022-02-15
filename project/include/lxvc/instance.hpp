@@ -40,7 +40,7 @@ namespace lxvc {
 
     // 
     vk::Instance instance = {};
-    vk::InstanceDispatcher dispatch = {};
+    vk::raii::InstanceDispatcher dispatch = {};
     stm::map_of_shared<vk::StructureType, vk::BaseInStructure> infoMap = {};
 
     //
@@ -76,7 +76,7 @@ namespace lxvc {
         uintptr_t propIndex = 0ull;
         for (auto& prop : props) {
           std::string_view propName = { prop.extensionName };
-          if (std::string::compare(propName, name) == 0) {
+          if (name.compare(propName) == 0) {
             selected.push_back(name); break;
           };
           propIndex++;
@@ -100,7 +100,7 @@ namespace lxvc {
         uintptr_t propIndex = 0ull;
         for (auto& prop : props) {
           std::string_view propName = { prop.layerName };
-          if (std::string::compare(propName, name) == 0) {
+          if (name.compare(propName) == 0) {
             selected.push_back(name); break;
           };
           propIndex++;
