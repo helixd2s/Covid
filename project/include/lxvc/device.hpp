@@ -152,17 +152,17 @@ namespace lxvc {
           .pNext = infoMap->set(vk::StructureType::ePhysicalDeviceVulkan12Features, vk::ePhysicalDeviceVulkan12Features{
           .pNext = infoMap->set(vk::StructureType::ePhysicalDeviceVulkan13Features, vk::ePhysicalDeviceVulkan13Features{
 
-          }).get()
-          }).get()
-          }).get()
-          }).get()
+          })
+          })
+          })
+          })
       });
 
       //
       auto physicalDevice = this->filterPhysicalDevices(cInfo->physicalDeviceIndices)[0];
 
       //
-      physicalDevice.getFeatures2(infoMap->get_ptr<vk::StructureType::ePhysicalDeviceFeatures2>(vk::StructureType::ePhysicalDeviceFeatures2));
+      physicalDevice.getFeatures2(infoMap->get<vk::StructureType::ePhysicalDeviceFeatures2>(vk::StructureType::ePhysicalDeviceFeatures2));
 
       // 
       deviceInfo->setQueueCreateInfos(this->filterQueueInfo());
