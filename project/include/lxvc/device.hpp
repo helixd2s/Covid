@@ -162,8 +162,8 @@ namespace lxvc {
 
       // 
       deviceInfo->setQueueCreateInfos(this->filterQueueInfo());
-      deviceInfo->setPEnabledExtensionNames(this->filterExtensions(physicalDevice, cInfo->extensionNames));
-      deviceInfo->setPEnabledLayerNames(this->filterLayers(physicalDevice, cInfo->layerNames));
+      deviceInfo->setPEnabledExtensionNames(stm::toCString(this->filterExtensions(physicalDevice, cInfo->extensionNames)));
+      deviceInfo->setPEnabledLayerNames(stm::toCString(this->filterLayers(physicalDevice, cInfo->layerNames)));
 
       //
       if (!!physicalDevice) {

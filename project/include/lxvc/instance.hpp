@@ -135,8 +135,8 @@ namespace lxvc {
 
       //
       auto instanceInfo = infoMap.set(vk::StructureType::eInstanceCreateInfo, vk::InstanceCreateInfo{ .pApplicationInfo = appInfo });
-      instanceInfo->setPEnabledExtensionNames(this->filterExtensions(cInfo->extensionNames));
-      instanceInfo->setPEnabledLayerNames(this->filterLayers(cInfo->layerNames));
+      instanceInfo->setPEnabledExtensionNames(stm::toCString(this->filterExtensions(cInfo->extensionNames)));
+      instanceInfo->setPEnabledLayerNames(stm::toCString(this->filterLayers(cInfo->layerNames)));
 
       //
       this->instance = vk::createInstance(instanceInfo);
