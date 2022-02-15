@@ -10,9 +10,9 @@ namespace lxvc {
   // 
   class DeviceObj : std::enable_shared_from_this<DeviceObj> {
   public:
-    using tType = std::shared_ptr<Device>;
+    using tType = std::shared_ptr<DeviceObj>;
     using SFT = shared_from_this;
-    using MSS = stm::map_of_shared<vk::StructureType, vk::BaseInStructure>
+    using MSS = stm::map_of_shared<vk::StructureType, vk::BaseInStructure>;
     friend InstanceObj;
 
     //
@@ -22,13 +22,13 @@ namespace lxvc {
     std::vector<vk::PhysicalDevice> physicalDevices = {}; 
 
     // 
-    vk::Device instance = {};
-    vk::DeviceDispatch dispatch = {};
+    vk::Device device = {};
+    vk::DeviceDispatcher dispatch = {};
     MSS infoMap = {};
 
     //
     std::vector<std::string> extensionList = {};
-    std::string<std::string> layerList = {};
+    std::vector<std::string> layerList = {};
 
     //
     std::vector<MSS> queueInfoMaps = {};
@@ -57,15 +57,15 @@ namespace lxvc {
       uintptr_t queueInfoIndex = 0ull;
       std::vector<vk::DeviceQueueCreateInfo>& queueInfos = queueInfoCache;
       for (auto& queueInfoMap : this->queueInfoMaps) {
-        queueInfos.push_back(queueInfoMap->get<vk::DeviceQueueCreateInfo>(vk::eDeviceQueueCreateInfo));
+        queueInfos.push_back(queueInfoMap.get<vk::DeviceQueueCreateInfo>(vk::StructureType::eDeviceQueueCreateInfo));
         queueInfoIndex++;
       };
       return queueInfos;
     };
 
     //
-    virtual std::vector<std::string>& filterExtensions(std::vector<std::string> const& names) {
-      std::vector<vk::ExtensionProperties> props = vk::EnumerateDeviceExtensionProperties();
+    virtual std::vector<std::string>& filterExtensions(vk::PhysicalDevice const& physicalDevice, std::vector<std::string> const& names) {
+      std::vector<vk::ExtensionProperties> props = physicalDevice.enumerateDeviceExtensionProperties();
       std::vector<std::string>& selected = extensionList;
 
       // 
@@ -77,7 +77,7 @@ namespace lxvc {
           if (std::compare(propName, name) == 0) {
             selected.push_back(name); break;
           };
-          propIndex+;
+          propIndex++;
         };
         nameIndex++;
       };
@@ -88,8 +88,8 @@ namespace lxvc {
     };
 
     //
-    virtual std::vector<std::string>& filterLayers(std::vector<std::string> const& names) {
-      std::vector<vk::ExtensionProperties> props = vk::EnumerateDeviceLayerProperties();
+    virtual std::vector<std::string>& filterLayers(vk::PhysicalDevice const& physicalDevice, std::vector<std::string> const& names) {
+      std::vector<vk::LayerProperties> props = physicalDevice.enumerateDeviceLayerProperties();
       std::vector<std::string>& selected = layerList;
 
       // 
@@ -101,7 +101,7 @@ namespace lxvc {
           if (std::compare(propName, name) == 0) {
             selected.push_back(name); break;
           };
-          propIndex+;
+          propIndex++;
         };
         nameIndex++;
       };
@@ -116,12 +116,12 @@ namespace lxvc {
       queueInfoMaps = {};
       for (auto& queueFamilyIndex : queueFamilyIndices) {
         auto last = queueInfoMaps.size();
-        queueInfoMaps.push_back(SID{});
+        queueInfoMaps.push_back(MSS{});
         auto& queueInfoMap = queueInfoMaps[last];
 
         // 
         std::vector<float> priorities = {1.f};
-        queueInfoMap->set(vk::StructureType::eDeviceQueueCreateInfo, vk::DeviceQueueCreateInfo{
+        queueInfoMap.set(vk::StructureType::eDeviceQueueCreateInfo, vk::DeviceQueueCreateInfo{
           .queueFamilyIndex = queueFamilyIndex,
           .queueCount = (uint32_t)priorities.size(),
           .pQueuePriorities = priorities.data()
@@ -140,11 +140,11 @@ namespace lxvc {
       this->filterQueueFamilyIndices(this->queueFamilyIndices = cInfo->queueFamilyIndices);
 
       // TODO: get rid from spagetti code or nesting
-      auto deviceInfo = infoMap->set(vk::DeviceCreateInfo{
-          .pNext = infoMap->set(vk::StructureType::ePhysicalDeviceFeatures2, vk::PhysicalDeviceFeatures2{
-          .pNext = infoMap->set(vk::StructureType::ePhysicalDeviceVulkan11Features, vk::PhysicalDeviceVulkan11Features{
-          .pNext = infoMap->set(vk::StructureType::ePhysicalDeviceVulkan12Features, vk::PhysicalDeviceVulkan12Features{
-          .pNext = infoMap->set(vk::StructureType::ePhysicalDeviceVulkan13Features, vk::PhysicalDeviceVulkan13Features{
+      auto deviceInfo = infoMap.set(vk::DeviceCreateInfo{
+          .pNext = infoMap.set(vk::StructureType::ePhysicalDeviceFeatures2, vk::PhysicalDeviceFeatures2{
+          .pNext = infoMap.set(vk::StructureType::ePhysicalDeviceVulkan11Features, vk::PhysicalDeviceVulkan11Features{
+          .pNext = infoMap.set(vk::StructureType::ePhysicalDeviceVulkan12Features, vk::PhysicalDeviceVulkan12Features{
+          .pNext = infoMap.set(vk::StructureType::ePhysicalDeviceVulkan13Features, vk::PhysicalDeviceVulkan13Features{
 
           })
           })
@@ -156,7 +156,7 @@ namespace lxvc {
       auto physicalDevice = this->filterPhysicalDevices(cInfo->physicalDeviceIndices)[0];
 
       //
-      physicalDevice.getFeatures2(infoMap->get<vk::StructureType::ePhysicalDeviceFeatures2>(vk::StructureType::ePhysicalDeviceFeatures2));
+      physicalDevice.getFeatures2(infoMap.get<vk::StructureType::ePhysicalDeviceFeatures2>(vk::StructureType::ePhysicalDeviceFeatures2));
 
       // 
       deviceInfo->setQueueCreateInfos(this->filterQueueInfo());

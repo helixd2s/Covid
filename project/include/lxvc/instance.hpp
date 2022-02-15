@@ -26,7 +26,7 @@ namespace lxvc {
   // 
   class InstanceObj : std::enable_shared_from_this<InstanceObj> {
   public:
-    using tType = std::shared_ptr<Instance>;
+    using tType = std::shared_ptr<InstanceObj>;
     using SFT = shared_from_this;
     friend DeviceObj;
 
@@ -35,12 +35,12 @@ namespace lxvc {
 
     // 
     vk::Instance instance = {};
-    vk::InstanceDispatch dispatch = {};
+    vk::InstanceDispatcher dispatch = {};
     stm::map_of_shared<vk::StructureType, vk::BaseInStructure> infoMap = {};
 
     //
     std::vector<std::string> extensionList = {};
-    std::string<std::string> layerList = {};
+    std::vector<std::string> layerList = {};
 
     //
     std::vector<vk::PhysicalDevice> physicalDevices = {};
@@ -74,7 +74,7 @@ namespace lxvc {
           if (std::compare(propName, name) == 0) {
             selected.push_back(name); break;
           };
-          propIndex+;
+          propIndex++;
         };
         nameIndex++;
       };
@@ -86,7 +86,7 @@ namespace lxvc {
 
     //
     virtual std::vector<std::string>& filterLayers(std::vector<std::string> const& names) {
-      std::vector<vk::ExtensionProperties> props = vk::EnumerateInstanceLayerProperties();
+      std::vector<vk::LayerProperties> props = vk::EnumerateInstanceLayerProperties();
       std::vector<std::string>& selected = layerList;
 
       // 
@@ -98,7 +98,7 @@ namespace lxvc {
           if (std::compare(propName, name) == 0) {
             selected.push_back(name); break;
           };
-          propIndex+;
+          propIndex++;
         };
         nameIndex++;
       };
