@@ -44,8 +44,8 @@ namespace lxvc {
     stm::map_of_shared<vk::StructureType, vk::BaseInStructure> infoMap = {};
 
     //
-    std::vector<std::string> extensionList = {};
-    std::vector<std::string> layerList = {};
+    std::vector<char const*> extensionNames = {};
+    std::vector<char const*> layerNames = {};
 
     //
     std::vector<vk::PhysicalDevice> physicalDevices = {};
@@ -135,8 +135,8 @@ namespace lxvc {
 
       //
       auto instanceInfo = infoMap.set(vk::StructureType::eInstanceCreateInfo, vk::InstanceCreateInfo{ .pApplicationInfo = appInfo });
-      instanceInfo->setPEnabledExtensionNames(stm::toCString(this->filterExtensions(cInfo->extensionNames)));
-      instanceInfo->setPEnabledLayerNames(stm::toCString(this->filterLayers(cInfo->layerNames)));
+      instanceInfo->setPEnabledExtensionNames(stm::toCString(this->extensionNames, this->filterExtensions(cInfo->extensionNames)));
+      instanceInfo->setPEnabledLayerNames(stm::toCString(this->layerNames, this->filterLayers(cInfo->layerNames)));
 
       //
       this->instance = vk::createInstance(instanceInfo);

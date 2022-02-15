@@ -29,8 +29,8 @@ namespace lxvc {
     MSS infoMap = {};
 
     //
-    std::vector<std::string> extensionList = {};
-    std::vector<std::string> layerList = {};
+    std::vector<char const*> extensionNames = {};
+    std::vector<char const*> layerNames = {};
 
     //
     std::vector<MSS> queueInfoMaps = {};
@@ -162,8 +162,8 @@ namespace lxvc {
 
       // 
       deviceInfo->setQueueCreateInfos(this->filterQueueInfo());
-      deviceInfo->setPEnabledExtensionNames(stm::toCString(this->filterExtensions(physicalDevice, cInfo->extensionNames)));
-      deviceInfo->setPEnabledLayerNames(stm::toCString(this->filterLayers(physicalDevice, cInfo->layerNames)));
+      deviceInfo->setPEnabledExtensionNames(stm::toCString(this->extensionNames, this->filterExtensions(physicalDevice, cInfo->extensionNames)));
+      deviceInfo->setPEnabledLayerNames(stm::toCString(this->layerNames, this->filterLayers(physicalDevice, cInfo->layerNames)));
 
       //
       if (!!physicalDevice) {
