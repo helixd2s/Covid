@@ -45,7 +45,15 @@ namespace lxvc {
     std::vector<std::string> layerList = {};
     std::vector<uint32_t> queueFamilyIndices = {0u};
     uint32_t physicalDeviceGroupIndex = 0u;
+    uint32_t physicalDeviceIndex = 0u;
   };
 
-
+  //
+  enum class MemoryUsage : uint32_t {
+    eUnknown = 0u,
+    eGpuOnly = 1u,
+    eCpuToGpu = 2u,
+    eGpuToCpu = 3u,
+    eCpuOnly = 4u
+  };
 };

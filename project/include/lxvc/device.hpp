@@ -22,6 +22,7 @@ namespace lxvc {
 
     //
     std::vector<vk::PhysicalDevice> physicalDevices = {}; 
+    std::vector<MSS> PDInfoMaps = {};
 
     // 
     vk::Device device = {};
@@ -39,9 +40,10 @@ namespace lxvc {
     std::vector<vk::DeviceQueueCreateInfo> queueInfoCache = {};
 
     //
-    std::vector<uint32_t> physicalDeviceIndices = {};
     std::vector<uint32_t> queueFamilyIndices = {};
     std::vector<vk::Queue> queues = {};
+    uint32_t physicalDeviceGroupIndex = 0u;
+    uint32_t physicalDeviceIndex = 0u;
 
     // 
     DeviceObj(std::shared_ptr<InstanceObj> instanceObj = {}, stm::uni_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
@@ -49,15 +51,76 @@ namespace lxvc {
     };
 
     //
-    virtual std::vector<vk::PhysicalDevice>& filterPhysicalDevices(uint32_t const& index) {
-      //decltype(auto) instancePhysicalDevices = this->instanceObj->enumeratePhysicalDevices();
-      //for (auto& indice : indices) {
-      //  physicalDevices.push_back(instancePhysicalDevices[indice]);
-      //};
-      //return physicalDevices;
+    virtual tType setPhysicalDeviceIndex(uint32_t const& physicalDeviceIndex = 0u) { this->physicalDeviceIndex = physicalDeviceIndex; return SFT(); };
+
+    //
+    virtual std::tuple<uint32_t, uint32_t> findMemoryTypeAndHeapIndex(uint32_t const& requiredMemoryTypeBits, MemoryUsage const& usage = MemoryUsage::eGpuOnly) {
+      decltype(auto) physicalDevice = this->physicalDevices[this->physicalDeviceIndex];
+      decltype(auto) PDInfoMap = this->PDInfoMaps[this->physicalDeviceIndex];
+      decltype(auto) memoryProperties2 = PDInfoMap.set(vk::StructureType::ePhysicalDeviceMemoryProperties2, vk::PhysicalDeviceMemoryProperties2{
+        
+      });
+      decltype(auto) memoryProperties = memoryProperties2->memoryProperties; // get ref
+      decltype(auto) memoryTypes = memoryProperties.memoryTypes; // get ref
+      physicalDevice.getMemoryProperties2(memoryProperties);
+
+      // 
+      uint32_t bitIndex = 0u;
+      std::vector<uint32_t> requiredMemoryTypeIndices = {};
+      for (uint32_t bitMask = 1u; (bitMask < 0xFFFFFFFF && bitMask > 0); bitMask <<= 1u) {
+          decltype(auto) bitWith = requiredMemoryTypeBits & bitMask;
+          if (bitWith) { requiredMemoryTypeIndices.push_back(bitIndex); };
+          bitIndex++;
+      };
+
+      //uint32_t memoryTypeIndex = 0u;
+      //for (decltype(auto) memoryType : memoryTypes) {
+      std::tuple<uint32_t, uint32_t> memoryTypeAndHeapIndex = {0u, 0u};
+      for (decltype(auto) memoryTypeIndex : requiredMemoryTypeIndices) {
+        decltype(auto) memoryType = memoryTypes[memoryTypeIndex];
+        decltype(auto) memoryHeapIndex = memoryType.heapIndex;
+        decltype(auto) requiredBits = vk::MemoryPropertyFlags{};// | vk::MemoryPropertyFlagBits::eDeviceLocal;
+
+        // 
+        switch (usage) {
+          MemoryUsage::eGpuOnly: 
+          requiredBits |= vk::MemoryPropertyFlagBits::eDeviceLocal;
+          break;
+
+          MemoryUsage::eCpuToGpu: 
+          //requiredBits |= vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCached | vk::MemoryPropertyFlagBits::eHostCoherent;
+          requiredBits |= vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eDeviceLocal | vk::MemoryPropertyFlagBits::eHostCoherent;
+          break;
+
+          MemoryUsage::eGpuToCpu: 
+          requiredBits |= vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eDeviceLocal | vk::MemoryPropertyFlagBits::eHostCoherent;
+          break;
+
+          MemoryUsage::eCpuOnly: 
+          requiredBits |= vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCached | vk::MemoryPropertyFlagBits::eHostCoherent;
+          break;
+
+          default: 
+          requiredBits |= vk::MemoryPropertyFlagBits::eDeviceLocal;
+        };
+
+        // 
+        if ((memoryTypeBits & requiredBits) == requiredBits) {
+          memoryTypeAndHeapIndex = {memoryTypeIndex, memoryHeapIndex};
+          break;
+        };
+      };
+
+      return memoryTypeAndHeapIndex;
+    };
+
+    //
+    virtual std::vector<vk::PhysicalDevice>& filterPhysicalDevices(uint32_t const& groupIndex) {
       decltype(auto) deviceGroups = this->instanceObj->enumeratePhysicalDeviceGroups();
-      decltype(auto) deviceGroup = deviceGroups[index];
-      return (this->physicalDevices = std::vector<vk::PhysicalDevice>(*deviceGroup.physicalDevices, *deviceGroup.physicalDevices + deviceGroup.physicalDeviceCount));
+      decltype(auto) deviceGroup = deviceGroups[groupIndex];
+      decltype(auto) physicalDevices = (this->physicalDevices = std::vector<vk::PhysicalDevice>(*deviceGroup.physicalDevices, *deviceGroup.physicalDevices + deviceGroup.physicalDeviceCount));
+      PDInfoMap.resize(physicalDevices.size(), MSS{});
+      return physicalDevices;
     };
 
     //
@@ -168,8 +231,8 @@ namespace lxvc {
       });
 
       //
-      decltype(auto) physicalDevices = this->filterPhysicalDevices(cInfo->physicalDeviceGroupIndex);
-      decltype(auto) physicalDevice = physicalDevices[0];
+      decltype(auto) physicalDevices = this->filterPhysicalDevices(this->physicalDeviceGroupIndex = cInfo->physicalDeviceGroupIndex);
+      decltype(auto) physicalDevice = physicalDevices[this->physicalDeviceIndex = cInfo->physicalDeviceIndex];
 
       //
       if (!!physicalDevice) {
