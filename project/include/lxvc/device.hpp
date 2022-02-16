@@ -63,8 +63,8 @@ namespace lxvc {
     //
     virtual std::vector<vk::DeviceQueueCreateInfo>& filterQueueInfo() {
       uintptr_t queueInfoIndex = 0ull;
-      std::vector<vk::DeviceQueueCreateInfo>& queueInfos = queueInfoCache;
-      for (auto& queueInfoMap : this->queueInfoMaps) {
+      decltype(auto) queueInfos = queueInfoCache;
+      for (decltype(auto) queueInfoMap : this->queueInfoMaps) {
         queueInfos.push_back(queueInfoMap.get<vk::DeviceQueueCreateInfo>(vk::StructureType::eDeviceQueueCreateInfo));
         queueInfoIndex++;
       };
@@ -73,14 +73,14 @@ namespace lxvc {
 
     //
     virtual std::vector<std::string>& filterExtensions(vk::PhysicalDevice const& physicalDevice, std::vector<std::string> const& names) {
-      std::vector<vk::ExtensionProperties> props = physicalDevice.enumerateDeviceExtensionProperties();
-      std::vector<std::string>& selected = extensionList;
+      decltype(auto) props = physicalDevice.enumerateDeviceExtensionProperties();
+      decltype(auto) selected = extensionList;
 
       // 
       uintptr_t nameIndex = 0ull;
-      for (auto& name : names) {
+      for (decltype(auto) name : names) {
         uintptr_t propIndex = 0ull;
-        for (auto& prop : props) {
+        for (decltype(auto) prop : props) {
           std::string_view propName = { prop.extensionName };
           if (name.compare(propName) == 0) {
             selected.push_back(name); break;
@@ -97,14 +97,14 @@ namespace lxvc {
 
     //
     virtual std::vector<std::string>& filterLayers(vk::PhysicalDevice const& physicalDevice, std::vector<std::string> const& names) {
-      std::vector<vk::LayerProperties> props = physicalDevice.enumerateDeviceLayerProperties();
-      std::vector<std::string>& selected = layerList;
+      decltype(auto) props = physicalDevice.enumerateDeviceLayerProperties();
+      decltype(auto) selected = layerList;
 
       // 
       uintptr_t nameIndex = 0ull;
-      for (auto& name : names) {
+      for (decltype(auto) name : names) {
         uintptr_t propIndex = 0ull;
-        for (auto& prop : props) {
+        for (decltype(auto) prop : props) {
           std::string_view propName = { prop.layerName };
           if (name.compare(propName) == 0) {
             selected.push_back(name); break;
@@ -122,10 +122,10 @@ namespace lxvc {
     // 
     virtual tType filterQueueFamilyIndices(std::vector<uint32_t> const& queueFamilyIndices = {}) {
       queueInfoMaps = {};
-      for (auto& queueFamilyIndex : queueFamilyIndices) {
-        auto last = queueInfoMaps.size();
+      for (decltype(auto) queueFamilyIndex : queueFamilyIndices) {
+        decltype(auto) last = queueInfoMaps.size();
         queueInfoMaps.push_back(MSS{});
-        auto& queueInfoMap = queueInfoMaps[last];
+        decltype(auto) queueInfoMap = queueInfoMaps[last];
 
         // 
         std::vector<float> priorities = {1.f};
@@ -168,18 +168,20 @@ namespace lxvc {
       });
 
       //
-      decltype(auto) devices = this->filterPhysicalDevices(cInfo->physicalDeviceGroupIndex);
-      decltype(auto) physicalDevice = devices[0];
-      physicalDevice.getFeatures2(infoMap.get<vk::PhysicalDeviceFeatures2>(vk::StructureType::ePhysicalDeviceFeatures2));
-      deviceGroupInfo->setPhysicalDevices(devices);
-
-      // 
-      deviceInfo->setQueueCreateInfos(this->filterQueueInfo());
-      deviceInfo->setPEnabledExtensionNames(stm::toCString(this->extensionNames, this->filterExtensions(physicalDevice, this->extensionList)));
-      deviceInfo->setPEnabledLayerNames(stm::toCString(this->layerNames, this->filterLayers(physicalDevice, this->layerList)));
+      decltype(auto) physicalDevices = this->filterPhysicalDevices(cInfo->physicalDeviceGroupIndex);
+      decltype(auto) physicalDevice = physicalDevices[0];
 
       //
       if (!!physicalDevice) {
+        physicalDevice.getFeatures2(infoMap.get<vk::PhysicalDeviceFeatures2>(vk::StructureType::ePhysicalDeviceFeatures2));
+        deviceGroupInfo->setPhysicalDevices(physicalDevices);
+
+        // 
+        deviceInfo->setQueueCreateInfos(this->filterQueueInfo());
+        deviceInfo->setPEnabledExtensionNames(stm::toCString(this->extensionNames, this->filterExtensions(physicalDevice, this->extensionList)));
+        deviceInfo->setPEnabledLayerNames(stm::toCString(this->layerNames, this->filterLayers(physicalDevice, this->layerList)));
+
+        // 
         this->device = physicalDevice.createDevice(deviceInfo);
       } else {
         std::cerr << "Physical Device Not Detected" << std::endl;
