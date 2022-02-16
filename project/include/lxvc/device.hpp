@@ -68,8 +68,7 @@ namespace lxvc {
       uint32_t bitIndex = 0u;
       std::vector<uint32_t> requiredMemoryTypeIndices = {};
       for (uint32_t bitMask = 1u; (bitMask < 0xFFFFFFFF && bitMask > 0); bitMask <<= 1u) {
-          decltype(auto) bitWith = requiredMemoryTypeBits & bitMask;
-          if (bitWith) { requiredMemoryTypeIndices.push_back(bitIndex); };
+          if (requiredMemoryTypeBits & bitMask) { requiredMemoryTypeIndices.push_back(bitIndex); };
           bitIndex++;
       };
 
