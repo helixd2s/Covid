@@ -62,7 +62,7 @@ namespace lxvc {
       });
       decltype(auto) memoryProperties = memoryProperties2->memoryProperties; // get ref
       decltype(auto) memoryTypes = memoryProperties.memoryTypes; // get ref
-      physicalDevice.getMemoryProperties2(memoryProperties);
+      physicalDevice.getMemoryProperties2(memoryProperties2);
 
       // 
       uint32_t bitIndex = 0u;
