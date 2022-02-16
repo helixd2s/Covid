@@ -119,10 +119,8 @@ namespace lxvc {
       this->physicalDevices = {};
       decltype(auto) deviceGroups = this->instanceObj->enumeratePhysicalDeviceGroups();
       decltype(auto) deviceGroup = deviceGroups[groupIndex];
-      decltype(auto) physicalDevices = (this->physicalDevices = std::vector<vk::PhysicalDevice>(
-        &deviceGroup.physicalDevices, 
-        &deviceGroup.physicalDevices + deviceGroup.physicalDeviceCount)
-      );
+      vk::PhysicalDevice* PDP = deviceGroup.physicalDevices;
+      decltype(auto) physicalDevices = (this->physicalDevices = std::vector<vk::PhysicalDevice>(PDP, PDP + deviceGroup.physicalDeviceCount));
       PDInfoMaps.resize(physicalDevices.size(), MSS{});
       return physicalDevices;
     };
