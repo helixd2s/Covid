@@ -51,10 +51,21 @@ namespace lxvc {
 
     //
     std::vector<vk::PhysicalDevice> physicalDevices = {};
+    std::vector<vk::PhysicalDeviceGroupProperties> physicalDeviceGroups = {};
 
     // 
     InstanceObj(std::shared_ptr<ContextObj> contextObj = {}, stm::uni_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
       this->construct(contextObj, cInfo);
+    };
+
+    //
+    virtual std::vector<vk::PhysicalDeviceGroupProperties>& enumeratePhysicalDeviceGroups() {
+      return (this->physicalDeviceGroups = (this->physicalDeviceGroups.size() > 0 ? this->physicalDeviceGroups : instance.enumeratePhysicalDeviceGroups()));
+    };
+
+    //
+    virtual std::vector<vk::PhysicalDeviceGroupProperties> const& enumeratePhysicalDeviceGroups() const {
+      return (this->physicalDeviceGroups.size() > 0 ? this->physicalDeviceGroups : instance.enumeratePhysicalDeviceGroups());
     };
 
     //

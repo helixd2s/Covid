@@ -43,8 +43,8 @@ namespace lxvc {
   struct DeviceCreateInfo {
     std::vector<std::string> extensionList = {};
     std::vector<std::string> layerList = {};
-    std::vector<uint32_t> physicalDeviceIndices = {0u};
     std::vector<uint32_t> queueFamilyIndices = {0u};
+    uint32_t physicalDeviceGroupIndex = 0u;
   };
 
 
