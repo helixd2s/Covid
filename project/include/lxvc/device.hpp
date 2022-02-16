@@ -83,20 +83,20 @@ namespace lxvc {
 
         // 
         switch (usage) {
-          MemoryUsage::eGpuOnly: 
+          case (MemoryUsage::eGpuOnly): 
           requiredBits |= vk::MemoryPropertyFlagBits::eDeviceLocal;
           break;
 
-          MemoryUsage::eCpuToGpu: 
+          case (MemoryUsage::eCpuToGpu): 
           //requiredBits |= vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCached | vk::MemoryPropertyFlagBits::eHostCoherent;
           requiredBits |= vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eDeviceLocal | vk::MemoryPropertyFlagBits::eHostCoherent;
           break;
 
-          MemoryUsage::eGpuToCpu: 
+          case (MemoryUsage::eGpuToCpu): 
           requiredBits |= vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eDeviceLocal | vk::MemoryPropertyFlagBits::eHostCoherent;
           break;
 
-          MemoryUsage::eCpuOnly: 
+          case (MemoryUsage::eCpuOnly): 
           requiredBits |= vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCached | vk::MemoryPropertyFlagBits::eHostCoherent;
           break;
 
@@ -105,7 +105,7 @@ namespace lxvc {
         };
 
         // 
-        if ((memoryTypeBits & requiredBits) == requiredBits) {
+        if ((memoryType.propertyFlags & requiredBits) == requiredBits) {
           memoryTypeAndHeapIndex = {memoryTypeIndex, memoryHeapIndex};
           break;
         };
@@ -116,10 +116,14 @@ namespace lxvc {
 
     //
     virtual std::vector<vk::PhysicalDevice>& filterPhysicalDevices(uint32_t const& groupIndex) {
+      this->physicalDevices = {};
       decltype(auto) deviceGroups = this->instanceObj->enumeratePhysicalDeviceGroups();
       decltype(auto) deviceGroup = deviceGroups[groupIndex];
-      decltype(auto) physicalDevices = (this->physicalDevices = std::vector<vk::PhysicalDevice>(*deviceGroup.physicalDevices, *deviceGroup.physicalDevices + deviceGroup.physicalDeviceCount));
-      PDInfoMap.resize(physicalDevices.size(), MSS{});
+      decltype(auto) physicalDevices = (this->physicalDevices = std::vector<vk::PhysicalDevice>(
+        &deviceGroup.physicalDevices, 
+        &deviceGroup.physicalDevices + deviceGroup.physicalDeviceCount)
+      );
+      PDInfoMaps.resize(physicalDevices.size(), MSS{});
       return physicalDevices;
     };
 
