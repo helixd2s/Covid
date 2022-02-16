@@ -126,7 +126,7 @@ namespace lxvc {
     };
 
     //
-    virtual std::vector<vk::DeviceQueueCreateInfo>& filterQueueInfo() {
+    virtual std::vector<vk::DeviceQueueCreateInfo>& cacheQueueInfos() {
       uintptr_t queueInfoIndex = 0ull;
       decltype(auto) queueInfos = queueInfoCache;
       for (decltype(auto) queueInfoMap : this->queueInfoMaps) {
@@ -242,7 +242,7 @@ namespace lxvc {
         deviceGroupInfo->setPhysicalDevices(physicalDevices);
 
         // 
-        deviceInfo->setQueueCreateInfos(this->filterQueueInfo());
+        deviceInfo->setQueueCreateInfos(this->cacheQueueInfos());
         deviceInfo->setPEnabledExtensionNames(stm::toCString(this->extensionNames, this->filterExtensions(physicalDevice, this->extensionList)));
         deviceInfo->setPEnabledLayerNames(stm::toCString(this->layerNames, this->filterLayers(physicalDevice, this->layerList)));
 
