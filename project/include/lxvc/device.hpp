@@ -36,14 +36,17 @@ namespace lxvc {
     std::vector<char const*> layerNames = {};
 
     //
-    std::vector<MSS> queueInfoMaps = {};
-    std::vector<vk::DeviceQueueCreateInfo> queueInfoCache = {};
-
-    //
     std::vector<uint32_t> queueFamilyIndices = {};
-    std::vector<vk::Queue> queues = {};
+    std::vector<vk::DeviceQueueCreateInfo> queueInfoCache = {};
+    std::vector<std::vector<float>> queuePriorities = {};
+    std::vector<MSS> queueInfoMaps = {};
+
+    // 
     uint32_t physicalDeviceGroupIndex = 0u;
     uint32_t physicalDeviceIndex = 0u;
+
+    //
+    std::vector<vk::Queue> queues = {};
 
     // 
     DeviceObj(std::shared_ptr<InstanceObj> instanceObj = {}, stm::uni_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
@@ -115,7 +118,7 @@ namespace lxvc {
 
     //
     virtual std::vector<vk::PhysicalDevice>& filterPhysicalDevices(uint32_t const& groupIndex) {
-      this->physicalDevices = {};
+      //this->physicalDevices = {};
       decltype(auto) deviceGroups = this->instanceObj->enumeratePhysicalDeviceGroups();
       decltype(auto) deviceGroup = deviceGroups[groupIndex];
       vk::PhysicalDevice* PDP = deviceGroup.physicalDevices;
@@ -185,20 +188,29 @@ namespace lxvc {
 
     // 
     virtual tType filterQueueFamilyIndices(std::vector<uint32_t> const& queueFamilyIndices = {}) {
-      queueInfoMaps = {};
+      this->queueInfoMaps = {};
+      this->queuePriorities = {};
+
+      // TODO: customize queue priorities
       for (decltype(auto) queueFamilyIndex : queueFamilyIndices) {
-        decltype(auto) last = queueInfoMaps.size();
-        queueInfoMaps.push_back(MSS{});
-        decltype(auto) queueInfoMap = queueInfoMaps[last];
+        decltype(auto) last = this->queueInfoMaps.size();
+        this->queueInfoMaps.push_back(MSS{});
+        this->queuePriorities.push_back(std::vector<float>{1.f});
 
         // 
-        std::vector<float> priorities = {1.f};
-        queueInfoMap.set(vk::StructureType::eDeviceQueueCreateInfo, vk::DeviceQueueCreateInfo{
+        decltype(auto) queueInfoMap = this->queueInfoMaps[last];
+        decltype(auto) queueInfo = queueInfoMap.set(vk::StructureType::eDeviceQueueCreateInfo, vk::DeviceQueueCreateInfo{
           .queueFamilyIndex = queueFamilyIndex,
-          .queueCount = (uint32_t)priorities.size(),
-          .pQueuePriorities = priorities.data()
         });
       };
+
+      // set final vector
+      for (decltype(auto) priorities : this->queuePriorities) {
+        decltype(auto) queueInfoMap = this->queueInfoMaps[std::distance(this->queuePriorities.begin(), std::find(this->queuePriorities.begin(), this->queuePriorities.end(), priorities))];
+        decltype(auto) queueInfo = queueInfoMap.get<vk::DeviceQueueCreateInfo>(vk::StructureType::eDeviceQueueCreateInfo);
+        queueInfo->setQueuePriorities(priorities);
+      };
+
       return SFT();
     };
 
