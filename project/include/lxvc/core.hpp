@@ -8,6 +8,7 @@
 #include <string>
 #include <memory>
 #include <string_view>
+#include <utility>
 
 //
 #include <glm/glm.hpp>
@@ -20,6 +21,23 @@
 
 // 
 namespace lxvc {
+
+    // 
+#ifdef VKU_ENABLE_TYPE_SAFE
+    namespace ts {
+        using namespace type_safe;
+    };
+#endif
+
+#ifdef TYPE_SAFE_OPTIONAL_REF_HPP_INCLUDED
+    using optional_ref = ts::optional_ref;
+    using opt_ref = ts::opt_ref;
+    using opt_cref = ts::opt_cref;
+#else 
+    using optional_ref = stm::optional_ref;
+    using opt_ref = stm::opt_ref;
+    using opt_cref = stm::opt_cref;
+#endif
 
   //
   class ContextObj;

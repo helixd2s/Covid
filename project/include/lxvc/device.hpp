@@ -130,9 +130,10 @@ namespace lxvc {
     //
     virtual std::vector<vk::DeviceQueueCreateInfo>& cacheQueueInfos() {
       uintptr_t queueInfoIndex = 0ull;
-      decltype(auto) queueInfos = queueInfoCache;
+      decltype(auto) queueInfos = opt_ref(this->queueInfoCache);
+      //decltype(auto) queueInfos = this->queueInfoCache;
       for (decltype(auto) queueInfoMap : this->queueInfoMaps) {
-        queueInfos.push_back(queueInfoMap.get<vk::DeviceQueueCreateInfo>(vk::StructureType::eDeviceQueueCreateInfo));
+        queueInfos->push_back(queueInfoMap.get<vk::DeviceQueueCreateInfo>(vk::StructureType::eDeviceQueueCreateInfo));
         queueInfoIndex++;
       };
       return queueInfos;
