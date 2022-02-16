@@ -207,12 +207,11 @@ namespace lxvc {
     virtual tType construct(std::shared_ptr<InstanceObj> instanceObj = {}, stm::uni_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
       this->instanceObj = instanceObj;
       this->infoMap = {};
+      this->physicalDevices = {};
       this->extensionList = cInfo->extensionList;
       this->layerList = cInfo->layerList;
       this->extensionNames = {};
       this->layerNames = {};
-      this->physicalDevices = {};
-      this->filterQueueFamilyIndices(this->queueFamilyIndices = cInfo->queueFamilyIndices);
 
       //
       decltype(auto) deviceGroupInfo = infoMap.set(vk::StructureType::eDeviceGroupDeviceCreateInfo, vk::DeviceGroupDeviceCreateInfo{
@@ -242,7 +241,7 @@ namespace lxvc {
         deviceGroupInfo->setPhysicalDevices(physicalDevices);
 
         // 
-        deviceInfo->setQueueCreateInfos(this->cacheQueueInfos());
+        deviceInfo->setQueueCreateInfos(this->filterQueueFamilyIndices(this->queueFamilyIndices = cInfo->queueFamilyIndices)->cacheQueueInfos());
         deviceInfo->setPEnabledExtensionNames(stm::toCString(this->extensionNames, this->filterExtensions(physicalDevice, this->extensionList)));
         deviceInfo->setPEnabledLayerNames(stm::toCString(this->layerNames, this->filterLayers(physicalDevice, this->layerList)));
 
