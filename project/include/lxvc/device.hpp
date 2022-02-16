@@ -46,7 +46,7 @@ namespace lxvc {
     uint32_t physicalDeviceIndex = 0u;
 
     //
-    std::vector<vk::Queue> queues = {};
+    //std::vector<vk::Queue> queues = {};
 
     // 
     DeviceObj(std::shared_ptr<InstanceObj> instanceObj = {}, stm::uni_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
