@@ -16,12 +16,12 @@ namespace lxvc {
     inline decltype(auto) SFT() { return shared_from_this(); };
 
     // 
-    ContextObj(stm::uni_arg<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
+    ContextObj(cpp21::uni_arg<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
       this->construct(cInfo);
     };
 
     // 
-    virtual tType construct(stm::uni_arg<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
+    virtual tType construct(cpp21::uni_arg<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
       return SFT();
     };
   };
@@ -41,11 +41,11 @@ namespace lxvc {
     // 
     vk::Instance instance = {};
     vk::DispatchLoaderDynamic dispatch = {};
-    stm::map_of_shared<vk::StructureType, vk::BaseInStructure> infoMap = {};
+    cpp21::map_of_shared<vk::StructureType, vk::BaseInStructure> infoMap = {};
 
     //
-    std::vector<std::string> extensionList = {};
-    std::vector<std::string> layerList = {};
+    cpp21::shared_vector<std::string> extensionList = {};
+    cpp21::shared_vector<std::string> layerList = {};
     std::vector<char const*> extensionNames = {};
     std::vector<char const*> layerNames = {};
 
@@ -54,7 +54,7 @@ namespace lxvc {
     std::vector<vk::PhysicalDeviceGroupProperties> physicalDeviceGroups = {};
 
     // 
-    InstanceObj(std::shared_ptr<ContextObj> contextObj = {}, stm::uni_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
+    InstanceObj(std::shared_ptr<ContextObj> contextObj = {}, cpp21::uni_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
       this->construct(contextObj, cInfo);
     };
 
@@ -90,7 +90,7 @@ namespace lxvc {
         for (decltype(auto) prop : props) {
           std::string_view propName = { prop.extensionName };
           if (name.compare(propName) == 0) {
-            selected.push_back(name); break;
+            selected->push_back(name); break;
           };
           propIndex++;
         };
@@ -114,7 +114,7 @@ namespace lxvc {
         for (decltype(auto) prop : props) {
           std::string_view propName = { prop.layerName };
           if (name.compare(propName) == 0) {
-            selected.push_back(name); break;
+            selected->push_back(name); break;
           };
           propIndex++;
         };
@@ -127,7 +127,7 @@ namespace lxvc {
     };
 
     // 
-    virtual tType construct(std::shared_ptr<ContextObj> contextObj = {}, stm::uni_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
+    virtual tType construct(std::shared_ptr<ContextObj> contextObj = {}, cpp21::uni_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
       this->contextObj = contextObj;
       this->infoMap = {};
       this->extensionList = cInfo->extensionList;
@@ -149,8 +149,8 @@ namespace lxvc {
           .apiVersion = VK_VERSION_1_3
         })
       });
-      instanceInfo->setPEnabledExtensionNames(stm::toCString(this->extensionNames, this->filterExtensions(this->extensionList)));
-      instanceInfo->setPEnabledLayerNames(stm::toCString(this->layerNames, this->filterLayers(this->layerList)));
+      instanceInfo->setPEnabledExtensionNames(cpp21::toCString(this->extensionNames, this->filterExtensions(this->extensionList)));
+      instanceInfo->setPEnabledLayerNames(cpp21::toCString(this->layerNames, this->filterLayers(this->layerList)));
 
       //
       this->instance = vk::createInstance(instanceInfo);
