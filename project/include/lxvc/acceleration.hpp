@@ -8,16 +8,16 @@
 namespace lxvc {
   
   // 
-  class QueueObj : std::enable_shared_from_this<QueueObj> {
+  class AccelerationObj : std::enable_shared_from_this<AccelerationObj> {
   public:
-    using tType = std::shared_ptr<QueueObj>;
+    using tType = std::shared_ptr<AccelerationObj>;
     using MSS = cpp21::map_of_shared<vk::StructureType, vk::BaseInStructure>;
     friend InstanceObj;
 
     // 
-    vk::Queue queue = {};
+    vk::AccelerationStructureKHR acceleration = {};
     AllocatedMemory allocated = {};
-    QueueCreateInfo cInfo = {};
+    AccelerationCreateInfo cInfo = {};
 
     //
     std::shared_ptr<DeviceObj> deviceObj = {};
@@ -26,12 +26,12 @@ namespace lxvc {
     inline decltype(auto) SFT() { return shared_from_this(); };
 
     // 
-    QueueObj(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::uni_arg<QueueCreateInfo> cInfo = QueueCreateInfo{}) : deviceObj(deviceObj), cInfo(cInfo) {
+    AccelerationObj(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::uni_arg<AccelerationCreateInfo> cInfo = AccelerationCreateInfo{}) : deviceObj(deviceObj), cInfo(cInfo) {
       this->construct(deviceObj, cInfo);
     };
 
     // 
-    virtual tType construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::uni_arg<QueueCreateInfo> cInfo = QueueCreateInfo{}) {
+    virtual tType construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::uni_arg<AccelerationCreateInfo> cInfo = AccelerationCreateInfo{}) {
       this->deviceObj = deviceObj;
       this->cInfo = cInfo;
       

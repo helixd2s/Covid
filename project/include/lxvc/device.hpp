@@ -12,7 +12,14 @@ namespace lxvc {
   public:
     using tType = std::shared_ptr<DeviceObj>;
     using MSS = cpp21::map_of_shared<vk::StructureType, vk::BaseInStructure>;
+    using StringType = const char const*;
     friend InstanceObj;
+
+    // 
+    vk::Device device = {};
+    vk::DispatchLoaderDynamic dispatch = {};
+    DeviceCreateInfo cInfo = {};
+    MSS infoMap = {};
 
     // 
     inline decltype(auto) SFT() { return shared_from_this(); };
@@ -24,37 +31,17 @@ namespace lxvc {
     std::vector<vk::PhysicalDevice> physicalDevices = {}; 
     std::vector<MSS> PDInfoMaps = {};
 
-    // 
-    vk::Device device = {};
-    vk::DispatchLoaderDynamic dispatch = {};
-    MSS infoMap = {};
-
     //
-    cpp21::shared_vector<std::string> extensionList = {};
-    cpp21::shared_vector<std::string> layerList = {};
-    std::vector<char const*> extensionNames = {};
-    std::vector<char const*> layerNames = {};
-
-    //
-    cpp21::shared_vector<uint32_t> queueFamilyIndices = {};
+    std::vector<StringType> extensionNames = {};
+    std::vector<StringType> layerNames = {};
     std::vector<vk::DeviceQueueCreateInfo> queueInfoCache = {};
     std::vector<std::vector<float>> queuePriorities = {};
     std::vector<MSS> queueInfoMaps = {};
 
     // 
-    uint32_t physicalDeviceGroupIndex = 0u;
-    uint32_t physicalDeviceIndex = 0u;
-
-    //
-    //std::vector<vk::Queue> queues = {};
-
-    // 
-    DeviceObj(std::shared_ptr<InstanceObj> instanceObj = {}, cpp21::uni_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
+    DeviceObj(std::shared_ptr<InstanceObj> instanceObj = {}, cpp21::uni_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) : instanceObj(instanceObj), cInfo(cInfo) {
       this->construct(instanceObj, cInfo);
     };
-
-    //
-    virtual tType setPhysicalDeviceIndex(uint32_t const& physicalDeviceIndex = 0u) { this->physicalDeviceIndex = physicalDeviceIndex; return SFT(); };
 
     //
     virtual std::tuple<uint32_t, uint32_t> findMemoryTypeAndHeapIndex(cpp21::uni_arg<MemoryRequirements> req = MemoryRequirements{}) {
@@ -130,7 +117,7 @@ namespace lxvc {
     //
     virtual std::vector<vk::DeviceQueueCreateInfo>& cacheQueueInfos() {
       uintptr_t queueInfoIndex = 0ull;
-      decltype(auto) queueInfos = opt_ref<std::vector<vk::DeviceQueueCreateInfo>>(this->queueInfoCache);
+      decltype(auto) queueInfos = opt_ref(this->queueInfoCache);
       //decltype(auto) queueInfos = this->queueInfoCache;
       for (decltype(auto) queueInfoMap : this->queueInfoMaps) {
         queueInfos->push_back(queueInfoMap.get<vk::DeviceQueueCreateInfo>(vk::StructureType::eDeviceQueueCreateInfo));
@@ -140,9 +127,9 @@ namespace lxvc {
     };
 
     //
-    virtual std::vector<std::string>& filterExtensions(vk::PhysicalDevice const& physicalDevice, std::vector<std::string> const& names) {
+    virtual std::vector<StringType>& filterExtensions(vk::PhysicalDevice const& physicalDevice, std::vector<std::string> const& names) {
       decltype(auto) props = physicalDevice.enumerateDeviceExtensionProperties();
-      decltype(auto) selected = extensionList;
+      decltype(auto) selected = opt_ref(this->extensionNames);
 
       // 
       uintptr_t nameIndex = 0ull;
@@ -164,9 +151,9 @@ namespace lxvc {
     };
 
     //
-    virtual std::vector<std::string>& filterLayers(vk::PhysicalDevice const& physicalDevice, std::vector<std::string> const& names) {
+    virtual std::vector<StringType>& filterLayers(vk::PhysicalDevice const& physicalDevice, std::vector<std::string> const& names) {
       decltype(auto) props = physicalDevice.enumerateDeviceLayerProperties();
-      decltype(auto) selected = layerList;
+      decltype(auto) selected = opt_ref(this->layerNames);
 
       // 
       uintptr_t nameIndex = 0ull;
@@ -218,12 +205,11 @@ namespace lxvc {
     // 
     virtual tType construct(std::shared_ptr<InstanceObj> instanceObj = {}, cpp21::uni_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
       this->instanceObj = instanceObj;
-      this->infoMap = {};
       this->physicalDevices = {};
-      this->extensionList = cInfo->extensionList;
-      this->layerList = cInfo->layerList;
       this->extensionNames = {};
       this->layerNames = {};
+      this->infoMap = {};
+      this->cInfo = cInfo;
 
       //
       decltype(auto) deviceGroupInfo = infoMap.set(vk::StructureType::eDeviceGroupDeviceCreateInfo, vk::DeviceGroupDeviceCreateInfo{
@@ -244,8 +230,8 @@ namespace lxvc {
       });
 
       //
-      decltype(auto) physicalDevices = this->filterPhysicalDevices(this->physicalDeviceGroupIndex = cInfo->physicalDeviceGroupIndex);
-      decltype(auto) physicalDevice = physicalDevices[this->physicalDeviceIndex = cInfo->physicalDeviceIndex];
+      decltype(auto) physicalDevices = this->filterPhysicalDevices(this->cInfo.physicalDeviceGroupIndex);
+      decltype(auto) physicalDevice = physicalDevices[this->cInfo.physicalDeviceIndex];
 
       //
       if (!!physicalDevice) {
@@ -253,9 +239,9 @@ namespace lxvc {
         deviceGroupInfo->setPhysicalDevices(physicalDevices);
 
         // 
-        deviceInfo->setQueueCreateInfos(this->filterQueueFamilyIndices(this->queueFamilyIndices = cInfo->queueFamilyIndices)->cacheQueueInfos());
-        deviceInfo->setPEnabledExtensionNames(cpp21::toCString(this->extensionNames, this->filterExtensions(physicalDevice, this->extensionList)));
-        deviceInfo->setPEnabledLayerNames(cpp21::toCString(this->layerNames, this->filterLayers(physicalDevice, this->layerList)));
+        deviceInfo->setQueueCreateInfos(this->filterQueueFamilyIndices(this->cInfo.queueFamilyIndices)->cacheQueueInfos());
+        deviceInfo->setPEnabledExtensionNames(this->filterExtensions(physicalDevice, this->cInfo.extensionList));
+        deviceInfo->setPEnabledLayerNames(this->filterLayers(physicalDevice, this->cInfo.layerList));
 
         // 
         this->device = physicalDevice.createDevice(deviceInfo);
