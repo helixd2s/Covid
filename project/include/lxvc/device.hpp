@@ -47,9 +47,10 @@ namespace lxvc {
     };
 
     //
-    virtual std::tuple<uint32_t, uint32_t> findMemoryTypeAndHeapIndex(cpp21::optional_ref<MemoryRequirements> req = MemoryRequirements{}) {
-      decltype(auto) physicalDevice = this->physicalDevices[req->physicalDeviceIndex];
-      decltype(auto) PDInfoMap = this->PDInfoMaps[req->physicalDeviceIndex];
+    virtual std::tuple<uint32_t, uint32_t> findMemoryTypeAndHeapIndex(vk::PhysicalDevice const& physicalDevice, cpp21::optional_ref<MemoryRequirements> req = MemoryRequirements{}) {
+      //decltype(auto) physicalDevice = this->physicalDevices[req->physicalDeviceIndex];
+      decltype(auto) physicalDeviceIndex = std::distance(this->physicalDevices.begin(), std::find(this->physicalDevices.begin(), this->physicalDevices.end(), physicalDevice));
+      decltype(auto) PDInfoMap = this->PDInfoMaps[physicalDeviceIndex];
       decltype(auto) memoryProperties2 = PDInfoMap.set(vk::StructureType::ePhysicalDeviceMemoryProperties2, vk::PhysicalDeviceMemoryProperties2{
         
       });
@@ -61,7 +62,7 @@ namespace lxvc {
       uint32_t bitIndex = 0u;
       std::vector<uint32_t> requiredMemoryTypeIndices = {};
       for (uint32_t bitMask = 1u; (bitMask < 0xFFFFFFFF && bitMask > 0); bitMask <<= 1u) {
-          if (req->requiredMemoryTypeBits & bitMask) { requiredMemoryTypeIndices.push_back(bitIndex); };
+          if (req->memoryTypeBits & bitMask) { requiredMemoryTypeIndices.push_back(bitIndex); };
           bitIndex++;
       };
 
@@ -74,7 +75,7 @@ namespace lxvc {
         decltype(auto) requiredBits = vk::MemoryPropertyFlags{};// | vk::MemoryPropertyFlagBits::eDeviceLocal;
 
         // 
-        switch (req->usage) {
+        switch (req->memoryUsage) {
           case (MemoryUsage::eGpuOnly): 
           requiredBits |= vk::MemoryPropertyFlagBits::eDeviceLocal;
           break;

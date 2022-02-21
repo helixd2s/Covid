@@ -56,6 +56,15 @@ namespace lxvc {
   };
 
   //
+  enum class ImageType : uint32_t {
+    eStorage = 0u,
+    eTexture = 1u,
+    eColorAttachment = 2u,
+    eDepthAttachment = 3u,
+    eStencilAttachment = 4u
+  };
+
+  //
   class AccelerationObj;
   class ContextObj;
   class InstanceObj;
@@ -71,9 +80,11 @@ namespace lxvc {
 
   //
   struct MemoryRequirements {
-    uint32_t physicalDeviceIndex = 0u;
-    uint32_t requiredMemoryTypeBits = 0u;
-    MemoryUsage usage = MemoryUsage::eGpuOnly;
+    //uint32_t physicalDeviceIndex = 0u;
+    MemoryUsage memoryUsage = MemoryUsage::eGpuOnly;
+    uint32_t memoryTypeBits = 0u;
+    size_t size = 0ull;
+    size_t alignment = 0ull;
   };
 
   // 
@@ -100,13 +111,16 @@ namespace lxvc {
 
   //
   struct ImageCreateInfo {
-
+    ImageType type = ImageType::eStorage;
+    vk::Extent3D extent = {};
+    vk::Format format = vk::Format::eUndefined;
   };
 
   //
   struct BufferCreateInfo {
-    size_t size = 0ull;
     BufferType type = BufferType::eDevice;
+    size_t size = 0ull;
+    
   };
 
   //

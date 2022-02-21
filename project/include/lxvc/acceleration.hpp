@@ -16,8 +16,9 @@ namespace lxvc {
 
     // 
     vk::AccelerationStructureKHR acceleration = {};
-    AllocatedMemory allocated = {};
+    std::optional<AllocatedMemory> allocated = {};
     std::optional<AccelerationCreateInfo> cInfo = {};
+    std::optional<MemoryRequirements> mReqs = {};
     MSS infoMap = {};
 
     //
