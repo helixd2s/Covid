@@ -17,7 +17,7 @@ namespace lxvc {
     // 
     vk::Buffer buffer = {};
     AllocatedMemory allocated = {};
-    BufferCreateInfo cInfo = {};
+    std::optional<BufferCreateInfo> cInfo = {};
 
     //
     std::shared_ptr<DeviceObj> deviceObj = {};

@@ -17,7 +17,7 @@ namespace lxvc {
     // 
     vk::Queue queue = {};
     AllocatedMemory allocated = {};
-    QueueCreateInfo cInfo = {};
+    std::optional<QueueCreateInfo> cInfo = {};
 
     //
     std::shared_ptr<DeviceObj> deviceObj = {};

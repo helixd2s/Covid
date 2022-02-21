@@ -12,7 +12,7 @@ namespace lxvc {
     using tType = std::shared_ptr<ContextObj>;
     //using SFT = shared_from_this;
 
-    ContextCreateInfo cInfo = {};
+    std::optional<ContextCreateInfo> cInfo = {};
 
     // 
     inline decltype(auto) SFT() { return shared_from_this(); };

@@ -17,7 +17,7 @@ namespace lxvc {
     // 
     vk::Image image = {};
     AllocatedMemory allocated = {};
-    ImageCreateInfo cInfo = {};
+    std::optional<ImageCreateInfo> cInfo = {};
 
     //
     std::shared_ptr<DeviceObj> deviceObj = {};

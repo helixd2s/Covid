@@ -17,7 +17,7 @@ namespace lxvc {
     // 
     vk::Pipeline pipeline = {};
     AllocatedMemory allocated = {};
-    PipelineCreateInfo cInfo = {};
+    std::optional<PipelineCreateInfo> cInfo = {};
 
     //
     std::shared_ptr<DeviceObj> deviceObj = {};

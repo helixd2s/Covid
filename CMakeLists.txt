@@ -24,6 +24,7 @@ file(GLOB_RECURSE _source_list
 add_executable(${PROJECT_NAME} ${_source_list})
 target_compile_definitions(${PROJECT_NAME} PUBLIC )
 target_include_directories(${PROJECT_NAME} PUBLIC 
+  ${PROJECT_SOURCE_DIR}/project/include 
   ${PROJECT_SOURCE_DIR}/prebuild/include 
   ${PROJECT_SOURCE_DIR}/external/include 
   ${PROJECT_SOURCE_DIR}/submodules/*/include 
@@ -31,6 +32,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   ${Vulkan_INCLUDE_DIRS}
 )
 target_link_directories(${PROJECT_NAME} PUBLIC 
+  ${PROJECT_SOURCE_DIR}/project/lib 
   ${PROJECT_SOURCE_DIR}/prebuild/lib 
   ${PROJECT_SOURCE_DIR}/external/lib 
   ${PROJECT_SOURCE_DIR}/submodules/*/lib/
@@ -40,7 +42,7 @@ target_link_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS} ${Vulkan_LIBRARIES} glfw3
 
 # 
 if (MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest /bigobj /MP /incremental /debug:fastlink /experimental")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest /bigobj /MP /incremental /debug:fastlink /experimental /errorReport /Og /Oi /Oa")
 endif()
 
 # 

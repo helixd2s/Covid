@@ -17,7 +17,7 @@ namespace lxvc {
     // 
     vk::AccelerationStructureKHR acceleration = {};
     AllocatedMemory allocated = {};
-    AccelerationCreateInfo cInfo = {};
+    std::optional<AccelerationCreateInfo> cInfo = {};
 
     //
     std::shared_ptr<DeviceObj> deviceObj = {};

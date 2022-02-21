@@ -17,7 +17,7 @@ namespace lxvc {
     // 
     vk::Instance instance = {};
     vk::DispatchLoaderDynamic dispatch = {};
-    InstanceCreateInfo cInfo = {};
+    std::optional<InstanceCreateInfo> cInfo = {};
 
     // 
     inline decltype(auto) SFT() { return shared_from_this(); };
@@ -37,7 +37,7 @@ namespace lxvc {
     std::vector<vk::PhysicalDeviceGroupProperties> physicalDeviceGroups = {};
 
     // 
-    InstanceObj(std::shared_ptr<ContextObj> contextObj = {}, cpp21::uni_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : contextObj(contextObj), cInfo(cInfo) {
+    InstanceObj(std::shared_ptr<ContextObj> contextObj = {}, cpp21::optional_ref<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : contextObj(contextObj), cInfo(cInfo) {
       this->construct(contextObj, cInfo);
     };
 
@@ -110,9 +110,9 @@ namespace lxvc {
     };
 
     // 
-    virtual tType construct(std::shared_ptr<ContextObj> contextObj = {}, cpp21::uni_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
+    virtual tType construct(std::shared_ptr<ContextObj> contextObj, cpp21::optional_ref<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
       this->contextObj = contextObj;
-      this->cInfo = cInfo;
+      memcpy(&this->cInfo, &cInfo, sizeof(InstanceCreateInfo));
       this->infoMap = {};
       this->extensionNames = {};
       this->layerNames = {};
@@ -120,8 +120,8 @@ namespace lxvc {
       //
       decltype(auto) instanceInfo = infoMap.set(vk::StructureType::eInstanceCreateInfo, vk::InstanceCreateInfo{ 
         .pApplicationInfo = infoMap.set(vk::StructureType::eApplicationInfo, vk::ApplicationInfo{
-          .pApplicationName = this->cInfo.appName.c_str(),
-          .applicationVersion = this->cInfo.appVersion,
+          .pApplicationName = this->cInfo->appName.c_str(),
+          .applicationVersion = this->cInfo->appVersion,
 
           // TODO: updating this data before commit
           .pEngineName = "LXVC",
@@ -131,8 +131,8 @@ namespace lxvc {
           .apiVersion = VK_VERSION_1_3
         })
       });
-      instanceInfo->setPEnabledExtensionNames(this->filterExtensions(this->cInfo.extensionList));
-      instanceInfo->setPEnabledLayerNames(this->filterLayers(this->cInfo.layerList));
+      instanceInfo->setPEnabledExtensionNames(this->filterExtensions(this->cInfo->extensionList));
+      instanceInfo->setPEnabledLayerNames(this->filterLayers(this->cInfo->layerList));
 
       //
       this->instance = vk::createInstance(instanceInfo);

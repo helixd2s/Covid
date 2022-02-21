@@ -18,7 +18,7 @@ namespace lxvc {
     // 
     vk::Device device = {};
     vk::DispatchLoaderDynamic dispatch = {};
-    DeviceCreateInfo cInfo = {};
+    std::optional<DeviceCreateInfo> cInfo = {};
     MSS infoMap = {};
 
     // 
@@ -39,12 +39,12 @@ namespace lxvc {
     std::vector<MSS> queueInfoMaps = {};
 
     // 
-    DeviceObj(std::shared_ptr<InstanceObj> instanceObj = {}, cpp21::uni_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) : instanceObj(instanceObj), cInfo(cInfo) {
+    DeviceObj(std::shared_ptr<InstanceObj> instanceObj = {}, cpp21::optional_ref<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) : instanceObj(instanceObj), cInfo(cInfo) {
       this->construct(instanceObj, cInfo);
     };
 
     //
-    virtual std::tuple<uint32_t, uint32_t> findMemoryTypeAndHeapIndex(cpp21::uni_arg<MemoryRequirements> req = MemoryRequirements{}) {
+    virtual std::tuple<uint32_t, uint32_t> findMemoryTypeAndHeapIndex(cpp21::optional_ref<MemoryRequirements> req = MemoryRequirements{}) {
       decltype(auto) physicalDevice = this->physicalDevices[req->physicalDeviceIndex];
       decltype(auto) PDInfoMap = this->PDInfoMaps[req->physicalDeviceIndex];
       decltype(auto) memoryProperties2 = PDInfoMap.set(vk::StructureType::ePhysicalDeviceMemoryProperties2, vk::PhysicalDeviceMemoryProperties2{
@@ -52,7 +52,7 @@ namespace lxvc {
       });
       decltype(auto) memoryProperties = memoryProperties2->memoryProperties; // get ref
       decltype(auto) memoryTypes = memoryProperties.memoryTypes; // get ref
-      physicalDevice.getMemoryProperties2(memoryProperties2);
+      physicalDevice.getMemoryProperties2(memoryProperties2.get());
 
       // 
       uint32_t bitIndex = 0u;
@@ -138,7 +138,7 @@ namespace lxvc {
         for (decltype(auto) prop : props) {
           std::string_view propName = { prop.extensionName };
           if (name.compare(propName) == 0) {
-            selected->push_back(name); break;
+            selected->push_back(name.c_str()); break;
           };
           propIndex++;
         };
@@ -162,7 +162,7 @@ namespace lxvc {
         for (decltype(auto) prop : props) {
           std::string_view propName = { prop.layerName };
           if (name.compare(propName) == 0) {
-            selected->push_back(name); break;
+            selected->push_back(name.c_str()); break;
           };
           propIndex++;
         };
@@ -203,13 +203,13 @@ namespace lxvc {
     };
 
     // 
-    virtual tType construct(std::shared_ptr<InstanceObj> instanceObj = {}, cpp21::uni_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
+    virtual tType construct(std::shared_ptr<InstanceObj> instanceObj = {}, cpp21::optional_ref<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
       this->instanceObj = instanceObj;
       this->physicalDevices = {};
       this->extensionNames = {};
       this->layerNames = {};
       this->infoMap = {};
-      this->cInfo = cInfo;
+      memcpy(&this->cInfo, &cInfo, sizeof(DeviceCreateInfo));
 
       //
       decltype(auto) deviceGroupInfo = infoMap.set(vk::StructureType::eDeviceGroupDeviceCreateInfo, vk::DeviceGroupDeviceCreateInfo{
@@ -230,18 +230,18 @@ namespace lxvc {
       });
 
       //
-      decltype(auto) physicalDevices = this->filterPhysicalDevices(this->cInfo.physicalDeviceGroupIndex);
-      decltype(auto) physicalDevice = physicalDevices[this->cInfo.physicalDeviceIndex];
+      decltype(auto) physicalDevices = this->filterPhysicalDevices(this->cInfo->physicalDeviceGroupIndex);
+      decltype(auto) physicalDevice = physicalDevices[this->cInfo->physicalDeviceIndex];
 
       //
       if (!!physicalDevice) {
-        physicalDevice.getFeatures2(infoMap.get<vk::PhysicalDeviceFeatures2>(vk::StructureType::ePhysicalDeviceFeatures2));
+        physicalDevice.getFeatures2(infoMap.get<vk::PhysicalDeviceFeatures2>(vk::StructureType::ePhysicalDeviceFeatures2).get());
         deviceGroupInfo->setPhysicalDevices(physicalDevices);
 
         // 
-        deviceInfo->setQueueCreateInfos(this->filterQueueFamilyIndices(this->cInfo.queueFamilyIndices)->cacheQueueInfos());
-        deviceInfo->setPEnabledExtensionNames(this->filterExtensions(physicalDevice, this->cInfo.extensionList));
-        deviceInfo->setPEnabledLayerNames(this->filterLayers(physicalDevice, this->cInfo.layerList));
+        deviceInfo->setQueueCreateInfos(this->filterQueueFamilyIndices(this->cInfo->queueFamilyIndices)->cacheQueueInfos());
+        deviceInfo->setPEnabledExtensionNames(this->filterExtensions(physicalDevice, this->cInfo->extensionList));
+        deviceInfo->setPEnabledLayerNames(this->filterLayers(physicalDevice, this->cInfo->layerList));
 
         // 
         this->device = physicalDevice.createDevice(deviceInfo);

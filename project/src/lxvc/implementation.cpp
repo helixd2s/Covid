@@ -2,6 +2,6 @@
 #include <LXVC/lxvc.hpp>
 
 // 
-int main() {
-  
+namespace lxvc {
+
 };

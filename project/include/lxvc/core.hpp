@@ -39,6 +39,16 @@ namespace lxvc {
     CPP21_FN_ALIAS(opt_cref, cpp21::opt_cref);
 #endif
 
+    //
+    enum class MemoryUsage : uint32_t {
+        eUnknown = 0u,
+        eGpuOnly = 1u,
+        eCpuToGpu = 2u,
+        eGpuToCpu = 3u,
+        eCpuOnly = 4u
+    };
+
+
   //
   class ContextObj;
   class InstanceObj;
@@ -58,7 +68,7 @@ namespace lxvc {
 
   // 
   struct InstanceCreateInfo {
-    const std::string& appName = "LXVC_APP";
+    std::string appName = "LXVC_APP";
     uint32_t appVersion = VK_MAKE_VERSION(1,0,0);
     cpp21::shared_vector<std::string> extensionList = {};
     cpp21::shared_vector<std::string> layerList = {};
@@ -108,12 +118,5 @@ namespace lxvc {
     size_t size = VK_WHOLE_SIZE;
   };
 
-  //
-  enum class MemoryUsage : uint32_t {
-    eUnknown = 0u,
-    eGpuOnly = 1u,
-    eCpuToGpu = 2u,
-    eGpuToCpu = 3u,
-    eCpuOnly = 4u
-  };
+  
 };
