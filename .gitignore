@@ -49,7 +49,21 @@ build/*
 */build/
 */build/*
 
+out
+out/
+out/*
 
+/out
+/out/
+/out/*
+
+./out
+./out/
+./out/*
+
+*/out
+*/out/
+*/out/*
 
 .vs
 .vs/
