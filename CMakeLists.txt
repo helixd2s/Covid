@@ -3,7 +3,28 @@ project(LXVC VERSION 0.1.0)
 set(PROJECT_NAME LXVC)
 
 # 
+IF(NOT DEFINED VCPKG_PATH OR NOT DEFINED ${VCPKG_PATH})
+  set (VCPKG_PATH "C:/vcpkg/")
+ENDIF()
+
+# trying load GLFW3 from VCPKG in Windows
+IF (WIN32)
+  IF(NOT DEFINED CMAKE_TOOLCHAIN_FILE OR NOT DEFINED ${CMAKE_TOOLCHAIN_FILE})
+    set (CMAKE_TOOLCHAIN_FILE "${VCPKG_PATH}/scripts/buildsystems/vcpkg.cmake")
+  ENDIF()
+
+  IF(NOT DEFINED CMAKE_MODULE_PATH OR NOT DEFINED ${CMAKE_MODULE_PATH})
+    set (CMAKE_MODULE_PATH "${VCPKG_PATH}/installed/x64-windows")
+  ENDIF()
+  
+  IF(NOT DEFINED glfw3_DIR OR NOT DEFINED ${glfw3_DIR})
+    set (glfw3_DIR "${CMAKE_MODULE_PATH}/share/glfw3")
+  ENDIF()
+ENDIF()
+
+# 
 find_package(Vulkan REQUIRED FATAL_ERROR)
+find_package(glfw3 REQUIRED)
 
 # 
 set(CMAKE_CXX_STANDARD 20)
@@ -22,7 +43,7 @@ file(GLOB_RECURSE _source_list
   "${_src_root_path}/src/lxvc/*.inl"
   "${_src_root_path}/src/lxvc/*.cpp"
   "${_src_root_path}/src/lxvc/*.c"
-	"${_src_root_path}/test/test.cpp"
+  "${_src_root_path}/test/test.cpp"
   "${_src_root_path}/test/*"
 )
 
@@ -44,7 +65,7 @@ target_link_directories(${PROJECT_NAME} PUBLIC
   ${PROJECT_SOURCE_DIR}/submodules/*/lib/
   ${PROJECT_SOURCE_DIR}/../external/lib
 )
-target_link_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS} ${Vulkan_LIBRARIES} glfw3)
+target_link_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS} ${Vulkan_LIBRARIES} glfw)
 
 # 
 if (MSVC)

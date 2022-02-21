@@ -34,7 +34,7 @@ namespace lxvc {
     };
 
     //
-    virtual AllocatedMemory& allocateMemory(cpp21::optional_ref<MemoryRequirements> requirements) {
+    virtual std::optional<AllocatedMemory>& allocateMemory(cpp21::optional_ref<MemoryRequirements> requirements) {
       decltype(auto) physicalDevice = this->deviceObj->physicalDevices[this->deviceObj->cInfo->physicalDeviceIndex];
       decltype(auto) memTypeHeap = this->deviceObj->findMemoryTypeAndHeapIndex(physicalDevice, *requirements);
       decltype(auto) allocated = this->allocated;
@@ -42,7 +42,7 @@ namespace lxvc {
       // 
       allocated = AllocatedMemory{
         .memory = this->deviceObj->device.allocateMemory(infoMap.set(vk::StructureType::eMemoryAllocateInfo, vk::MemoryAllocateInfo{
-          .pNext = infoMap.set(vk::StructureType::eMemoryDedicatedAllocateInfo, vk::MemoryDedicatedAllocateInfo{ .image = this->image }),
+          .pNext = infoMap.set(vk::StructureType::eMemoryDedicatedAllocateInfo, vk::MemoryDedicatedAllocateInfo{.image = requirements->dedicated ? this->image : vk::Image{} }),
           .allocationSize = requirements->size,
           .memoryTypeIndex = std::get<0>(memTypeHeap)
         })),
@@ -51,7 +51,7 @@ namespace lxvc {
       };
 
       // 
-      return allocated.value();
+      return allocated;
     };
 
     // 

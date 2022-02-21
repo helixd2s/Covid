@@ -83,6 +83,7 @@ namespace lxvc {
     //uint32_t physicalDeviceIndex = 0u;
     MemoryUsage memoryUsage = MemoryUsage::eGpuOnly;
     uint32_t memoryTypeBits = 0u;
+    cpp21::bool32_t dedicated = true;
     size_t size = 0ull;
     size_t alignment = 0ull;
   };
