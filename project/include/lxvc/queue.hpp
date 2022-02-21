@@ -12,12 +12,12 @@ namespace lxvc {
   public:
     using tType = std::shared_ptr<QueueObj>;
     using MSS = cpp21::map_of_shared<vk::StructureType, vk::BaseInStructure>;
-    friend InstanceObj;
+    friend DeviceObj;
 
     // 
     vk::Queue queue = {};
-    AllocatedMemory allocated = {};
     std::optional<QueueCreateInfo> cInfo = {};
+    MSS infoMap = {};
 
     //
     std::shared_ptr<DeviceObj> deviceObj = {};
@@ -34,7 +34,7 @@ namespace lxvc {
     virtual tType construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::uni_arg<QueueCreateInfo> cInfo = QueueCreateInfo{}) {
       this->deviceObj = deviceObj;
       this->cInfo = cInfo;
-      
+      this->infoMap = {};
 
       return this->SFT();
     };

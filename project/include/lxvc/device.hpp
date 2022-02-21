@@ -14,6 +14,9 @@ namespace lxvc {
     using MSS = cpp21::map_of_shared<vk::StructureType, vk::BaseInStructure>;
     using StringType = const char const*;
     friend InstanceObj;
+    friend BufferObj;
+    friend ImageObj;
+    friend QueueObj;
 
     // 
     vk::Device device = {};

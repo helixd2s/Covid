@@ -39,20 +39,30 @@ namespace lxvc {
     CPP21_FN_ALIAS(opt_cref, cpp21::opt_cref);
 #endif
 
-    //
-    enum class MemoryUsage : uint32_t {
-        eUnknown = 0u,
-        eGpuOnly = 1u,
-        eCpuToGpu = 2u,
-        eGpuToCpu = 3u,
-        eCpuOnly = 4u
-    };
-
+  //
+  enum class MemoryUsage : uint32_t {
+      eUnknown = 0u,
+      eGpuOnly = 1u,
+      eCpuToGpu = 2u,
+      eGpuToCpu = 3u,
+      eCpuOnly = 4u
+  };
 
   //
+  enum class BufferType : uint32_t {
+      eDevice = 0u,
+      eHostMap = 1u,
+      eUniform = 2u
+  };
+
+  //
+  class AccelerationObj;
   class ContextObj;
   class InstanceObj;
   class DeviceObj;
+  class BufferObj;
+  class ImageObj;
+  class QueueObj;
 
   //
   struct ContextCreateInfo {
@@ -96,6 +106,7 @@ namespace lxvc {
   //
   struct BufferCreateInfo {
     size_t size = 0ull;
+    BufferType type = BufferType::eDevice;
   };
 
   //

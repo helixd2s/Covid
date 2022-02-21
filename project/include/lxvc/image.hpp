@@ -12,12 +12,13 @@ namespace lxvc {
   public:
     using tType = std::shared_ptr<ImageObj>;
     using MSS = cpp21::map_of_shared<vk::StructureType, vk::BaseInStructure>;
-    friend InstanceObj;
+    friend DeviceObj;
 
     // 
     vk::Image image = {};
     AllocatedMemory allocated = {};
     std::optional<ImageCreateInfo> cInfo = {};
+    MSS infoMap = {};
 
     //
     std::shared_ptr<DeviceObj> deviceObj = {};
@@ -34,7 +35,7 @@ namespace lxvc {
     virtual tType construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::uni_arg<ImageCreateInfo> cInfo = ImageCreateInfo{}) {
       this->deviceObj = deviceObj;
       this->cInfo = cInfo;
-      
+      this->infoMap = {};
 
       return this->SFT();
     };

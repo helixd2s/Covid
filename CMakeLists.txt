@@ -10,6 +10,12 @@ set(CMAKE_CXX_STANDARD 20)
 set(_src_root_path "${PROJECT_SOURCE_DIR}/project")
 file(GLOB_RECURSE _source_list 
   LIST_DIRECTORIES false
+  "${_src_root_path}/../prebuild/include/vk-utils/*.inl"
+  "${_src_root_path}/../prebuild/include/vk-utils/*.hpp"
+  "${_src_root_path}/../prebuild/include/vk-utils/*.h"
+  "${_src_root_path}/../prebuild/include/vku/*.inl"
+  "${_src_root_path}/../prebuild/include/vku/*.hpp"
+  "${_src_root_path}/../prebuild/include/vku/*.h"
   "${_src_root_path}/include/lxvc/*.inl"
   "${_src_root_path}/include/lxvc/*.hpp"
   "${_src_root_path}/include/lxvc/*.h"
