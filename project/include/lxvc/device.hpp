@@ -123,7 +123,7 @@ namespace lxvc {
         queueInfos->push_back(queueInfoMap.get<vk::DeviceQueueCreateInfo>(vk::StructureType::eDeviceQueueCreateInfo));
         queueInfoIndex++;
       };
-      return queueInfos;
+      return *queueInfos;
     };
 
     //
@@ -146,7 +146,7 @@ namespace lxvc {
       };
 
       // 
-      return selected;
+      return *selected;
       //return (extensionList = selected);
     };
 
@@ -170,7 +170,7 @@ namespace lxvc {
       };
 
       // 
-      return selected;
+      return *selected;
       //return (layerList = selected);
     };
 

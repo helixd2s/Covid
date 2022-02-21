@@ -81,7 +81,7 @@ namespace lxvc {
       };
 
       // 
-      return selected;
+      return *selected;
       //return (extensionList = selected);
     };
 
@@ -105,7 +105,7 @@ namespace lxvc {
       };
 
       // 
-      return selected;
+      return *selected;
       //return (layerList = selected);
     };
 
