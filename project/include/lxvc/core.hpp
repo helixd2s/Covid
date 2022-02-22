@@ -103,7 +103,7 @@ namespace lxvc {
   struct QueueFamilyCreateInfo {
     uint32_t queueFamilyIndex = 0u;
     cpp21::shared_vector<float> queuePriorities = std::vector<float>{1.f};
-    std::shared_ptr<MSS> infoMap = {};//std::make_shared<MSS>();
+    //std::shared_ptr<MSS> infoMap = {};//std::make_shared<MSS>();
   };
 
   // 

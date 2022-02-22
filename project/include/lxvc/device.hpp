@@ -40,8 +40,9 @@ namespace lxvc {
     std::vector<cType> layerNames = {};
 
     // 
-    std::vector<vk::DeviceQueueCreateInfo> queueInfoCache = {};
+    std::vector<vk::DeviceQueueCreateInfo> queueFamilyInfos = {};
     std::vector<uint32_t> queueFamilyIndices = {};
+    std::vector<MSS> queueFamilyInfoMaps = {};
 
     //
     virtual std::tuple<uint32_t, uint32_t> findMemoryTypeAndHeapIndex(vk::PhysicalDevice const& physicalDevice, cpp21::optional_ref<MemoryRequirements> req = MemoryRequirements{}) {
@@ -164,24 +165,24 @@ namespace lxvc {
     };
 
     // 
-    virtual std::vector<vk::DeviceQueueCreateInfo>& filterQueueFamilies(std::vector<QueueFamilyCreateInfo> const& queueFamilyInfos = {}) {
-      this->queueInfoCache = {};
-      this->queueFamilyIndices = {};
+    virtual std::vector<vk::DeviceQueueCreateInfo>& filterQueueFamilies(std::vector<QueueFamilyCreateInfo> const& qfInfosIn = {}) {
 
       // TODO: customize queue priorities
-      decltype(auto) queueInfos = opt_ref(this->queueInfoCache);
-      decltype(auto) queueFamilyIndices = opt_ref(this->queueFamilyIndices);
-      for (decltype(auto) queueFamilyInfo : (* this->cInfo->queueFamilyInfos)) {
-        decltype(auto) queueInfo = (queueFamilyInfo.infoMap ? queueFamilyInfo.infoMap : (queueFamilyInfo.infoMap = std::make_shared<MSS>()))->set(vk::StructureType::eDeviceQueueCreateInfo, vk::DeviceQueueCreateInfo{
-          .queueFamilyIndex = queueFamilyInfo.queueFamilyIndex,
+      decltype(auto) qfInfosVk = opt_ref(this->queueFamilyInfos = {});
+      decltype(auto) qfIndices = opt_ref(this->queueFamilyIndices = {});
+      decltype(auto) qfInfoMaps = opt_ref(this->queueFamilyInfoMaps = {});
+      for (decltype(auto) qfInfoIn : qfInfosIn) {
+        qfInfoMaps.push_back(MSS());
+        decltype(auto) qfInfoMap = qfInfoMaps.back();
+        decltype(auto) qfInfoVk = qfInfoMap.set(vk::StructureType::eDeviceQueueCreateInfo, vk::DeviceQueueCreateInfo{
+          .queueFamilyIndex = qfInfoIn.queueFamilyIndex,
         });
-        queueFamilyIndices->push_back(queueFamilyInfo.queueFamilyIndex);
-        queueInfo->setQueuePriorities(*queueFamilyInfo.queuePriorities);
-        queueInfos->push_back(queueInfo);
+        qfIndices->push_back(qfInfoIn.queueFamilyIndex);
+        qfInfosVk->push_back(qfInfoVk->setQueuePriorities(*qfInfoIn.queuePriorities));
       };
 
       // 
-      return *queueInfos;
+      return qfInfosVk;
     };
 
 
