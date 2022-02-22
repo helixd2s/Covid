@@ -11,7 +11,6 @@ namespace lxvc {
   class AccelerationStructureObj : std::enable_shared_from_this<AccelerationStructureObj> {
   public:
     using tType = std::shared_ptr<AccelerationStructureObj>;
-    using MSS = cpp21::map_of_shared<vk::StructureType, vk::BaseInStructure>;
     friend DeviceObj;
 
     // 
@@ -19,7 +18,7 @@ namespace lxvc {
     std::optional<AllocatedMemory> allocated = {};
     std::optional<AccelerationCreateInfo> cInfo = {};
     std::optional<MemoryRequirements> mReqs = {};
-    MSS infoMap = {};
+    std::shared_ptr<MSS> infoMap = {};
 
     //
     std::shared_ptr<DeviceObj> deviceObj = {};
@@ -36,7 +35,7 @@ namespace lxvc {
     virtual tType construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::uni_arg<AccelerationCreateInfo> cInfo = AccelerationCreateInfo{}) {
       this->deviceObj = deviceObj;
       this->cInfo = cInfo;
-      this->infoMap = {};
+      this->infoMap = std::make_shared<MSS>()
 
       return this->SFT();
     };

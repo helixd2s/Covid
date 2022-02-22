@@ -9,24 +9,30 @@ namespace lxvc {
 
   // 
   class InstanceObj : std::enable_shared_from_this<InstanceObj> {
-  public:
+  protected:
     using tType = std::shared_ptr<InstanceObj>;
     using cType = const char const*;
     friend DeviceObj;
+
+  public:
 
     // 
     vk::Instance instance = {};
     vk::DispatchLoaderDynamic dispatch = {};
     std::optional<InstanceCreateInfo> cInfo = {};
+    std::shared_ptr<MSS> infoMap = {};
 
+    // 
+    InstanceObj(std::shared_ptr<ContextObj> contextObj = {}, cpp21::optional_ref<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : contextObj(contextObj), cInfo(cInfo) {
+      this->construct(contextObj, cInfo);
+    };
+
+  protected: 
     // 
     inline decltype(auto) SFT() { return shared_from_this(); };
 
     //
     std::shared_ptr<ContextObj> contextObj = {};
-
-    // 
-    cpp21::map_of_shared<vk::StructureType, vk::BaseInStructure> infoMap = {};
 
     //
     std::vector<char const*> extensionNames = {};
@@ -35,11 +41,6 @@ namespace lxvc {
     //
     std::vector<vk::PhysicalDevice> physicalDevices = {};
     std::vector<vk::PhysicalDeviceGroupProperties> physicalDeviceGroups = {};
-
-    // 
-    InstanceObj(std::shared_ptr<ContextObj> contextObj = {}, cpp21::optional_ref<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : contextObj(contextObj), cInfo(cInfo) {
-      this->construct(contextObj, cInfo);
-    };
 
     //
     virtual std::vector<vk::PhysicalDeviceGroupProperties>& enumeratePhysicalDeviceGroups() {
@@ -113,13 +114,13 @@ namespace lxvc {
     virtual tType construct(std::shared_ptr<ContextObj> contextObj, cpp21::optional_ref<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
       this->contextObj = contextObj;
       memcpy(&this->cInfo, &cInfo, sizeof(InstanceCreateInfo));
-      this->infoMap = {};
+      this->infoMap = std::make_shared<MSS>();
       this->extensionNames = {};
       this->layerNames = {};
 
       //
-      decltype(auto) instanceInfo = infoMap.set(vk::StructureType::eInstanceCreateInfo, vk::InstanceCreateInfo{ 
-        .pApplicationInfo = infoMap.set(vk::StructureType::eApplicationInfo, vk::ApplicationInfo{
+      decltype(auto) instanceInfo = infoMap->set(vk::StructureType::eInstanceCreateInfo, vk::InstanceCreateInfo{ 
+        .pApplicationInfo = infoMap->set(vk::StructureType::eApplicationInfo, vk::ApplicationInfo{
           .pApplicationName = this->cInfo->appName.c_str(),
           .applicationVersion = this->cInfo->appVersion,
 

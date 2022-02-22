@@ -11,13 +11,12 @@ namespace lxvc {
   class QueueFamilyObj : std::enable_shared_from_this<QueueFamilyObj> {
   public:
     using tType = std::shared_ptr<QueueFamilyObj>;
-    using MSS = cpp21::map_of_shared<vk::StructureType, vk::BaseInStructure>;
     friend DeviceObj;
 
     // 
     std::vector<vk::Queue> queues = {};
     std::optional<QueueFamilyCreateInfo> cInfo = {};
-    MSS infoMap = {};
+    std::shared_ptr<MSS> infoMap = {};
 
     //
     std::shared_ptr<DeviceObj> deviceObj = {};
@@ -34,7 +33,7 @@ namespace lxvc {
     virtual tType construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::uni_arg<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{}) {
       this->deviceObj = deviceObj;
       this->cInfo = cInfo;
-      this->infoMap = {};
+      this->infoMap = std::make_shared<MSS>();
 
       return this->SFT();
     };

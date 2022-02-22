@@ -11,7 +11,6 @@ namespace lxvc {
   class BufferObj : std::enable_shared_from_this<BufferObj> {
   public:
     using tType = std::shared_ptr<BufferObj>;
-    using MSS = cpp21::map_of_shared<vk::StructureType, vk::BaseInStructure>;
     friend DeviceObj;
 
     // 
@@ -19,7 +18,7 @@ namespace lxvc {
     std::optional<AllocatedMemory> allocated = {};
     std::optional<BufferCreateInfo> cInfo = {};
     std::optional<MemoryRequirements> mReqs = {};
-    MSS infoMap = {};
+    std::shared_ptr<MSS> infoMap = {};
 
     //
     std::shared_ptr<DeviceObj> deviceObj = {};
@@ -40,8 +39,8 @@ namespace lxvc {
 
       // 
       allocated = AllocatedMemory{
-        .memory = this->deviceObj->device.allocateMemory(infoMap.set(vk::StructureType::eMemoryAllocateInfo, vk::MemoryAllocateInfo{
-          .pNext = infoMap.set(vk::StructureType::eMemoryDedicatedAllocateInfo, vk::MemoryDedicatedAllocateInfo{ .buffer = requirements->dedicated ? this->buffer : vk::Buffer{} }),
+        .memory = this->deviceObj->device.allocateMemory(infoMap->set(vk::StructureType::eMemoryAllocateInfo, vk::MemoryAllocateInfo{
+          .pNext = infoMap->set(vk::StructureType::eMemoryDedicatedAllocateInfo, vk::MemoryDedicatedAllocateInfo{ .buffer = requirements->dedicated ? this->buffer : vk::Buffer{} }),
           .allocationSize = requirements->size,
           .memoryTypeIndex = std::get<0>(memTypeHeap)
         })),
@@ -57,7 +56,7 @@ namespace lxvc {
     virtual tType construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::uni_arg<BufferCreateInfo> cInfo = BufferCreateInfo{}) {
       this->deviceObj = deviceObj;
       this->cInfo = cInfo;
-      this->infoMap = {};
+      this->infoMap = std::make_shared<MSS>();
 
       // 
       auto bufferUsage = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
@@ -94,18 +93,18 @@ namespace lxvc {
       };
 
       // 
-      decltype(auto) bufferInfo = infoMap.set(vk::StructureType::eBufferCreateInfo, vk::BufferCreateInfo{
+      decltype(auto) bufferInfo = infoMap->set(vk::StructureType::eBufferCreateInfo, vk::BufferCreateInfo{
         .size = this->cInfo->size,
         .usage = bufferUsage
       });
 
       // 
-      decltype(auto) memReqInfo2 = infoMap.set(vk::StructureType::eMemoryRequirements2, vk::MemoryRequirements2{
-        .pNext = infoMap.set(vk::StructureType::eMemoryDedicatedRequirements, vk::MemoryDedicatedRequirements{})
+      decltype(auto) memReqInfo2 = infoMap->set(vk::StructureType::eMemoryRequirements2, vk::MemoryRequirements2{
+        .pNext = infoMap->set(vk::StructureType::eMemoryDedicatedRequirements, vk::MemoryDedicatedRequirements{})
       });
 
       //
-      this->deviceObj->device.getBufferMemoryRequirements2(infoMap.set(vk::StructureType::eBufferMemoryRequirementsInfo2, vk::BufferMemoryRequirementsInfo2{
+      this->deviceObj->device.getBufferMemoryRequirements2(infoMap->set(vk::StructureType::eBufferMemoryRequirementsInfo2, vk::BufferMemoryRequirementsInfo2{
         .buffer = (this->buffer = this->deviceObj->device.createBuffer(bufferInfo->setQueueFamilyIndices(this->deviceObj->queueFamilyIndices)))
       }).get(), memReqInfo2.get());
 
@@ -118,7 +117,7 @@ namespace lxvc {
       }).value()));
 
       //
-      std::vector<vk::BindBufferMemoryInfo> bindInfos = { *infoMap.set(vk::StructureType::eBindBufferMemoryInfo, vk::BindBufferMemoryInfo{
+      std::vector<vk::BindBufferMemoryInfo> bindInfos = { *infoMap->set(vk::StructureType::eBindBufferMemoryInfo, vk::BindBufferMemoryInfo{
         .buffer = this->buffer, .memory = this->allocated->memory, .memoryOffset = this->allocated->offset
       }) };
       this->deviceObj->device.bindBufferMemory2(bindInfos);
