@@ -3,7 +3,17 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/../external/include/*/*",
+                "${workspaceFolder}/include/*/*",
+                "${workspaceFolder}/external/include/*/*",
+                "${workspaceFolder}/prebuild/include/*/*",
+                "${workspaceFolder}/project/include/*/*",
+                "${workspaceFolder}/submodules/*/include/*/*",
+                "${workspaceFolder}/submodules/*/include/*",
+                "${workspaceFolder}/submodules/*/glm/*/*",
+                "${workspaceFolder}/submodules/*/glm/*",
+                "C:/vcpkg/installed/x64-windows/include/*/*",
+                "C:/VulkanSDK/1.3.204.0/include/*/*"
             ],
             "defines": [
                 "_DEBUG",

@@ -37,6 +37,7 @@ file(GLOB_RECURSE _source_list
   "${_src_root_path}/../prebuild/include/vku/*.inl"
   "${_src_root_path}/../prebuild/include/vku/*.hpp"
   "${_src_root_path}/../prebuild/include/vku/*.h"
+
   "${_src_root_path}/include/lxvc/*.inl"
   "${_src_root_path}/include/lxvc/*.hpp"
   "${_src_root_path}/include/lxvc/*.h"
@@ -55,6 +56,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   ${PROJECT_SOURCE_DIR}/prebuild/include 
   ${PROJECT_SOURCE_DIR}/external/include 
   ${PROJECT_SOURCE_DIR}/submodules/*/include 
+  ${PROJECT_SOURCE_DIR}/submodules/*/glm 
   ${PROJECT_SOURCE_DIR}/../external/include 
   ${Vulkan_INCLUDE_DIRS}
 )
@@ -69,7 +71,8 @@ target_link_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS} ${Vulkan_LIBRARIES} glfw)
 
 # 
 if (MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest /bigobj /MP /incremental /debug:fastlink /experimental /errorReport /Og /Oi /Oa")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest /bigobj /MP /incremental")
+    set(CMAKE_EXE_LINKER_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj /MP /MAP /incremental /debug:fastlink /experimental /errorReport")
 endif()
 
 # 

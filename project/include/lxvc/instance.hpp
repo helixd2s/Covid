@@ -11,7 +11,7 @@ namespace lxvc {
   class InstanceObj : std::enable_shared_from_this<InstanceObj> {
   public:
     using tType = std::shared_ptr<InstanceObj>;
-    using StringType = const char const*;
+    using cType = const char const*;
     friend DeviceObj;
 
     // 
@@ -62,7 +62,7 @@ namespace lxvc {
     };
 
     //
-    virtual std::vector<StringType>& filterExtensions(std::vector<std::string> const& names) {
+    virtual std::vector<cType>& filterExtensions(std::vector<std::string> const& names) {
       decltype(auto) props = vk::enumerateInstanceExtensionProperties();
       decltype(auto) selected = opt_ref(this->extensionNames);
 
@@ -86,7 +86,7 @@ namespace lxvc {
     };
 
     //
-    virtual std::vector<StringType>& filterLayers(std::vector<std::string> const& names) {
+    virtual std::vector<cType>& filterLayers(std::vector<std::string> const& names) {
       decltype(auto) props = vk::enumerateInstanceLayerProperties();
       decltype(auto) selected = opt_ref(this->layerNames);
 

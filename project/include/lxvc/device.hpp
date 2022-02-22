@@ -12,7 +12,7 @@ namespace lxvc {
   public:
     using tType = std::shared_ptr<DeviceObj>;
     using MSS = cpp21::map_of_shared<vk::StructureType, vk::BaseInStructure>;
-    using StringType = const char const*;
+    using cType = const char const*;
     friend InstanceObj;
     friend BufferObj;
     friend ImageObj;
@@ -35,8 +35,8 @@ namespace lxvc {
     std::vector<MSS> PDInfoMaps = {};
 
     //
-    std::vector<StringType> extensionNames = {};
-    std::vector<StringType> layerNames = {};
+    std::vector<cType> extensionNames = {};
+    std::vector<cType> layerNames = {};
     std::vector<vk::DeviceQueueCreateInfo> queueInfoCache = {};
     std::vector<std::vector<float>> queuePriorities = {};
     std::vector<MSS> queueInfoMaps = {};
@@ -131,7 +131,7 @@ namespace lxvc {
     };
 
     //
-    virtual std::vector<StringType>& filterExtensions(vk::PhysicalDevice const& physicalDevice, std::vector<std::string> const& names) {
+    virtual std::vector<cType>& filterExtensions(vk::PhysicalDevice const& physicalDevice, std::vector<std::string> const& names) {
       decltype(auto) props = physicalDevice.enumerateDeviceExtensionProperties();
       decltype(auto) selected = opt_ref(this->extensionNames);
 
@@ -155,7 +155,7 @@ namespace lxvc {
     };
 
     //
-    virtual std::vector<StringType>& filterLayers(vk::PhysicalDevice const& physicalDevice, std::vector<std::string> const& names) {
+    virtual std::vector<cType>& filterLayers(vk::PhysicalDevice const& physicalDevice, std::vector<std::string> const& names) {
       decltype(auto) props = physicalDevice.enumerateDeviceLayerProperties();
       decltype(auto) selected = opt_ref(this->layerNames);
 
