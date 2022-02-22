@@ -3,12 +3,12 @@ project(LXVC VERSION 0.1.0)
 set(PROJECT_NAME LXVC)
 
 # 
-IF(NOT DEFINED VCPKG_PATH OR NOT DEFINED ${VCPKG_PATH})
-  set (VCPKG_PATH "C:/vcpkg/")
-ENDIF()
-
-# trying load GLFW3 from VCPKG in Windows
 IF (WIN32)
+  IF(NOT DEFINED VCPKG_PATH OR NOT DEFINED ${VCPKG_PATH})
+    set (VCPKG_PATH "C:/vcpkg/")
+  ENDIF()
+
+  # trying load GLFW3 from VCPKG in Windows
   IF(NOT DEFINED CMAKE_TOOLCHAIN_FILE OR NOT DEFINED ${CMAKE_TOOLCHAIN_FILE})
     set (CMAKE_TOOLCHAIN_FILE "${VCPKG_PATH}/scripts/buildsystems/vcpkg.cmake")
   ENDIF()
