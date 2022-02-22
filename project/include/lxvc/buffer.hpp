@@ -1,8 +1,8 @@
 #pragma once
 
 // 
-#include "./core.hpp"
-#include "./device.hpp"
+#include "./Core.hpp"
+#include "./Device.hpp"
 
 // 
 namespace lxvc {
@@ -106,7 +106,7 @@ namespace lxvc {
 
       //
       this->deviceObj->device.getBufferMemoryRequirements2(infoMap.set(vk::StructureType::eBufferMemoryRequirementsInfo2, vk::BufferMemoryRequirementsInfo2{
-        .buffer = (this->buffer = this->deviceObj->device.createBuffer(bufferInfo->setQueueFamilyIndices(*this->deviceObj->cInfo->queueFamilyIndices)))
+        .buffer = (this->buffer = this->deviceObj->device.createBuffer(bufferInfo->setQueueFamilyIndices(this->deviceObj->queueFamilyIndices)))
       }).get(), memReqInfo2.get());
 
       // 

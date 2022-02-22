@@ -1,13 +1,13 @@
 #pragma once
 
 // 
-#include "./core.hpp"
-#include "./context.hpp"
-#include "./instance.hpp"
-#include "./queue.hpp"
-#include "./image.hpp"
-#include "./buffer.hpp"
-#include "./descriptors.hpp"
+#include "./Core.hpp"
+#include "./Context.hpp"
+#include "./Instance.hpp"
+#include "./QueueFamily.hpp"
+#include "./Image.hpp"
+#include "./Buffer.hpp"
+#include "./Descriptors.hpp"
 
 // 
 namespace lxvc {

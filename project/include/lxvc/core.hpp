@@ -65,13 +65,13 @@ namespace lxvc {
   };
 
   //
-  class AccelerationObj;
+  class AccelerationStructureObj;
   class ContextObj;
   class InstanceObj;
   class DeviceObj;
   class BufferObj;
   class ImageObj;
-  class QueueObj;
+  class QueueFamilyObj;
 
   //
   struct ContextCreateInfo {
@@ -96,11 +96,21 @@ namespace lxvc {
     cpp21::shared_vector<std::string> layerList = {};
   };
 
+  //
+  using MSS = cpp21::map_of_shared<vk::StructureType, vk::BaseInStructure>;
+
+  //
+  struct QueueFamilyCreateInfo {
+    uint32_t queueFamilyIndex = 0u;
+    cpp21::shared_vector<float> queuePriorities = std::vector<float>{1.f};
+    std::shared_ptr<MSS> infoMap = {};//std::make_shared<MSS>();
+  };
+
   // 
   struct DeviceCreateInfo {
     cpp21::shared_vector<std::string> extensionList = {};
     cpp21::shared_vector<std::string> layerList = {};
-    cpp21::shared_vector<uint32_t> queueFamilyIndices = {};
+    cpp21::shared_vector<QueueFamilyCreateInfo> queueFamilyInfos = std::vector<QueueFamilyCreateInfo>{ QueueFamilyCreateInfo{} };
     uint32_t physicalDeviceGroupIndex = 0u;
     uint32_t physicalDeviceIndex = 0u;
   };
@@ -122,12 +132,6 @@ namespace lxvc {
     BufferType type = BufferType::eDevice;
     size_t size = 0ull;
     
-  };
-
-  //
-  struct QueueCreateInfo {
-    uint32_t queueFamilyIndex = 0u;
-    uint32_t queueIndex = 0u;
   };
 
   //

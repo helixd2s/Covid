@@ -1,16 +1,16 @@
 #pragma once
 
 // 
-#include "./core.hpp"
-#include "./device.hpp"
+#include "./Core.hpp"
+#include "./Device.hpp"
 
 // 
 namespace lxvc {
   
   // 
-  class AccelerationObj : std::enable_shared_from_this<AccelerationObj> {
+  class AccelerationStructureObj : std::enable_shared_from_this<AccelerationStructureObj> {
   public:
-    using tType = std::shared_ptr<AccelerationObj>;
+    using tType = std::shared_ptr<AccelerationStructureObj>;
     using MSS = cpp21::map_of_shared<vk::StructureType, vk::BaseInStructure>;
     friend DeviceObj;
 
@@ -28,7 +28,7 @@ namespace lxvc {
     inline decltype(auto) SFT() { return shared_from_this(); };
 
     // 
-    AccelerationObj(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::uni_arg<AccelerationCreateInfo> cInfo = AccelerationCreateInfo{}) : deviceObj(deviceObj), cInfo(cInfo) {
+    AccelerationStructureObj(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::uni_arg<AccelerationCreateInfo> cInfo = AccelerationCreateInfo{}) : deviceObj(deviceObj), cInfo(cInfo) {
       this->construct(deviceObj, cInfo);
     };
 

@@ -1,8 +1,8 @@
 #pragma once
 
 // 
-#include "./core.hpp"
-#include "./context.hpp"
+#include "./Core.hpp"
+#include "./Context.hpp"
 
 // 
 namespace lxvc {

@@ -1,8 +1,8 @@
 #pragma once
 
 // 
-#include "./core.hpp"
-#include "./device.hpp"
+#include "./Core.hpp"
+#include "./Device.hpp"
 
 // 
 namespace lxvc {
@@ -108,7 +108,7 @@ namespace lxvc {
 
       //
       this->deviceObj->device.getImageMemoryRequirements2(infoMap.set(vk::StructureType::eImageMemoryRequirementsInfo2, vk::ImageMemoryRequirementsInfo2{
-        .image = (this->image = this->deviceObj->device.createImage(imageInfo->setQueueFamilyIndices(*this->deviceObj->cInfo->queueFamilyIndices)))
+        .image = (this->image = this->deviceObj->device.createImage(imageInfo->setQueueFamilyIndices(this->deviceObj->queueFamilyIndices)))
       }).get(), memReqInfo2.get());
 
       // 
