@@ -107,7 +107,7 @@ namespace lxvc {
 
       //
       this->deviceObj->device.getImageMemoryRequirements2(infoMap->set(vk::StructureType::eImageMemoryRequirementsInfo2, vk::ImageMemoryRequirementsInfo2{
-        .image = (this->image = this->deviceObj->device.createImage(imageInfo->setQueueFamilyIndices(this->deviceObj->queueFamilyIndices)))
+        .image = (this->image = this->deviceObj->device.createImage(imageInfo->setQueueFamilyIndices(this->deviceObj->queueFamilies.indices)))
       }).get(), memReqInfo2.get());
 
       // 

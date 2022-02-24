@@ -7,6 +7,16 @@
 // 
 namespace lxvc {
 
+  //
+  struct QueueFamilies {
+    // 
+    std::vector<uint32_t> indices = {};
+    std::vector<vk::DeviceQueueCreateInfo> infos = {};
+    std::vector<std::shared_ptr<MSS>> infoMaps = {};
+    std::vector<vk::CommandPool> commandPools = {};
+    //std::vector<std::vector<vk::Queue>> queueFamilyQueues = {};
+  };
+
   // 
   class DeviceObj : std::enable_shared_from_this<DeviceObj> {
   public:
@@ -39,12 +49,8 @@ namespace lxvc {
     std::vector<cType> extensionNames = {};
     std::vector<cType> layerNames = {};
 
-    // 
-    std::vector<uint32_t> queueFamilyIndices = {};
-    std::vector<vk::DeviceQueueCreateInfo> queueFamilyInfos = {};
-    std::vector<std::shared_ptr<MSS>> queueFamilyInfoMaps = {};
-    std::vector<vk::CommandPool> commandPools = {};
-    //std::vector<std::vector<vk::Queue>> queueFamilyQueues = {};
+    //
+    QueueFamilies queueFamilies = {};
 
     //
     virtual std::tuple<uint32_t, uint32_t> findMemoryTypeAndHeapIndex(vk::PhysicalDevice const& physicalDevice, cpp21::optional_ref<MemoryRequirements> req = MemoryRequirements{}) {
@@ -172,10 +178,10 @@ namespace lxvc {
     virtual std::vector<vk::DeviceQueueCreateInfo>& filterQueueFamilies(std::vector<QueueFamilyCreateInfo> const& qfInfosIn = {}) {
 
       // TODO: customize queue priorities
-      decltype(auto) qfInfosVk = opt_ref(this->queueFamilyInfos = {});
-      decltype(auto) qfIndices = opt_ref(this->queueFamilyIndices = {});
-      decltype(auto) qfInfoMaps = opt_ref(this->queueFamilyInfoMaps = {});
-      decltype(auto) qfCommandPools = opt_ref(this->commandPools = {});
+      decltype(auto) qfInfosVk = opt_ref(this->queueFamilies.infos = {});
+      decltype(auto) qfIndices = opt_ref(this->queueFamilies.indices = {});
+      decltype(auto) qfInfoMaps = opt_ref(this->queueFamilies.infoMaps = {});
+      decltype(auto) qfCommandPools = opt_ref(this->queueFamilies.commandPools = {});
       for (decltype(auto) qfInfoIn : qfInfosIn) {
         qfInfoMaps->push_back(std::make_shared<MSS>());
         decltype(auto) qfInfoMap = qfInfoMaps->back();
@@ -193,24 +199,25 @@ namespace lxvc {
     //
     virtual std::vector<vk::CommandPool>& createCommandPools(std::vector<QueueFamilyCreateInfo> const& qfInfosIn = {}) {
       uintptr_t index = 0u;
-      decltype(auto) qfInfosVk = opt_ref(this->queueFamilyInfos);
-      decltype(auto) qfIndices = opt_ref(this->queueFamilyIndices);
-      decltype(auto) qfInfoMaps = opt_ref(this->queueFamilyInfoMaps);
-      decltype(auto) qfCommandPools = opt_ref(this->commandPools = {});//this->device.getQueue(info->queueFamilyIndex, info->queueIndex);
-      //decltype(auto) qfQueuesStack = opt_ref(this->queueFamilyQueues = {});
-      for (decltype(auto) qfInfoIn : qfInfosIn) {
-        decltype(auto) qfIndex = qfIndices[index];
-        decltype(auto) qfInfoMap = qfInfoMaps[index];
-        //decltype(auto) qfQueues = qfQueuesStack[index];
-        //decltype(auto) qfInfoVk = qfInfoMap[index];
-        qfCommandPools->push_back(this->device.createCommandPool(qfInfoMap->set(vk::StructureType::eCommandPoolCreateInfo, vk::CommandPoolCreateInfo{
-          .flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-          .queueFamilyIndex = qfIndex,
-        })));
-        //qfQueuesStack->push_back();
-        index++;
+      if (this->queueFamilies.commandPools.size() <= 0u) {
+        decltype(auto) qfInfosVk = opt_ref(this->queueFamilies.infos);
+        decltype(auto) qfIndices = opt_ref(this->queueFamilies.indices);
+        decltype(auto) qfInfoMaps = opt_ref(this->queueFamilies.infoMaps);
+        decltype(auto) qfCommandPools = opt_ref(this->queueFamilies.commandPools);
+        for (decltype(auto) qfInfoIn : qfInfosIn) {
+          decltype(auto) qfIndex = qfIndices[index];
+          decltype(auto) qfInfoMap = qfInfoMaps[index];
+          //decltype(auto) qfQueues = qfQueuesStack[index];
+          //decltype(auto) qfInfoVk = qfInfoMap[index];
+          qfCommandPools->push_back(this->device.createCommandPool(qfInfoMap->set(vk::StructureType::eCommandPoolCreateInfo, vk::CommandPoolCreateInfo{
+            .flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+            .queueFamilyIndex = qfIndex,
+          })));
+          //qfQueuesStack->push_back();
+          index++;
+        };
       };
-      return qfCommandPools;
+      return this->queueFamilies.commandPools;
     };
 
     // TODO: caching...

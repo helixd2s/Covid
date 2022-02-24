@@ -27,8 +27,8 @@ namespace lxvc {
     std::vector<std::shared_ptr<DescriptorBindings>> layoutBindings = {};
 
     //
-    cpp21::bucket<vk::DescriptorImageInfo> textures = {};
-    cpp21::bucket<vk::DescriptorImageInfo> samplers = {};
+    cpp21::bucket<vk::DescriptorImageInfo> textures = std::vector<vk::DescriptorImageInfo>{};
+    cpp21::bucket<vk::DescriptorImageInfo> samplers = std::vector<vk::DescriptorImageInfo>{};
 
     // 
     std::vector<vk::DescriptorPoolSize> DPC = {};

@@ -105,7 +105,7 @@ namespace lxvc {
 
       //
       this->deviceObj->device.getBufferMemoryRequirements2(infoMap->set(vk::StructureType::eBufferMemoryRequirementsInfo2, vk::BufferMemoryRequirementsInfo2{
-        .buffer = (this->buffer = this->deviceObj->device.createBuffer(bufferInfo->setQueueFamilyIndices(this->deviceObj->queueFamilyIndices)))
+        .buffer = (this->buffer = this->deviceObj->device.createBuffer(bufferInfo->setQueueFamilyIndices(this->deviceObj->queueFamilies.indices)))
       }).get(), memReqInfo2.get());
 
       // 
