@@ -40,9 +40,11 @@ namespace lxvc {
     std::vector<cType> layerNames = {};
 
     // 
-    std::vector<vk::DeviceQueueCreateInfo> queueFamilyInfos = {};
     std::vector<uint32_t> queueFamilyIndices = {};
+    std::vector<vk::DeviceQueueCreateInfo> queueFamilyInfos = {};
     std::vector<std::shared_ptr<MSS>> queueFamilyInfoMaps = {};
+    std::vector<vk::CommandPool> commandPools = {};
+    //std::vector<std::vector<vk::Queue>> queueFamilyQueues = {};
 
     //
     virtual std::tuple<uint32_t, uint32_t> findMemoryTypeAndHeapIndex(vk::PhysicalDevice const& physicalDevice, cpp21::optional_ref<MemoryRequirements> req = MemoryRequirements{}) {
@@ -173,6 +175,7 @@ namespace lxvc {
       decltype(auto) qfInfosVk = opt_ref(this->queueFamilyInfos = {});
       decltype(auto) qfIndices = opt_ref(this->queueFamilyIndices = {});
       decltype(auto) qfInfoMaps = opt_ref(this->queueFamilyInfoMaps = {});
+      decltype(auto) qfCommandPools = opt_ref(this->commandPools = {});
       for (decltype(auto) qfInfoIn : qfInfosIn) {
         qfInfoMaps->push_back(std::make_shared<MSS>());
         decltype(auto) qfInfoMap = qfInfoMaps->back();
@@ -187,6 +190,33 @@ namespace lxvc {
       return qfInfosVk;
     };
 
+    //
+    virtual std::vector<vk::CommandPool>& createCommandPools(std::vector<QueueFamilyCreateInfo> const& qfInfosIn = {}) {
+      uintptr_t index = 0u;
+      decltype(auto) qfInfosVk = opt_ref(this->queueFamilyInfos);
+      decltype(auto) qfIndices = opt_ref(this->queueFamilyIndices);
+      decltype(auto) qfInfoMaps = opt_ref(this->queueFamilyInfoMaps);
+      decltype(auto) qfCommandPools = opt_ref(this->commandPools = {});//this->device.getQueue(info->queueFamilyIndex, info->queueIndex);
+      //decltype(auto) qfQueuesStack = opt_ref(this->queueFamilyQueues = {});
+      for (decltype(auto) qfInfoIn : qfInfosIn) {
+        decltype(auto) qfIndex = qfIndices[index];
+        decltype(auto) qfInfoMap = qfInfoMaps[index];
+        //decltype(auto) qfQueues = qfQueuesStack[index];
+        //decltype(auto) qfInfoVk = qfInfoMap[index];
+        qfCommandPools->push_back(this->device.createCommandPool(qfInfoMap->set(vk::StructureType::eCommandPoolCreateInfo, vk::CommandPoolCreateInfo{
+          .flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+          .queueFamilyIndex = qfIndex,
+        })));
+        //qfQueuesStack->push_back();
+        index++;
+      };
+      return qfCommandPools;
+    };
+
+    // TODO: caching...
+    virtual vk::Queue getQueue(cpp21::optional_ref<QueueGetInfo> info = {}) {
+      return this->device.getQueue(info->queueFamilyIndex, info->queueIndex);
+    };
 
   public:
 
@@ -205,7 +235,7 @@ namespace lxvc {
       memcpy(&this->cInfo, &cInfo, sizeof(DeviceCreateInfo));
 
       //
-      decltype(auto) deviceGroupInfo = infoMap->set(vk::StructureType::eDeviceGroupDeviceCreateInfo, vk::DeviceGroupDeviceCreateInfo{
+      decltype(auto) deviceGroupInfo = this->infoMap->set(vk::StructureType::eDeviceGroupDeviceCreateInfo, vk::DeviceGroupDeviceCreateInfo{
 
       });
 
@@ -238,6 +268,8 @@ namespace lxvc {
 
         // 
         this->device = physicalDevice.createDevice(deviceInfo);
+        this->createCommandPools(this->cInfo->queueFamilyInfos);
+
       } else {
         std::cerr << "Physical Device Not Detected" << std::endl;
       };

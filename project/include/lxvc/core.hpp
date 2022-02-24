@@ -153,5 +153,11 @@ namespace lxvc {
     size_t size = VK_WHOLE_SIZE;
   };
 
+  //
+  struct QueueGetInfo {
+    uint32_t queueFamilyIndex = 0u;
+    uint32_t queueIndex = 0u;
+  };
+
   
 };
