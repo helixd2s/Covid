@@ -16,7 +16,7 @@ namespace lxvc {
     // 
     vk::AccelerationStructureKHR acceleration = {};
     std::optional<AllocatedMemory> allocated = {};
-    std::optional<AccelerationCreateInfo> cInfo = {};
+    std::optional<AccelerationStructureCreateInfo> cInfo = {};
     std::optional<MemoryRequirements> mReqs = {};
     std::shared_ptr<MSS> infoMap = {};
 
@@ -27,15 +27,15 @@ namespace lxvc {
     inline decltype(auto) SFT() { return shared_from_this(); };
 
     // 
-    AccelerationStructureObj(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::uni_arg<AccelerationCreateInfo> cInfo = AccelerationCreateInfo{}) : deviceObj(deviceObj), cInfo(cInfo) {
+    AccelerationStructureObj(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::uni_arg<AccelerationStructureCreateInfo> cInfo = AccelerationStructureCreateInfo{}) : deviceObj(deviceObj), cInfo(cInfo) {
       this->construct(deviceObj, cInfo);
     };
 
     // 
-    virtual tType construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::uni_arg<AccelerationCreateInfo> cInfo = AccelerationCreateInfo{}) {
+    virtual tType construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::uni_arg<AccelerationStructureCreateInfo> cInfo = AccelerationStructureCreateInfo{}) {
       this->deviceObj = deviceObj;
       this->cInfo = cInfo;
-      this->infoMap = std::make_shared<MSS>()
+      this->infoMap = std::make_shared<MSS>();
 
       return this->SFT();
     };

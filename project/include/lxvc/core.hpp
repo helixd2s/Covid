@@ -116,8 +116,13 @@ namespace lxvc {
   };
 
   //
-  struct AccelerationCreateInfo {
+  struct AccelerationStructureCreateInfo {
     
+  };
+
+  //
+  struct DescriptorsCreateInfo {
+
   };
 
   //
