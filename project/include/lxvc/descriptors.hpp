@@ -23,8 +23,10 @@ namespace lxvc {
     vk::DescriptorPool pool = {};
     std::vector<vk::DescriptorSet> sets = {};
     std::vector<vk::DescriptorSetLayout> layouts = {};
-    std::vector<std::shared_ptr<MSS>> layoutInfoMaps = {};
-    std::vector<std::shared_ptr<DescriptorBindings>> layoutBindings = {};
+
+    // 
+    cpp21::vector_of_shared<MSS> layoutInfoMaps = {};
+    cpp21::vector_of_shared<DescriptorBindings> layoutBindings = {};
 
     //
     cpp21::bucket<vk::DescriptorImageInfo> textures = std::vector<vk::DescriptorImageInfo>{};
@@ -50,8 +52,8 @@ namespace lxvc {
     virtual tType createDescriptorLayout(vk::DescriptorType const& type, uint32_t const& count = 1u) {
       decltype(auto) last = this->layouts.size();
       this->layouts.push_back(vk::DescriptorSetLayout{});
-      this->layoutInfoMaps.push_back(std::make_shared<MSS>());
-      this->layoutBindings.push_back(std::make_shared<DescriptorBindings>());
+      this->layoutInfoMaps->push_back(std::make_shared<MSS>());
+      this->layoutBindings->push_back(std::make_shared<DescriptorBindings>());
       decltype(auto) layoutInfoMap = this->layoutInfoMaps[last];
       decltype(auto) layoutBindingStack = this->layoutBindings[last];
       opt_ref(layoutBindingStack->bindings)->push_back(vk::DescriptorSetLayoutBinding{ .binding = 0u, .descriptorType = type, .descriptorCount = count, .stageFlags = {} });

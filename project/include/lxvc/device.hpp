@@ -43,7 +43,7 @@ namespace lxvc {
 
     //
     std::vector<vk::PhysicalDevice> physicalDevices = {};
-    std::vector<std::shared_ptr<MSS>> PDInfoMaps = {};
+    cpp21::vector_of_shared<MSS> PDInfoMaps = {};
 
     //
     std::vector<cType> extensionNames = {};
@@ -55,7 +55,7 @@ namespace lxvc {
     //
     virtual std::tuple<uint32_t, uint32_t> findMemoryTypeAndHeapIndex(vk::PhysicalDevice const& physicalDevice, cpp21::optional_ref<MemoryRequirements> req = MemoryRequirements{}) {
       //decltype(auto) physicalDevice = this->physicalDevices[req->physicalDeviceIndex];
-      decltype(auto) physicalDeviceIndex = std::distance(this->physicalDevices.begin(), std::find(this->physicalDevices.begin(), this->physicalDevices.end(), physicalDevice));
+      uintptr_t physicalDeviceIndex = std::distance(this->physicalDevices.begin(), std::find(this->physicalDevices.begin(), this->physicalDevices.end(), physicalDevice));
       decltype(auto) PDInfoMap = this->PDInfoMaps[physicalDeviceIndex];
       decltype(auto) memoryProperties2 = PDInfoMap->set(vk::StructureType::ePhysicalDeviceMemoryProperties2, vk::PhysicalDeviceMemoryProperties2{
 
@@ -169,7 +169,7 @@ namespace lxvc {
       vk::PhysicalDevice* PDP = deviceGroup.physicalDevices;
       decltype(auto) physicalDevices = (this->physicalDevices = std::vector<vk::PhysicalDevice>(PDP, PDP + deviceGroup.physicalDeviceCount));
       for (decltype(auto) PD : physicalDevices) {
-        PDInfoMaps.push_back(std::make_shared<MSS>());
+        PDInfoMaps->push_back(std::make_shared<MSS>());
       };
       return physicalDevices;
     };
