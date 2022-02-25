@@ -9,12 +9,11 @@ namespace lxvc {
 
   //
   struct QueueFamilies {
-    // 
+    cpp21::vector_of_shared<MSS> infoMaps = {};
     std::vector<uint32_t> indices = {};
     std::vector<vk::DeviceQueueCreateInfo> infos = {};
     std::vector<vk::CommandPool> commandPools = {};
-    cpp21::vector_of_shared<MSS> infoMaps = {};
-    //std::vector<std::vector<vk::Queue>> queueFamilyQueues = {};
+    std::vector<std::vector<vk::Queue>> queues = {};
   };
 
   // 
@@ -182,8 +181,10 @@ namespace lxvc {
       decltype(auto) qfIndices = opt_ref(this->queueFamilies.indices = {});
       decltype(auto) qfInfoMaps = opt_ref(this->queueFamilies.infoMaps = {});
       decltype(auto) qfCommandPools = opt_ref(this->queueFamilies.commandPools = {});
+      decltype(auto) qfQueuesStack = opt_ref(this->queueFamilies.queues = {});
       for (decltype(auto) qfInfoIn : qfInfosIn) {
         qfInfoMaps->push_back(std::make_shared<MSS>());
+        qfQueuesStack->push_back(std::vector<vk::Queue>{});
         decltype(auto) qfInfoMap = qfInfoMaps->back();
         decltype(auto) qfInfoVk = qfInfoMap->set(vk::StructureType::eDeviceQueueCreateInfo, vk::DeviceQueueCreateInfo{
           .queueFamilyIndex = qfInfoIn.queueFamilyIndex,
@@ -198,31 +199,82 @@ namespace lxvc {
 
     //
     virtual std::vector<vk::CommandPool>& createCommandPools(std::vector<QueueFamilyCreateInfo> const& qfInfosIn = {}) {
-      uintptr_t index = 0u;
+      //uintptr_t index = 0u;
       if (this->queueFamilies.commandPools.size() <= 0u) {
         decltype(auto) qfInfosVk = opt_ref(this->queueFamilies.infos);
         decltype(auto) qfIndices = opt_ref(this->queueFamilies.indices);
         decltype(auto) qfInfoMaps = opt_ref(this->queueFamilies.infoMaps);
         decltype(auto) qfCommandPools = opt_ref(this->queueFamilies.commandPools);
+        decltype(auto) qfQueuesStack = opt_ref(this->queueFamilies.queues);
         for (decltype(auto) qfInfoIn : qfInfosIn) {
-          decltype(auto) qfIndex = qfIndices[index];
-          decltype(auto) qfInfoMap = qfInfoMaps[index];
-          //decltype(auto) qfQueues = qfQueuesStack[index];
-          //decltype(auto) qfInfoVk = qfInfoMap[index];
+          uintptr_t indexOfQF = std::distance(qfIndices->begin(), std::find(qfIndices->begin(), qfIndices->end(), qfInfoIn.queueFamilyIndex));
+          decltype(auto) qfIndex = qfIndices[indexOfQF];
+          decltype(auto) qfInfoMap = qfInfoMaps[indexOfQF];
+          decltype(auto) qfQueues = qfQueuesStack[indexOfQF];
+          decltype(auto) qfInfoVk = qfInfoMap[indexOfQF].get<vk::DeviceQueueCreateInfo>(vk::StructureType::eDeviceQueueCreateInfo);
           qfCommandPools->push_back(this->device.createCommandPool(qfInfoMap->set(vk::StructureType::eCommandPoolCreateInfo, vk::CommandPoolCreateInfo{
             .flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
             .queueFamilyIndex = qfIndex,
           })));
-          //qfQueuesStack->push_back();
-          index++;
+          for (decltype(auto) i = 0u; i < qfInfoVk->queueCount; i++) {
+            qfQueues.push_back(this->device.getQueue(qfIndex, i));
+          };
+          //index++;
         };
       };
       return this->queueFamilies.commandPools;
     };
 
     // TODO: caching...
-    virtual vk::Queue getQueue(cpp21::optional_ref<QueueGetInfo> info = {}) {
-      return this->device.getQueue(info->queueFamilyIndex, info->queueIndex);
+    virtual vk::Queue const& getQueue(cpp21::optional_ref<QueueGetInfo> info = {}) const {
+      //return this->device.getQueue(info->queueFamilyIndex, info->queueIndex);
+      decltype(auto) qfIndices = opt_ref(this->queueFamilies.indices);
+      decltype(auto) qfQueuesStack = opt_ref(this->queueFamilies.queues);
+      uintptr_t indexOfQF = std::distance(qfIndices->begin(), std::find(qfIndices->begin(), qfIndices->end(), info->queueFamilyIndex));
+      return qfQueuesStack[indexOfQF][info->queueIndex];
+    };
+
+    //
+    virtual vk::Fence executeCommandOnce(cpp21::optional_ref<CommandSubmission> submissionRef = {}) {
+      std::optional<CommandSubmission> submission = submissionRef;
+      decltype(auto) qfIndices = opt_ref(this->queueFamilies.indices);
+      decltype(auto) qfCommandPools = opt_ref(this->queueFamilies.commandPools);
+      uintptr_t indexOfQF = std::distance(qfIndices->begin(), std::find(qfIndices->begin(), qfIndices->end(), submissionRef->info->queueFamilyIndex));
+      decltype(auto) queue = this->getQueue(submissionRef->info);
+      decltype(auto) commandPool = qfCommandPools[indexOfQF];
+      decltype(auto) commandBuffers = this->device.allocateCommandBuffers(vk::CommandBufferAllocateInfo{
+        .commandPool = commandPool,
+        .level = vk::CommandBufferLevel::ePrimary,
+        .commandBufferCount = (uint32_t)submission->commandInits.size()
+      });
+
+      //
+      decltype(auto) cmdInfos = std::vector<vk::CommandBufferSubmitInfo >{};
+      decltype(auto) submitInfo = vk::SubmitInfo2{};
+      decltype(auto) cIndex = 0u; for (decltype(auto) fn : submission->commandInits) {
+        decltype(auto) cmdBuf = commandBuffers[cIndex++];
+        cmdInfos.push_back(vk::CommandBufferSubmitInfo{
+          .commandBuffer = fn(cmdBuf),
+          .deviceMask = 0x1
+        });
+      };
+
+      // 
+      //decltype(auto) 
+      decltype(auto) fence = this->device.createFence(vk::FenceCreateInfo{ .flags = {} });
+      decltype(auto) submits = std::vector<vk::SubmitInfo2>{
+        submitInfo.setCommandBufferInfos(cmdInfos).setWaitSemaphoreInfos(*submission->waitSemaphores).setSignalSemaphoreInfos(*submission->signalSemaphores)
+      };
+      queue.submit2(submits, fence);
+
+      // 
+      std::async(std::launch::async | std::launch::deferred, [=,this]() {
+        this->device.waitForFences(std::vector<vk::Fence>{fence}, true, 10000000000);
+        for (decltype(auto) fn : submission->onDone) { fn(); };
+      });
+
+      // 
+      return fence;
     };
 
   public:
