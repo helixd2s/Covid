@@ -26,12 +26,12 @@ namespace lxvc {
     inline decltype(auto) SFT() { return shared_from_this(); };
 
     // 
-    PipelineObj(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::uni_arg<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) : deviceObj(deviceObj), cInfo(cInfo) {
+    PipelineObj(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) : deviceObj(deviceObj), cInfo(cInfo) {
       this->construct(deviceObj, cInfo);
     };
 
     // 
-    virtual tType construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::uni_arg<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) {
+    virtual tType construct(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) {
       this->deviceObj = deviceObj;
       this->cInfo = cInfo;
       this->infoMap = std::make_shared<MSS>();

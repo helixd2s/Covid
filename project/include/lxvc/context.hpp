@@ -18,12 +18,12 @@ namespace lxvc {
     inline decltype(auto) SFT() { return shared_from_this(); };
 
     // 
-    ContextObj(cpp21::uni_arg<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
+    ContextObj(std::optional<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
       this->construct(cInfo);
     };
 
     // 
-    virtual tType construct(cpp21::uni_arg<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
+    virtual tType construct(std::optional<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
       return SFT();
     };
   };

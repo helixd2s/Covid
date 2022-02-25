@@ -18,21 +18,22 @@ namespace lxvc {
 
   // 
   class DeviceObj : std::enable_shared_from_this<DeviceObj> {
-  public:
+  protected:
     // 
     vk::Device device = {};
     vk::DispatchLoaderDynamic dispatch = {};
     std::optional<DeviceCreateInfo> cInfo = {};
     std::shared_ptr<MSS> infoMap = {};
 
-  protected:
+    //
+    friend InstanceObj;
+    friend ResourceObj;
+    friend QueueFamilyObj;
+    friend DescriptorsObj;
 
+    //
     using tType = std::shared_ptr<DeviceObj>;
     using cType = const char const*;
-    friend InstanceObj;
-    friend BufferObj;
-    friend ImageObj;
-    friend QueueFamilyObj;
 
     // 
     inline decltype(auto) SFT() { return shared_from_this(); };
@@ -277,13 +278,6 @@ namespace lxvc {
       return fence;
     };
 
-  public:
-
-    // 
-    DeviceObj(std::shared_ptr<InstanceObj> instanceObj = {}, cpp21::optional_ref<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) : instanceObj(instanceObj), cInfo(cInfo) {
-      this->construct(instanceObj, cInfo);
-    };
-
     // 
     virtual tType construct(std::shared_ptr<InstanceObj> instanceObj = {}, cpp21::optional_ref<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
       this->instanceObj = instanceObj;
@@ -296,7 +290,7 @@ namespace lxvc {
       //
       decltype(auto) deviceGroupInfo = this->infoMap->set(vk::StructureType::eDeviceGroupDeviceCreateInfo, vk::DeviceGroupDeviceCreateInfo{
 
-      });
+        });
 
       // TODO: get rid from spagetti code or nesting
       decltype(auto) deviceInfo = infoMap->set(vk::StructureType::eDeviceCreateInfo, vk::DeviceCreateInfo{
@@ -309,7 +303,7 @@ namespace lxvc {
           })
           })
           })
-      });
+        });
 
       //
       decltype(auto) physicalDevices = this->filterPhysicalDevices(this->cInfo->physicalDeviceGroupIndex);
@@ -329,13 +323,23 @@ namespace lxvc {
         this->device = physicalDevice.createDevice(deviceInfo);
         this->createCommandPools(this->cInfo->queueFamilyInfos);
 
-      } else {
+      }
+      else {
         std::cerr << "Physical Device Not Detected" << std::endl;
       };
 
       // 
       return SFT();
     };
+
+  public:
+
+    // 
+    DeviceObj(std::shared_ptr<InstanceObj> instanceObj = {}, cpp21::optional_ref<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) : instanceObj(instanceObj), cInfo(cInfo) {
+      this->construct(instanceObj, cInfo);
+    };
+
+    
   };
 
 

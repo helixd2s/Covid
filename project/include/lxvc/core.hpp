@@ -69,9 +69,9 @@ namespace lxvc {
   class ContextObj;
   class InstanceObj;
   class DeviceObj;
-  class BufferObj;
-  class ImageObj;
+  class ResourceObj;
   class QueueFamilyObj;
+  class DescriptorsObj;
 
   //
   struct ContextCreateInfo {
@@ -137,6 +137,12 @@ namespace lxvc {
     BufferType type = BufferType::eDevice;
     size_t size = 0ull;
     
+  };
+
+  //
+  struct ResourceCreateInfo {
+    std::optional<BufferCreateInfo> bufferInfo = {};
+    std::optional<ImageCreateInfo> imageInfo = {};
   };
 
   //

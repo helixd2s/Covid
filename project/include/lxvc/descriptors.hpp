@@ -44,7 +44,7 @@ namespace lxvc {
     inline decltype(auto) SFT() { return shared_from_this(); };
 
     // 
-    DescriptorsObj(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::uni_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) : deviceObj(deviceObj), cInfo(cInfo) {
+    DescriptorsObj(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) : deviceObj(deviceObj), cInfo(cInfo) {
       this->construct(deviceObj, cInfo);
     };
 
@@ -68,7 +68,7 @@ namespace lxvc {
     };
 
     // 
-    virtual tType construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::uni_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) {
+    virtual tType construct(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) {
       this->deviceObj = deviceObj;
       this->cInfo = cInfo;
       this->infoMap = std::make_shared<MSS>();
