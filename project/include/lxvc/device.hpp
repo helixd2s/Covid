@@ -12,8 +12,8 @@ namespace lxvc {
     // 
     std::vector<uint32_t> indices = {};
     std::vector<vk::DeviceQueueCreateInfo> infos = {};
-    std::vector<std::shared_ptr<MSS>> infoMaps = {};
     std::vector<vk::CommandPool> commandPools = {};
+    cpp21::vector_of_shared<MSS> infoMaps = {};
     //std::vector<std::vector<vk::Queue>> queueFamilyQueues = {};
   };
 
