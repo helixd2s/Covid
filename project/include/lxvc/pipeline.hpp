@@ -34,9 +34,10 @@ namespace lxvc {
   protected:
     //
     virtual tType createCompute(cpp21::optional_ref<ComputePipelineCreateInfo> compute = {}) {
-      this->pipeline = std::move<vk::Pipeline>(deviceObj->device.createComputePipeline(this->cInfo->descriptors->cache, vk::ComputePipelineCreateInfo{
+      decltype(auto) device = this->deviceObj->device;
+      this->pipeline = std::move<vk::Pipeline>(device.createComputePipeline(this->cInfo->descriptors->cache, vk::ComputePipelineCreateInfo{
         .flags = vk::PipelineCreateFlags{},
-        .stage = makeComputePipelineStageInfo(this->deviceObj->device, *(compute->code)),
+        .stage = makeComputePipelineStageInfo(device, *(compute->code)),
         .layout = this->cInfo->descriptors->layout
       }));
       return this->SFT();

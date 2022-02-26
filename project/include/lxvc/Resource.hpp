@@ -43,10 +43,11 @@ namespace lxvc {
       decltype(auto) physicalDevice = this->deviceObj->physicalDevices[this->deviceObj->cInfo->physicalDeviceIndex];
       decltype(auto) memTypeHeap = this->deviceObj->findMemoryTypeAndHeapIndex(physicalDevice, *requirements);
       decltype(auto) allocated = this->allocated;
+      decltype(auto) device = this->deviceObj->device;
 
       // 
       allocated = AllocatedMemory{
-        .memory = this->deviceObj->device.allocateMemory(infoMap->set(vk::StructureType::eMemoryAllocateInfo, vk::MemoryAllocateInfo{
+        .memory = device.allocateMemory(infoMap->set(vk::StructureType::eMemoryAllocateInfo, vk::MemoryAllocateInfo{
           .pNext = infoMap->set(vk::StructureType::eMemoryDedicatedAllocateInfo, vk::MemoryDedicatedAllocateInfo{ 
             .image = requirements->dedicated ? this->image : vk::Image{},
             .buffer = requirements->dedicated ? this->buffer : vk::Buffer{}
@@ -74,8 +75,9 @@ namespace lxvc {
     // 
     virtual tType createImage(cpp21::optional_ref<ImageCreateInfo> cInfo = {}) {
       // 
-      auto imageUsage = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst;
-      auto memoryUsage = MemoryUsage::eGpuOnly;
+      decltype(auto) device = this->deviceObj->device;
+      decltype(auto) imageUsage = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst;
+      decltype(auto) memoryUsage = MemoryUsage::eGpuOnly;
 
       // 
       switch (cInfo->type) {
@@ -120,8 +122,8 @@ namespace lxvc {
       });
 
       //
-      this->deviceObj->device.getImageMemoryRequirements2(infoMap->set(vk::StructureType::eImageMemoryRequirementsInfo2, vk::ImageMemoryRequirementsInfo2{
-        .image = (this->image = this->deviceObj->device.createImage(imageInfo->setQueueFamilyIndices(this->deviceObj->queueFamilies.indices)))
+      device.getImageMemoryRequirements2(infoMap->set(vk::StructureType::eImageMemoryRequirementsInfo2, vk::ImageMemoryRequirementsInfo2{
+        .image = (this->image = device.createImage(imageInfo->setQueueFamilyIndices(this->deviceObj->queueFamilies.indices)))
       }).get(), memReqInfo2.get());
 
       // 
@@ -136,7 +138,7 @@ namespace lxvc {
       std::vector<vk::BindImageMemoryInfo> bindInfos = { *infoMap->set(vk::StructureType::eBindImageMemoryInfo, vk::BindImageMemoryInfo{
         .image = this->image, .memory = this->allocated->memory, .memoryOffset = this->allocated->offset
       }) };
-      this->deviceObj->device.bindImageMemory2(bindInfos);
+      device.bindImageMemory2(bindInfos);
 
       // 
       return this->SFT();
@@ -144,8 +146,9 @@ namespace lxvc {
 
     // 
     virtual tType createBuffer(cpp21::optional_ref<BufferCreateInfo> cInfo = {}) {
-      auto bufferUsage = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
-      auto memoryUsage = MemoryUsage::eGpuOnly;
+      decltype(auto) device = this->deviceObj->device;
+      decltype(auto) bufferUsage = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
+      decltype(auto) memoryUsage = MemoryUsage::eGpuOnly;
 
       // 
       switch (cInfo->type) {
@@ -189,8 +192,8 @@ namespace lxvc {
       });
 
       //
-      this->deviceObj->device.getBufferMemoryRequirements2(infoMap->set(vk::StructureType::eBufferMemoryRequirementsInfo2, vk::BufferMemoryRequirementsInfo2{
-        .buffer = (this->buffer = this->deviceObj->device.createBuffer(bufferInfo->setQueueFamilyIndices(this->deviceObj->queueFamilies.indices)))
+      device.getBufferMemoryRequirements2(infoMap->set(vk::StructureType::eBufferMemoryRequirementsInfo2, vk::BufferMemoryRequirementsInfo2{
+        .buffer = (this->buffer = device.createBuffer(bufferInfo->setQueueFamilyIndices(this->deviceObj->queueFamilies.indices)))
       }).get(), memReqInfo2.get());
 
       // 
@@ -205,7 +208,7 @@ namespace lxvc {
       std::vector<vk::BindBufferMemoryInfo> bindInfos = { *infoMap->set(vk::StructureType::eBindBufferMemoryInfo, vk::BindBufferMemoryInfo{
         .buffer = this->buffer, .memory = this->allocated->memory, .memoryOffset = this->allocated->offset
       }) };
-      this->deviceObj->device.bindBufferMemory2(bindInfos);
+      device.bindBufferMemory2(bindInfos);
 
       // 
       return this->SFT();
