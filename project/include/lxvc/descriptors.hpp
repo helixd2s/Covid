@@ -71,7 +71,7 @@ namespace lxvc {
       this->layoutBindings->push_back(std::make_shared<DescriptorBindings>());
       decltype(auto) layoutInfoMap = this->layoutInfoMaps[last];
       decltype(auto) layoutBindingStack = this->layoutBindings[last];
-      opt_ref(layoutBindingStack->bindings)->push_back(vk::DescriptorSetLayoutBinding{ .binding = 0u, .descriptorType = type, .descriptorCount = count, .stageFlags = {} });
+      opt_ref(layoutBindingStack->bindings)->push_back(vk::DescriptorSetLayoutBinding{ .binding = 0u, .descriptorType = type, .descriptorCount = count, .stageFlags = vk::ShaderStageFlagBits::eAll });
       opt_ref(layoutBindingStack->bindingFlags)->push_back(vk::DescriptorBindingFlags{ vk::DescriptorBindingFlagBits::eVariableDescriptorCount | vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind });
       decltype(auto) layoutInfo = layoutInfoMap->set(vk::StructureType::eDescriptorSetLayoutCreateInfo, vk::DescriptorSetLayoutCreateInfo{
         .pNext = &(layoutInfoMap->set(vk::StructureType::eDescriptorSetLayoutBindingFlagsCreateInfo, vk::DescriptorSetLayoutBindingFlagsCreateInfo{
