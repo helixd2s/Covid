@@ -271,7 +271,7 @@ namespace lxvc {
 
       // 
       std::async(std::launch::async | std::launch::deferred, [=,this]() {
-        this->device.waitForFences(std::vector<vk::Fence>{fence}, true, 10000000000);
+        this->device.waitForFences(fence, true, 10000000000);
         for (decltype(auto) fn : submission->onDone) { fn(); };
       });
 
@@ -286,27 +286,25 @@ namespace lxvc {
       this->extensionNames = {};
       this->layerNames = {};
       this->infoMap = std::make_shared<MSS>();
-      memcpy(&this->cInfo, &cInfo, sizeof(DeviceCreateInfo));
-
-      //
-      decltype(auto) deviceGroupInfo = this->infoMap->set(vk::StructureType::eDeviceGroupDeviceCreateInfo, vk::DeviceGroupDeviceCreateInfo{
-
-        });
+      this->cInfo = cInfo;
+      //memcpy(&this->cInfo, &cInfo, sizeof(DeviceCreateInfo));
 
       // TODO: get rid from spagetti code or nesting
-      decltype(auto) deviceInfo = infoMap->set(vk::StructureType::eDeviceCreateInfo, vk::DeviceCreateInfo{
-          .pNext = infoMap->set(vk::StructureType::ePhysicalDeviceFeatures2, vk::PhysicalDeviceFeatures2{
-          .pNext = infoMap->set(vk::StructureType::ePhysicalDeviceVulkan11Features, vk::PhysicalDeviceVulkan11Features{
-          .pNext = infoMap->set(vk::StructureType::ePhysicalDeviceVulkan12Features, vk::PhysicalDeviceVulkan12Features{
-          .pNext = infoMap->set(vk::StructureType::ePhysicalDeviceVulkan13Features, vk::PhysicalDeviceVulkan13Features{
-          .pNext = deviceGroupInfo
-          })
-          })
-          })
-          })
-        });
+      decltype(auto) PDInfoMap = this->PDInfoMaps[this->cInfo->physicalDeviceIndex];
+      decltype(auto) deviceGroupInfo = this->infoMap->set(vk::StructureType::eDeviceGroupDeviceCreateInfo, vk::DeviceGroupDeviceCreateInfo{
+        .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceFeatures2, vk::PhysicalDeviceFeatures2{
+        .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceVulkan11Features, vk::PhysicalDeviceVulkan11Features{
+        .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceVulkan12Features, vk::PhysicalDeviceVulkan12Features{
+        .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceVulkan13Features, vk::PhysicalDeviceVulkan13Features{
 
-      //
+        })
+        })
+        })
+        })
+      });
+
+      // 
+      decltype(auto) deviceInfo = infoMap->set(vk::StructureType::eDeviceCreateInfo, vk::DeviceCreateInfo{ .pNext = deviceGroupInfo });
       decltype(auto) physicalDevices = this->filterPhysicalDevices(this->cInfo->physicalDeviceGroupIndex);
       decltype(auto) physicalDevice = physicalDevices[this->cInfo->physicalDeviceIndex];
 

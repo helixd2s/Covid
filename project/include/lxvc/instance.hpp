@@ -113,7 +113,7 @@ namespace lxvc {
     // 
     virtual tType construct(std::shared_ptr<ContextObj> contextObj, cpp21::optional_ref<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
       this->contextObj = contextObj;
-      memcpy(&this->cInfo, &cInfo, sizeof(InstanceCreateInfo));
+      this->cInfo = cInfo;
       this->infoMap = std::make_shared<MSS>();
       this->extensionNames = {};
       this->layerNames = {};
