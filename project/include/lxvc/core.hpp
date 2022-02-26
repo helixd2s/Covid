@@ -18,6 +18,7 @@
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_raii.hpp>
 #include <vk-utils/cpp21.hpp>
+#include <vk-utils/chain.hpp>
 
 // 
 namespace lxvc {
