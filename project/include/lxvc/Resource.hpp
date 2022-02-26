@@ -12,6 +12,7 @@ namespace lxvc {
   protected: 
     using tType = std::shared_ptr<ResourceObj>;
     friend DeviceObj;
+    friend DescriptorsObj;
 
     // 
     vk::Buffer buffer = {};
