@@ -237,7 +237,7 @@ namespace lxvc {
     };
 
     //
-    virtual vk::Fence executeCommandOnce(cpp21::optional_ref<CommandSubmission> submissionRef = {}) {
+    virtual std::tuple<std::future<vk::Result>, vk::Fence> executeCommandOnce(cpp21::optional_ref<CommandSubmission> submissionRef = {}) {
       std::optional<CommandSubmission> submission = submissionRef;
       decltype(auto) qfIndices = opt_ref(this->queueFamilies.indices);
       decltype(auto) qfCommandPools = opt_ref(this->queueFamilies.commandPools);
@@ -270,14 +270,14 @@ namespace lxvc {
       queue.submit2(submits, fence);
 
       // 
-      std::async(std::launch::async | std::launch::deferred, [=,this]() {
+      decltype(auto) promise = std::async(std::launch::async | std::launch::deferred, [=,this]() {
         decltype(auto) result = this->device.waitForFences(fence, true, 10000000000);
         for (decltype(auto) fn : submission->onDone) { fn(result); };
         return result;
       });
 
       // 
-      return fence;
+      return std::make_tuple(std::forward<std::future<vk::Result>>(promise), std::forward<vk::Fence>(fence));
     };
 
     // 
