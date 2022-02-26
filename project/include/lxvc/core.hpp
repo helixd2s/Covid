@@ -176,18 +176,26 @@ namespace lxvc {
   };
 
   //
-  struct CommandSubmission {
+  struct CommandOnceSubmission {
     std::optional<QueueGetInfo> info = {};
-    std::vector<std::function<vk::CommandBuffer const&(vk::CommandBuffer const&)>> commandInits = {};
+    std::vector<std::function<vk::CommandBuffer const& (vk::CommandBuffer const&)>> commandInits = {};
     std::vector<std::function<void(vk::Result const&)>> onDone = {};
     cpp21::shared_vector<vk::SemaphoreSubmitInfo> waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
     cpp21::shared_vector<vk::SemaphoreSubmitInfo> signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
+    std::optional<vk::CommandBufferInheritanceInfo> inheritanceInfo = {};
   };
 
   //
   struct BufferRegionObj {
     std::shared_ptr<ResourceObj> buffer = {};
     DataRegion region = {};
+  };
+
+  //
+  struct CopyBufferInfo {
+    std::optional<QueueGetInfo> info = {};
+    std::optional<BufferRegionObj> src = {};
+    std::optional<BufferRegionObj> dst = {};
   };
 
   //

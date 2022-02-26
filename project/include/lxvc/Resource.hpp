@@ -225,5 +225,73 @@ namespace lxvc {
     };
 
   };
+
+  // 
+  inline FenceType DeviceObj::copyBuffers(cpp21::optional_ref<CopyBufferInfo> copyInfoRaw) {
+    decltype(auto) submission = CommandOnceSubmission{ .info = copyInfoRaw->info };
+    decltype(auto) device = this->device;
+    decltype(auto) size = std::min(copyInfoRaw->src->region.size, copyInfoRaw->dst->region.size);
+    decltype(auto) copyInfo = vk::CopyBufferInfo2{ .srcBuffer = copyInfoRaw->src->buffer->buffer , .dstBuffer = copyInfoRaw->dst->buffer->buffer };
+    decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
+    decltype(auto) regions = std::vector<vk::BufferCopy2>{ vk::BufferCopy2{.srcOffset = copyInfoRaw->src->region.offset, .dstOffset = copyInfoRaw->dst->region.offset, .size = size} };
+
+    //
+    decltype(auto) bufferBarriersBegin = std::vector<vk::BufferMemoryBarrier2>{
+      vk::BufferMemoryBarrier2{
+        .srcStageMask = vk::PipelineStageFlagBits2::eAllCommands,
+        .srcAccessMask = vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eTransferWrite,
+        .dstStageMask = vk::PipelineStageFlagBits2::eCopy | vk::PipelineStageFlagBits2::eTransfer,
+        .dstAccessMask = vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eTransferRead,
+        .buffer = copyInfoRaw->src->buffer->buffer,
+        .offset = copyInfoRaw->src->region.offset,
+        .size = size
+      },
+      vk::BufferMemoryBarrier2{
+        .srcStageMask = vk::PipelineStageFlagBits2::eAllCommands,
+        .srcAccessMask = vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eTransferRead,
+        .dstStageMask = vk::PipelineStageFlagBits2::eCopy | vk::PipelineStageFlagBits2::eTransfer,
+        .dstAccessMask = vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eTransferWrite,
+        .buffer = copyInfoRaw->dst->buffer->buffer,
+        .offset = copyInfoRaw->dst->region.offset,
+        .size = size
+      }
+    };
+
+    //
+    decltype(auto) bufferBarriersEnd = std::vector<vk::BufferMemoryBarrier2>{
+      vk::BufferMemoryBarrier2{
+        .srcStageMask = vk::PipelineStageFlagBits2::eCopy | vk::PipelineStageFlagBits2::eTransfer,
+        .srcAccessMask = vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eTransferRead,
+        .dstStageMask = vk::PipelineStageFlagBits2::eAllCommands,
+        .dstAccessMask = vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eTransferWrite,
+        .buffer = copyInfoRaw->src->buffer->buffer,
+        .offset = copyInfoRaw->src->region.offset,
+        .size = size
+      },
+      vk::BufferMemoryBarrier2{
+        .srcStageMask = vk::PipelineStageFlagBits2::eCopy | vk::PipelineStageFlagBits2::eTransfer,
+        .srcAccessMask = vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eTransferWrite,
+        .dstStageMask = vk::PipelineStageFlagBits2::eAllCommands,
+        .dstAccessMask = vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eTransferRead,
+        .buffer = copyInfoRaw->dst->buffer->buffer,
+        .offset = copyInfoRaw->dst->region.offset,
+        .size = size
+      }
+    };
+
+    // 
+    submission.commandInits.push_back([=](vk::CommandBuffer const& cmdBuf) {
+      auto _copyInfo = copyInfo;
+      auto _depInfo = depInfo;
+      cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersBegin));
+      cmdBuf.copyBuffer2(_copyInfo.setRegions(regions));
+      cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersEnd));
+      return cmdBuf;
+    });
+
+    //
+    return this->executeCommandOnce(submission);
+  };
+
   
 };

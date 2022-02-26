@@ -238,8 +238,11 @@ namespace lxvc {
     };
 
     //
-    virtual FenceType executeCommandOnce(cpp21::optional_ref<CommandSubmission> submissionRef = {}) {
-      std::optional<CommandSubmission> submission = submissionRef;
+    virtual FenceType copyBuffers(cpp21::optional_ref<CopyBufferInfo> copyInfoRaw);
+
+    //
+    virtual FenceType executeCommandOnce(cpp21::optional_ref<CommandOnceSubmission> submissionRef = {}) {
+      std::optional<CommandOnceSubmission> submission = submissionRef;
       decltype(auto) qfIndices = opt_ref(this->queueFamilies.indices);
       decltype(auto) qfCommandPools = opt_ref(this->queueFamilies.commandPools);
       uintptr_t indexOfQF = std::distance(qfIndices->begin(), std::find(qfIndices->begin(), qfIndices->end(), submissionRef->info->queueFamilyIndex));
@@ -256,10 +259,12 @@ namespace lxvc {
       decltype(auto) submitInfo = vk::SubmitInfo2{};
       decltype(auto) cIndex = 0u; for (decltype(auto) fn : submission->commandInits) {
         decltype(auto) cmdBuf = commandBuffers[cIndex++];
+        cmdBuf.begin(vk::CommandBufferBeginInfo{ .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit, .pInheritanceInfo = cpp21::pointer(submissionRef->inheritanceInfo) });
         cmdInfos.push_back(vk::CommandBufferSubmitInfo{
           .commandBuffer = fn(cmdBuf),
           .deviceMask = 0x1
         });
+        cmdBuf.end();
       };
 
       // 
