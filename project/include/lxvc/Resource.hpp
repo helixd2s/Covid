@@ -13,11 +13,13 @@ namespace lxvc {
     using tType = std::shared_ptr<ResourceObj>;
     friend DeviceObj;
     friend DescriptorsObj;
+    friend UploaderObj;
 
     // 
     vk::Buffer buffer = {};
     vk::Image image = {};
     vk::ImageLayout imageLayout = vk::ImageLayout::eUndefined;
+    void* mappedMemory = nullptr;
 
     // 
     std::optional<AllocatedMemory> allocated = {};
@@ -38,6 +40,8 @@ namespace lxvc {
     };
 
   protected:
+
+    
 
     //
     virtual std::optional<AllocatedMemory>& allocateMemory(cpp21::optional_ref<MemoryRequirements> requirements) {
@@ -210,6 +214,11 @@ namespace lxvc {
         .buffer = this->buffer, .memory = this->allocated->memory, .memoryOffset = this->allocated->offset
       }) };
       device.bindBufferMemory2(bindInfos);
+
+      //
+      if (cInfo->type == BufferType::eHostMap) {
+        this->mappedMemory = device.mapMemory(this->allocated->memory, this->allocated->offset, memReqInfo.size);
+      };
 
       // 
       return this->SFT();

@@ -31,6 +31,7 @@ namespace lxvc {
     friend QueueFamilyObj;
     friend DescriptorsObj;
     friend PipelineObj;
+    friend UploaderObj;
 
     //
     using tType = std::shared_ptr<DeviceObj>;
@@ -237,7 +238,7 @@ namespace lxvc {
     };
 
     //
-    virtual std::tuple<std::future<vk::Result>, vk::Fence> executeCommandOnce(cpp21::optional_ref<CommandSubmission> submissionRef = {}) {
+    virtual FenceType executeCommandOnce(cpp21::optional_ref<CommandSubmission> submissionRef = {}) {
       std::optional<CommandSubmission> submission = submissionRef;
       decltype(auto) qfIndices = opt_ref(this->queueFamilies.indices);
       decltype(auto) qfCommandPools = opt_ref(this->queueFamilies.commandPools);

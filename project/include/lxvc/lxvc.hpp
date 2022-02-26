@@ -8,6 +8,7 @@
 #include "./Resource.hpp"
 #include "./Descriptors.hpp"
 #include "./Pipeline.hpp"
+#include "./Uploader.hpp"
 
 // 
 namespace lxvc {

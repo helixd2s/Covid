@@ -74,6 +74,7 @@ namespace lxvc {
   class QueueFamilyObj;
   class DescriptorsObj;
   class PipelineObj;
+  class UploaderObj;
 
   //
   struct ContextCreateInfo {
@@ -155,11 +156,18 @@ namespace lxvc {
   };
 
   //
-  struct BufferRegion {
-    vk::Buffer buffer = {};
+  struct DataRegion {
     uintptr_t offset = 0ull;
     size_t size = VK_WHOLE_SIZE;
   };
+
+  //
+  struct BufferRegion {
+    vk::Buffer buffer = {};
+    DataRegion region = {};
+  };
+
+  
 
   //
   struct QueueGetInfo {
@@ -174,6 +182,18 @@ namespace lxvc {
     std::vector<std::function<void(vk::Result const&)>> onDone = {};
     cpp21::shared_vector<vk::SemaphoreSubmitInfo> waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
     cpp21::shared_vector<vk::SemaphoreSubmitInfo> signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
+  };
+
+  //
+  struct BufferRegionObj {
+    std::shared_ptr<ResourceObj> buffer = {};
+    DataRegion region = {};
+  };
+
+  //
+  struct UploaderCreateInfo {
+    std::optional<QueueGetInfo> info = {};
+    size_t cacheSize = 1024ull * 1024ull * 2ull;
   };
 
   //
@@ -192,6 +212,9 @@ namespace lxvc {
     std::optional<ComputePipelineCreateInfo> compute = {};
     std::optional<GraphicsPipelineCreateInfo> graphics = {};
   };
+
+  //
+  using FenceType = std::tuple<std::future<vk::Result>, vk::Fence>;
 
   // 
   struct ComputeStageCreateInfo {
