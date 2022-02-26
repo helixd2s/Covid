@@ -15,14 +15,18 @@ namespace lxvc {
   
   // 
   class DescriptorsObj : std::enable_shared_from_this<DescriptorsObj> {
-  public:
+  protected: 
     using tType = std::shared_ptr<DescriptorsObj>;
     friend DeviceObj;
+    friend PipelineObj;
 
     //
+    vk::PipelineCache cache = {};
+    vk::PipelineLayout layout = {};
     vk::DescriptorPool pool = {};
     std::vector<vk::DescriptorSet> sets = {};
     std::vector<vk::DescriptorSetLayout> layouts = {};
+    std::vector<vk::PushConstantRange> pushConstantRanges = {};
 
     // 
     cpp21::vector_of_shared<MSS> layoutInfoMaps = {};
@@ -40,14 +44,19 @@ namespace lxvc {
     //
     std::shared_ptr<DeviceObj> deviceObj = {};
 
+    //
+    std::vector<char8_t> initialData = {};
+
     // 
     inline decltype(auto) SFT() { return shared_from_this(); };
 
+  public:
     // 
     DescriptorsObj(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) : deviceObj(deviceObj), cInfo(cInfo) {
       this->construct(deviceObj, cInfo);
     };
 
+  protected:
     //
     virtual tType createDescriptorLayout(vk::DescriptorType const& type, uint32_t const& count = 1u) {
       decltype(auto) last = this->layouts.size();
@@ -91,6 +100,16 @@ namespace lxvc {
       this->sets = this->deviceObj->device.allocateDescriptorSets(this->infoMap->set(vk::StructureType::eDescriptorSetAllocateInfo, vk::DescriptorSetAllocateInfo{
         .descriptorPool = (this->pool = this->deviceObj->device.createDescriptorPool(DPI))
       })->setSetLayouts(this->layouts));
+
+      //
+      this->layout = this->deviceObj->device.createPipelineLayout(infoMap->set(vk::StructureType::ePipelineLayoutCreateInfo, vk::PipelineLayoutCreateInfo{
+
+      })->setSetLayouts(this->layouts).setPushConstantRanges(this->pushConstantRanges));
+
+      //
+      this->cache = this->deviceObj->device.createPipelineCache(infoMap->set(vk::StructureType::ePipelineCacheCreateInfo, vk::PipelineCacheCreateInfo{
+
+      })->setInitialData<char8_t>(this->initialData));
 
       // 
       return this->SFT();

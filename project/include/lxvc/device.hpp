@@ -30,6 +30,7 @@ namespace lxvc {
     friend ResourceObj;
     friend QueueFamilyObj;
     friend DescriptorsObj;
+    friend PipelineObj;
 
     //
     using tType = std::shared_ptr<DeviceObj>;

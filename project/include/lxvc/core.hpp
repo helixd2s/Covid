@@ -72,6 +72,7 @@ namespace lxvc {
   class ResourceObj;
   class QueueFamilyObj;
   class DescriptorsObj;
+  class PipelineObj;
 
   //
   struct ContextCreateInfo {
@@ -174,5 +175,102 @@ namespace lxvc {
     cpp21::shared_vector<vk::SemaphoreSubmitInfo> signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
   };
 
-  
+  //
+  struct GraphicsPipelineCreateInfo {
+    
+  };
+
+  //
+  struct ComputePipelineCreateInfo {
+    cpp21::shared_vector<uint32_t> code = {};
+  };
+
+  //
+  struct PipelineCreateInfo {
+    std::shared_ptr<DescriptorsObj> descriptors = {};
+    std::optional<ComputePipelineCreateInfo> compute = {};
+    std::optional<GraphicsPipelineCreateInfo> graphics = {};
+  };
+
+  // 
+  struct ComputeStageCreateInfo {
+    //ComputeStageCreateInfo(vk::PipelineShaderStageCreateInfo spi = {}, vk::PipelineShaderStageRequiredSubgroupSizeCreateInfoEXT sgmp = {}) : spi(spi), sgmp(sgmp) {
+    //};
+
+    vk::PipelineShaderStageCreateInfo spi = {};
+    vk::PipelineShaderStageRequiredSubgroupSizeCreateInfoEXT sgmp = {};
+
+    // 
+    operator vk::PipelineShaderStageCreateInfo& () { return spi; };
+    operator vk::PipelineShaderStageRequiredSubgroupSizeCreateInfoEXT& () { return sgmp; };
+    operator vk::PipelineShaderStageCreateInfo const& () const { return spi; };
+    operator vk::PipelineShaderStageRequiredSubgroupSizeCreateInfoEXT const& () const { return sgmp; };
+    
+    //
+    decltype(auto) operator =(vk::PipelineShaderStageCreateInfo const& spi) { (this->spi = spi); return *this; };
+    decltype(auto) operator =(vk::PipelineShaderStageRequiredSubgroupSizeCreateInfoEXT const& sgmp) { (this->sgmp = sgmp); return *this; };
+  };
+
+  // 
+  struct ShaderModuleCreateInfo {
+    //ComputeStageCreateInfo(vk::PipelineShaderStageCreateInfo spi = {}, vk::PipelineShaderStageRequiredSubgroupSizeCreateInfoEXT sgmp = {}) : spi(spi), sgmp(sgmp) {
+    //};
+
+    vk::ShaderModuleCreateInfo info = {};
+    vk::ShaderModuleValidationCacheCreateInfoEXT validInfo = {};
+
+    // 
+    operator vk::ShaderModuleCreateInfo& () { return info; };
+    operator vk::ShaderModuleValidationCacheCreateInfoEXT& () { return validInfo; };
+    operator vk::ShaderModuleCreateInfo const& () const { return info; };
+    operator vk::ShaderModuleValidationCacheCreateInfoEXT const& () const { return validInfo; };
+
+    //
+    decltype(auto) operator =(vk::ShaderModuleCreateInfo const& info) { (this->info = info); return *this; };
+    decltype(auto) operator =(vk::ShaderModuleValidationCacheCreateInfoEXT const& validInfo) { (this->validInfo = validInfo); return *this; };
+  };
+
+  // 
+  inline static std::vector<uint32_t> eTempCode = {};
+
+  // 
+  static inline decltype(auto) makeShaderModuleInfo(std::vector<uint32_t> const& code) {
+    return ShaderModuleCreateInfo{ vk::ShaderModuleCreateInfo{.codeSize = code.size() * 4ull, .pCode = code.data() } };
+  };
+
+  // 
+  static inline decltype(auto) createShaderModule(vk::Device const& device, cpp21::optional_ref<ShaderModuleCreateInfo> info = {}) {
+      return device.createShaderModule(info.value());
+  };
+
+  // 
+  static inline decltype(auto) createShaderModule(vk::Device const& device, std::vector<uint32_t> const& code = {}) {
+      return createShaderModule(device, makeShaderModuleInfo(eTempCode = code));
+  };
+
+  // create shader module 
+  static inline decltype(auto) makePipelineStageInfo(vk::Device const& device, std::vector<uint32_t> const& code = {}, vk::ShaderStageFlagBits stage = vk::ShaderStageFlagBits::eCompute, std::optional<char const*> entry = "main") {
+      vk::PipelineShaderStageCreateInfo spi = {
+        .stage = stage,
+        .pName = entry.value(),
+        .pSpecializationInfo = nullptr
+      };
+      if (code.size() > 0u && (!spi.module)) { spi.module = createShaderModule(device, code); };
+      return std::move(spi);
+  };
+
+  // create compute
+  static inline decltype(auto) makeComputePipelineStageInfo(vk::Device const& device, std::vector<uint32_t> const& code = {}, std::optional<const char*> entry = "main", std::optional<uint32_t> subgroupSize = 0u) {
+      decltype(auto) f = ComputeStageCreateInfo{};
+      f.spi = makePipelineStageInfo(device, code, vk::ShaderStageFlagBits::eCompute, entry);
+      f.spi.flags = vk::PipelineShaderStageCreateFlags{ vk::PipelineShaderStageCreateFlagBits::eRequireFullSubgroups };
+      f.spi.module = createShaderModule(device, eTempCode = code);
+      if (subgroupSize && subgroupSize.value() > 0u) {
+        f.sgmp = vk::PipelineShaderStageRequiredSubgroupSizeCreateInfoEXT{};
+        f.sgmp.requiredSubgroupSize = subgroupSize.value();
+        f.spi.pNext = &f.sgmp;
+      };
+      return std::move(f);
+  };
+
 };

@@ -7,6 +7,7 @@
 #include "./QueueFamily.hpp"
 #include "./Resource.hpp"
 #include "./Descriptors.hpp"
+#include "./Pipeline.hpp"
 
 // 
 namespace lxvc {
