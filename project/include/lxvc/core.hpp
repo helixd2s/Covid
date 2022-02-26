@@ -170,7 +170,7 @@ namespace lxvc {
   struct CommandSubmission {
     std::optional<QueueGetInfo> info = {};
     std::vector<std::function<vk::CommandBuffer const&(vk::CommandBuffer const&)>> commandInits = {};
-    std::vector<std::function<void()>> onDone = {};
+    std::vector<std::function<void(vk::Result const&)>> onDone = {};
     cpp21::shared_vector<vk::SemaphoreSubmitInfo> waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
     cpp21::shared_vector<vk::SemaphoreSubmitInfo> signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
   };

@@ -271,8 +271,9 @@ namespace lxvc {
 
       // 
       std::async(std::launch::async | std::launch::deferred, [=,this]() {
-        this->device.waitForFences(fence, true, 10000000000);
-        for (decltype(auto) fn : submission->onDone) { fn(); };
+        decltype(auto) result = this->device.waitForFences(fence, true, 10000000000);
+        for (decltype(auto) fn : submission->onDone) { fn(result); };
+        return result;
       });
 
       // 
