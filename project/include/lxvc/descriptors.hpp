@@ -59,6 +59,7 @@ namespace lxvc {
   protected:
     //
     virtual tType createDescriptorLayout(vk::DescriptorType const& type, uint32_t const& count = 1u) {
+      decltype(auto) device = this->deviceObj->device;
       decltype(auto) last = this->layouts.size();
       this->layouts.push_back(vk::DescriptorSetLayout{});
       this->layoutInfoMaps->push_back(std::make_shared<MSS>());
@@ -73,7 +74,7 @@ namespace lxvc {
         })->setBindingFlags(layoutBindingStack->bindingFlags)),
         .flags = vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool
         })->setBindings(layoutBindingStack->bindings);
-      this->layouts.push_back(this->deviceObj->device.createDescriptorSetLayout(layoutInfo));
+      this->layouts.push_back(device.createDescriptorSetLayout(layoutInfo));
     };
 
     // 
@@ -83,6 +84,7 @@ namespace lxvc {
       this->infoMap = std::make_shared<MSS>();
 
       //
+      decltype(auto) device = this->deviceObj->device;
       decltype(auto) DPI = infoMap->set(vk::StructureType::eDescriptorPoolCreateInfo, vk::DescriptorPoolCreateInfo{
         .flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet | vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind,
       })->setPoolSizes(this->DPC = std::vector<vk::DescriptorPoolSize>{
@@ -97,17 +99,17 @@ namespace lxvc {
       this->createDescriptorLayout(vk::DescriptorType::eSampler, 64u);
 
       //
-      this->sets = this->deviceObj->device.allocateDescriptorSets(this->infoMap->set(vk::StructureType::eDescriptorSetAllocateInfo, vk::DescriptorSetAllocateInfo{
-        .descriptorPool = (this->pool = this->deviceObj->device.createDescriptorPool(DPI))
+      this->sets = device.allocateDescriptorSets(this->infoMap->set(vk::StructureType::eDescriptorSetAllocateInfo, vk::DescriptorSetAllocateInfo{
+        .descriptorPool = (this->pool = device.createDescriptorPool(DPI))
       })->setSetLayouts(this->layouts));
 
       //
-      this->layout = this->deviceObj->device.createPipelineLayout(infoMap->set(vk::StructureType::ePipelineLayoutCreateInfo, vk::PipelineLayoutCreateInfo{
+      this->layout = device.createPipelineLayout(infoMap->set(vk::StructureType::ePipelineLayoutCreateInfo, vk::PipelineLayoutCreateInfo{
 
       })->setSetLayouts(this->layouts).setPushConstantRanges(this->pushConstantRanges));
 
       //
-      this->cache = this->deviceObj->device.createPipelineCache(infoMap->set(vk::StructureType::ePipelineCacheCreateInfo, vk::PipelineCacheCreateInfo{
+      this->cache = device.createPipelineCache(infoMap->set(vk::StructureType::ePipelineCacheCreateInfo, vk::PipelineCacheCreateInfo{
 
       })->setInitialData<char8_t>(this->initialData));
 
