@@ -55,6 +55,12 @@ namespace lxvc {
       return typeid(std::decay_t<decltype(this)>);
     };
 
+    //
+    virtual tType registerSelf() {
+      lxvc::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
+      return SFT();
+    };
+
   protected:
 
     //
@@ -83,7 +89,7 @@ namespace lxvc {
     };
 
     // 
-    virtual tType construct(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
+    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
       this->base = deviceObj->handle;
       //this->deviceObj = deviceObj;
       this->cInfo = cInfo;
@@ -93,7 +99,7 @@ namespace lxvc {
     };
 
     // 
-    virtual tType createImage(cpp21::optional_ref<ImageCreateInfo> cInfo = {}) {
+    virtual void createImage(cpp21::optional_ref<ImageCreateInfo> cInfo = {}) {
       // 
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) imageUsage = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst;
@@ -164,11 +170,11 @@ namespace lxvc {
       device.bindImageMemory2(bindInfos);
 
       // 
-      return this->SFT();
+      //return this->SFT();
     };
 
     // 
-    virtual tType createBuffer(cpp21::optional_ref<BufferCreateInfo> cInfo = {}) {
+    virtual void createBuffer(cpp21::optional_ref<BufferCreateInfo> cInfo = {}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) bufferUsage = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
       decltype(auto) memoryUsage = MemoryUsage::eGpuOnly;
@@ -242,7 +248,7 @@ namespace lxvc {
       };
 
       // 
-      return this->SFT();
+      //return this->SFT();
     };
 
   };

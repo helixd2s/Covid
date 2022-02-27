@@ -323,7 +323,7 @@ namespace lxvc {
   };
 
   //
-  inline static std::unordered_map<std::type_index, HandleType> handleTypeMap = {};
+  inline extern std::unordered_map<std::type_index, HandleType> handleTypeMap = {};
 
   //
   inline static decltype(auto) registerTypes() {
@@ -350,7 +350,7 @@ namespace lxvc {
   inline static decltype(auto) getHandleType(auto const& typed) {
     using T = std::decay_t<decltype(typed)>;
     decltype(auto) ID = std::type_index(typeid(T));
-    if (handleTypeMap.find(ID) == handleTypeMap.end()) {
+    if (handleTypeMap.find(ID) != handleTypeMap.end()) {
       return std::move(handleTypeMap.at(ID));
     };
     return std::forward<HandleType>(HandleType::eUnknown);

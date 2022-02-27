@@ -38,6 +38,7 @@ namespace lxvc {
     inline decltype(auto) SFT() const { return std::dynamic_pointer_cast<const std::decay_t<decltype(*this)>>(shared_from_this()); };
 
   public:
+
     // 
     UploaderObj(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) : cInfo(cInfo) {
       this->base = deviceObj->handle;
@@ -52,6 +53,12 @@ namespace lxvc {
     // 
     virtual std::type_info const& type_info() const override {
       return typeid(std::decay_t<decltype(this)>);
+    };
+
+    //
+    virtual tType registerSelf() {
+      lxvc::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
+      return SFT();
     };
 
     //

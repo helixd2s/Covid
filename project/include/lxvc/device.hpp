@@ -291,7 +291,7 @@ namespace lxvc {
     };
 
     // 
-    virtual tType construct(std::shared_ptr<InstanceObj> instanceObj = {}, cpp21::optional_ref<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
+    virtual void construct(std::shared_ptr<InstanceObj> instanceObj = {}, cpp21::optional_ref<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
       //this->instanceObj = instanceObj;
       this->base = instanceObj->handle;
       this->physicalDevices = {};
@@ -331,7 +331,7 @@ namespace lxvc {
         deviceInfo->setPEnabledLayerNames(this->filterLayers(physicalDevice, this->cInfo->layerList));
 
         // 
-        lxvc::context->registerObj(this->handle = physicalDevice.createDevice(deviceInfo), shared_from_this());
+        this->handle = physicalDevice.createDevice(deviceInfo);
         this->createCommandPools(this->cInfo->queueFamilyInfos);
 
       }
@@ -340,7 +340,7 @@ namespace lxvc {
       };
 
       // 
-      return SFT();
+      //return SFT();
     };
 
   public:
@@ -354,6 +354,12 @@ namespace lxvc {
     // 
     DeviceObj(Handle const& handle, std::optional<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) : cInfo(cInfo) {
       this->construct(lxvc::context->get<InstanceObj>(this->base = handle), cInfo);
+    };
+
+    //
+    virtual tType registerSelf() {
+      lxvc::context->registerObj(this->handle, shared_from_this());
+      return SFT();
     };
 
     // 

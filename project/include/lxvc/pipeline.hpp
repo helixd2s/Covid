@@ -43,9 +43,15 @@ namespace lxvc {
       return typeid(std::decay_t<decltype(this)>);
     };
 
+    //
+    virtual tType registerSelf() {
+      lxvc::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
+      return SFT();
+    };
+
   protected:
     //
-    virtual tType createCompute(cpp21::optional_ref<ComputePipelineCreateInfo> compute = {}) {
+    virtual void createCompute(cpp21::optional_ref<ComputePipelineCreateInfo> compute = {}) {
       decltype(auto) device = this->base.as<vk::Device>();
       this->handle = std::move<vk::Pipeline>(device.createComputePipeline(this->cInfo->descriptors->cache, vk::ComputePipelineCreateInfo{
         .flags = vk::PipelineCreateFlags{},
@@ -54,26 +60,26 @@ namespace lxvc {
       }));
       //
       lxvc::context->get(this->base)->registerObj(this->handle, shared_from_this());
-      return this->SFT();
+      //return this->SFT();
     };
 
     //
-    virtual tType createGraphics(cpp21::optional_ref<GraphicsPipelineCreateInfo> graphics = {}) {
+    virtual void createGraphics(cpp21::optional_ref<GraphicsPipelineCreateInfo> graphics = {}) {
       //this->pipeline = makeComputePipelineStageInfo(this->deviceObj->device, compute->code);
       //
       lxvc::context->get(this->base)->registerObj(this->handle, shared_from_this());
-      return this->SFT();
+      //return this->SFT();
     };
 
     // 
-    virtual tType construct(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) {
+    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) {
       this->base = deviceObj->handle;
       //this->deviceObj = deviceObj;
       this->cInfo = cInfo;
       this->infoMap = std::make_shared<MSS>();
       if (this->cInfo->compute) { this->createCompute(this->cInfo->compute); };
       if (this->cInfo->graphics) { this->createGraphics(this->cInfo->graphics); };
-      return this->SFT();
+      //return this->SFT();
     };
 
   };

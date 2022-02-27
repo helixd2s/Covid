@@ -78,9 +78,15 @@ namespace lxvc {
       return typeid(std::decay_t<decltype(this)>);
     };
 
+    //
+    virtual tType registerSelf() {
+      lxvc::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
+      return SFT();
+    };
+
   protected:
     //
-    virtual tType createDescriptorLayout(vk::DescriptorType const& type, uint32_t const& count = 1u) {
+    virtual void createDescriptorLayout(vk::DescriptorType const& type, uint32_t const& count = 1u) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) last = this->layouts.size();
       this->layouts.push_back(vk::DescriptorSetLayout{});
@@ -100,7 +106,7 @@ namespace lxvc {
     };
 
     // 
-    virtual tType construct(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) {
+    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) {
       this->base = deviceObj->handle;
       //this->deviceObj = deviceObj;
       this->cInfo = cInfo;
@@ -153,18 +159,18 @@ namespace lxvc {
       this->updateDescriptors();
 
       // 
-      return this->SFT();
+      //return this->SFT();
     };
 
     //
-    virtual tType updateDescriptors() {
+    virtual void updateDescriptors() {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) writes = std::vector<vk::WriteDescriptorSet>{};
       writes.push_back(vk::WriteDescriptorSet{ .dstSet = this->sets[0u], .dstBinding = 0u, .dstArrayElement = 0u, .descriptorCount = 1u, .descriptorType = vk::DescriptorType::eUniformBuffer, .pBufferInfo = &this->uniformBufferDesc.value() });
       writes.push_back(vk::WriteDescriptorSet{ .dstSet = this->sets[1u], .dstBinding = 0u, .dstArrayElement = 0u, .descriptorCount = (uint32_t)this->textures->size(), .descriptorType = vk::DescriptorType::eSampledImage, .pImageInfo = this->textures->data() });
       writes.push_back(vk::WriteDescriptorSet{ .dstSet = this->sets[2u], .dstBinding = 0u, .dstArrayElement = 0u, .descriptorCount = (uint32_t)this->samplers->size(), .descriptorType = vk::DescriptorType::eSampler, .pImageInfo = this->samplers->data() });
       device.updateDescriptorSets(writes, {});
-      return this->SFT();
+      //return this->SFT();
     };
     
   };

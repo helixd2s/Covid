@@ -22,6 +22,10 @@ namespace lxvc {
     vk::DispatchLoaderDynamic dispatch = {};
     std::optional<InstanceCreateInfo> cInfo = {};
 
+    // 
+    inline decltype(auto) SFT() { return std::dynamic_pointer_cast<std::decay_t<decltype(*this)>>(shared_from_this()); };
+    inline decltype(auto) SFT() const { return std::dynamic_pointer_cast<const std::decay_t<decltype(*this)>>(shared_from_this()); };
+
   public: 
     // 
     InstanceObj(std::shared_ptr<ContextObj> contextObj = {}, cpp21::optional_ref<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : cInfo(cInfo) {
@@ -39,11 +43,13 @@ namespace lxvc {
       return typeid(std::decay_t<decltype(this)>);
     };
 
-  protected: 
-    // 
-    inline decltype(auto) SFT() { return std::dynamic_pointer_cast<std::decay_t<decltype(*this)>>(shared_from_this()); };
-    inline decltype(auto) SFT() const { return std::dynamic_pointer_cast<const std::decay_t<decltype(*this)>>(shared_from_this()); };
+    //
+    virtual tType registerSelf() {
+      lxvc::context->registerObj(this->handle, shared_from_this());
+      return SFT();
+    };
 
+  protected:
     //
     //std::shared_ptr<ContextObj> contextObj = {};
 
@@ -77,7 +83,7 @@ namespace lxvc {
 
     //
     virtual std::vector<cType>& filterExtensions(std::vector<std::string> const& names) {
-      decltype(auto) props = vk::enumerateInstanceExtensionProperties();
+      auto props = vk::enumerateInstanceExtensionProperties();
       decltype(auto) selected = opt_ref(this->extensionNames);
 
       // 
@@ -101,7 +107,7 @@ namespace lxvc {
 
     //
     virtual std::vector<cType>& filterLayers(std::vector<std::string> const& names) {
-      decltype(auto) props = vk::enumerateInstanceLayerProperties();
+      auto props = vk::enumerateInstanceLayerProperties();
       decltype(auto) selected = opt_ref(this->layerNames);
 
       // 
@@ -124,7 +130,7 @@ namespace lxvc {
     };
 
     // 
-    virtual tType construct(std::shared_ptr<ContextObj> contextObj, cpp21::optional_ref<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
+    virtual void construct(std::shared_ptr<ContextObj> contextObj, cpp21::optional_ref<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
       this->base = contextObj->handle;
       //this->deviceObj = deviceObj;
       this->cInfo = cInfo;
@@ -134,6 +140,7 @@ namespace lxvc {
 
       //
       decltype(auto) instanceInfo = infoMap->set(vk::StructureType::eInstanceCreateInfo, vk::InstanceCreateInfo{ 
+        .pNext = nullptr,
         .pApplicationInfo = infoMap->set(vk::StructureType::eApplicationInfo, vk::ApplicationInfo{
           .pApplicationName = this->cInfo->appName.c_str(),
           .applicationVersion = this->cInfo->appVersion,
@@ -146,14 +153,15 @@ namespace lxvc {
           .apiVersion = VK_VERSION_1_3
         })
       });
+      instanceInfo->setPNext(nullptr);
       instanceInfo->setPEnabledExtensionNames(this->filterExtensions(this->cInfo->extensionList));
       instanceInfo->setPEnabledLayerNames(this->filterLayers(this->cInfo->layerList));
 
       //
-      lxvc::context->registerObj(this->handle = vk::createInstance(instanceInfo), shared_from_this());
+      this->handle = vk::createInstance(instanceInfo.ref());
 
       // 
-      return SFT();
+      //return SFT();
     };
   };
 

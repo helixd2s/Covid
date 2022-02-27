@@ -34,19 +34,19 @@ namespace lxvc {
 
   protected: 
     // 
-    virtual tType construct(std::optional<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
+    virtual void construct(std::optional<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
       this->base = 0ull;
-      return SFT();
+      //return SFT();
     };
   };
 
   //
-  inline static std::shared_ptr<ContextObj> context = {};
+  inline extern std::shared_ptr<ContextObj> context = {};
 
   // 
   inline static decltype(auto) initialize(std::optional<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
-    lxvc::context = std::make_shared<ContextObj>(cInfo);
     lxvc::registerTypes();
+    lxvc::context = std::make_shared<ContextObj>(cInfo);
     return lxvc::context;
   };
 

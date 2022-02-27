@@ -45,15 +45,21 @@ namespace lxvc {
       return typeid(std::decay_t<decltype(this)>);
     };
 
+    //
+    virtual tType registerSelf() {
+      lxvc::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
+      return SFT();
+    };
+
     // 
   protected:
-    virtual tType construct(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{}) {
+    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{}) {
       this->base = deviceObj->handle;
       //this->deviceObj = deviceObj;
       this->cInfo = cInfo;
       this->infoMap = std::make_shared<MSS>();
 
-      return this->SFT();
+      //return this->SFT();
     };
 
   };
