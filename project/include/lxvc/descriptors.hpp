@@ -137,6 +137,9 @@ namespace lxvc {
       })->setInitialData<char8_t>(this->initialData));
 
       //
+      lxvc::context->get(this->base)->registerObj(this->handle, shared_from_this());
+
+      //
       decltype(auto) uniformSize = 65536ull;
       this->uniformBuffer = std::make_shared<ResourceObj>(lxvc::context->get<DeviceObj>(this->base), ResourceCreateInfo{
         .bufferInfo = BufferCreateInfo{
