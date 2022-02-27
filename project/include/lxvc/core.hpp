@@ -112,8 +112,8 @@ namespace lxvc {
   struct InstanceCreateInfo {
     std::string appName = "LXVC_APP";
     uint32_t appVersion = VK_MAKE_VERSION(1,0,0);
-    cpp21::shared_vector<std::string> extensionList = {};
-    cpp21::shared_vector<std::string> layerList = {};
+    cpp21::shared_vector<std::string> extensionList = std::vector<std::string>{};
+    cpp21::shared_vector<std::string> layerList = std::vector<std::string>{ "VK_LAYER_KHRONOS_validation" };
   };
 
   //
@@ -427,7 +427,8 @@ namespace lxvc {
     template<class T = BaseObj>
     inline decltype(auto) registerObj(Handle const& handle, std::shared_ptr<T> const& obj = {}) {
       if (handleObjectMap.find(handle.type) == handleObjectMap.end()) { handleObjectMap[handle.type] = {}; };
-      handleObjectMap.at(handle.type)[handle.value] = (obj ? obj : std::make_shared<T>(this->handle, handle));
+      decltype(auto) map = handleObjectMap.at(handle.type);
+      map[handle.value] = (obj ? obj : std::make_shared<T>(this->handle, handle));
       return shared_from_this();
     };
 

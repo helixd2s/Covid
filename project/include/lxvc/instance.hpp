@@ -83,7 +83,9 @@ namespace lxvc {
 
     //
     virtual std::vector<cType>& filterExtensions(std::vector<std::string> const& names) {
-      auto props = vk::enumerateInstanceExtensionProperties();
+      //std::vector<vk::ExtensionProperties> props(1024u); uint32_t size = 0ull;
+      //vk::enumerateInstanceExtensionProperties("", &size, props.data()); props.resize(size);
+      decltype(auto) props = vk::enumerateInstanceExtensionProperties();
       decltype(auto) selected = opt_ref(this->extensionNames);
 
       // 
@@ -107,7 +109,9 @@ namespace lxvc {
 
     //
     virtual std::vector<cType>& filterLayers(std::vector<std::string> const& names) {
-      auto props = vk::enumerateInstanceLayerProperties();
+      //std::vector<vk::LayerProperties> props(1024u); uint32_t size = 0ull;
+      //vk::enumerateInstanceLayerProperties(&size, props.data()); props.resize(size);
+      decltype(auto) props = vk::enumerateInstanceLayerProperties();
       decltype(auto) selected = opt_ref(this->layerNames);
 
       // 
@@ -142,6 +146,7 @@ namespace lxvc {
       decltype(auto) instanceInfo = infoMap->set(vk::StructureType::eInstanceCreateInfo, vk::InstanceCreateInfo{ 
         .pNext = nullptr,
         .pApplicationInfo = infoMap->set(vk::StructureType::eApplicationInfo, vk::ApplicationInfo{
+          .pNext = nullptr,
           .pApplicationName = this->cInfo->appName.c_str(),
           .applicationVersion = this->cInfo->appVersion,
 
@@ -150,10 +155,9 @@ namespace lxvc {
           .engineVersion = VK_MAKE_VERSION(1,0,0),
 
           // 
-          .apiVersion = VK_VERSION_1_3
-        })
+          .apiVersion = VK_API_VERSION_1_3
+        }).get()
       });
-      instanceInfo->setPNext(nullptr);
       instanceInfo->setPEnabledExtensionNames(this->filterExtensions(this->cInfo->extensionList));
       instanceInfo->setPEnabledLayerNames(this->filterLayers(this->cInfo->layerList));
 
