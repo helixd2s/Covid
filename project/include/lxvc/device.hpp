@@ -168,7 +168,8 @@ namespace lxvc {
     //
     virtual std::vector<vk::PhysicalDevice>& filterPhysicalDevices(uint32_t const& groupIndex) {
       //this->physicalDevices = {};
-      decltype(auto) deviceGroups = lxvc::context->get<InstanceObj>(this->base)->enumeratePhysicalDeviceGroups();
+      decltype(auto) instanceObj = lxvc::context->get<InstanceObj>(this->base);
+      decltype(auto) deviceGroups = instanceObj->enumeratePhysicalDeviceGroups();
       decltype(auto) deviceGroup = deviceGroups[groupIndex];
       vk::PhysicalDevice* PDP = deviceGroup.physicalDevices;
       decltype(auto) physicalDevices = (this->physicalDevices = std::vector<vk::PhysicalDevice>(PDP, PDP + deviceGroup.physicalDeviceCount));
@@ -206,7 +207,7 @@ namespace lxvc {
     virtual std::vector<vk::CommandPool>& createCommandPools(std::vector<QueueFamilyCreateInfo> const& qfInfosIn = {}) {
       //uintptr_t index = 0u;
       decltype(auto) device = this->base.as<vk::Device>();
-      if (this->queueFamilies.commandPools.size() <= 0u) {
+      if (!!device && this->queueFamilies.commandPools.size() <= 0u) {
         decltype(auto) qfInfosVk = opt_ref(this->queueFamilies.infos);
         decltype(auto) qfIndices = opt_ref(this->queueFamilies.indices);
         decltype(auto) qfInfoMaps = opt_ref(this->queueFamilies.infoMaps);
@@ -217,13 +218,14 @@ namespace lxvc {
           decltype(auto) qfIndex = qfIndices[indexOfQF];
           decltype(auto) qfInfoMap = qfInfoMaps[indexOfQF];
           decltype(auto) qfQueues = qfQueuesStack[indexOfQF];
-          decltype(auto) qfInfoVk = qfInfoMap[indexOfQF].get<vk::DeviceQueueCreateInfo>(vk::StructureType::eDeviceQueueCreateInfo);
-          qfCommandPools->push_back(device.createCommandPool(qfInfoMap->set(vk::StructureType::eCommandPoolCreateInfo, vk::CommandPoolCreateInfo{
+          decltype(auto) qfInfoVk = qfInfoMap->get<vk::DeviceQueueCreateInfo>(vk::StructureType::eDeviceQueueCreateInfo);
+          decltype(auto) qfCmdPoolInfo = qfInfoMap->set(vk::StructureType::eCommandPoolCreateInfo, vk::CommandPoolCreateInfo{
             .flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
             .queueFamilyIndex = qfIndex,
-          })));
+          });
+          //qfCommandPools->push_back(device.createCommandPool(qfCmdPoolInfo));
           for (decltype(auto) i = 0u; i < qfInfoVk->queueCount; i++) {
-            qfQueues.push_back(device.getQueue(qfIndex, i));
+            //qfQueues.push_back(device.getQueue(qfIndex, i));
           };
           //index++;
         };
@@ -245,7 +247,7 @@ namespace lxvc {
 
     //
     virtual FenceType executeCommandOnce(cpp21::optional_ref<CommandOnceSubmission> submissionRef = {}) {
-      decltype(auto) device = this->base.as<vk::Device>();
+      decltype(auto) device = this->handle.as<vk::Device>();
       std::optional<CommandOnceSubmission> submission = submissionRef;
       decltype(auto) qfIndices = opt_ref(this->queueFamilies.indices);
       decltype(auto) qfCommandPools = opt_ref(this->queueFamilies.commandPools);
@@ -302,7 +304,9 @@ namespace lxvc {
       //memcpy(&this->cInfo, &cInfo, sizeof(DeviceCreateInfo));
 
       // TODO: get rid from spagetti code or nesting
+      decltype(auto) physicalDevices = this->filterPhysicalDevices(this->cInfo->physicalDeviceGroupIndex);
       decltype(auto) PDInfoMap = this->PDInfoMaps[this->cInfo->physicalDeviceIndex];
+      decltype(auto) physicalDevice = physicalDevices[this->cInfo->physicalDeviceIndex];
       decltype(auto) deviceGroupInfo = this->infoMap->set(vk::StructureType::eDeviceGroupDeviceCreateInfo, vk::DeviceGroupDeviceCreateInfo{
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceFeatures2, vk::PhysicalDeviceFeatures2{
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceVulkan11Features, vk::PhysicalDeviceVulkan11Features{
@@ -317,12 +321,10 @@ namespace lxvc {
 
       // 
       decltype(auto) deviceInfo = infoMap->set(vk::StructureType::eDeviceCreateInfo, vk::DeviceCreateInfo{ .pNext = deviceGroupInfo });
-      decltype(auto) physicalDevices = this->filterPhysicalDevices(this->cInfo->physicalDeviceGroupIndex);
-      decltype(auto) physicalDevice = physicalDevices[this->cInfo->physicalDeviceIndex];
-
+      
       //
       if (!!physicalDevice) {
-        physicalDevice.getFeatures2(infoMap->get<vk::PhysicalDeviceFeatures2>(vk::StructureType::ePhysicalDeviceFeatures2).get());
+        physicalDevice.getFeatures2(PDInfoMap->get<vk::PhysicalDeviceFeatures2>(vk::StructureType::ePhysicalDeviceFeatures2).get());
         deviceGroupInfo->setPhysicalDevices(physicalDevices);
 
         // 

@@ -428,7 +428,7 @@ namespace lxvc {
     inline decltype(auto) registerObj(Handle const& handle, std::shared_ptr<T> const& obj = {}) {
       if (handleObjectMap.find(handle.type) == handleObjectMap.end()) { handleObjectMap[handle.type] = {}; };
       decltype(auto) map = handleObjectMap.at(handle.type);
-      map[handle.value] = (obj ? obj : std::make_shared<T>(this->handle, handle));
+      map.set(handle.value, (obj ? obj : std::make_shared<T>(this->handle, handle)));
       return shared_from_this();
     };
 
@@ -453,7 +453,7 @@ namespace lxvc {
 
       // 
       decltype(auto) objMap = handleObjectMap.at(handle.type);
-      if (objMap->find(handle.value) == objMap->end()) { objMap[handle.value] = std::make_shared<T>(this->handle, handle); };
+      if (objMap->find(handle.value) == objMap->end()) { objMap.set(handle.value, std::make_shared<T>(this->handle, handle)); };
       return std::dynamic_pointer_cast<T>(objMap.at(handle.value).shared());
     };
 

@@ -9,4 +9,8 @@ int main() {
 
   })->registerSelf();
 
+  decltype(auto) device = std::make_shared<lxvc::DeviceObj>(instance, lxvc::DeviceCreateInfo{
+
+  })->registerSelf();
+
 };
