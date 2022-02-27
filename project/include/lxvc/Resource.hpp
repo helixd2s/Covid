@@ -22,7 +22,7 @@ namespace lxvc {
     // 
     //vk::Buffer buffer = {};
     //vk::Image image = {};
-    vk::ImageLayout imageLayout = vk::ImageLayout::eUndefined;
+    //vk::ImageLayout imageLayout = vk::ImageLayout::eUndefined;
     void* mappedMemory = nullptr;
 
     // 
@@ -104,7 +104,7 @@ namespace lxvc {
     };
 
     // 
-    virtual void createImage(cpp21::optional_ref<ImageCreateInfo> cInfo = {}) {
+    virtual FenceType createImage(cpp21::optional_ref<ImageCreateInfo> cInfo = {}) {
       // 
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) imageUsage = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst;
@@ -144,7 +144,13 @@ namespace lxvc {
       decltype(auto) imageInfo = infoMap->set(vk::StructureType::eImageCreateInfo, vk::ImageCreateInfo{
         .format = cInfo->format,
         .extent = cInfo->extent,
-        .usage = imageUsage
+        .mipLevels = 1u,
+        .arrayLayers = 1u, // TODO: correct array layers
+        .samples = vk::SampleCountFlagBits::e1,
+        .tiling = vk::ImageTiling::eOptimal,
+        .usage = imageUsage,
+        .sharingMode = vk::SharingMode::eExclusive,
+        .initialLayout = vk::ImageLayout::eUndefined
       });
 
       // 
@@ -174,6 +180,38 @@ namespace lxvc {
       }) };
       device.bindImageMemory2(bindInfos);
 
+      // 
+      decltype(auto) submission = CommandOnceSubmission{ .info = cInfo->info };
+      decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
+      decltype(auto) correctAccessMask = vku::getCorrectAccessMaskByImageLayout<vk::AccessFlagBits2>(cInfo->layout);
+      decltype(auto) transferBarrier = std::vector<vk::ImageMemoryBarrier2>{
+        vk::ImageMemoryBarrier2{
+          .srcStageMask = vk::PipelineStageFlagBits2::eAllCommands,
+          .srcAccessMask = vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eMemoryWrite,
+          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(correctAccessMask),
+          .dstAccessMask = correctAccessMask,
+          .oldLayout = imageInfo->initialLayout,
+          .newLayout = cInfo->layout,
+          .image = this->handle.as<vk::Image>(),
+          .subresourceRange = vk::ImageSubresourceRange{
+            .aspectMask = vk::ImageAspectFlagBits::eColor,
+            .baseMipLevel = 0u,
+            .levelCount = imageInfo->mipLevels,
+            .baseArrayLayer = 0u,
+            .layerCount = imageInfo->arrayLayers
+          }
+        }
+      };
+
+      // 
+      submission.commandInits.push_back([=](vk::CommandBuffer const& cmdBuf) {
+        auto _depInfo = depInfo;
+        cmdBuf.pipelineBarrier2(_depInfo.setImageMemoryBarriers(transferBarrier));
+        return cmdBuf;
+      });
+
+      //
+      return lxvc::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
       // 
       //return this->SFT();
     };
@@ -270,19 +308,19 @@ namespace lxvc {
     //
     decltype(auto) bufferBarriersBegin = std::vector<vk::BufferMemoryBarrier2>{
       vk::BufferMemoryBarrier2{
-        .srcStageMask = vk::PipelineStageFlagBits2::eAllCommands,
-        .srcAccessMask = vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eTransferWrite | vk::AccessFlagBits2::eShaderWrite,
-        .dstStageMask = vk::PipelineStageFlagBits2::eCopy | vk::PipelineStageFlagBits2::eTransfer,
-        .dstAccessMask = vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eTransferRead,
+        .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralWrite),
+        .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralWrite),
+        .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferRead),
+        .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferRead),
         .buffer = copyInfoRaw->src->buffer,
         .offset = copyInfoRaw->src->region.offset,
         .size = size
       },
       vk::BufferMemoryBarrier2{
-        .srcStageMask = vk::PipelineStageFlagBits2::eAllCommands,
-        .srcAccessMask = vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eTransferRead | vk::AccessFlagBits2::eShaderRead,
-        .dstStageMask = vk::PipelineStageFlagBits2::eCopy | vk::PipelineStageFlagBits2::eTransfer,
-        .dstAccessMask = vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eTransferWrite,
+        .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralRead),
+        .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralRead),
+        .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferWrite),
+        .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
         .buffer = copyInfoRaw->dst->buffer,
         .offset = copyInfoRaw->dst->region.offset,
         .size = size
@@ -292,19 +330,19 @@ namespace lxvc {
     //
     decltype(auto) bufferBarriersEnd = std::vector<vk::BufferMemoryBarrier2>{
       vk::BufferMemoryBarrier2{
-        .srcStageMask = vk::PipelineStageFlagBits2::eCopy | vk::PipelineStageFlagBits2::eTransfer,
-        .srcAccessMask = vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eTransferRead,
-        .dstStageMask = vk::PipelineStageFlagBits2::eAllCommands,
-        .dstAccessMask = vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eTransferWrite | vk::AccessFlagBits2::eShaderWrite,
+        .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferWrite),
+        .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
+        .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralRead),
+        .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralRead),
         .buffer = copyInfoRaw->src->buffer,
         .offset = copyInfoRaw->src->region.offset,
         .size = size
       },
       vk::BufferMemoryBarrier2{
-        .srcStageMask = vk::PipelineStageFlagBits2::eCopy | vk::PipelineStageFlagBits2::eTransfer,
-        .srcAccessMask = vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eTransferWrite,
-        .dstStageMask = vk::PipelineStageFlagBits2::eAllCommands,
-        .dstAccessMask = vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eTransferRead | vk::AccessFlagBits2::eShaderRead,
+        .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferRead),
+        .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferRead),
+        .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralWrite),
+        .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralWrite),
         .buffer = copyInfoRaw->dst->buffer,
         .offset = copyInfoRaw->dst->region.offset,
         .size = size
