@@ -86,7 +86,7 @@ namespace lxvc {
 
     //
     inline static tType make(Handle const& handle, std::optional<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) {
-      return WrapShared<DescriptorsObj>(std::make_shared<DescriptorsObj>(handle, cInfo)->registerSelf().shared());
+      return std::make_shared<DescriptorsObj>(handle, cInfo)->registerSelf();
     };
 
   protected:

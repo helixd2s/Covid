@@ -52,7 +52,7 @@ namespace lxvc {
 
     //
     inline static tType make(Handle const& handle, std::optional<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
-      return WrapShared<InstanceObj>(std::make_shared<InstanceObj>(handle, cInfo)->registerSelf().shared());
+      return std::make_shared<InstanceObj>(handle, cInfo)->registerSelf();
     };
 
   protected:

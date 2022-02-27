@@ -371,7 +371,7 @@ namespace lxvc {
     
     //
     inline static tType make(Handle const& handle, std::optional<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
-      return WrapShared<DeviceObj>(std::make_shared<DeviceObj>(handle, cInfo)->registerSelf().shared());
+      return std::make_shared<DeviceObj>(handle, cInfo)->registerSelf();
     };
 
   };

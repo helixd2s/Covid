@@ -63,7 +63,7 @@ namespace lxvc {
 
     //
     inline static tType make(Handle const& handle, std::optional<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
-      return WrapShared<ResourceObj>(std::make_shared<ResourceObj>(handle, cInfo)->registerSelf().shared());
+      return std::make_shared<ResourceObj>(handle, cInfo)->registerSelf();
     };
 
   protected:

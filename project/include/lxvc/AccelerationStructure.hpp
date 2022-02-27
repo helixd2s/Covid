@@ -60,7 +60,7 @@ namespace lxvc {
 
     //
     inline static tType make(Handle const& handle, std::optional<AccelerationStructureCreateInfo> cInfo = AccelerationStructureCreateInfo{}) {
-      return WrapShared<AccelerationStructureObj>(std::make_shared<AccelerationStructureObj>(handle, cInfo)->registerSelf());
+      return std::make_shared<AccelerationStructureObj>(handle, cInfo)->registerSelf();
     };
 
   protected:

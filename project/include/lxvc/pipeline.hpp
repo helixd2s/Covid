@@ -51,7 +51,7 @@ namespace lxvc {
 
     //
     inline static tType make(Handle const& handle, std::optional<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) {
-      return WrapShared<PipelineObj>(std::make_shared<PipelineObj>(handle, cInfo)->registerSelf().shared());
+      return std::make_shared<PipelineObj>(handle, cInfo)->registerSelf();
     };
 
   protected:

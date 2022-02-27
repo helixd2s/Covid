@@ -63,7 +63,7 @@ namespace lxvc {
 
     //
     inline static tType make(Handle const& handle, std::optional<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) {
-      return WrapShared<UploaderObj>(std::make_shared<UploaderObj>(handle, cInfo)->registerSelf().shared());
+      return std::make_shared<UploaderObj>(handle, cInfo)->registerSelf();
     };
 
     //

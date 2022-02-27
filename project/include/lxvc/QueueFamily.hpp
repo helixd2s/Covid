@@ -53,7 +53,7 @@ namespace lxvc {
 
     //
     inline static tType make(Handle const& handle, std::optional<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{}) {
-      return WrapShared<QueueFamilyObj>(std::make_shared<QueueFamilyObj>(handle, cInfo)->registerSelf().shared());
+      return std::make_shared<QueueFamilyObj>(handle, cInfo)->registerSelf();
     };
 
     // 
