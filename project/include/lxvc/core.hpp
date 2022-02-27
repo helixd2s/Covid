@@ -66,6 +66,23 @@ namespace lxvc {
   };
 
   //
+  enum class HandleType : uint32_t {
+    eUnknown = 0u,
+    eInstance = 1u,
+    ePhysicalDevice = 2u,
+    eDevice = 3u,
+    eQueue = 4u, 
+    eCommandBuffer = 5u,
+
+    eBuffer = 6u,
+    eImage = 7u,
+    ePipeline = 8u,
+    eUploader = 9u,
+    eDescriptors = 10u,
+    eQueueFamily = 11u
+  };
+
+  //
   class AccelerationStructureObj;
   class ContextObj;
   class InstanceObj;
@@ -303,6 +320,141 @@ namespace lxvc {
         f.spi.pNext = &f.sgmp;
       };
       return std::move(f);
+  };
+
+  //
+  inline static std::unordered_map<std::type_index, HandleType> handleTypeMap = {};
+
+  //
+  inline static decltype(auto) registerTypes() {
+    lxvc::handleTypeMap = {};
+
+    // 
+    lxvc::handleTypeMap[std::type_index(typeid(vk::Instance))] = HandleType::eInstance;
+    lxvc::handleTypeMap[std::type_index(typeid(vk::PhysicalDevice))] = HandleType::ePhysicalDevice;
+    lxvc::handleTypeMap[std::type_index(typeid(vk::Device))] = HandleType::eDevice;
+    lxvc::handleTypeMap[std::type_index(typeid(vk::Queue))] = HandleType::eQueue;
+    lxvc::handleTypeMap[std::type_index(typeid(vk::CommandBuffer))] = HandleType::eCommandBuffer;
+
+    // 
+    lxvc::handleTypeMap[std::type_index(typeid(vk::Buffer))] = HandleType::eBuffer;
+    lxvc::handleTypeMap[std::type_index(typeid(vk::Image))] = HandleType::eImage;
+    lxvc::handleTypeMap[std::type_index(typeid(vk::Pipeline))] = HandleType::ePipeline;
+    lxvc::handleTypeMap[std::type_index(typeid(vk::PipelineLayout))] = HandleType::eDescriptors;
+
+    //
+    return handleTypeMap;
+  };
+
+  //
+  inline static decltype(auto) getHandleType(auto const& typed) {
+    using T = std::decay_t<decltype(typed)>;
+    decltype(auto) ID = std::type_index(typeid(T));
+    if (handleTypeMap.find(ID) == handleTypeMap.end()) {
+      return std::move(handleTypeMap.at(ID));
+    };
+    return std::forward<HandleType>(HandleType::eUnknown);
+  };
+
+  // 
+  class Handle {
+  public: 
+    friend Handle;
+
+    // 
+    uintptr_t value = 0ull;
+    HandleType type = HandleType::eUnknown;
+    uint32_t family = 0u;
+
+  public: 
+    Handle() {};
+    Handle(auto const& _handle, HandleType const& type) : value(reinterpret_cast<uintptr_t const&>(_handle)), type(type) {};
+    Handle(auto const& _handle) : value(reinterpret_cast<uintptr_t const&>(_handle)), type(getHandleType(_handle)) {};
+    Handle(Handle const& _handle) : value(_handle.value), type(_handle.type), family(_handle.family) {};
+
+    // 
+    template<class T = uintptr_t> inline T& as() { return reinterpret_cast<T&>(this->value); };
+    template<class T = uintptr_t> inline T const& as() const { return reinterpret_cast<T const&>(this->value); };
+
+    // 
+    template<class T = uintptr_t> inline operator T&() { return reinterpret_cast<T&>(this->value); };
+    template<class T = uintptr_t> inline operator T const&() const { return reinterpret_cast<T const&>(this->value); };
+
+    //
+    inline decltype(auto) operator =(auto const& handle) { 
+      this->value = reinterpret_cast<uintptr_t const&>(handle);
+      this->type = getHandleType(handle);
+      return *this;
+    };
+
+    //
+    inline decltype(auto) operator =(Handle const& handle) { 
+      this->value = handle.value, this->type = handle.type, this->family = handle.family;
+      return *this;
+    };
+  };
+
+  //
+  class BaseObj : public std::enable_shared_from_this<BaseObj> {
+  protected: 
+    using SBP = std::shared_ptr<BaseObj>;
+  public: 
+    friend ContextObj;
+    friend InstanceObj;
+    friend DeviceObj;
+
+    // 
+    inline decltype(auto) SFT() { return std::dynamic_pointer_cast<std::decay_t<decltype(*this)>>(shared_from_this()); };
+    inline decltype(auto) SFT() const { return std::dynamic_pointer_cast<const std::decay_t<decltype(*this)>>(shared_from_this()); };
+
+    // 
+    Handle handle = {}, base = {};
+    std::unordered_map<HandleType, cpp21::map_of_shared<uintptr_t, BaseObj>> handleObjectMap = {};
+
+    // 
+    BaseObj() {};
+    BaseObj(Handle const& base, Handle const& handle = {}) : base(base), handle(handle) {
+      
+    };
+
+    // 
+    virtual std::type_info const& type_info() const {
+      return typeid(std::decay_t<decltype(this)>);
+    };
+
+    //
+    template<class T = BaseObj>
+    inline decltype(auto) registerObj(Handle const& handle, std::shared_ptr<T> const& obj = {}) {
+      if (handleObjectMap.find(handle.type) == handleObjectMap.end()) { handleObjectMap[handle.type] = {}; };
+      handleObjectMap.at(handle.type)[handle.value] = (obj ? obj : std::make_shared<T>(this->handle, handle));
+      return shared_from_this();
+    };
+
+    //
+    template<class T = BaseObj>
+    inline decltype(auto) registerObj(auto const& handle, std::shared_ptr<T> const& obj = {}) {
+      return this->registerObj(Handle(handle), obj);
+    };
+
+    //
+    template<class T = BaseObj>
+    inline decltype(auto) get(Handle const& handle) {
+      if (handleObjectMap.find(handle.type) == handleObjectMap.end()) { 
+        handleObjectMap[handle.type] = {};
+      };
+
+      // 
+      decltype(auto) objMap = handleObjectMap.at(handle.type);
+      if (objMap->find(handle.value) == objMap->end()) { objMap[handle.value] = std::make_shared<T>(this->handle, handle); };
+      return std::dynamic_pointer_cast<T>(objMap.at(handle.value));
+    };
+
+    //
+    template<class T = BaseObj>
+    inline decltype(auto) get(Handle const& handle) const {
+      decltype(auto) objMap = handleObjectMap.at(handle.type);
+      return std::dynamic_pointer_cast<T>(objMap.at(handle.value));
+    };
   };
 
 };

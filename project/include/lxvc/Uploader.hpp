@@ -10,13 +10,15 @@
 namespace lxvc {
   
   // 
-  class UploaderObj : std::enable_shared_from_this<UploaderObj> {
-  protected: 
+  class UploaderObj : public BaseObj {
+  public: 
+    //using BaseObj;
     using tType = std::shared_ptr<UploaderObj>;
     friend DeviceObj;
     friend PipelineObj;
     friend ResourceObj;
 
+  protected: 
     // 
     cpp21::vector_of_shared<MSS> layoutInfoMaps = {};
     std::optional<UploaderCreateInfo> cInfo = {};
@@ -28,12 +30,19 @@ namespace lxvc {
     std::shared_ptr<ResourceObj> downloadBuffer = {};
 
     // 
-    inline decltype(auto) SFT() { return shared_from_this(); };
+    inline decltype(auto) SFT() { return std::dynamic_pointer_cast<std::decay_t<decltype(*this)>>(shared_from_this()); };
+    inline decltype(auto) SFT() const { return std::dynamic_pointer_cast<const std::decay_t<decltype(*this)>>(shared_from_this()); };
 
   public:
     // 
     UploaderObj(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) : deviceObj(deviceObj), cInfo(cInfo) {
+      this->base = deviceObj->handle;
       this->construct(deviceObj, cInfo);
+    };
+
+    // 
+    virtual std::type_info const& type_info() const override {
+      return typeid(std::decay_t<decltype(this)>);
     };
 
     //
@@ -41,9 +50,9 @@ namespace lxvc {
       decltype(auto) submission = CommandOnceSubmission{ .info = this->cInfo->info };
       decltype(auto) uploadBuffer = this->uploadBuffer;
       decltype(auto) downloadBuffer = this->downloadBuffer;
-      decltype(auto) device = this->deviceObj->device;
+      decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) size = std::min(host.size(), bufferRegion->region.size);
-      decltype(auto) copyInfo = vk::CopyBufferInfo2{ .srcBuffer = uploadBuffer->buffer, .dstBuffer = bufferRegion->buffer->buffer };
+      decltype(auto) copyInfo = vk::CopyBufferInfo2{ .srcBuffer = uploadBuffer->handle.as<vk::Buffer>(), .dstBuffer = bufferRegion->buffer->handle.as<vk::Buffer>() };
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
 
       //
@@ -58,7 +67,7 @@ namespace lxvc {
           .dstAccessMask = vk::AccessFlagBits2::eHostRead | vk::AccessFlagBits2::eTransferRead | vk::AccessFlagBits2::eMemoryRead,
           .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
           .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
-          .buffer = uploadBuffer->buffer,
+          .buffer = uploadBuffer->handle.as<vk::Buffer>(),
           .offset = 0ull, 
           .size = size
         },
@@ -67,7 +76,7 @@ namespace lxvc {
           .srcAccessMask = vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eTransferRead | vk::AccessFlagBits2::eShaderRead,
           .dstStageMask = vk::PipelineStageFlagBits2::eCopy | vk::PipelineStageFlagBits2::eTransfer,
           .dstAccessMask = vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eTransferWrite,
-          .buffer = bufferRegion->buffer->buffer,
+          .buffer = bufferRegion->buffer->handle.as<vk::Buffer>(),
           .offset = bufferRegion->region.offset,
           .size = size
         }
@@ -82,7 +91,7 @@ namespace lxvc {
           .dstAccessMask = vk::AccessFlagBits2::eHostWrite | vk::AccessFlagBits2::eTransferWrite | vk::AccessFlagBits2::eMemoryWrite,
           .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
           .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
-          .buffer = uploadBuffer->buffer,
+          .buffer = uploadBuffer->handle.as<vk::Buffer>(),
           .offset = 0ull,
           .size = size
         },
@@ -91,7 +100,7 @@ namespace lxvc {
           .srcAccessMask =  vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eTransferWrite,
           .dstStageMask = vk::PipelineStageFlagBits2::eAllCommands,
           .dstAccessMask = vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eTransferRead | vk::AccessFlagBits2::eShaderRead,
-          .buffer = bufferRegion->buffer->buffer,
+          .buffer = bufferRegion->buffer->handle.as<vk::Buffer>(),
           .offset = bufferRegion->region.offset,
           .size = size
         }
@@ -120,10 +129,10 @@ namespace lxvc {
       decltype(auto) submission = CommandOnceSubmission{ .info = this->cInfo->info };
       decltype(auto) uploadBuffer = this->uploadBuffer;
       decltype(auto) downloadBuffer = this->downloadBuffer;
-      decltype(auto) device = this->deviceObj->device;
+      decltype(auto) device = this->deviceObj->handle.as<vk::Buffer>();
       decltype(auto) size = std::min(host.size(), bufferRegion->region.size);
       decltype(auto) regions = std::vector<vk::BufferCopy2>{ vk::BufferCopy2{ .srcOffset = bufferRegion->region.offset, .dstOffset = 0ull, .size = size } };
-      decltype(auto) copyInfo = vk::CopyBufferInfo2{ .srcBuffer = bufferRegion->buffer->buffer, .dstBuffer = downloadBuffer->buffer };
+      decltype(auto) copyInfo = vk::CopyBufferInfo2{ .srcBuffer = bufferRegion->buffer->handle.as<vk::Buffer>(), .dstBuffer = downloadBuffer->handle.as<vk::Buffer>() };
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
 
       //
@@ -133,7 +142,7 @@ namespace lxvc {
           .srcAccessMask = vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eTransferWrite | vk::AccessFlagBits2::eShaderWrite,
           .dstStageMask = vk::PipelineStageFlagBits2::eCopy | vk::PipelineStageFlagBits2::eTransfer,
           .dstAccessMask = vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eTransferRead,
-          .buffer = bufferRegion->buffer->buffer,
+          .buffer = bufferRegion->buffer->handle.as<vk::Buffer>(),
           .offset = bufferRegion->region.offset,
           .size = size
         },
@@ -144,7 +153,7 @@ namespace lxvc {
           .dstAccessMask = vk::AccessFlagBits2::eHostWrite | vk::AccessFlagBits2::eTransferWrite | vk::AccessFlagBits2::eMemoryWrite,
           .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
           .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
-          .buffer = downloadBuffer->buffer,
+          .buffer = downloadBuffer->handle.as<vk::Buffer>(),
           .offset = 0ull,
           .size = size
         },
@@ -157,7 +166,7 @@ namespace lxvc {
           .srcAccessMask = vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eTransferRead,
           .dstStageMask = vk::PipelineStageFlagBits2::eAllCommands,
           .dstAccessMask = vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eTransferWrite | vk::AccessFlagBits2::eShaderWrite,
-          .buffer = bufferRegion->buffer->buffer,
+          .buffer = bufferRegion->buffer->handle.as<vk::Buffer>(),
           .offset = bufferRegion->region.offset,
           .size = size
         },
@@ -168,7 +177,7 @@ namespace lxvc {
           .dstAccessMask = vk::AccessFlagBits2::eHostRead | vk::AccessFlagBits2::eTransferRead | vk::AccessFlagBits2::eMemoryRead,
           .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
           .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
-          .buffer = downloadBuffer->buffer,
+          .buffer = downloadBuffer->handle.as<vk::Buffer>(),
           .offset = 0ull,
           .size = size
         }

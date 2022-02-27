@@ -17,10 +17,15 @@ namespace lxvc {
   };
 
   // 
-  class DeviceObj : std::enable_shared_from_this<DeviceObj> {
+  class DeviceObj : public BaseObj {
+  public:
+    using tType = std::shared_ptr<DeviceObj>;
+    using cType = const char const*;
+    //using BaseObj;
+
   protected:
     // 
-    vk::Device device = {};
+    //vk::Device device = {};
     vk::DispatchLoaderDynamic dispatch = {};
     std::optional<DeviceCreateInfo> cInfo = {};
     std::shared_ptr<MSS> infoMap = {};
@@ -33,12 +38,9 @@ namespace lxvc {
     friend PipelineObj;
     friend UploaderObj;
 
-    //
-    using tType = std::shared_ptr<DeviceObj>;
-    using cType = const char const*;
-
     // 
-    inline decltype(auto) SFT() { return shared_from_this(); };
+    inline decltype(auto) SFT() { return std::dynamic_pointer_cast<std::decay_t<decltype(*this)>>(shared_from_this()); };
+    inline decltype(auto) SFT() const { return std::dynamic_pointer_cast<const std::decay_t<decltype(*this)>>(shared_from_this()); };
 
     //
     std::shared_ptr<InstanceObj> instanceObj = {};
@@ -203,6 +205,7 @@ namespace lxvc {
     //
     virtual std::vector<vk::CommandPool>& createCommandPools(std::vector<QueueFamilyCreateInfo> const& qfInfosIn = {}) {
       //uintptr_t index = 0u;
+      decltype(auto) device = this->base.as<vk::Device>();
       if (this->queueFamilies.commandPools.size() <= 0u) {
         decltype(auto) qfInfosVk = opt_ref(this->queueFamilies.infos);
         decltype(auto) qfIndices = opt_ref(this->queueFamilies.indices);
@@ -215,12 +218,12 @@ namespace lxvc {
           decltype(auto) qfInfoMap = qfInfoMaps[indexOfQF];
           decltype(auto) qfQueues = qfQueuesStack[indexOfQF];
           decltype(auto) qfInfoVk = qfInfoMap[indexOfQF].get<vk::DeviceQueueCreateInfo>(vk::StructureType::eDeviceQueueCreateInfo);
-          qfCommandPools->push_back(this->device.createCommandPool(qfInfoMap->set(vk::StructureType::eCommandPoolCreateInfo, vk::CommandPoolCreateInfo{
+          qfCommandPools->push_back(device.createCommandPool(qfInfoMap->set(vk::StructureType::eCommandPoolCreateInfo, vk::CommandPoolCreateInfo{
             .flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
             .queueFamilyIndex = qfIndex,
           })));
           for (decltype(auto) i = 0u; i < qfInfoVk->queueCount; i++) {
-            qfQueues.push_back(this->device.getQueue(qfIndex, i));
+            qfQueues.push_back(device.getQueue(qfIndex, i));
           };
           //index++;
         };
@@ -242,13 +245,14 @@ namespace lxvc {
 
     //
     virtual FenceType executeCommandOnce(cpp21::optional_ref<CommandOnceSubmission> submissionRef = {}) {
+      decltype(auto) device = this->base.as<vk::Device>();
       std::optional<CommandOnceSubmission> submission = submissionRef;
       decltype(auto) qfIndices = opt_ref(this->queueFamilies.indices);
       decltype(auto) qfCommandPools = opt_ref(this->queueFamilies.commandPools);
       uintptr_t indexOfQF = std::distance(qfIndices->begin(), std::find(qfIndices->begin(), qfIndices->end(), submissionRef->info->queueFamilyIndex));
       decltype(auto) queue = this->getQueue(submissionRef->info);
       decltype(auto) commandPool = qfCommandPools[indexOfQF];
-      decltype(auto) commandBuffers = this->device.allocateCommandBuffers(vk::CommandBufferAllocateInfo{
+      decltype(auto) commandBuffers = device.allocateCommandBuffers(vk::CommandBufferAllocateInfo{
         .commandPool = commandPool,
         .level = vk::CommandBufferLevel::ePrimary,
         .commandBufferCount = (uint32_t)submission->commandInits.size()
@@ -269,7 +273,7 @@ namespace lxvc {
 
       // 
       //decltype(auto) 
-      decltype(auto) fence = this->device.createFence(vk::FenceCreateInfo{ .flags = {} });
+      decltype(auto) fence = device.createFence(vk::FenceCreateInfo{ .flags = {} });
       decltype(auto) submits = std::vector<vk::SubmitInfo2>{
         submitInfo.setCommandBufferInfos(cmdInfos).setWaitSemaphoreInfos(*submission->waitSemaphores).setSignalSemaphoreInfos(*submission->signalSemaphores)
       };
@@ -277,7 +281,7 @@ namespace lxvc {
 
       // 
       decltype(auto) promise = std::async(std::launch::async | std::launch::deferred, [=,this]() {
-        decltype(auto) result = this->device.waitForFences(fence, true, 10000000000);
+        decltype(auto) result = device.waitForFences(fence, true, 10000000000);
         for (decltype(auto) fn : submission->onDone) { fn(result); };
         return result;
       });
@@ -326,7 +330,7 @@ namespace lxvc {
         deviceInfo->setPEnabledLayerNames(this->filterLayers(physicalDevice, this->cInfo->layerList));
 
         // 
-        this->device = physicalDevice.createDevice(deviceInfo);
+        this->handle = physicalDevice.createDevice(deviceInfo);
         this->createCommandPools(this->cInfo->queueFamilyInfos);
 
       }
@@ -342,9 +346,14 @@ namespace lxvc {
 
     // 
     DeviceObj(std::shared_ptr<InstanceObj> instanceObj = {}, cpp21::optional_ref<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) : instanceObj(instanceObj), cInfo(cInfo) {
+      this->base = instanceObj->handle;
       this->construct(instanceObj, cInfo);
     };
 
+    // 
+    virtual std::type_info const& type_info() const override {
+      return typeid(std::decay_t<decltype(this)>);
+    };
     
   };
 

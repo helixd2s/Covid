@@ -8,28 +8,37 @@
 namespace lxvc {
 
   // 
-  class InstanceObj : std::enable_shared_from_this<InstanceObj> {
-  protected:
+  class InstanceObj : public BaseObj {
+  public:
     using tType = std::shared_ptr<InstanceObj>;
     using cType = const char const*;
+    //using BaseObj;
     friend DeviceObj;
 
-  public:
+  protected:
 
     // 
-    vk::Instance instance = {};
+    //vk::Instance instance = {};
     vk::DispatchLoaderDynamic dispatch = {};
     std::optional<InstanceCreateInfo> cInfo = {};
     std::shared_ptr<MSS> infoMap = {};
 
+  public: 
     // 
     InstanceObj(std::shared_ptr<ContextObj> contextObj = {}, cpp21::optional_ref<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : contextObj(contextObj), cInfo(cInfo) {
+      this->base = contextObj->handle;
       this->construct(contextObj, cInfo);
+    };
+
+    // 
+    virtual std::type_info const& type_info() const override {
+      return typeid(std::decay_t<decltype(this)>);
     };
 
   protected: 
     // 
-    inline decltype(auto) SFT() { return shared_from_this(); };
+    inline decltype(auto) SFT() { return std::dynamic_pointer_cast<std::decay_t<decltype(*this)>>(shared_from_this()); };
+    inline decltype(auto) SFT() const { return std::dynamic_pointer_cast<const std::decay_t<decltype(*this)>>(shared_from_this()); };
 
     //
     std::shared_ptr<ContextObj> contextObj = {};
@@ -44,22 +53,22 @@ namespace lxvc {
 
     //
     virtual std::vector<vk::PhysicalDeviceGroupProperties>& enumeratePhysicalDeviceGroups() {
-      return (this->physicalDeviceGroups = (this->physicalDeviceGroups.size() > 0 ? this->physicalDeviceGroups : instance.enumeratePhysicalDeviceGroups()));
+      return (this->physicalDeviceGroups = (this->physicalDeviceGroups.size() > 0 ? this->physicalDeviceGroups : this->handle.as<vk::Instance>().enumeratePhysicalDeviceGroups()));
     };
 
     //
     virtual std::vector<vk::PhysicalDeviceGroupProperties> const& enumeratePhysicalDeviceGroups() const {
-      return (this->physicalDeviceGroups.size() > 0 ? this->physicalDeviceGroups : instance.enumeratePhysicalDeviceGroups());
+      return (this->physicalDeviceGroups.size() > 0 ? this->physicalDeviceGroups : this->handle.as<vk::Instance>().enumeratePhysicalDeviceGroups());
     };
 
     //
     virtual std::vector<vk::PhysicalDevice>& enumeratePhysicalDevices() {
-      return (this->physicalDevices = (this->physicalDevices.size() > 0 ? this->physicalDevices : instance.enumeratePhysicalDevices()));
+      return (this->physicalDevices = (this->physicalDevices.size() > 0 ? this->physicalDevices : this->handle.as<vk::Instance>().enumeratePhysicalDevices()));
     };
 
     //
     virtual std::vector<vk::PhysicalDevice> const& enumeratePhysicalDevices() const {
-      return (this->physicalDevices.size() > 0 ? this->physicalDevices : instance.enumeratePhysicalDevices());
+      return (this->physicalDevices.size() > 0 ? this->physicalDevices : this->handle.as<vk::Instance>().enumeratePhysicalDevices());
     };
 
     //
@@ -136,7 +145,7 @@ namespace lxvc {
       instanceInfo->setPEnabledLayerNames(this->filterLayers(this->cInfo->layerList));
 
       //
-      this->instance = vk::createInstance(instanceInfo);
+      this->handle = vk::createInstance(instanceInfo);
 
       // 
       return SFT();

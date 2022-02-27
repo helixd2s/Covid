@@ -8,16 +8,18 @@
 namespace lxvc {
 
   // 
-  class ResourceObj : std::enable_shared_from_this<ResourceObj> {
-  protected: 
+  class ResourceObj : public BaseObj {
+  public: 
     using tType = std::shared_ptr<ResourceObj>;
+    //using BaseObj;
     friend DeviceObj;
     friend DescriptorsObj;
     friend UploaderObj;
 
+  protected:
     // 
-    vk::Buffer buffer = {};
-    vk::Image image = {};
+    //vk::Buffer buffer = {};
+    //vk::Image image = {};
     vk::ImageLayout imageLayout = vk::ImageLayout::eUndefined;
     void* mappedMemory = nullptr;
 
@@ -31,31 +33,36 @@ namespace lxvc {
     std::shared_ptr<DeviceObj> deviceObj = {};
 
     // 
-    inline decltype(auto) SFT() { return shared_from_this(); };
+    inline decltype(auto) SFT() { return std::dynamic_pointer_cast<std::decay_t<decltype(*this)>>(shared_from_this()); };
+    inline decltype(auto) SFT() const { return std::dynamic_pointer_cast<const std::decay_t<decltype(*this)>>(shared_from_this()); };
 
   public:
     // 
     ResourceObj(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : deviceObj(deviceObj), cInfo(cInfo) {
+      this->base = deviceObj->handle;
       this->construct(deviceObj, cInfo);
     };
 
-  protected:
+    // 
+    virtual std::type_info const& type_info() const override {
+      return typeid(std::decay_t<decltype(this)>);
+    };
 
-    
+  protected:
 
     //
     virtual std::optional<AllocatedMemory>& allocateMemory(cpp21::optional_ref<MemoryRequirements> requirements) {
       decltype(auto) physicalDevice = this->deviceObj->physicalDevices[this->deviceObj->cInfo->physicalDeviceIndex];
       decltype(auto) memTypeHeap = this->deviceObj->findMemoryTypeAndHeapIndex(physicalDevice, *requirements);
       decltype(auto) allocated = this->allocated;
-      decltype(auto) device = this->deviceObj->device;
+      decltype(auto) device = this->base.as<vk::Device>();
 
       // 
       allocated = AllocatedMemory{
         .memory = device.allocateMemory(infoMap->set(vk::StructureType::eMemoryAllocateInfo, vk::MemoryAllocateInfo{
           .pNext = infoMap->set(vk::StructureType::eMemoryDedicatedAllocateInfo, vk::MemoryDedicatedAllocateInfo{ 
-            .image = requirements->dedicated ? this->image : vk::Image{},
-            .buffer = requirements->dedicated ? this->buffer : vk::Buffer{}
+            .image = requirements->dedicated && this->handle.type == HandleType::eImage ? this->handle.as<vk::Image>() : vk::Image{},
+            .buffer = requirements->dedicated && this->handle.type == HandleType::eBuffer ? this->handle.as<vk::Buffer>() : vk::Buffer{}
           }),
           .allocationSize = requirements->size,
           .memoryTypeIndex = std::get<0>(memTypeHeap)
@@ -80,7 +87,7 @@ namespace lxvc {
     // 
     virtual tType createImage(cpp21::optional_ref<ImageCreateInfo> cInfo = {}) {
       // 
-      decltype(auto) device = this->deviceObj->device;
+      decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) imageUsage = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst;
       decltype(auto) memoryUsage = MemoryUsage::eGpuOnly;
 
@@ -128,7 +135,7 @@ namespace lxvc {
 
       //
       device.getImageMemoryRequirements2(infoMap->set(vk::StructureType::eImageMemoryRequirementsInfo2, vk::ImageMemoryRequirementsInfo2{
-        .image = (this->image = device.createImage(imageInfo->setQueueFamilyIndices(this->deviceObj->queueFamilies.indices)))
+        .image = (this->handle = device.createImage(imageInfo->setQueueFamilyIndices(this->deviceObj->queueFamilies.indices)))
       }).get(), memReqInfo2.get());
 
       // 
@@ -141,7 +148,7 @@ namespace lxvc {
 
       //
       std::vector<vk::BindImageMemoryInfo> bindInfos = { *infoMap->set(vk::StructureType::eBindImageMemoryInfo, vk::BindImageMemoryInfo{
-        .image = this->image, .memory = this->allocated->memory, .memoryOffset = this->allocated->offset
+        .image = this->handle , .memory = this->allocated->memory, .memoryOffset = this->allocated->offset
       }) };
       device.bindImageMemory2(bindInfos);
 
@@ -151,7 +158,7 @@ namespace lxvc {
 
     // 
     virtual tType createBuffer(cpp21::optional_ref<BufferCreateInfo> cInfo = {}) {
-      decltype(auto) device = this->deviceObj->device;
+      decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) bufferUsage = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
       decltype(auto) memoryUsage = MemoryUsage::eGpuOnly;
 
@@ -198,7 +205,7 @@ namespace lxvc {
 
       //
       device.getBufferMemoryRequirements2(infoMap->set(vk::StructureType::eBufferMemoryRequirementsInfo2, vk::BufferMemoryRequirementsInfo2{
-        .buffer = (this->buffer = device.createBuffer(bufferInfo->setQueueFamilyIndices(this->deviceObj->queueFamilies.indices)))
+        .buffer = (this->handle = device.createBuffer(bufferInfo->setQueueFamilyIndices(this->deviceObj->queueFamilies.indices)))
       }).get(), memReqInfo2.get());
 
       // 
@@ -211,7 +218,7 @@ namespace lxvc {
 
       //
       std::vector<vk::BindBufferMemoryInfo> bindInfos = { *infoMap->set(vk::StructureType::eBindBufferMemoryInfo, vk::BindBufferMemoryInfo{
-        .buffer = this->buffer, .memory = this->allocated->memory, .memoryOffset = this->allocated->offset
+        .buffer = this->handle, .memory = this->allocated->memory, .memoryOffset = this->allocated->offset
       }) };
       device.bindBufferMemory2(bindInfos);
 
@@ -229,9 +236,9 @@ namespace lxvc {
   // 
   inline FenceType DeviceObj::copyBuffers(cpp21::optional_ref<CopyBufferInfo> copyInfoRaw) {
     decltype(auto) submission = CommandOnceSubmission{ .info = copyInfoRaw->info };
-    decltype(auto) device = this->device;
+    decltype(auto) device = this->base.as<vk::Device>();
     decltype(auto) size = std::min(copyInfoRaw->src->region.size, copyInfoRaw->dst->region.size);
-    decltype(auto) copyInfo = vk::CopyBufferInfo2{ .srcBuffer = copyInfoRaw->src->buffer->buffer , .dstBuffer = copyInfoRaw->dst->buffer->buffer };
+    decltype(auto) copyInfo = vk::CopyBufferInfo2{ .srcBuffer = copyInfoRaw->src->buffer->handle.as<vk::Buffer>(), .dstBuffer = copyInfoRaw->dst->buffer->handle.as<vk::Buffer>() };
     decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
     decltype(auto) regions = std::vector<vk::BufferCopy2>{ vk::BufferCopy2{.srcOffset = copyInfoRaw->src->region.offset, .dstOffset = copyInfoRaw->dst->region.offset, .size = size} };
 
@@ -242,7 +249,7 @@ namespace lxvc {
         .srcAccessMask = vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eTransferWrite | vk::AccessFlagBits2::eShaderWrite,
         .dstStageMask = vk::PipelineStageFlagBits2::eCopy | vk::PipelineStageFlagBits2::eTransfer,
         .dstAccessMask = vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eTransferRead,
-        .buffer = copyInfoRaw->src->buffer->buffer,
+        .buffer = copyInfoRaw->src->buffer->handle.as<vk::Buffer>(),
         .offset = copyInfoRaw->src->region.offset,
         .size = size
       },
@@ -251,7 +258,7 @@ namespace lxvc {
         .srcAccessMask = vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eTransferRead | vk::AccessFlagBits2::eShaderRead,
         .dstStageMask = vk::PipelineStageFlagBits2::eCopy | vk::PipelineStageFlagBits2::eTransfer,
         .dstAccessMask = vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eTransferWrite,
-        .buffer = copyInfoRaw->dst->buffer->buffer,
+        .buffer = copyInfoRaw->dst->buffer->handle.as<vk::Buffer>(),
         .offset = copyInfoRaw->dst->region.offset,
         .size = size
       }
@@ -264,7 +271,7 @@ namespace lxvc {
         .srcAccessMask = vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eTransferRead,
         .dstStageMask = vk::PipelineStageFlagBits2::eAllCommands,
         .dstAccessMask = vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eTransferWrite | vk::AccessFlagBits2::eShaderWrite,
-        .buffer = copyInfoRaw->src->buffer->buffer,
+        .buffer = copyInfoRaw->src->buffer->handle.as<vk::Buffer>(),
         .offset = copyInfoRaw->src->region.offset,
         .size = size
       },
@@ -273,7 +280,7 @@ namespace lxvc {
         .srcAccessMask = vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eTransferWrite,
         .dstStageMask = vk::PipelineStageFlagBits2::eAllCommands,
         .dstAccessMask = vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eTransferRead | vk::AccessFlagBits2::eShaderRead,
-        .buffer = copyInfoRaw->dst->buffer->buffer,
+        .buffer = copyInfoRaw->dst->buffer->handle.as<vk::Buffer>(),
         .offset = copyInfoRaw->dst->region.offset,
         .size = size
       }

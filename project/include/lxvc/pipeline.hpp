@@ -9,13 +9,15 @@
 namespace lxvc {
 
   // 
-  class PipelineObj : std::enable_shared_from_this<PipelineObj> {
-  protected: 
+  class PipelineObj : public BaseObj {
+  public: 
     using tType = std::shared_ptr<PipelineObj>;
+    //using BaseObj;
     friend DeviceObj;
 
+  protected:
     // 
-    vk::Pipeline pipeline = {};
+    //vk::Pipeline pipeline = {};
     std::optional<PipelineCreateInfo> cInfo = {};
     std::shared_ptr<MSS> infoMap = {};
 
@@ -23,22 +25,29 @@ namespace lxvc {
     std::shared_ptr<DeviceObj> deviceObj = {};
 
     // 
-    inline decltype(auto) SFT() { return shared_from_this(); };
+    inline decltype(auto) SFT() { return std::dynamic_pointer_cast<std::decay_t<decltype(*this)>>(shared_from_this()); };
+    inline decltype(auto) SFT() const { return std::dynamic_pointer_cast<const std::decay_t<decltype(*this)>>(shared_from_this()); };
 
   public:
     // 
     PipelineObj(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) : deviceObj(deviceObj), cInfo(cInfo) {
+      this->base = deviceObj->handle;
       this->construct(deviceObj, cInfo);
+    };
+
+    // 
+    virtual std::type_info const& type_info() const override {
+      return typeid(std::decay_t<decltype(this)>);
     };
 
   protected:
     //
     virtual tType createCompute(cpp21::optional_ref<ComputePipelineCreateInfo> compute = {}) {
-      decltype(auto) device = this->deviceObj->device;
-      this->pipeline = std::move<vk::Pipeline>(device.createComputePipeline(this->cInfo->descriptors->cache, vk::ComputePipelineCreateInfo{
+      decltype(auto) device = this->base.as<vk::Device>();
+      this->handle = std::move<vk::Pipeline>(device.createComputePipeline(this->cInfo->descriptors->cache, vk::ComputePipelineCreateInfo{
         .flags = vk::PipelineCreateFlags{},
         .stage = makeComputePipelineStageInfo(device, *(compute->code)),
-        .layout = this->cInfo->descriptors->layout
+        .layout = this->cInfo->descriptors->handle.as<vk::PipelineLayout>()
       }));
       return this->SFT();
     };

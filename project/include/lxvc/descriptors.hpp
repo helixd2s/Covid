@@ -16,16 +16,20 @@ struct DescriptorBindings {
 namespace lxvc {
   
   // 
-  class DescriptorsObj : std::enable_shared_from_this<DescriptorsObj> {
-  protected: 
+  class DescriptorsObj : public BaseObj {
+  public: 
     using tType = std::shared_ptr<DescriptorsObj>;
+    //using BaseObj;
+
+  protected: 
+    // 
     friend DeviceObj;
     friend PipelineObj;
     friend ResourceObj;
 
     //
     vk::PipelineCache cache = {};
-    vk::PipelineLayout layout = {};
+    //vk::PipelineLayout layout = {};
     vk::DescriptorPool pool = {};
     std::vector<vk::DescriptorSet> sets = {};
     std::vector<vk::DescriptorSetLayout> layouts = {};
@@ -53,18 +57,25 @@ namespace lxvc {
     std::vector<char8_t> initialData = {};
 
     // 
-    inline decltype(auto) SFT() { return shared_from_this(); };
+    inline decltype(auto) SFT() { return std::dynamic_pointer_cast<std::decay_t<decltype(*this)>>(shared_from_this()); };
+    inline decltype(auto) SFT() const { return std::dynamic_pointer_cast<const std::decay_t<decltype(*this)>>(shared_from_this()); };
 
   public:
     // 
     DescriptorsObj(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) : deviceObj(deviceObj), cInfo(cInfo) {
+      this->base = deviceObj->handle;
       this->construct(deviceObj, cInfo);
+    };
+
+    // 
+    virtual std::type_info const& type_info() const override {
+      return typeid(std::decay_t<decltype(this)>);
     };
 
   protected:
     //
     virtual tType createDescriptorLayout(vk::DescriptorType const& type, uint32_t const& count = 1u) {
-      decltype(auto) device = this->deviceObj->device;
+      decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) last = this->layouts.size();
       this->layouts.push_back(vk::DescriptorSetLayout{});
       this->layoutInfoMaps->push_back(std::make_shared<MSS>());
@@ -89,7 +100,7 @@ namespace lxvc {
       this->infoMap = std::make_shared<MSS>();
 
       //
-      decltype(auto) device = this->deviceObj->device;
+      decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) DPI = infoMap->set(vk::StructureType::eDescriptorPoolCreateInfo, vk::DescriptorPoolCreateInfo{
         .flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet | vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind,
       })->setPoolSizes(this->DPC = std::vector<vk::DescriptorPoolSize>{
@@ -109,7 +120,7 @@ namespace lxvc {
       })->setSetLayouts(this->layouts));
 
       //
-      this->layout = device.createPipelineLayout(infoMap->set(vk::StructureType::ePipelineLayoutCreateInfo, vk::PipelineLayoutCreateInfo{
+      this->handle = device.createPipelineLayout(infoMap->set(vk::StructureType::ePipelineLayoutCreateInfo, vk::PipelineLayoutCreateInfo{
 
       })->setSetLayouts(this->layouts).setPushConstantRanges(this->pushConstantRanges));
 
@@ -128,7 +139,7 @@ namespace lxvc {
       });
 
       //
-      this->uniformBufferDesc = vk::DescriptorBufferInfo{ this->uniformBuffer->buffer, 0ull, uniformSize };
+      this->uniformBufferDesc = vk::DescriptorBufferInfo{ this->uniformBuffer->handle.as<vk::Buffer>(), 0ull, uniformSize};
       this->updateDescriptors();
 
       // 
@@ -137,7 +148,7 @@ namespace lxvc {
 
     //
     virtual tType updateDescriptors() {
-      decltype(auto) device = this->deviceObj->device;
+      decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) writes = std::vector<vk::WriteDescriptorSet>{};
       writes.push_back(vk::WriteDescriptorSet{ .dstSet = this->sets[0u], .dstBinding = 0u, .dstArrayElement = 0u, .descriptorCount = 1u, .descriptorType = vk::DescriptorType::eUniformBuffer, .pBufferInfo = &this->uniformBufferDesc.value() });
       writes.push_back(vk::WriteDescriptorSet{ .dstSet = this->sets[1u], .dstBinding = 0u, .dstArrayElement = 0u, .descriptorCount = (uint32_t)this->textures->size(), .descriptorType = vk::DescriptorType::eSampledImage, .pImageInfo = this->textures->data() });
