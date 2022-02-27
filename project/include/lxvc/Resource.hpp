@@ -308,7 +308,7 @@ namespace lxvc {
     //
     decltype(auto) bufferBarriersBegin = std::vector<vk::BufferMemoryBarrier2>{
       vk::BufferMemoryBarrier2{
-        .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralWrite),
+        .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
         .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralWrite),
         .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferRead),
         .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferRead),
@@ -334,17 +334,17 @@ namespace lxvc {
         .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
         .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralRead),
         .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralRead),
-        .buffer = copyInfoRaw->src->buffer,
-        .offset = copyInfoRaw->src->region.offset,
+        .buffer = copyInfoRaw->dst->buffer,
+        .offset = copyInfoRaw->dst->region.offset,
         .size = size
       },
       vk::BufferMemoryBarrier2{
         .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferRead),
         .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferRead),
-        .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralWrite),
+        .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
         .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralWrite),
-        .buffer = copyInfoRaw->dst->buffer,
-        .offset = copyInfoRaw->dst->region.offset,
+        .buffer = copyInfoRaw->src->buffer,
+        .offset = copyInfoRaw->src->region.offset,
         .size = size
       }
     };

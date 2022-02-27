@@ -93,8 +93,8 @@ namespace lxvc {
           .size = size
         },
         vk::BufferMemoryBarrier2{
-          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralRead) | vk::PipelineStageFlagBits2::eAllCommands,
-          .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralRead),
+          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralRead),
+          .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite),
           .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferWrite),
           .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
           .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
@@ -121,8 +121,8 @@ namespace lxvc {
         vk::BufferMemoryBarrier2{
           .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferWrite),
           .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
-          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralRead) | vk::PipelineStageFlagBits2::eAllCommands,
-          .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralRead),
+          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralRead),
+          .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite),
           .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
           .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
           .buffer = bufferRegion->buffer,
@@ -162,8 +162,8 @@ namespace lxvc {
       //
       decltype(auto) bufferBarriersBegin = std::vector<vk::BufferMemoryBarrier2>{
         vk::BufferMemoryBarrier2{
-          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralWrite),
-          .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralWrite),
+          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
+          .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite),
           .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferRead),
           .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferRead),
           .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
@@ -190,8 +190,8 @@ namespace lxvc {
         vk::BufferMemoryBarrier2{
           .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferRead),
           .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferRead),
-          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralWrite),
-          .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralWrite),
+          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
+          .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite),
           .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
           .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
           .buffer = bufferRegion->buffer,
