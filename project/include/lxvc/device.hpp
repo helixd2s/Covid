@@ -183,20 +183,20 @@ namespace lxvc {
     virtual std::vector<vk::DeviceQueueCreateInfo>& filterQueueFamilies(std::vector<QueueFamilyCreateInfo> const& qfInfosIn = {}) {
 
       // TODO: customize queue priorities
-      decltype(auto) qfInfosVk = this->queueFamilies.infos = {};
-      decltype(auto) qfIndices = this->queueFamilies.indices = {};
-      decltype(auto) qfInfoMaps = this->queueFamilies.infoMaps = {};
-      decltype(auto) qfCommandPools = this->queueFamilies.commandPools = {};
-      decltype(auto) qfQueuesStack = this->queueFamilies.queues = {};
+      decltype(auto) qfInfosVk = cpp21::opt_ref(this->queueFamilies.infos = {});
+      decltype(auto) qfIndices = cpp21::opt_ref(this->queueFamilies.indices = {});
+      decltype(auto) qfInfoMaps = cpp21::opt_ref(this->queueFamilies.infoMaps = {});
+      decltype(auto) qfCommandPools = cpp21::opt_ref(this->queueFamilies.commandPools = {});
+      decltype(auto) qfQueuesStack = cpp21::opt_ref(this->queueFamilies.queues = {});
       for (decltype(auto) qfInfoIn : qfInfosIn) {
-        qfInfoMaps.push_back(std::make_shared<MSS>());
-        qfQueuesStack.push_back(std::vector<vk::Queue>{});
+        qfInfoMaps->push_back(std::make_shared<MSS>());
+        qfQueuesStack->push_back(std::vector<vk::Queue>{});
         decltype(auto) qfInfoMap = qfInfoMaps->back();
         decltype(auto) qfInfoVk = qfInfoMap->set(vk::StructureType::eDeviceQueueCreateInfo, vk::DeviceQueueCreateInfo{
           .queueFamilyIndex = qfInfoIn.queueFamilyIndex,
         });
-        qfIndices.push_back(qfInfoIn.queueFamilyIndex);
-        qfInfosVk.push_back(qfInfoVk->setQueuePriorities(*qfInfoIn.queuePriorities));
+        qfIndices->push_back(qfInfoIn.queueFamilyIndex);
+        qfInfosVk->push_back(qfInfoVk->setQueuePriorities(*qfInfoIn.queuePriorities));
       };
 
       // 
@@ -206,26 +206,26 @@ namespace lxvc {
     //
     virtual std::vector<vk::CommandPool>& createCommandPools(std::vector<QueueFamilyCreateInfo> const& qfInfosIn = {}) {
       //uintptr_t index = 0u;
-      decltype(auto) device = this->base.as<vk::Device>();
+      decltype(auto) device = this->handle.as<vk::Device>(); // finally found issue
       if (!!device && this->queueFamilies.commandPools.size() <= 0u) {
-        decltype(auto) qfInfosVk = this->queueFamilies.infos;
-        decltype(auto) qfIndices = this->queueFamilies.indices;
-        decltype(auto) qfInfoMaps = this->queueFamilies.infoMaps;
-        decltype(auto) qfCommandPools = this->queueFamilies.commandPools;
-        decltype(auto) qfQueuesStack = this->queueFamilies.queues;
+        decltype(auto) qfInfosVk = cpp21::opt_ref(this->queueFamilies.infos);
+        decltype(auto) qfIndices = cpp21::opt_ref(this->queueFamilies.indices);
+        decltype(auto) qfInfoMaps = cpp21::opt_ref(this->queueFamilies.infoMaps);
+        decltype(auto) qfCommandPools = cpp21::opt_ref(this->queueFamilies.commandPools);
+        decltype(auto) qfQueuesStack = cpp21::opt_ref(this->queueFamilies.queues);
         for (decltype(auto) qfInfoIn : qfInfosIn) {
-          uintptr_t indexOfQF = std::distance(qfIndices.begin(), std::find(qfIndices.begin(), qfIndices.end(), qfInfoIn.queueFamilyIndex));
-          decltype(auto) qfIndex = qfIndices[indexOfQF];
+          uintptr_t indexOfQF = std::distance(qfIndices->begin(), std::find(qfIndices->begin(), qfIndices->end(), qfInfoIn.queueFamilyIndex));
+          decltype(auto) qfIndex = cpp21::opt_ref(qfIndices[indexOfQF]);
           decltype(auto) qfInfoMap = qfInfoMaps[indexOfQF];
-          decltype(auto) qfQueues = qfQueuesStack[indexOfQF];
+          decltype(auto) qfQueues = cpp21::opt_ref(qfQueuesStack[indexOfQF]);
           decltype(auto) qfInfoVk = qfInfoMap->get<vk::DeviceQueueCreateInfo>(vk::StructureType::eDeviceQueueCreateInfo);
           decltype(auto) qfCmdPoolInfo = qfInfoMap->set(vk::StructureType::eCommandPoolCreateInfo, vk::CommandPoolCreateInfo{
             .flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
             .queueFamilyIndex = qfIndex,
           });
-          qfCommandPools.push_back(device.createCommandPool(qfCmdPoolInfo));
+          qfCommandPools->push_back(device.createCommandPool(qfCmdPoolInfo.ref()));
           for (decltype(auto) i = 0u; i < qfInfoVk->queueCount; i++) {
-            qfQueues.push_back(device.getQueue(qfIndex, i));
+            qfQueues->push_back(device.getQueue(qfIndex, i));
           };
           //index++;
         };
