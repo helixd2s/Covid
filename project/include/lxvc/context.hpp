@@ -11,6 +11,7 @@ namespace lxvc {
   public:
     //using BaseObj;
     using tType = std::shared_ptr<ContextObj>;
+    using BaseObj::BaseObj;
     //using SFT = shared_from_this;
 
   protected:

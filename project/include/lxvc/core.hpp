@@ -203,16 +203,16 @@ namespace lxvc {
   };
 
   //
-  struct BufferRegionObj {
-    std::shared_ptr<ResourceObj> buffer = {};
-    DataRegion region = {};
-  };
+  //struct BufferRegionObj {
+    //std::shared_ptr<ResourceObj> buffer = {};
+    //DataRegion region = {};
+  //};
 
   //
   struct CopyBufferInfo {
     std::optional<QueueGetInfo> info = {};
-    std::optional<BufferRegionObj> src = {};
-    std::optional<BufferRegionObj> dst = {};
+    std::optional<BufferRegion> src = {};
+    std::optional<BufferRegion> dst = {};
   };
 
   //
@@ -410,10 +410,11 @@ namespace lxvc {
     // 
     Handle handle = {}, base = {};
     std::unordered_map<HandleType, cpp21::map_of_shared<uintptr_t, BaseObj>> handleObjectMap = {};
+    std::shared_ptr<MSS> infoMap = {};
 
     // 
-    BaseObj() {};
-    BaseObj(Handle const& base, Handle const& handle = {}) : base(base), handle(handle) {
+    BaseObj() : infoMap(std::make_shared<MSS>()) {};
+    BaseObj(Handle const& base, Handle const& handle = {}) : base(base), handle(handle), infoMap(std::make_shared<MSS>()) {
       
     };
 
@@ -438,6 +439,12 @@ namespace lxvc {
 
     //
     template<class T = BaseObj>
+    inline decltype(auto) registerObj(std::shared_ptr<T> const& obj = {}) {
+      return this->registerObj(obj->handle, obj);
+    };
+
+    //
+    template<class T = BaseObj>
     inline decltype(auto) get(Handle const& handle) {
       if (handleObjectMap.find(handle.type) == handleObjectMap.end()) { 
         handleObjectMap[handle.type] = {};
@@ -446,14 +453,14 @@ namespace lxvc {
       // 
       decltype(auto) objMap = handleObjectMap.at(handle.type);
       if (objMap->find(handle.value) == objMap->end()) { objMap[handle.value] = std::make_shared<T>(this->handle, handle); };
-      return std::dynamic_pointer_cast<T>(objMap.at(handle.value));
+      return std::dynamic_pointer_cast<T>(objMap.at(handle.value).shared());
     };
 
     //
     template<class T = BaseObj>
     inline decltype(auto) get(Handle const& handle) const {
       decltype(auto) objMap = handleObjectMap.at(handle.type);
-      return std::dynamic_pointer_cast<T>(objMap.at(handle.value));
+      return std::dynamic_pointer_cast<T>(objMap.at(handle.value).shared());
     };
   };
 

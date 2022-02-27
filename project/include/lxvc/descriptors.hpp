@@ -19,6 +19,7 @@ namespace lxvc {
   class DescriptorsObj : public BaseObj {
   public: 
     using tType = std::shared_ptr<DescriptorsObj>;
+    using BaseObj::BaseObj;
     //using BaseObj;
 
   protected: 
@@ -47,11 +48,11 @@ namespace lxvc {
     // 
     std::vector<vk::DescriptorPoolSize> DPC = {};
     std::optional<DescriptorsCreateInfo> cInfo = {};
-    std::shared_ptr<MSS> infoMap = {};
 
     //
-    std::shared_ptr<DeviceObj> deviceObj = {};
-    std::shared_ptr<ResourceObj> uniformBuffer = {};
+    //std::shared_ptr<DeviceObj> deviceObj = {};
+    //std::shared_ptr<ResourceObj> uniformBuffer = {};
+    vk::Buffer uniformBuffer = {};
 
     //
     std::vector<char8_t> initialData = {};
@@ -62,9 +63,14 @@ namespace lxvc {
 
   public:
     // 
-    DescriptorsObj(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) : deviceObj(deviceObj), cInfo(cInfo) {
+    DescriptorsObj(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) : cInfo(cInfo) {
       this->base = deviceObj->handle;
       this->construct(deviceObj, cInfo);
+    };
+    
+    // 
+    DescriptorsObj(Handle const& handle, std::optional<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) : cInfo(cInfo) {
+      this->construct(lxvc::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
     // 
@@ -95,7 +101,8 @@ namespace lxvc {
 
     // 
     virtual tType construct(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) {
-      this->deviceObj = deviceObj;
+      this->base = deviceObj->handle;
+      //this->deviceObj = deviceObj;
       this->cInfo = cInfo;
       this->infoMap = std::make_shared<MSS>();
 
@@ -131,15 +138,15 @@ namespace lxvc {
 
       //
       decltype(auto) uniformSize = 65536ull;
-      this->uniformBuffer = std::make_shared<ResourceObj>(this->deviceObj, ResourceCreateInfo{
+      this->uniformBuffer = std::make_shared<ResourceObj>(lxvc::context->get<DeviceObj>(this->base), ResourceCreateInfo{
         .bufferInfo = BufferCreateInfo{
           .type = BufferType::eUniform,
           .size = uniformSize
         }
-      });
+      })->handle.as<vk::Buffer>();
 
       //
-      this->uniformBufferDesc = vk::DescriptorBufferInfo{ this->uniformBuffer->handle.as<vk::Buffer>(), 0ull, uniformSize};
+      this->uniformBufferDesc = vk::DescriptorBufferInfo{ this->uniformBuffer, 0ull, uniformSize};
       this->updateDescriptors();
 
       // 

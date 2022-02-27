@@ -12,16 +12,18 @@ namespace lxvc {
   public:
     //using BaseObj;
     using tType = std::shared_ptr<QueueFamilyObj>;
-    friend DeviceObj;
+    using BaseObj::BaseObj;
 
   protected:
+    friend DeviceObj;
+
     // 
     std::vector<vk::Queue> queues = {};
     std::optional<QueueFamilyCreateInfo> cInfo = {};
-    std::shared_ptr<MSS> infoMap = {};
+    //std::shared_ptr<MSS> infoMap = {};
 
     //
-    std::shared_ptr<DeviceObj> deviceObj = {};
+    //std::shared_ptr<DeviceObj> deviceObj = {};
 
     // 
     inline decltype(auto) SFT() { return std::dynamic_pointer_cast<std::decay_t<decltype(*this)>>(shared_from_this()); };
@@ -29,8 +31,13 @@ namespace lxvc {
 
     // 
   public:
-    QueueFamilyObj(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{}) : deviceObj(deviceObj), cInfo(cInfo) {
+    QueueFamilyObj(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{}) : cInfo(cInfo) {
       this->construct(deviceObj, cInfo);
+    };
+
+    // 
+    QueueFamilyObj(Handle const& handle, std::optional<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{}) : cInfo(cInfo) {
+      this->construct(lxvc::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
     // 
@@ -41,7 +48,8 @@ namespace lxvc {
     // 
   protected:
     virtual tType construct(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{}) {
-      this->deviceObj = deviceObj;
+      this->base = deviceObj->handle;
+      //this->deviceObj = deviceObj;
       this->cInfo = cInfo;
       this->infoMap = std::make_shared<MSS>();
 

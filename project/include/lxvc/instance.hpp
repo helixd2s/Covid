@@ -12,22 +12,26 @@ namespace lxvc {
   public:
     using tType = std::shared_ptr<InstanceObj>;
     using cType = const char const*;
-    //using BaseObj;
-    friend DeviceObj;
+    using BaseObj::BaseObj;
 
   protected:
+    friend DeviceObj;
 
     // 
     //vk::Instance instance = {};
     vk::DispatchLoaderDynamic dispatch = {};
     std::optional<InstanceCreateInfo> cInfo = {};
-    std::shared_ptr<MSS> infoMap = {};
 
   public: 
     // 
-    InstanceObj(std::shared_ptr<ContextObj> contextObj = {}, cpp21::optional_ref<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : contextObj(contextObj), cInfo(cInfo) {
+    InstanceObj(std::shared_ptr<ContextObj> contextObj = {}, cpp21::optional_ref<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : cInfo(cInfo) {
       this->base = contextObj->handle;
       this->construct(contextObj, cInfo);
+    };
+
+    // 
+    InstanceObj(Handle const& handle, std::optional<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : cInfo(cInfo) {
+      this->construct(lxvc::context, cInfo);
     };
 
     // 
@@ -41,7 +45,7 @@ namespace lxvc {
     inline decltype(auto) SFT() const { return std::dynamic_pointer_cast<const std::decay_t<decltype(*this)>>(shared_from_this()); };
 
     //
-    std::shared_ptr<ContextObj> contextObj = {};
+    //std::shared_ptr<ContextObj> contextObj = {};
 
     //
     std::vector<char const*> extensionNames = {};
@@ -121,7 +125,8 @@ namespace lxvc {
 
     // 
     virtual tType construct(std::shared_ptr<ContextObj> contextObj, cpp21::optional_ref<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
-      this->contextObj = contextObj;
+      this->base = contextObj->handle;
+      //this->deviceObj = deviceObj;
       this->cInfo = cInfo;
       this->infoMap = std::make_shared<MSS>();
       this->extensionNames = {};
@@ -145,7 +150,7 @@ namespace lxvc {
       instanceInfo->setPEnabledLayerNames(this->filterLayers(this->cInfo->layerList));
 
       //
-      this->handle = vk::createInstance(instanceInfo);
+      lxvc::context->registerObj(this->handle = vk::createInstance(instanceInfo), shared_from_this());
 
       // 
       return SFT();

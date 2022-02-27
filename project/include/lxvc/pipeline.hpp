@@ -12,17 +12,15 @@ namespace lxvc {
   class PipelineObj : public BaseObj {
   public: 
     using tType = std::shared_ptr<PipelineObj>;
-    //using BaseObj;
+    using BaseObj::BaseObj;
+    
+  protected:
     friend DeviceObj;
 
-  protected:
     // 
     //vk::Pipeline pipeline = {};
     std::optional<PipelineCreateInfo> cInfo = {};
-    std::shared_ptr<MSS> infoMap = {};
-
-    //
-    std::shared_ptr<DeviceObj> deviceObj = {};
+    //std::shared_ptr<DeviceObj> deviceObj = {};
 
     // 
     inline decltype(auto) SFT() { return std::dynamic_pointer_cast<std::decay_t<decltype(*this)>>(shared_from_this()); };
@@ -30,9 +28,14 @@ namespace lxvc {
 
   public:
     // 
-    PipelineObj(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) : deviceObj(deviceObj), cInfo(cInfo) {
+    PipelineObj(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) : cInfo(cInfo) {
       this->base = deviceObj->handle;
       this->construct(deviceObj, cInfo);
+    };
+
+    // 
+    PipelineObj(Handle const& handle, std::optional<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) : cInfo(cInfo) {
+      this->construct(lxvc::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
     // 
@@ -49,18 +52,23 @@ namespace lxvc {
         .stage = makeComputePipelineStageInfo(device, *(compute->code)),
         .layout = this->cInfo->descriptors->handle.as<vk::PipelineLayout>()
       }));
+      //
+      lxvc::context->get(this->base)->registerObj(this->handle, shared_from_this());
       return this->SFT();
     };
 
     //
     virtual tType createGraphics(cpp21::optional_ref<GraphicsPipelineCreateInfo> graphics = {}) {
       //this->pipeline = makeComputePipelineStageInfo(this->deviceObj->device, compute->code);
+      //
+      lxvc::context->get(this->base)->registerObj(this->handle, shared_from_this());
       return this->SFT();
     };
 
     // 
     virtual tType construct(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) {
-      this->deviceObj = deviceObj;
+      this->base = deviceObj->handle;
+      //this->deviceObj = deviceObj;
       this->cInfo = cInfo;
       this->infoMap = std::make_shared<MSS>();
       if (this->cInfo->compute) { this->createCompute(this->cInfo->compute); };

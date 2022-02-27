@@ -19,6 +19,7 @@ namespace lxvc {
   // 
   class DeviceObj : public BaseObj {
   public:
+    using BaseObj::BaseObj;
     using tType = std::shared_ptr<DeviceObj>;
     using cType = const char const*;
     //using BaseObj;
@@ -28,7 +29,6 @@ namespace lxvc {
     //vk::Device device = {};
     vk::DispatchLoaderDynamic dispatch = {};
     std::optional<DeviceCreateInfo> cInfo = {};
-    std::shared_ptr<MSS> infoMap = {};
 
     //
     friend InstanceObj;
@@ -43,7 +43,7 @@ namespace lxvc {
     inline decltype(auto) SFT() const { return std::dynamic_pointer_cast<const std::decay_t<decltype(*this)>>(shared_from_this()); };
 
     //
-    std::shared_ptr<InstanceObj> instanceObj = {};
+    //std::shared_ptr<InstanceObj> instanceObj = {};
 
     //
     std::vector<vk::PhysicalDevice> physicalDevices = {};
@@ -168,7 +168,7 @@ namespace lxvc {
     //
     virtual std::vector<vk::PhysicalDevice>& filterPhysicalDevices(uint32_t const& groupIndex) {
       //this->physicalDevices = {};
-      decltype(auto) deviceGroups = this->instanceObj->enumeratePhysicalDeviceGroups();
+      decltype(auto) deviceGroups = lxvc::context->get<InstanceObj>(this->base)->enumeratePhysicalDeviceGroups();
       decltype(auto) deviceGroup = deviceGroups[groupIndex];
       vk::PhysicalDevice* PDP = deviceGroup.physicalDevices;
       decltype(auto) physicalDevices = (this->physicalDevices = std::vector<vk::PhysicalDevice>(PDP, PDP + deviceGroup.physicalDeviceCount));
@@ -292,7 +292,8 @@ namespace lxvc {
 
     // 
     virtual tType construct(std::shared_ptr<InstanceObj> instanceObj = {}, cpp21::optional_ref<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
-      this->instanceObj = instanceObj;
+      //this->instanceObj = instanceObj;
+      this->base = instanceObj->handle;
       this->physicalDevices = {};
       this->extensionNames = {};
       this->layerNames = {};
@@ -330,7 +331,7 @@ namespace lxvc {
         deviceInfo->setPEnabledLayerNames(this->filterLayers(physicalDevice, this->cInfo->layerList));
 
         // 
-        this->handle = physicalDevice.createDevice(deviceInfo);
+        lxvc::context->registerObj(this->handle = physicalDevice.createDevice(deviceInfo), shared_from_this());
         this->createCommandPools(this->cInfo->queueFamilyInfos);
 
       }
@@ -345,9 +346,14 @@ namespace lxvc {
   public:
 
     // 
-    DeviceObj(std::shared_ptr<InstanceObj> instanceObj = {}, cpp21::optional_ref<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) : instanceObj(instanceObj), cInfo(cInfo) {
+    DeviceObj(std::shared_ptr<InstanceObj> instanceObj = {}, cpp21::optional_ref<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) : cInfo(cInfo) {
       this->base = instanceObj->handle;
       this->construct(instanceObj, cInfo);
+    };
+
+    // 
+    DeviceObj(Handle const& handle, std::optional<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) : cInfo(cInfo) {
+      this->construct(lxvc::context->get<InstanceObj>(this->base = handle), cInfo);
     };
 
     // 

@@ -12,18 +12,19 @@ namespace lxvc {
   public:
     //using BaseObj;
     using tType = std::shared_ptr<AccelerationStructureObj>;
+    using BaseObj::BaseObj;
+    
+  protected: 
     friend DeviceObj;
 
-  protected: 
     // 
     //vk::AccelerationStructureKHR acceleration = {};
     std::optional<AllocatedMemory> allocated = {};
     std::optional<AccelerationStructureCreateInfo> cInfo = {};
     std::optional<MemoryRequirements> mReqs = {};
-    std::shared_ptr<MSS> infoMap = {};
 
     //
-    std::shared_ptr<DeviceObj> deviceObj = {};
+    //std::shared_ptr<DeviceObj> deviceObj = {};
 
     // 
     inline decltype(auto) SFT() { return std::dynamic_pointer_cast<std::decay_t<decltype(*this)>>(shared_from_this()); };
@@ -31,9 +32,14 @@ namespace lxvc {
 
   public:
     // 
-    AccelerationStructureObj(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<AccelerationStructureCreateInfo> cInfo = AccelerationStructureCreateInfo{}) : deviceObj(deviceObj), cInfo(cInfo) {
+    AccelerationStructureObj(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<AccelerationStructureCreateInfo> cInfo = AccelerationStructureCreateInfo{}) : cInfo(cInfo) {
       this->base = deviceObj->handle;
       this->construct(deviceObj, cInfo);
+    };
+
+    // 
+    AccelerationStructureObj(Handle const& handle, std::optional<AccelerationStructureCreateInfo> cInfo = AccelerationStructureCreateInfo{}) : cInfo(cInfo) {
+      this->construct(lxvc::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
     // 
@@ -44,7 +50,8 @@ namespace lxvc {
   protected:
     // 
     virtual tType construct(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<AccelerationStructureCreateInfo> cInfo = AccelerationStructureCreateInfo{}) {
-      this->deviceObj = deviceObj;
+      this->base = deviceObj->handle;
+      //this->deviceObj = deviceObj;
       this->cInfo = cInfo;
       this->infoMap = std::make_shared<MSS>();
 
