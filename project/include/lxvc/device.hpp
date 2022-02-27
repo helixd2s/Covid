@@ -57,7 +57,7 @@ namespace lxvc {
     QueueFamilies queueFamilies = {};
 
     //
-    virtual std::tuple<uint32_t, uint32_t> findMemoryTypeAndHeapIndex(vk::PhysicalDevice const& physicalDevice, cpp21::optional_ref<MemoryRequirements> req = MemoryRequirements{}) {
+    virtual std::tuple<uint32_t, uint32_t> findMemoryTypeAndHeapIndex(vk::PhysicalDevice const& physicalDevice, std::optional<MemoryRequirements> req = MemoryRequirements{}) {
       //decltype(auto) physicalDevice = this->physicalDevices[req->physicalDeviceIndex];
       uintptr_t physicalDeviceIndex = std::distance(this->physicalDevices.begin(), std::find(this->physicalDevices.begin(), this->physicalDevices.end(), physicalDevice));
       decltype(auto) PDInfoMap = this->PDInfoMaps[physicalDeviceIndex];
@@ -128,7 +128,7 @@ namespace lxvc {
         uintptr_t propIndex = 0ull;
         for (decltype(auto) prop : props) {
           std::string_view propName = { prop.layerName };
-          if (name.compare(propName) == 0) {
+          if (propName.find(name) != std::string::npos) {
             selected->push_back(name.c_str()); break;
           };
           propIndex++;
@@ -152,7 +152,7 @@ namespace lxvc {
         uintptr_t propIndex = 0ull;
         for (decltype(auto) prop : props) {
           std::string_view propName = { prop.extensionName };
-          if (name.compare(propName) == 0) {
+          if (propName.find(name) != std::string::npos) {
             selected->push_back(name.c_str()); break;
           };
           propIndex++;
@@ -183,20 +183,20 @@ namespace lxvc {
     virtual std::vector<vk::DeviceQueueCreateInfo>& filterQueueFamilies(std::vector<QueueFamilyCreateInfo> const& qfInfosIn = {}) {
 
       // TODO: customize queue priorities
-      decltype(auto) qfInfosVk = opt_ref(this->queueFamilies.infos = {});
-      decltype(auto) qfIndices = opt_ref(this->queueFamilies.indices = {});
-      decltype(auto) qfInfoMaps = opt_ref(this->queueFamilies.infoMaps = {});
-      decltype(auto) qfCommandPools = opt_ref(this->queueFamilies.commandPools = {});
-      decltype(auto) qfQueuesStack = opt_ref(this->queueFamilies.queues = {});
+      decltype(auto) qfInfosVk = this->queueFamilies.infos = {};
+      decltype(auto) qfIndices = this->queueFamilies.indices = {};
+      decltype(auto) qfInfoMaps = this->queueFamilies.infoMaps = {};
+      decltype(auto) qfCommandPools = this->queueFamilies.commandPools = {};
+      decltype(auto) qfQueuesStack = this->queueFamilies.queues = {};
       for (decltype(auto) qfInfoIn : qfInfosIn) {
-        qfInfoMaps->push_back(std::make_shared<MSS>());
-        qfQueuesStack->push_back(std::vector<vk::Queue>{});
+        qfInfoMaps.push_back(std::make_shared<MSS>());
+        qfQueuesStack.push_back(std::vector<vk::Queue>{});
         decltype(auto) qfInfoMap = qfInfoMaps->back();
         decltype(auto) qfInfoVk = qfInfoMap->set(vk::StructureType::eDeviceQueueCreateInfo, vk::DeviceQueueCreateInfo{
           .queueFamilyIndex = qfInfoIn.queueFamilyIndex,
         });
-        qfIndices->push_back(qfInfoIn.queueFamilyIndex);
-        qfInfosVk->push_back(qfInfoVk->setQueuePriorities(*qfInfoIn.queuePriorities));
+        qfIndices.push_back(qfInfoIn.queueFamilyIndex);
+        qfInfosVk.push_back(qfInfoVk->setQueuePriorities(*qfInfoIn.queuePriorities));
       };
 
       // 
@@ -208,13 +208,13 @@ namespace lxvc {
       //uintptr_t index = 0u;
       decltype(auto) device = this->base.as<vk::Device>();
       if (!!device && this->queueFamilies.commandPools.size() <= 0u) {
-        decltype(auto) qfInfosVk = opt_ref(this->queueFamilies.infos);
-        decltype(auto) qfIndices = opt_ref(this->queueFamilies.indices);
-        decltype(auto) qfInfoMaps = opt_ref(this->queueFamilies.infoMaps);
-        decltype(auto) qfCommandPools = opt_ref(this->queueFamilies.commandPools);
-        decltype(auto) qfQueuesStack = opt_ref(this->queueFamilies.queues);
+        decltype(auto) qfInfosVk = this->queueFamilies.infos;
+        decltype(auto) qfIndices = this->queueFamilies.indices;
+        decltype(auto) qfInfoMaps = this->queueFamilies.infoMaps;
+        decltype(auto) qfCommandPools = this->queueFamilies.commandPools;
+        decltype(auto) qfQueuesStack = this->queueFamilies.queues;
         for (decltype(auto) qfInfoIn : qfInfosIn) {
-          uintptr_t indexOfQF = std::distance(qfIndices->begin(), std::find(qfIndices->begin(), qfIndices->end(), qfInfoIn.queueFamilyIndex));
+          uintptr_t indexOfQF = std::distance(qfIndices.begin(), std::find(qfIndices.begin(), qfIndices.end(), qfInfoIn.queueFamilyIndex));
           decltype(auto) qfIndex = qfIndices[indexOfQF];
           decltype(auto) qfInfoMap = qfInfoMaps[indexOfQF];
           decltype(auto) qfQueues = qfQueuesStack[indexOfQF];
@@ -223,9 +223,9 @@ namespace lxvc {
             .flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
             .queueFamilyIndex = qfIndex,
           });
-          //qfCommandPools->push_back(device.createCommandPool(qfCmdPoolInfo));
+          qfCommandPools.push_back(device.createCommandPool(qfCmdPoolInfo));
           for (decltype(auto) i = 0u; i < qfInfoVk->queueCount; i++) {
-            //qfQueues.push_back(device.getQueue(qfIndex, i));
+            qfQueues.push_back(device.getQueue(qfIndex, i));
           };
           //index++;
         };
@@ -236,9 +236,9 @@ namespace lxvc {
     // TODO: caching...
     virtual vk::Queue const& getQueue(cpp21::optional_ref<QueueGetInfo> info = {}) const {
       //return this->device.getQueue(info->queueFamilyIndex, info->queueIndex);
-      decltype(auto) qfIndices = opt_ref(this->queueFamilies.indices);
-      decltype(auto) qfQueuesStack = opt_ref(this->queueFamilies.queues);
-      uintptr_t indexOfQF = std::distance(qfIndices->begin(), std::find(qfIndices->begin(), qfIndices->end(), info->queueFamilyIndex));
+      decltype(auto) qfIndices = this->queueFamilies.indices;
+      decltype(auto) qfQueuesStack = this->queueFamilies.queues;
+      uintptr_t indexOfQF = std::distance(qfIndices.begin(), std::find(qfIndices.begin(), qfIndices.end(), info->queueFamilyIndex));
       return qfQueuesStack[indexOfQF][info->queueIndex];
     };
 
@@ -249,9 +249,9 @@ namespace lxvc {
     virtual FenceType executeCommandOnce(cpp21::optional_ref<CommandOnceSubmission> submissionRef = {}) {
       decltype(auto) device = this->handle.as<vk::Device>();
       std::optional<CommandOnceSubmission> submission = submissionRef;
-      decltype(auto) qfIndices = opt_ref(this->queueFamilies.indices);
-      decltype(auto) qfCommandPools = opt_ref(this->queueFamilies.commandPools);
-      uintptr_t indexOfQF = std::distance(qfIndices->begin(), std::find(qfIndices->begin(), qfIndices->end(), submissionRef->info->queueFamilyIndex));
+      decltype(auto) qfIndices = this->queueFamilies.indices;
+      decltype(auto) qfCommandPools = this->queueFamilies.commandPools;
+      uintptr_t indexOfQF = std::distance(qfIndices.begin(), std::find(qfIndices.begin(), qfIndices.end(), submissionRef->info->queueFamilyIndex));
       decltype(auto) queue = this->getQueue(submissionRef->info);
       decltype(auto) commandPool = qfCommandPools[indexOfQF];
       decltype(auto) commandBuffers = device.allocateCommandBuffers(vk::CommandBufferAllocateInfo{
@@ -293,7 +293,7 @@ namespace lxvc {
     };
 
     // 
-    virtual void construct(std::shared_ptr<InstanceObj> instanceObj = {}, cpp21::optional_ref<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
+    virtual void construct(std::shared_ptr<InstanceObj> instanceObj = {}, std::optional<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
       //this->instanceObj = instanceObj;
       this->base = instanceObj->handle;
       this->physicalDevices = {};
@@ -348,7 +348,7 @@ namespace lxvc {
   public:
 
     // 
-    DeviceObj(std::shared_ptr<InstanceObj> instanceObj = {}, cpp21::optional_ref<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) : cInfo(cInfo) {
+    DeviceObj(std::shared_ptr<InstanceObj> instanceObj = {}, std::optional<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) : cInfo(cInfo) {
       this->base = instanceObj->handle;
       this->construct(instanceObj, cInfo);
     };

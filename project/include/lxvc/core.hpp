@@ -112,7 +112,7 @@ namespace lxvc {
   struct InstanceCreateInfo {
     std::string appName = "LXVC_APP";
     uint32_t appVersion = VK_MAKE_VERSION(1,0,0);
-    cpp21::shared_vector<std::string> extensionList = std::vector<std::string>{};
+    cpp21::shared_vector<std::string> extensionList = std::vector<std::string>{ };
     cpp21::shared_vector<std::string> layerList = std::vector<std::string>{ "VK_LAYER_KHRONOS_validation" };
   };
 
@@ -128,8 +128,8 @@ namespace lxvc {
 
   // 
   struct DeviceCreateInfo {
-    cpp21::shared_vector<std::string> extensionList = {};
-    cpp21::shared_vector<std::string> layerList = {};
+    cpp21::shared_vector<std::string> extensionList = std::vector<std::string>{ };
+    cpp21::shared_vector<std::string> layerList = std::vector<std::string>{ "VK_LAYER_KHRONOS_validation" };
     cpp21::shared_vector<QueueFamilyCreateInfo> queueFamilyInfos = std::vector<QueueFamilyCreateInfo>{ QueueFamilyCreateInfo{} };
     uint32_t physicalDeviceGroupIndex = 0u;
     uint32_t physicalDeviceIndex = 0u;
@@ -288,8 +288,8 @@ namespace lxvc {
   };
 
   // 
-  static inline decltype(auto) createShaderModule(vk::Device const& device, cpp21::optional_ref<ShaderModuleCreateInfo> info = {}) {
-      return device.createShaderModule(info.value());
+  static inline decltype(auto) createShaderModule(vk::Device const& device, ShaderModuleCreateInfo const& info = {}) {
+      return device.createShaderModule(info);
   };
 
   // 

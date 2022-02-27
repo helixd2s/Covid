@@ -28,7 +28,7 @@ namespace lxvc {
 
   public: 
     // 
-    InstanceObj(std::shared_ptr<ContextObj> contextObj = {}, cpp21::optional_ref<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : cInfo(cInfo) {
+    InstanceObj(std::shared_ptr<ContextObj> contextObj = {}, std::optional<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : cInfo(cInfo) {
       this->base = contextObj->handle;
       this->construct(contextObj, cInfo);
     };
@@ -94,7 +94,7 @@ namespace lxvc {
         uintptr_t propIndex = 0ull;
         for (decltype(auto) prop : props) {
           std::string_view propName = { prop.extensionName };
-          if (name.compare(propName) == 0) {
+          if (propName.find(name) != std::string::npos) {
             selected->push_back(name.c_str()); break;
           };
           propIndex++;
@@ -120,7 +120,7 @@ namespace lxvc {
         uintptr_t propIndex = 0ull;
         for (decltype(auto) prop : props) {
           std::string_view propName = { prop.layerName };
-          if (name.compare(propName) == 0) {
+          if (propName.find(name) != std::string::npos) {
             selected->push_back(name.c_str()); break;
           };
           propIndex++;
@@ -134,7 +134,7 @@ namespace lxvc {
     };
 
     // 
-    virtual void construct(std::shared_ptr<ContextObj> contextObj, cpp21::optional_ref<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
+    virtual void construct(std::shared_ptr<ContextObj> contextObj, std::optional<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
       this->base = contextObj->handle;
       //this->deviceObj = deviceObj;
       this->cInfo = cInfo;
