@@ -476,6 +476,14 @@ namespace lxvc {
     operator Handle const& () const { return this->ptr->handle; };
 
     // 
+    inline decltype(auto) type() { return this->ptr->handle.type; };
+    inline decltype(auto) type() const { return this->ptr->handle.type; };
+
+    // 
+    inline decltype(auto) family() { return this->ptr->handle.family; };
+    inline decltype(auto) family() const { return this->ptr->handle.family; };
+
+    // 
     template<class T = uintptr_t> inline decltype(auto) as() { return this->ptr->handle.as<T>(); };
     template<class T = uintptr_t> inline decltype(auto) as() const { return this->ptr->handle.as<T>(); };
 
