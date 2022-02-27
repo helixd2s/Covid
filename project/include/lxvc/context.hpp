@@ -10,7 +10,7 @@ namespace lxvc {
   class ContextObj : public BaseObj {
   public:
     //using BaseObj;
-    using tType = std::shared_ptr<ContextObj>;
+    using tType = WrapShared<ContextObj>;
     using BaseObj::BaseObj;
     //using SFT = shared_from_this;
 
@@ -18,8 +18,8 @@ namespace lxvc {
     std::optional<ContextCreateInfo> cInfo = {};
 
     // 
-    inline decltype(auto) SFT() { return std::dynamic_pointer_cast<std::decay_t<decltype(*this)>>(shared_from_this()); };
-    inline decltype(auto) SFT() const { return std::dynamic_pointer_cast<const std::decay_t<decltype(*this)>>(shared_from_this()); };
+    inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
+    inline decltype(auto) SFT() const { using T = const std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
 
   public: 
     // 
@@ -32,6 +32,11 @@ namespace lxvc {
       return typeid(std::decay_t<decltype(this)>);
     };
 
+    //
+    inline static tType make(Handle const& handle, std::optional<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
+      return WrapShared<ContextObj>(std::make_shared<ContextObj>(handle, cInfo));
+    };
+
   protected: 
     // 
     virtual void construct(std::optional<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
@@ -41,12 +46,12 @@ namespace lxvc {
   };
 
   //
-  inline extern std::shared_ptr<ContextObj> context = {};
+  inline extern WrapShared<ContextObj> context = { {} };
 
   // 
   inline static decltype(auto) initialize(std::optional<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
     lxvc::registerTypes();
-    lxvc::context = std::make_shared<ContextObj>(cInfo);
+    lxvc::context = ContextObj::make(Handle(0ull), cInfo);
     return lxvc::context;
   };
 

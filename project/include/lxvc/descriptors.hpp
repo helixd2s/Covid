@@ -18,7 +18,7 @@ namespace lxvc {
   // 
   class DescriptorsObj : public BaseObj {
   public: 
-    using tType = std::shared_ptr<DescriptorsObj>;
+    using tType = WrapShared<DescriptorsObj>;
     using BaseObj::BaseObj;
     //using BaseObj;
 
@@ -58,8 +58,8 @@ namespace lxvc {
     std::vector<char8_t> initialData = {};
 
     // 
-    inline decltype(auto) SFT() { return std::dynamic_pointer_cast<std::decay_t<decltype(*this)>>(shared_from_this()); };
-    inline decltype(auto) SFT() const { return std::dynamic_pointer_cast<const std::decay_t<decltype(*this)>>(shared_from_this()); };
+    inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
+    inline decltype(auto) SFT() const { using T = const std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
 
   public:
     // 
@@ -82,6 +82,11 @@ namespace lxvc {
     virtual tType registerSelf() {
       lxvc::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
       return SFT();
+    };
+
+    //
+    inline static tType make(Handle const& handle, std::optional<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) {
+      return WrapShared<DescriptorsObj>(std::make_shared<DescriptorsObj>(handle, cInfo)->registerSelf().shared());
     };
 
   protected:

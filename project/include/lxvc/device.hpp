@@ -20,7 +20,7 @@ namespace lxvc {
   class DeviceObj : public BaseObj {
   public:
     using BaseObj::BaseObj;
-    using tType = std::shared_ptr<DeviceObj>;
+    using tType = WrapShared<DeviceObj>;
     using cType = const char const*;
     //using BaseObj;
 
@@ -39,8 +39,8 @@ namespace lxvc {
     friend UploaderObj;
 
     // 
-    inline decltype(auto) SFT() { return std::dynamic_pointer_cast<std::decay_t<decltype(*this)>>(shared_from_this()); };
-    inline decltype(auto) SFT() const { return std::dynamic_pointer_cast<const std::decay_t<decltype(*this)>>(shared_from_this()); };
+    inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
+    inline decltype(auto) SFT() const { using T = const std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
 
     //
     //std::shared_ptr<InstanceObj> instanceObj = {};
@@ -369,6 +369,11 @@ namespace lxvc {
       return typeid(std::decay_t<decltype(this)>);
     };
     
+    //
+    inline static tType make(Handle const& handle, std::optional<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
+      return WrapShared<DeviceObj>(std::make_shared<DeviceObj>(handle, cInfo)->registerSelf().shared());
+    };
+
   };
 
 

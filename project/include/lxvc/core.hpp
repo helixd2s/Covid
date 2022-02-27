@@ -465,4 +465,22 @@ namespace lxvc {
     };
   };
 
+  //
+  template<class T = BaseObj, class Tw = cpp21::wrap_shared_ptr<T>>
+  class WrapShared : public Tw {
+  public:
+    using Tw::Tw;
+
+    // 
+    operator Handle&() { return this->ptr->handle; };
+    operator Handle const& () const { return this->ptr->handle; };
+
+    
+
+    // we forbid to change handle directly
+
+    //
+
+  };
+
 };

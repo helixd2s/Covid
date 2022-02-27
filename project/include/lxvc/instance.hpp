@@ -10,7 +10,7 @@ namespace lxvc {
   // 
   class InstanceObj : public BaseObj {
   public:
-    using tType = std::shared_ptr<InstanceObj>;
+    using tType = WrapShared<InstanceObj>;
     using cType = const char const*;
     using BaseObj::BaseObj;
 
@@ -23,8 +23,8 @@ namespace lxvc {
     std::optional<InstanceCreateInfo> cInfo = {};
 
     // 
-    inline decltype(auto) SFT() { return std::dynamic_pointer_cast<std::decay_t<decltype(*this)>>(shared_from_this()); };
-    inline decltype(auto) SFT() const { return std::dynamic_pointer_cast<const std::decay_t<decltype(*this)>>(shared_from_this()); };
+    inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
+    inline decltype(auto) SFT() const { using T = const std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
 
   public: 
     // 
@@ -35,6 +35,7 @@ namespace lxvc {
 
     // 
     InstanceObj(Handle const& handle, std::optional<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : cInfo(cInfo) {
+      this->base = handle;
       this->construct(lxvc::context, cInfo);
     };
 
@@ -47,6 +48,11 @@ namespace lxvc {
     virtual tType registerSelf() {
       lxvc::context->registerObj(this->handle, shared_from_this());
       return SFT();
+    };
+
+    //
+    inline static tType make(Handle const& handle, std::optional<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
+      return WrapShared<InstanceObj>(std::make_shared<InstanceObj>(handle, cInfo)->registerSelf().shared());
     };
 
   protected:

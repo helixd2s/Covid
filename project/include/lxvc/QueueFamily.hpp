@@ -11,7 +11,7 @@ namespace lxvc {
   class QueueFamilyObj : public BaseObj {
   public:
     //using BaseObj;
-    using tType = std::shared_ptr<QueueFamilyObj>;
+    using tType = WrapShared<QueueFamilyObj>;
     using BaseObj::BaseObj;
 
   protected:
@@ -26,8 +26,8 @@ namespace lxvc {
     //std::shared_ptr<DeviceObj> deviceObj = {};
 
     // 
-    inline decltype(auto) SFT() { return std::dynamic_pointer_cast<std::decay_t<decltype(*this)>>(shared_from_this()); };
-    inline decltype(auto) SFT() const { return std::dynamic_pointer_cast<const std::decay_t<decltype(*this)>>(shared_from_this()); };
+    inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
+    inline decltype(auto) SFT() const { using T = const std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
 
     // 
   public:
@@ -49,6 +49,11 @@ namespace lxvc {
     virtual tType registerSelf() {
       lxvc::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
       return SFT();
+    };
+
+    //
+    inline static tType make(Handle const& handle, std::optional<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{}) {
+      return WrapShared<QueueFamilyObj>(std::make_shared<QueueFamilyObj>(handle, cInfo)->registerSelf().shared());
     };
 
     // 
