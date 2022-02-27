@@ -373,12 +373,12 @@ namespace lxvc {
     Handle(Handle const& _handle) : value(_handle.value), type(_handle.type), family(_handle.family) {};
 
     // 
-    template<class T = uintptr_t> inline T& as() { return reinterpret_cast<T&>(this->value); };
-    template<class T = uintptr_t> inline T const& as() const { return reinterpret_cast<T const&>(this->value); };
+    template<class T = uintptr_t> inline decltype(auto) as() { return reinterpret_cast<T&>(this->value); };
+    template<class T = uintptr_t> inline decltype(auto) as() const { return reinterpret_cast<T const&>(this->value); };
 
     // 
-    template<class T = uintptr_t> inline operator T&() { return reinterpret_cast<T&>(this->value); };
-    template<class T = uintptr_t> inline operator T const&() const { return reinterpret_cast<T const&>(this->value); };
+    template<class T = uintptr_t> inline operator T&() { return this->as<T>(); };
+    template<class T = uintptr_t> inline operator T const&() const { return this->as<T>(); };
 
     //
     inline decltype(auto) operator =(auto const& handle) { 
@@ -475,7 +475,10 @@ namespace lxvc {
     operator Handle&() { return this->ptr->handle; };
     operator Handle const& () const { return this->ptr->handle; };
 
-    
+    // 
+    template<class T = uintptr_t> inline decltype(auto) as() { return this->ptr->handle.as<T>(); };
+    template<class T = uintptr_t> inline decltype(auto) as() const { return this->ptr->handle.as<T>(); };
+
 
     // we forbid to change handle directly
 

@@ -152,12 +152,12 @@ namespace lxvc {
 
       //
       decltype(auto) uniformSize = 65536ull;
-      this->uniformBuffer = std::make_shared<ResourceObj>(lxvc::context->get<DeviceObj>(this->base), ResourceCreateInfo{
+      this->uniformBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
         .bufferInfo = BufferCreateInfo{
           .type = BufferType::eUniform,
           .size = uniformSize
         }
-      })->handle.as<vk::Buffer>();
+      }).as<vk::Buffer>();
 
       //
       this->uniformBufferDesc = vk::DescriptorBufferInfo{ this->uniformBuffer, 0ull, uniformSize};

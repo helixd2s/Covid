@@ -231,19 +231,19 @@ namespace lxvc {
       this->base = deviceObj->handle;
       //this->deviceObj = deviceObj;
 
-      this->uploadBuffer = std::make_shared<ResourceObj>(lxvc::context->get<DeviceObj>(this->base), ResourceCreateInfo{
+      this->uploadBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
         .bufferInfo = BufferCreateInfo{
           .type = BufferType::eHostMap,
           .size = this->cInfo->cacheSize
         }
-      })->handle.as<vk::Buffer>();
+      }).as<vk::Buffer>();
 
-      this->downloadBuffer = std::make_shared<ResourceObj>(lxvc::context->get<DeviceObj>(this->base), ResourceCreateInfo{
+      this->downloadBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
         .bufferInfo = BufferCreateInfo{
           .type = BufferType::eHostMap,
           .size = this->cInfo->cacheSize
         }
-      })->handle.as<vk::Buffer>();
+      }).as<vk::Buffer>();
     };
   };
 
