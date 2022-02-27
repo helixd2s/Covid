@@ -156,19 +156,19 @@ namespace lxvc {
   };
 
   //
-  struct DescriptorsCreateInfo {
-
-  };
-
-  //
   struct QueueGetInfo {
     uint32_t queueFamilyIndex = 0u;
     uint32_t queueIndex = 0u;
   };
 
   //
+  struct DescriptorsCreateInfo {
+
+  };
+
+  //
   struct ImageCreateInfo {
-    std::optional<QueueGetInfo> info = {};
+    std::optional<QueueGetInfo> info = QueueGetInfo{};
     ImageType type = ImageType::eStorage;
     vk::Extent3D extent = {};
     vk::Format format = vk::Format::eUndefined;
@@ -207,13 +207,17 @@ namespace lxvc {
     DataRegion region = {};
   };
 
-  
+  struct UniformDataSet {
+    cpp21::data_view<char8_t> data = {};
+    std::optional<DataRegion> region = DataRegion{};
+    std::optional<QueueGetInfo> info = QueueGetInfo{};
+  };
 
   
 
   //
   struct CommandOnceSubmission {
-    std::optional<QueueGetInfo> info = {};
+    std::optional<QueueGetInfo> info = QueueGetInfo{};
     std::vector<std::function<vk::CommandBuffer const& (vk::CommandBuffer const&)>> commandInits = {};
     std::vector<std::function<void(vk::Result const&)>> onDone = {};
     cpp21::shared_vector<vk::SemaphoreSubmitInfo> waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
@@ -229,14 +233,14 @@ namespace lxvc {
 
   //
   struct CopyBufferInfo {
-    std::optional<QueueGetInfo> info = {};
-    std::optional<BufferRegion> src = {};
-    std::optional<BufferRegion> dst = {};
+    std::optional<QueueGetInfo> info = QueueGetInfo{};
+    std::optional<BufferRegion> src = BufferRegion{};
+    std::optional<BufferRegion> dst = BufferRegion{};
   };
 
   //
   struct UploaderCreateInfo {
-    std::optional<QueueGetInfo> info = {};
+    std::optional<QueueGetInfo> info = QueueGetInfo{};
     size_t cacheSize = 1024ull * 1024ull * 2ull;
   };
 
@@ -247,7 +251,7 @@ namespace lxvc {
 
   //
   struct ComputePipelineCreateInfo {
-    cpp21::shared_vector<uint32_t> code = {};
+    cpp21::shared_vector<uint32_t> code = std::vector<uint32_t>{};
   };
 
   //

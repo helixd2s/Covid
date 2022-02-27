@@ -167,6 +167,8 @@ namespace lxvc {
       //return this->SFT();
     };
 
+  public:
+
     //
     virtual void updateDescriptors() {
       decltype(auto) device = this->base.as<vk::Device>();
@@ -176,6 +178,52 @@ namespace lxvc {
       writes.push_back(vk::WriteDescriptorSet{ .dstSet = this->sets[2u], .dstBinding = 0u, .dstArrayElement = 0u, .descriptorCount = (uint32_t)this->samplers->size(), .descriptorType = vk::DescriptorType::eSampler, .pImageInfo = this->samplers->data() });
       device.updateDescriptorSets(writes, {});
       //return this->SFT();
+    };
+
+    //
+    virtual FenceType setUniformData(UniformDataSet const& cInfo) {
+      size_t size = std::min(cInfo.data.size(), cInfo.region->size);
+      decltype(auto) submission = CommandOnceSubmission{ .info = cInfo.info };
+      decltype(auto) device = this->base.as<vk::Device>();
+      decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
+
+      //
+      decltype(auto) bufferBarriersBegin = std::vector<vk::BufferMemoryBarrier2>{
+        vk::BufferMemoryBarrier2{
+          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralRead),
+          .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralRead) | vk::AccessFlagBits2::eUniformRead,
+          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferWrite),
+          .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
+          .buffer = this->uniformBuffer,
+          .offset = cInfo.region->offset,
+          .size = size
+        }
+      };
+
+      //
+      decltype(auto) bufferBarriersEnd = std::vector<vk::BufferMemoryBarrier2>{
+        vk::BufferMemoryBarrier2{
+          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferWrite),
+          .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
+          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralRead),
+          .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralRead) | vk::AccessFlagBits2::eUniformRead,
+          .buffer = this->uniformBuffer,
+          .offset = cInfo.region->offset,
+          .size = size
+        }
+      };
+
+      // 
+      submission.commandInits.push_back([=](vk::CommandBuffer const& cmdBuf) {
+        auto _depInfo = depInfo;
+        cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersBegin));
+        cmdBuf.updateBuffer(this->uniformBuffer, cInfo.region->offset, size, cInfo.data.data());
+        cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersEnd));
+        return cmdBuf;
+      });
+
+      //
+      return lxvc::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
     };
     
   };
