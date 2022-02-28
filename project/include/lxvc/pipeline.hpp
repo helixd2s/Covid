@@ -64,7 +64,7 @@ namespace lxvc {
         .layout = this->cInfo->descriptors->handle.as<vk::PipelineLayout>()
       }));
       //
-      lxvc::context->get(this->base)->registerObj(this->handle, shared_from_this());
+      //lxvc::context->get(this->base)->registerObj(this->handle, shared_from_this());
       //return this->SFT();
     };
 

@@ -236,9 +236,9 @@ namespace lxvc {
     // TODO: caching...
     virtual vk::Queue const& getQueue(cpp21::optional_ref<QueueGetInfo> info = {}) const {
       //return this->device.getQueue(info->queueFamilyIndex, info->queueIndex);
-      decltype(auto) qfIndices = this->queueFamilies.indices;
-      decltype(auto) qfQueuesStack = this->queueFamilies.queues;
-      uintptr_t indexOfQF = std::distance(qfIndices.begin(), std::find(qfIndices.begin(), qfIndices.end(), info->queueFamilyIndex));
+      decltype(auto) qfIndices = cpp21::opt_ref(this->queueFamilies.indices);
+      decltype(auto) qfQueuesStack = cpp21::opt_ref(this->queueFamilies.queues);
+      uintptr_t indexOfQF = std::distance(qfIndices->begin(), std::find(qfIndices->begin(), qfIndices->end(), info->queueFamilyIndex));
       return qfQueuesStack[indexOfQF][info->queueIndex];
     };
 
@@ -249,9 +249,9 @@ namespace lxvc {
     virtual FenceType executeCommandOnce(cpp21::optional_ref<CommandOnceSubmission> submissionRef = {}) {
       decltype(auto) device = this->handle.as<vk::Device>();
       std::optional<CommandOnceSubmission> submission = submissionRef;
-      decltype(auto) qfIndices = this->queueFamilies.indices;
-      decltype(auto) qfCommandPools = this->queueFamilies.commandPools;
-      uintptr_t indexOfQF = std::distance(qfIndices.begin(), std::find(qfIndices.begin(), qfIndices.end(), submissionRef->info->queueFamilyIndex));
+      decltype(auto) qfIndices = cpp21::opt_ref(this->queueFamilies.indices);
+      decltype(auto) qfCommandPools = cpp21::opt_ref(this->queueFamilies.commandPools);
+      uintptr_t indexOfQF = std::distance(qfIndices->begin(), std::find(qfIndices->begin(), qfIndices->end(), submissionRef->info->queueFamilyIndex));
       decltype(auto) queue = this->getQueue(submissionRef->info);
       decltype(auto) commandPool = qfCommandPools[indexOfQF];
       decltype(auto) commandBuffers = device.allocateCommandBuffers(vk::CommandBufferAllocateInfo{
@@ -266,8 +266,9 @@ namespace lxvc {
       decltype(auto) cIndex = 0u; for (decltype(auto) fn : submission->commandInits) {
         decltype(auto) cmdBuf = commandBuffers[cIndex++];
         cmdBuf.begin(vk::CommandBufferBeginInfo{ .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit, .pInheritanceInfo = cpp21::pointer(submissionRef->inheritanceInfo) });
+        decltype(auto) result = fn(cmdBuf);
         cmdInfos.push_back(vk::CommandBufferSubmitInfo{
-          .commandBuffer = fn(cmdBuf),
+          .commandBuffer = result ? result : cmdBuf,
           .deviceMask = 0x1
         });
         cmdBuf.end();

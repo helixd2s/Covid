@@ -32,7 +32,7 @@ namespace lxvc {
     //std::shared_ptr<MSS> infoMap = {};
 
     //
-    std::shared_ptr<DeviceObj> deviceObj = {};
+    //std::shared_ptr<DeviceObj> deviceObj = {};
 
     // 
     inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
@@ -40,7 +40,7 @@ namespace lxvc {
 
   public:
     // 
-    ResourceObj(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : deviceObj(deviceObj), cInfo(cInfo) {
+    ResourceObj(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : cInfo(cInfo) {
       this->base = deviceObj->handle;
       this->construct(deviceObj, cInfo);
     };
@@ -69,11 +69,12 @@ namespace lxvc {
   protected:
 
     //
-    virtual std::optional<AllocatedMemory>& allocateMemory(cpp21::optional_ref<MemoryRequirements> requirements) {
-      decltype(auto) physicalDevice = this->deviceObj->physicalDevices[this->deviceObj->cInfo->physicalDeviceIndex];
-      decltype(auto) memTypeHeap = this->deviceObj->findMemoryTypeAndHeapIndex(physicalDevice, *requirements);
-      decltype(auto) allocated = this->allocated;
+    virtual AllocatedMemory& allocateMemory(cpp21::optional_ref<MemoryRequirements> requirements) {
+      decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
+      decltype(auto) physicalDevice = deviceObj->physicalDevices[deviceObj->cInfo->physicalDeviceIndex];
+      decltype(auto) memTypeHeap = deviceObj->findMemoryTypeAndHeapIndex(physicalDevice, *requirements);
+      decltype(auto) allocated = cpp21::opt_ref<AllocatedMemory>((this->allocated = AllocatedMemory{}).value());
 
       // 
       allocated = AllocatedMemory{
@@ -106,6 +107,7 @@ namespace lxvc {
     // 
     virtual FenceType createImage(cpp21::optional_ref<ImageCreateInfo> cInfo = {}) {
       // 
+      decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) imageUsage = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst;
       decltype(auto) memoryUsage = MemoryUsage::eGpuOnly;
@@ -160,11 +162,11 @@ namespace lxvc {
 
       //
       device.getImageMemoryRequirements2(infoMap->set(vk::StructureType::eImageMemoryRequirementsInfo2, vk::ImageMemoryRequirementsInfo2{
-        .image = (this->handle = device.createImage(imageInfo->setQueueFamilyIndices(this->deviceObj->queueFamilies.indices)))
+        .image = (this->handle = device.createImage(imageInfo->setQueueFamilyIndices(deviceObj->queueFamilies.indices)))
       }).get(), memReqInfo2.get());
 
       //
-      lxvc::context->get(this->base)->registerObj(this->handle, shared_from_this());
+      //lxvc::context->get(this->base)->registerObj(this->handle, shared_from_this());
 
       // 
       decltype(auto) memReqInfo = memReqInfo2->memoryRequirements;
@@ -211,13 +213,14 @@ namespace lxvc {
       });
 
       //
-      return lxvc::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
+      return deviceObj->executeCommandOnce(submission);
       // 
       //return this->SFT();
     };
 
     // 
     virtual void createBuffer(cpp21::optional_ref<BufferCreateInfo> cInfo = {}) {
+      decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) bufferUsage = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
       decltype(auto) memoryUsage = MemoryUsage::eGpuOnly;
@@ -265,19 +268,19 @@ namespace lxvc {
 
       //
       device.getBufferMemoryRequirements2(infoMap->set(vk::StructureType::eBufferMemoryRequirementsInfo2, vk::BufferMemoryRequirementsInfo2{
-        .buffer = (this->handle = device.createBuffer(bufferInfo->setQueueFamilyIndices(this->deviceObj->queueFamilies.indices)))
+        .buffer = (this->handle = device.createBuffer(bufferInfo->setQueueFamilyIndices(deviceObj->queueFamilies.indices)))
       }).get(), memReqInfo2.get());
 
       //
-      lxvc::context->get(this->base)->registerObj(this->handle, shared_from_this());
+      //lxvc::context->get(this->base)->registerObj(this->handle, shared_from_this());
 
       // 
       decltype(auto) memReqInfo = memReqInfo2->memoryRequirements;
-      this->allocated = this->allocateMemory(opt_ref((this->mReqs = MemoryRequirements{
+      this->allocated = this->allocateMemory(this->mReqs = MemoryRequirements{
         .memoryUsage = memoryUsage,
         .memoryTypeBits = memReqInfo.memoryTypeBits,
         .size = memReqInfo.size
-      }).value()));
+      });
 
       //
       std::vector<vk::BindBufferMemoryInfo> bindInfos = { *infoMap->set(vk::StructureType::eBindBufferMemoryInfo, vk::BindBufferMemoryInfo{

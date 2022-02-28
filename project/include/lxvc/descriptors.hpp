@@ -10,6 +10,7 @@
 struct DescriptorBindings {
   std::vector<vk::DescriptorSetLayoutBinding> bindings = {};
   std::vector<vk::DescriptorBindingFlags> bindingFlags = {};
+  
 };
 
 // 
@@ -39,6 +40,7 @@ namespace lxvc {
     // 
     cpp21::vector_of_shared<MSS> layoutInfoMaps = {};
     cpp21::vector_of_shared<DescriptorBindings> layoutBindings = {};
+    std::vector<uint32_t> descriptorCounts = {};
 
     //
     cpp21::bucket<vk::DescriptorImageInfo> textures = std::vector<vk::DescriptorImageInfo>{};
@@ -94,7 +96,6 @@ namespace lxvc {
     virtual void createDescriptorLayout(vk::DescriptorType const& type, uint32_t const& count = 1u) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) last = this->layouts.size();
-      this->layouts.push_back(vk::DescriptorSetLayout{});
       this->layoutInfoMaps->push_back(std::make_shared<MSS>());
       this->layoutBindings->push_back(std::make_shared<DescriptorBindings>());
       decltype(auto) layoutInfoMap = this->layoutInfoMaps[last];
@@ -108,6 +109,7 @@ namespace lxvc {
         .flags = vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool
         })->setBindings(layoutBindingStack->bindings);
       this->layouts.push_back(device.createDescriptorSetLayout(layoutInfo));
+      this->descriptorCounts.push_back(count);
     };
 
     // 
@@ -121,6 +123,7 @@ namespace lxvc {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) DPI = infoMap->set(vk::StructureType::eDescriptorPoolCreateInfo, vk::DescriptorPoolCreateInfo{
         .flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet | vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind,
+        .maxSets = 6u,
       })->setPoolSizes(this->DPC = std::vector<vk::DescriptorPoolSize>{
         vk::DescriptorPoolSize{ vk::DescriptorType::eSampler, 64u },
         vk::DescriptorPoolSize{ vk::DescriptorType::eSampledImage, 256u },
@@ -128,12 +131,20 @@ namespace lxvc {
       });
 
       // 
+      this->layoutBindings = std::vector<std::shared_ptr<DescriptorBindings>>{};
+      this->layouts = std::vector<vk::DescriptorSetLayout>{};
+      this->sets = std::vector<vk::DescriptorSet>{};
+      this->layoutInfoMaps = std::vector<std::shared_ptr<MSS>>{};
+      this->descriptorCounts = std::vector<uint32_t>{};
       this->createDescriptorLayout(vk::DescriptorType::eUniformBuffer, 1u);
       this->createDescriptorLayout(vk::DescriptorType::eSampledImage, 256u);
       this->createDescriptorLayout(vk::DescriptorType::eSampler, 64u);
 
       //
       this->sets = device.allocateDescriptorSets(this->infoMap->set(vk::StructureType::eDescriptorSetAllocateInfo, vk::DescriptorSetAllocateInfo{
+        .pNext = &this->infoMap->set(vk::StructureType::eDescriptorSetVariableDescriptorCountAllocateInfo, vk::DescriptorSetVariableDescriptorCountAllocateInfo{
+
+        })->setDescriptorCounts(this->descriptorCounts),
         .descriptorPool = (this->pool = device.createDescriptorPool(DPI))
       })->setSetLayouts(this->layouts));
 
@@ -148,7 +159,7 @@ namespace lxvc {
       })->setInitialData<char8_t>(this->initialData));
 
       //
-      lxvc::context->get(this->base)->registerObj(this->handle, shared_from_this());
+      //lxvc::context->get(this->base)->registerObj(this->handle, shared_from_this());
 
       //
       decltype(auto) uniformSize = 65536ull;
@@ -174,8 +185,8 @@ namespace lxvc {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) writes = std::vector<vk::WriteDescriptorSet>{};
       writes.push_back(vk::WriteDescriptorSet{ .dstSet = this->sets[0u], .dstBinding = 0u, .dstArrayElement = 0u, .descriptorCount = 1u, .descriptorType = vk::DescriptorType::eUniformBuffer, .pBufferInfo = &this->uniformBufferDesc.value() });
-      writes.push_back(vk::WriteDescriptorSet{ .dstSet = this->sets[1u], .dstBinding = 0u, .dstArrayElement = 0u, .descriptorCount = (uint32_t)this->textures->size(), .descriptorType = vk::DescriptorType::eSampledImage, .pImageInfo = this->textures->data() });
-      writes.push_back(vk::WriteDescriptorSet{ .dstSet = this->sets[2u], .dstBinding = 0u, .dstArrayElement = 0u, .descriptorCount = (uint32_t)this->samplers->size(), .descriptorType = vk::DescriptorType::eSampler, .pImageInfo = this->samplers->data() });
+      if (this->textures->size() > 0ull) writes.push_back(vk::WriteDescriptorSet{ .dstSet = this->sets[1u], .dstBinding = 0u, .dstArrayElement = 0u, .descriptorCount = (uint32_t)this->textures->size(), .descriptorType = vk::DescriptorType::eSampledImage, .pImageInfo = this->textures->data() });
+      if (this->samplers->size() > 0ull) writes.push_back(vk::WriteDescriptorSet{ .dstSet = this->sets[2u], .dstBinding = 0u, .dstArrayElement = 0u, .descriptorCount = (uint32_t)this->samplers->size(), .descriptorType = vk::DescriptorType::eSampler, .pImageInfo = this->samplers->data() });
       device.updateDescriptorSets(writes, {});
       //return this->SFT();
     };
