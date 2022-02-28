@@ -258,7 +258,8 @@ namespace lxvc {
       // 
       decltype(auto) bufferInfo = infoMap->set(vk::StructureType::eBufferCreateInfo, vk::BufferCreateInfo{
         .size = cInfo->size,
-        .usage = bufferUsage
+        .usage = bufferUsage,
+        .sharingMode = vk::SharingMode::eExclusive
       });
 
       // 
