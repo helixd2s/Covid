@@ -338,6 +338,8 @@ namespace lxvc {
         .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
         .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralRead),
         .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralRead),
+        .srcQueueFamilyIndex = copyInfoRaw->info->queueFamilyIndex,
+        .dstQueueFamilyIndex = copyInfoRaw->info->queueFamilyIndex,
         .buffer = copyInfoRaw->dst->buffer,
         .offset = copyInfoRaw->dst->region.offset,
         .size = size
@@ -347,6 +349,8 @@ namespace lxvc {
         .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferRead),
         .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
         .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite),
+        .srcQueueFamilyIndex = copyInfoRaw->info->queueFamilyIndex,
+        .dstQueueFamilyIndex = copyInfoRaw->info->queueFamilyIndex,
         .buffer = copyInfoRaw->src->buffer,
         .offset = copyInfoRaw->src->region.offset,
         .size = size
