@@ -42,6 +42,7 @@ namespace lxvc {
     inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
     inline decltype(auto) SFT() const { using T = const std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
 
+    
     //
     //std::shared_ptr<InstanceObj> instanceObj = {};
 
@@ -335,8 +336,10 @@ namespace lxvc {
 
         // 
         this->handle = physicalDevice.createDevice(deviceInfo);
+        //VULKAN_HPP_DEFAULT_DISPATCHER.init(this->handle.as<vk::Device>());
+        this->dispatch = vk::DispatchLoaderDynamic(this->base.as<vk::Instance>(), vkGetInstanceProcAddr, this->handle.as<vk::Device>(), vkGetDeviceProcAddr);
         this->createCommandPools(this->cInfo->queueFamilyInfos);
-
+        
       }
       else {
         std::cerr << "Physical Device Not Detected" << std::endl;

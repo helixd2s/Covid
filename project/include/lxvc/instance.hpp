@@ -8,6 +8,9 @@
 namespace lxvc {
 
   // 
+  inline VkBool32 callbackFn(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageTypes, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
+
+  // 
   class InstanceObj : public BaseObj {
   public:
     using tType = WrapShared<InstanceObj>;
@@ -21,6 +24,11 @@ namespace lxvc {
     //vk::Instance instance = {};
     vk::DispatchLoaderDynamic dispatch = {};
     std::optional<InstanceCreateInfo> cInfo = {};
+
+    //
+    //using dfnT = std::remove_pointer_t<std::decay_t<PFN_vkDebugUtilsMessengerCallbackEXT>>;
+    vk::DebugUtilsMessengerEXT debugMessenger = {};
+    //std::function<dfnT> debugCallback = {};
 
     // 
     inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
@@ -169,10 +177,45 @@ namespace lxvc {
 
       //
       this->handle = vk::createInstance(instanceInfo.ref());
+      this->dispatch = vk::DispatchLoaderDynamic(this->handle.as<vk::Instance>(), vkGetInstanceProcAddr);
+      //VULKAN_HPP_DEFAULT_DISPATCHER.init(this->handle.as<vk::Instance>());
+      
+      // 
+      this->debugMessenger = this->handle.as<vk::Instance>().createDebugUtilsMessengerEXT(vk::DebugUtilsMessengerCreateInfoEXT{
+        .messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo | vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose,
+        .messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation,
+        .pfnUserCallback = &callbackFn,
+        .pUserData = this
+      }, nullptr, this->dispatch);
 
       // 
       //return SFT();
     };
   };
+
+  // 
+  inline VkBool32 callbackFn(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageTypes, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
+    decltype(auto) instanceObj = (InstanceObj*)(pUserData);
+    switch (messageSeverity) {
+      case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+        std::cerr << "Vulkan Debug Error: " << pCallbackData->pMessage << std::endl;
+        return false;
+        break;
+
+      case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
+        std::cout << "Vulkan Debug Info: " << pCallbackData->pMessage << std::endl;
+        break;
+
+      case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+        std::cerr << "Vulkan Debug Warning: " << pCallbackData->pMessage << std::endl;
+        break;
+
+      //case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
+        //std::cerr << "Vulkan Debug Verbose: " << pCallbackData->pMessage << std::endl;
+        //break;
+    };
+    return true;
+  };
+
 
 };

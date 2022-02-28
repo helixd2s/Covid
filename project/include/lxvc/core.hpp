@@ -14,6 +14,10 @@
 #include <glm/glm.hpp>
 
 // 
+//#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+//#define VULKAN_HPP_DEFAULT_DISPATCHER vk::DispatchLoaderDynamic
+
+// 
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_raii.hpp>
@@ -127,7 +131,7 @@ namespace lxvc {
   struct InstanceCreateInfo {
     std::string appName = "LXVC_APP";
     uint32_t appVersion = VK_MAKE_VERSION(1,0,0);
-    cpp21::shared_vector<std::string> extensionList = std::vector<std::string>{ };
+    cpp21::shared_vector<std::string> extensionList = std::vector<std::string>{ "VK_EXT_debug_utils"};
     cpp21::shared_vector<std::string> layerList = std::vector<std::string>{ "VK_LAYER_KHRONOS_validation" };
   };
 
@@ -143,7 +147,7 @@ namespace lxvc {
 
   // 
   struct DeviceCreateInfo {
-    cpp21::shared_vector<std::string> extensionList = std::vector<std::string>{ };
+    cpp21::shared_vector<std::string> extensionList = std::vector<std::string>{ "VK_KHR_deferred_host_operations", "VK_KHR_acceleration_structure", "VK_KHR_ray_query", "VK_KHR_ray_tracing_pipeline", "VK_KHR_surface", "VK_KHR_swapchain" };
     cpp21::shared_vector<std::string> layerList = std::vector<std::string>{ "VK_LAYER_KHRONOS_validation" };
     cpp21::shared_vector<QueueFamilyCreateInfo> queueFamilyInfos = std::vector<QueueFamilyCreateInfo>{ QueueFamilyCreateInfo{} };
     uint32_t physicalDeviceGroupIndex = 0u;
