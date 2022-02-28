@@ -301,7 +301,7 @@ namespace lxvc {
   };
 
   // 
-  inline FenceType DeviceObj::copyBuffers(cpp21::optional_ref<CopyBufferInfo> copyInfoRaw) {
+  inline FenceType DeviceObj::executeCopyBuffersOnce(cpp21::optional_ref<CopyBufferInfo> copyInfoRaw) {
     decltype(auto) submission = CommandOnceSubmission{ .info = QueueGetInfo {.queueFamilyIndex = copyInfoRaw->dst->queueFamilyIndex } };
     decltype(auto) device = this->base.as<vk::Device>();
     decltype(auto) size = std::min(copyInfoRaw->src->region.size, copyInfoRaw->dst->region.size);

@@ -244,7 +244,7 @@ namespace lxvc {
     };
 
     //
-    virtual FenceType copyBuffers(cpp21::optional_ref<CopyBufferInfo> copyInfoRaw);
+    virtual FenceType executeCopyBuffersOnce(cpp21::optional_ref<CopyBufferInfo> copyInfoRaw);
 
     //
     virtual FenceType executeCommandOnce(cpp21::optional_ref<CommandOnceSubmission> submissionRef = {}) {

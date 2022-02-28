@@ -72,7 +72,7 @@ namespace lxvc {
     virtual void createGraphics(cpp21::optional_ref<GraphicsPipelineCreateInfo> graphics = {}) {
       //this->pipeline = makeComputePipelineStageInfo(this->deviceObj->device, compute->code);
       //
-      lxvc::context->get(this->base)->registerObj(this->handle, shared_from_this());
+      //lxvc::context->get(this->base)->registerObj(this->handle, shared_from_this());
       //return this->SFT();
     };
 
@@ -85,6 +85,50 @@ namespace lxvc {
       if (this->cInfo->compute) { this->createCompute(this->cInfo->compute); };
       if (this->cInfo->graphics) { this->createGraphics(this->cInfo->graphics); };
       //return this->SFT();
+    };
+
+    // TODO: using multiple-command
+    virtual FenceType executeComputeOnce(std::optional<ExecuteComputeInfo> exec = ExecuteComputeInfo{}) {
+      decltype(auto) device = this->base.as<vk::Device>();
+      decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
+      decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(exec->layout);
+      decltype(auto) submission = CommandOnceSubmission{ .info = exec->info };
+      decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
+
+      //
+      decltype(auto) memoryBarriersBegin = std::vector<vk::MemoryBarrier2>{
+        vk::MemoryBarrier2{
+          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
+          .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite),
+          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eShaderReadWrite) | vk::PipelineStageFlagBits2::eComputeShader,
+          .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eShaderReadWrite)
+        }
+      };
+
+      //
+      decltype(auto) memoryBarriersEnd = std::vector<vk::MemoryBarrier2>{
+        vk::MemoryBarrier2{
+          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eShaderReadWrite) | vk::PipelineStageFlagBits2::eComputeShader,
+          .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eShaderReadWrite),
+          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
+          .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite)
+        }
+      };
+
+      // 
+      std::vector<uint32_t> offsets = {};
+      submission.commandInits.push_back([=](vk::CommandBuffer const& cmdBuf) {
+        auto _depInfo = depInfo;
+        cmdBuf.pipelineBarrier2(_depInfo.setMemoryBarriers(memoryBarriersBegin));
+        cmdBuf.bindDescriptorSets(vk::PipelineBindPoint::eCompute, descriptorsObj->handle.as<vk::PipelineLayout>(), 0u, descriptorsObj->sets, offsets);
+        cmdBuf.bindPipeline(vk::PipelineBindPoint::eCompute, this->handle.as<vk::Pipeline>());
+        cmdBuf.dispatch(exec->dispatch.width, exec->dispatch.height, exec->dispatch.depth);
+        cmdBuf.pipelineBarrier2(_depInfo.setMemoryBarriers(memoryBarriersEnd));
+        return cmdBuf;
+      });
+
+      //
+      return deviceObj->executeCommandOnce(submission);
     };
 
   };

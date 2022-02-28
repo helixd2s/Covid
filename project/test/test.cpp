@@ -24,7 +24,7 @@ int main() {
   uint32_t variable = 32u;
 
   // no, that is really final cherep...
-  descriptions->setUniformData(lxvc::UniformDataSet{
+  descriptions->executeUniformUpdateOnce(lxvc::UniformDataSet{
     .data = cpp21::data_view<char8_t>((char8_t*)&variable, 4ull),
     .region = lxvc::DataRegion{0ull, 4ull},
     .info = lxvc::QueueGetInfo{0u, 0u}

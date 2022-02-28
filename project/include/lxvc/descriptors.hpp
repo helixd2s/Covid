@@ -192,7 +192,7 @@ namespace lxvc {
     };
 
     //
-    virtual FenceType setUniformData(UniformDataSet const& cInfo) {
+    virtual FenceType executeUniformUpdateOnce(UniformDataSet const& cInfo) {
       size_t size = std::min(cInfo.data.size(), cInfo.region->size);
       decltype(auto) submission = CommandOnceSubmission{ .info = cInfo.info };
       decltype(auto) device = this->base.as<vk::Device>();
