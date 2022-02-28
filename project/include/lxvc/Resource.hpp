@@ -302,7 +302,7 @@ namespace lxvc {
 
   // 
   inline FenceType DeviceObj::copyBuffers(cpp21::optional_ref<CopyBufferInfo> copyInfoRaw) {
-    decltype(auto) submission = CommandOnceSubmission{ .info = copyInfoRaw->info };
+    decltype(auto) submission = CommandOnceSubmission{ .info = QueueGetInfo {.queueFamilyIndex = copyInfoRaw->dst->queueFamilyIndex } };
     decltype(auto) device = this->base.as<vk::Device>();
     decltype(auto) size = std::min(copyInfoRaw->src->region.size, copyInfoRaw->dst->region.size);
     decltype(auto) copyInfo = vk::CopyBufferInfo2{ .srcBuffer = copyInfoRaw->src->buffer, .dstBuffer = copyInfoRaw->dst->buffer };
@@ -316,6 +316,8 @@ namespace lxvc {
         .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite),
         .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferRead),
         .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferRead),
+        .srcQueueFamilyIndex = copyInfoRaw->src->queueFamilyIndex,
+        .dstQueueFamilyIndex = copyInfoRaw->dst->queueFamilyIndex,
         .buffer = copyInfoRaw->src->buffer,
         .offset = copyInfoRaw->src->region.offset,
         .size = size
@@ -325,6 +327,8 @@ namespace lxvc {
         .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralRead),
         .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferWrite),
         .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
+        .srcQueueFamilyIndex = copyInfoRaw->src->queueFamilyIndex,
+        .dstQueueFamilyIndex = copyInfoRaw->dst->queueFamilyIndex,
         .buffer = copyInfoRaw->dst->buffer,
         .offset = copyInfoRaw->dst->region.offset,
         .size = size
@@ -334,25 +338,25 @@ namespace lxvc {
     //
     decltype(auto) bufferBarriersEnd = std::vector<vk::BufferMemoryBarrier2>{
       vk::BufferMemoryBarrier2{
-        .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferWrite),
-        .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
-        .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralRead),
-        .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralRead),
-        .srcQueueFamilyIndex = copyInfoRaw->info->queueFamilyIndex,
-        .dstQueueFamilyIndex = copyInfoRaw->info->queueFamilyIndex,
-        .buffer = copyInfoRaw->dst->buffer,
-        .offset = copyInfoRaw->dst->region.offset,
-        .size = size
-      },
-      vk::BufferMemoryBarrier2{
         .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferRead),
         .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferRead),
         .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
         .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite),
-        .srcQueueFamilyIndex = copyInfoRaw->info->queueFamilyIndex,
-        .dstQueueFamilyIndex = copyInfoRaw->info->queueFamilyIndex,
+        .srcQueueFamilyIndex = copyInfoRaw->dst->queueFamilyIndex,
+        .dstQueueFamilyIndex = copyInfoRaw->src->queueFamilyIndex,
         .buffer = copyInfoRaw->src->buffer,
         .offset = copyInfoRaw->src->region.offset,
+        .size = size
+      },
+      vk::BufferMemoryBarrier2{
+        .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferWrite),
+        .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
+        .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralRead),
+        .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralRead),
+        .srcQueueFamilyIndex = copyInfoRaw->dst->queueFamilyIndex,
+        .dstQueueFamilyIndex = copyInfoRaw->src->queueFamilyIndex,
+        .buffer = copyInfoRaw->dst->buffer,
+        .offset = copyInfoRaw->dst->region.offset,
         .size = size
       }
     };

@@ -205,8 +205,10 @@ namespace lxvc {
   struct BufferRegion {
     vk::Buffer buffer = {};
     DataRegion region = {};
+    uint32_t queueFamilyIndex = 0u;
   };
 
+  // 
   struct UniformDataSet {
     cpp21::data_view<char8_t> data = {};
     std::optional<DataRegion> region = DataRegion{};
@@ -233,7 +235,7 @@ namespace lxvc {
 
   //
   struct CopyBufferInfo {
-    std::optional<QueueGetInfo> info = QueueGetInfo{};
+    //std::optional<QueueGetInfo> info = QueueGetInfo{};
     std::optional<BufferRegion> src = BufferRegion{};
     std::optional<BufferRegion> dst = BufferRegion{};
   };
