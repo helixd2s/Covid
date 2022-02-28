@@ -37,6 +37,12 @@ file(GLOB_RECURSE _source_list
   "${_src_root_path}/../prebuild/include/vku/*.inl"
   "${_src_root_path}/../prebuild/include/vku/*.hpp"
   "${_src_root_path}/../prebuild/include/vku/*.h"
+  "${_src_root_path}/../prebuild/include/vk-utils/cpp21/*.inl"
+  "${_src_root_path}/../prebuild/include/vk-utils/cpp21/*.hpp"
+  "${_src_root_path}/../prebuild/include/vk-utils/cpp21/*.h"
+  "${_src_root_path}/../prebuild/include/vku/cpp21/*.inl"
+  "${_src_root_path}/../prebuild/include/vku/cpp21/*.hpp"
+  "${_src_root_path}/../prebuild/include/vku/cpp21/*.h"
 
   "${_src_root_path}/include/lxvc/*.inl"
   "${_src_root_path}/include/lxvc/*.hpp"

@@ -27,37 +27,37 @@
 // 
 namespace lxvc {
 
-    // 
+  // 
 #ifdef VKU_ENABLE_TYPE_SAFE
-    namespace ts {
-        using namespace type_safe;
-    };
+  namespace ts {
+    using namespace type_safe;
+  };
 #endif
 
 #ifdef TYPE_SAFE_OPTIONAL_REF_HPP_INCLUDED
-    template<class T = cpp21::void_t> using optional_ref = ts::optional_ref<T>;
-    CPP21_FN_ALIAS(opt_ref, ts::opt_ref);
-    CPP21_FN_ALIAS(opt_cref, ts::opt_cref);
+  template<class T = cpp21::void_t> using optional_ref = ts::optional_ref<T>;
+  CPP21_FN_ALIAS(opt_ref, ts::opt_ref);
+  CPP21_FN_ALIAS(opt_cref, ts::opt_cref);
 #else 
-    template<class T = cpp21::void_t> using optional_ref = cpp21::optional_ref<T>;
-    CPP21_FN_ALIAS(opt_ref, cpp21::opt_ref);
-    CPP21_FN_ALIAS(opt_cref, cpp21::opt_cref);
+  template<class T = cpp21::void_t> using optional_ref = cpp21::optional_ref<T>;
+  CPP21_FN_ALIAS(opt_ref, cpp21::opt_ref);
+  CPP21_FN_ALIAS(opt_cref, cpp21::opt_cref);
 #endif
 
   //
   enum class MemoryUsage : uint32_t {
-      eUnknown = 0u,
-      eGpuOnly = 1u,
-      eCpuToGpu = 2u,
-      eGpuToCpu = 3u,
-      eCpuOnly = 4u
+    eUnknown = 0u,
+    eGpuOnly = 1u,
+    eCpuToGpu = 2u,
+    eGpuToCpu = 3u,
+    eCpuOnly = 4u
   };
 
   //
   enum class BufferType : uint32_t {
-      eDevice = 0u,
-      eHostMap = 1u,
-      eUniform = 2u
+    eDevice = 0u,
+    eHostMap = 1u,
+    eUniform = 2u
   };
 
   //
@@ -75,7 +75,7 @@ namespace lxvc {
     eInstance = 1u,
     ePhysicalDevice = 2u,
     eDevice = 3u,
-    eQueue = 4u, 
+    eQueue = 4u,
     eCommandBuffer = 5u,
 
     eBuffer = 6u,
@@ -131,8 +131,8 @@ namespace lxvc {
   // 
   struct InstanceCreateInfo {
     std::string appName = "LXVC_APP";
-    uint32_t appVersion = VK_MAKE_VERSION(1,0,0);
-    cpp21::shared_vector<std::string> extensionList = std::vector<std::string>{ "VK_EXT_debug_utils"};
+    uint32_t appVersion = VK_MAKE_VERSION(1, 0, 0);
+    cpp21::shared_vector<std::string> extensionList = std::vector<std::string>{ "VK_EXT_debug_utils" };
     cpp21::shared_vector<std::string> layerList = std::vector<std::string>{ "VK_LAYER_KHRONOS_validation" };
   };
 
@@ -142,7 +142,7 @@ namespace lxvc {
   //
   struct QueueFamilyCreateInfo {
     uint32_t queueFamilyIndex = 0u;
-    cpp21::shared_vector<float> queuePriorities = std::vector<float>{1.f};
+    cpp21::shared_vector<float> queuePriorities = std::vector<float>{ 1.f };
     //std::shared_ptr<MSS> infoMap = {};//std::make_shared<MSS>();
   };
 
@@ -157,7 +157,7 @@ namespace lxvc {
 
   //
   struct AccelerationStructureCreateInfo {
-    
+
   };
 
   //
@@ -184,7 +184,7 @@ namespace lxvc {
   struct BufferCreateInfo {
     BufferType type = BufferType::eDevice;
     size_t size = 0ull;
-    
+
   };
 
   //
@@ -222,7 +222,7 @@ namespace lxvc {
 
   //
   struct ExecuteComputeInfo {
-    vk::Extent3D dispatch = {1u, 1u, 1u};
+    vk::Extent3D dispatch = { 1u, 1u, 1u };
     vk::PipelineLayout layout = {};
     std::optional<QueueGetInfo> info = QueueGetInfo{};
   };
@@ -258,7 +258,7 @@ namespace lxvc {
 
   //
   struct GraphicsPipelineCreateInfo {
-    
+
   };
 
   //
@@ -289,7 +289,7 @@ namespace lxvc {
     operator vk::PipelineShaderStageRequiredSubgroupSizeCreateInfoEXT& () { return sgmp; };
     operator vk::PipelineShaderStageCreateInfo const& () const { return spi; };
     operator vk::PipelineShaderStageRequiredSubgroupSizeCreateInfoEXT const& () const { return sgmp; };
-    
+
     //
     decltype(auto) operator =(vk::PipelineShaderStageCreateInfo const& spi) { (this->spi = spi); return *this; };
     decltype(auto) operator =(vk::PipelineShaderStageRequiredSubgroupSizeCreateInfoEXT const& sgmp) { (this->sgmp = sgmp); return *this; };
@@ -324,37 +324,37 @@ namespace lxvc {
 
   // 
   static inline decltype(auto) createShaderModule(vk::Device const& device, ShaderModuleCreateInfo const& info = {}) {
-      return device.createShaderModule(info);
+    return device.createShaderModule(info);
   };
 
   // 
   static inline decltype(auto) createShaderModule(vk::Device const& device, std::vector<uint32_t> const& code = {}) {
-      return createShaderModule(device, makeShaderModuleInfo(eTempCode = code));
+    return createShaderModule(device, makeShaderModuleInfo(eTempCode = code));
   };
 
   // create shader module 
   static inline decltype(auto) makePipelineStageInfo(vk::Device const& device, std::vector<uint32_t> const& code = {}, vk::ShaderStageFlagBits stage = vk::ShaderStageFlagBits::eCompute, std::optional<char const*> entry = "main") {
-      vk::PipelineShaderStageCreateInfo spi = {
-        .stage = stage,
-        .pName = entry.value(),
-        .pSpecializationInfo = nullptr
-      };
-      if (code.size() > 0u && (!spi.module)) { spi.module = createShaderModule(device, code); };
-      return std::move(spi);
+    vk::PipelineShaderStageCreateInfo spi = {
+      .stage = stage,
+      .pName = entry.value(),
+      .pSpecializationInfo = nullptr
+    };
+    if (code.size() > 0u && (!spi.module)) { spi.module = createShaderModule(device, code); };
+    return std::move(spi);
   };
 
   // create compute
   static inline decltype(auto) makeComputePipelineStageInfo(vk::Device const& device, std::vector<uint32_t> const& code = {}, std::optional<const char*> entry = "main", std::optional<uint32_t> subgroupSize = 0u) {
-      decltype(auto) f = ComputeStageCreateInfo{};
-      f.spi = makePipelineStageInfo(device, code, vk::ShaderStageFlagBits::eCompute, entry);
-      f.spi.flags = vk::PipelineShaderStageCreateFlags{ vk::PipelineShaderStageCreateFlagBits::eRequireFullSubgroups };
-      f.spi.module = createShaderModule(device, eTempCode = code);
-      if (subgroupSize && subgroupSize.value() > 0u) {
-        f.sgmp = vk::PipelineShaderStageRequiredSubgroupSizeCreateInfoEXT{};
-        f.sgmp.requiredSubgroupSize = subgroupSize.value();
-        f.spi.pNext = &f.sgmp;
-      };
-      return std::move(f);
+    decltype(auto) f = ComputeStageCreateInfo{};
+    f.spi = makePipelineStageInfo(device, code, vk::ShaderStageFlagBits::eCompute, entry);
+    f.spi.flags = vk::PipelineShaderStageCreateFlags{ vk::PipelineShaderStageCreateFlagBits::eRequireFullSubgroups };
+    f.spi.module = createShaderModule(device, eTempCode = code);
+    if (subgroupSize && subgroupSize.value() > 0u) {
+      f.sgmp = vk::PipelineShaderStageRequiredSubgroupSizeCreateInfoEXT{};
+      f.sgmp.requiredSubgroupSize = subgroupSize.value();
+      f.spi.pNext = &f.sgmp;
+    };
+    return std::move(f);
   };
 
   //
@@ -393,7 +393,7 @@ namespace lxvc {
 
   // 
   class Handle {
-  public: 
+  public:
     friend Handle;
 
     // 
@@ -401,7 +401,7 @@ namespace lxvc {
     HandleType type = HandleType::eUnknown;
     uint32_t family = 0u;
 
-  public: 
+  public:
     Handle() {};
     Handle(auto const& _handle, HandleType const& type) : value(reinterpret_cast<uintptr_t const&>(_handle)), type(type) {};
     Handle(auto const& _handle) : value(reinterpret_cast<uintptr_t const&>(_handle)), type(getHandleType(_handle)) {};
@@ -412,18 +412,18 @@ namespace lxvc {
     template<class T = uintptr_t> inline decltype(auto) as() const { return reinterpret_cast<T const&>(this->value); };
 
     // 
-    template<class T = uintptr_t> inline operator T&() { return this->as<T>(); };
-    template<class T = uintptr_t> inline operator T const&() const { return this->as<T>(); };
+    template<class T = uintptr_t> inline operator T& () { return this->as<T>(); };
+    template<class T = uintptr_t> inline operator T const& () const { return this->as<T>(); };
 
     //
-    inline decltype(auto) operator =(auto const& handle) { 
+    inline decltype(auto) operator =(auto const& handle) {
       this->value = reinterpret_cast<uintptr_t const&>(handle);
       this->type = getHandleType(handle);
       return *this;
     };
 
     //
-    inline decltype(auto) operator =(Handle const& handle) { 
+    inline decltype(auto) operator =(Handle const& handle) {
       this->value = handle.value, this->type = handle.type, this->family = handle.family;
       return *this;
     };
@@ -431,9 +431,9 @@ namespace lxvc {
 
   //
   class BaseObj : public std::enable_shared_from_this<BaseObj> {
-  protected: 
+  protected:
     using SBP = std::shared_ptr<BaseObj>;
-  public: 
+  public:
     friend ContextObj;
     friend InstanceObj;
     friend DeviceObj;
@@ -450,7 +450,7 @@ namespace lxvc {
     // 
     BaseObj() : infoMap(std::make_shared<MSS>()) {};
     BaseObj(Handle const& base, Handle const& handle = {}) : base(base), handle(handle), infoMap(std::make_shared<MSS>()) {
-      
+
     };
 
     // 
@@ -482,7 +482,7 @@ namespace lxvc {
     //
     template<class T = BaseObj>
     inline decltype(auto) get(Handle const& handle) {
-      if (handleObjectMap.find(handle.type) == handleObjectMap.end()) { 
+      if (handleObjectMap.find(handle.type) == handleObjectMap.end()) {
         handleObjectMap[handle.type] = {};
       };
 
@@ -507,7 +507,7 @@ namespace lxvc {
     using Tw::Tw;
 
     // 
-    operator Handle&() { return this->ptr->handle; };
+    operator Handle& () { return this->ptr->handle; };
     operator Handle const& () const { return this->ptr->handle; };
 
     // 
