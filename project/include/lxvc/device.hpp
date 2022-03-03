@@ -65,9 +65,10 @@ namespace lxvc {
       decltype(auto) memoryProperties2 = PDInfoMap->set(vk::StructureType::ePhysicalDeviceMemoryProperties2, vk::PhysicalDeviceMemoryProperties2{
 
       });
+      auto& memoryProperties = memoryProperties2->memoryProperties; // get ref
+      auto& memoryTypes = memoryProperties.memoryTypes; // get ref
       physicalDevice.getMemoryProperties2(memoryProperties2.get());
-      auto memoryProperties = memoryProperties2->memoryProperties; // get ref
-      auto memoryTypes = memoryProperties.memoryTypes; // get ref
+      
 
       // 
       uint32_t bitIndex = 0u;
