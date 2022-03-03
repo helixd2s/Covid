@@ -79,9 +79,12 @@ namespace lxvc {
       // 
       allocated = AllocatedMemory{
         .memory = device.allocateMemory(infoMap->set(vk::StructureType::eMemoryAllocateInfo, vk::MemoryAllocateInfo{
-          .pNext = infoMap->set(vk::StructureType::eMemoryDedicatedAllocateInfo, vk::MemoryDedicatedAllocateInfo{ 
-            .image = requirements->dedicated && this->handle.type == HandleType::eImage ? this->handle.as<vk::Image>() : vk::Image{},
-            .buffer = requirements->dedicated && this->handle.type == HandleType::eBuffer ? this->handle.as<vk::Buffer>() : vk::Buffer{}
+          .pNext = infoMap->set(vk::StructureType::eMemoryAllocateFlagsInfo, vk::MemoryAllocateFlagsInfo{
+            .pNext = infoMap->set(vk::StructureType::eMemoryDedicatedAllocateInfo, vk::MemoryDedicatedAllocateInfo{
+              .image = requirements->dedicated && this->handle.type == HandleType::eImage ? this->handle.as<vk::Image>() : vk::Image{},
+              .buffer = requirements->dedicated && this->handle.type == HandleType::eBuffer ? this->handle.as<vk::Buffer>() : vk::Buffer{}
+            }),
+            .flags = this->cInfo->bufferInfo->type == BufferType::eDevice ? vk::MemoryAllocateFlagBits::eDeviceAddress : vk::MemoryAllocateFlagBits{},
           }),
           .allocationSize = requirements->size,
           .memoryTypeIndex = std::get<0>(memTypeHeap)

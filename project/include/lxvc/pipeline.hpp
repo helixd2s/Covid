@@ -57,11 +57,12 @@ namespace lxvc {
   protected:
     //
     virtual void createCompute(cpp21::optional_ref<ComputePipelineCreateInfo> compute = {}) {
+      decltype(auto) descriptors = lxvc::context->get<DeviceObj>(this->base)->get<DescriptorsObj>(this->cInfo->layout);
       decltype(auto) device = this->base.as<vk::Device>();
-      this->handle = std::move<vk::Pipeline>(device.createComputePipeline(this->cInfo->descriptors->cache, vk::ComputePipelineCreateInfo{
+      this->handle = std::move<vk::Pipeline>(device.createComputePipeline(descriptors->cache, vk::ComputePipelineCreateInfo{
         .flags = vk::PipelineCreateFlags{},
         .stage = makeComputePipelineStageInfo(device, *(compute->code)),
-        .layout = this->cInfo->descriptors->handle.as<vk::PipelineLayout>()
+        .layout = this->cInfo->layout
       }));
       //
       //lxvc::context->get(this->base)->registerObj(this->handle, shared_from_this());
@@ -87,11 +88,12 @@ namespace lxvc {
       //return this->SFT();
     };
 
+  public:
     // TODO: using multiple-command
     virtual FenceType executeComputeOnce(std::optional<ExecuteComputeInfo> exec = ExecuteComputeInfo{}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
-      decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(exec->layout);
+      decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(exec->layout ? exec->layout : this->cInfo->layout);
       decltype(auto) submission = CommandOnceSubmission{ .info = exec->info };
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
 

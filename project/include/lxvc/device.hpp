@@ -65,9 +65,9 @@ namespace lxvc {
       decltype(auto) memoryProperties2 = PDInfoMap->set(vk::StructureType::ePhysicalDeviceMemoryProperties2, vk::PhysicalDeviceMemoryProperties2{
 
       });
-      decltype(auto) memoryProperties = memoryProperties2->memoryProperties; // get ref
-      decltype(auto) memoryTypes = memoryProperties.memoryTypes; // get ref
       physicalDevice.getMemoryProperties2(memoryProperties2.get());
+      auto memoryProperties = memoryProperties2->memoryProperties; // get ref
+      auto memoryTypes = memoryProperties.memoryTypes; // get ref
 
       // 
       uint32_t bitIndex = 0u;
@@ -93,11 +93,11 @@ namespace lxvc {
 
         case (MemoryUsage::eCpuToGpu):
           //requiredBits |= vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCached | vk::MemoryPropertyFlagBits::eHostCoherent;
-          requiredBits |= vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eDeviceLocal | vk::MemoryPropertyFlagBits::eHostCoherent;
+          requiredBits |= vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
           break;
 
         case (MemoryUsage::eGpuToCpu):
-          requiredBits |= vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eDeviceLocal | vk::MemoryPropertyFlagBits::eHostCoherent;
+          requiredBits |= vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
           break;
 
         case (MemoryUsage::eCpuOnly):

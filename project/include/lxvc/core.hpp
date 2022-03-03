@@ -268,7 +268,7 @@ namespace lxvc {
 
   //
   struct PipelineCreateInfo {
-    std::shared_ptr<DescriptorsObj> descriptors = {};
+    vk::PipelineLayout layout = {};
     std::optional<ComputePipelineCreateInfo> compute = {};
     std::optional<GraphicsPipelineCreateInfo> graphics = {};
   };

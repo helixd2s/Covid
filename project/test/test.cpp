@@ -21,13 +21,56 @@ int main() {
   });
 
   //
-  uint32_t variable = 32u;
+  decltype(auto) buffer = lxvc::ResourceObj::make(device, lxvc::ResourceCreateInfo{
+    .bufferInfo = lxvc::BufferCreateInfo{
+      .type = lxvc::BufferType::eDevice,
+      .size = 1024ull,
+    }
+  }).as<vk::Buffer>();
+
+  //
+  decltype(auto) uploader = lxvc::UploaderObj::make(device, lxvc::UploaderCreateInfo{
+
+  });
+
+
+  //
+  uint64_t address = device.as<vk::Device>().getBufferAddress(vk::BufferDeviceAddressInfo{
+    .buffer = buffer
+  });
 
   // no, that is really final cherep...
   descriptions->executeUniformUpdateOnce(lxvc::UniformDataSet{
-    .data = cpp21::data_view<char8_t>((char8_t*)&variable, 4ull),
-    .region = lxvc::DataRegion{0ull, 4ull},
+    .data = cpp21::data_view<char8_t>((char8_t*)&address, 8ull),
+    .region = lxvc::DataRegion{0ull, 8ull},
     .info = lxvc::QueueGetInfo{0u, 0u}
   });
 
+  //
+  decltype(auto) compute = lxvc::PipelineObj::make(device, lxvc::PipelineCreateInfo{
+    .layout = descriptions.as<vk::PipelineLayout>(),
+    .compute = lxvc::ComputePipelineCreateInfo{
+      .code = cpp21::readBinaryU32("./test.comp.spv")
+    }
+  });
+
+  //
+  auto computeFence = compute->executeComputeOnce(lxvc::ExecuteComputeInfo{
+    .dispatch = vk::Extent3D{1u,1u,1u},
+    .layout = descriptions.as<vk::PipelineLayout>(),
+    .info = lxvc::QueueGetInfo{ 0u, 0u }
+  });
+
+  //
+  std::vector<uint32_t> results(256ull);
+  cpp21::data_view<char8_t> dataview((char8_t*)results.data(), 1024ull, 0ull);
+
+  //
+  auto uploadeFence = uploader->executeDownloadFromBufferOnce(lxvc::BufferRegion{ buffer, lxvc::DataRegion{0ull, 1024ull} }, dataview);
+  auto awaited = std::get<0u>(uploadeFence).get();
+
+  //
+  //for (decltype(auto) element : results) {
+    //std::cout << element << std::endl;
+  //}
 };

@@ -234,7 +234,7 @@ namespace lxvc {
   protected:
 
     // 
-    virtual tType construct(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) {
+    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) {
       this->cInfo = cInfo;
       this->base = deviceObj->handle;
       //this->deviceObj = deviceObj;
