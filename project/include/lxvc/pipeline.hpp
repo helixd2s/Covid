@@ -9,10 +9,11 @@
 namespace lxvc {
 
   //
-  struct DynamicRenderingFormats {
-    vk::Format depthAttachmentFormat;
-    vk::Format stencilAttachmentFormat;
+  struct AttachmentsInfo {
+    vk::Format depthAttachmentFormat = vk::Format::eD32Sfloat;
+    vk::Format stencilAttachmentFormat = vk::Format::eS8Uint;
     std::vector<vk::Format> colorAttachmentFormats = {};
+    std::vector<vk::PipelineColorBlendAttachmentState> blendStates = {};
   };
 
   // 
@@ -29,12 +30,12 @@ namespace lxvc {
     std::optional<PipelineCreateInfo> cInfo = {};
     std::vector<vk::PipelineShaderStageCreateInfo> pipelineStages = {};
     std::vector<vk::DynamicState> dynamicStates = {};
-    std::vector<vk::PipelineColorBlendAttachmentState> blendStates = {};
+    
     //std::vector<vk::Viewport> viewports = {};
     //std::vector<vk::Rect2D> scissors = {};
     //std::shared_ptr<DeviceObj> deviceObj = {};
 
-    DynamicRenderingFormats formats = {};
+    AttachmentsInfo attachments = {};
 
     // 
     inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
@@ -73,7 +74,7 @@ namespace lxvc {
     virtual void createCompute(cpp21::optional_ref<ComputePipelineCreateInfo> compute = {}) {
       decltype(auto) descriptors = lxvc::context->get<DeviceObj>(this->base)->get<DescriptorsObj>(this->cInfo->layout);
       decltype(auto) device = this->base.as<vk::Device>();
-      this->pipelineStages.push_back(makeComputePipelineStageInfo(device, *(compute->code)));
+      this->pipelineStages.push_back(makeComputePipelineStageInfo(device, *compute->code));
       this->handle = std::move<vk::Pipeline>(device.createComputePipeline(descriptors->cache, infoMap->set(vk::StructureType::eComputePipelineCreateInfo, vk::ComputePipelineCreateInfo{
         .flags = vk::PipelineCreateFlags{},
         .stage = this->pipelineStages.back(),
@@ -168,7 +169,7 @@ namespace lxvc {
       };
 
       //
-      dynamicStates.insert(dynamicStates.end(), { 
+      this->dynamicStates.insert(dynamicStates.end(), {
         vk::DynamicState::eViewport, 
         vk::DynamicState::eScissor, 
         vk::DynamicState::eScissorWithCount, 
@@ -181,10 +182,10 @@ namespace lxvc {
       });
 
       // 
-      formats.colorAttachmentFormats.insert(formats.colorAttachmentFormats.end(), {vk::Format::eR32G32B32A32Sfloat, vk::Format::eR32G32B32A32Sfloat });
+      this->attachments.colorAttachmentFormats.insert(attachments.colorAttachmentFormats.end(), {vk::Format::eR32G32B32A32Sfloat, vk::Format::eR32G32B32A32Sfloat });
 
       // for 1st image of framebuffer
-      blendStates.push_back(vk::PipelineColorBlendAttachmentState{ 
+      this->attachments.blendStates.push_back(vk::PipelineColorBlendAttachmentState{
         .blendEnable = false,
         .srcColorBlendFactor = vk::BlendFactor::eOneMinusDstAlpha,
         .dstColorBlendFactor = vk::BlendFactor::eDstAlpha,
@@ -195,7 +196,7 @@ namespace lxvc {
       });
 
       // for 2st image of framebuffer
-      blendStates.push_back(vk::PipelineColorBlendAttachmentState{
+      this->attachments.blendStates.push_back(vk::PipelineColorBlendAttachmentState{
         .blendEnable = false,
         .srcColorBlendFactor = vk::BlendFactor::eOneMinusDstAlpha,
         .dstColorBlendFactor = vk::BlendFactor::eDstAlpha,
@@ -207,7 +208,7 @@ namespace lxvc {
 
       // 
       decltype(auto) pInfo = infoMap->set(vk::StructureType::eGraphicsPipelineCreateInfo, vk::GraphicsPipelineCreateInfo{
-        .pNext = &pRendering->setColorAttachmentFormats(formats.colorAttachmentFormats),
+        .pNext = &pRendering->setColorAttachmentFormats(this->attachments.colorAttachmentFormats),
         .flags = vk::PipelineCreateFlags{},
         .pVertexInputState = pVertexInput.get(),
         .pInputAssemblyState = pInputAssembly.get(),
@@ -216,7 +217,7 @@ namespace lxvc {
         .pRasterizationState = pRasterization.get(),
         .pMultisampleState = pMultisample.get(),
         .pDepthStencilState = pDepthStencil.get(),
-        .pColorBlendState = &pColorBlend->setAttachments(blendStates),
+        .pColorBlendState = &pColorBlend->setAttachments(this->attachments.blendStates),
         .pDynamicState = &pDynamic->setDynamicStates(this->dynamicStates),
         .layout = this->cInfo->layout
       });
