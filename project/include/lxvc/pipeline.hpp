@@ -29,6 +29,9 @@ namespace lxvc {
     std::optional<PipelineCreateInfo> cInfo = {};
     std::vector<vk::PipelineShaderStageCreateInfo> pipelineStages = {};
     std::vector<vk::DynamicState> dynamicStates = {};
+    std::vector<vk::PipelineColorBlendAttachmentState> blendStates = {};
+    //std::vector<vk::Viewport> viewports = {};
+    //std::vector<vk::Rect2D> scissors = {};
     //std::shared_ptr<DeviceObj> deviceObj = {};
 
     DynamicRenderingFormats formats = {};
@@ -70,11 +73,12 @@ namespace lxvc {
     virtual void createCompute(cpp21::optional_ref<ComputePipelineCreateInfo> compute = {}) {
       decltype(auto) descriptors = lxvc::context->get<DeviceObj>(this->base)->get<DescriptorsObj>(this->cInfo->layout);
       decltype(auto) device = this->base.as<vk::Device>();
+      this->pipelineStages.push_back(makeComputePipelineStageInfo(device, *(compute->code)));
       this->handle = std::move<vk::Pipeline>(device.createComputePipeline(descriptors->cache, infoMap->set(vk::StructureType::eComputePipelineCreateInfo, vk::ComputePipelineCreateInfo{
         .flags = vk::PipelineCreateFlags{},
-        .stage = makeComputePipelineStageInfo(device, *(compute->code)),
+        .stage = this->pipelineStages.back(),
         .layout = this->cInfo->layout
-      })));
+      }).ref()));
       //
       //lxvc::context->get(this->base)->registerObj(this->handle, shared_from_this());
       //return this->SFT();
@@ -102,12 +106,12 @@ namespace lxvc {
 
       //
       decltype(auto) pInputAssembly = infoMap->set(vk::StructureType::ePipelineInputAssemblyStateCreateInfo, vk::PipelineInputAssemblyStateCreateInfo{
-
+        .topology = vk::PrimitiveTopology::eTriangleList
       });
 
       //
       decltype(auto) pTessellation = infoMap->set(vk::StructureType::ePipelineTessellationStateCreateInfo, vk::PipelineTessellationStateCreateInfo{
-
+        .patchControlPoints = 1u
       });
 
       //
@@ -122,22 +126,35 @@ namespace lxvc {
 
       //
       decltype(auto) pRasterization = infoMap->set(vk::StructureType::ePipelineRasterizationStateCreateInfo, vk::PipelineRasterizationStateCreateInfo{
-        .pNext = pRasterizationConservative.get()
+        .pNext = pRasterizationConservative.get(),
+        .depthClampEnable = true,
+        .rasterizerDiscardEnable = true,
+        .polygonMode = vk::PolygonMode::eFill,
+        .cullMode = vk::CullModeFlagBits::eNone,
+        .frontFace = vk::FrontFace::eClockwise,
+        .depthBiasEnable = false
       });
 
       //
       decltype(auto) pMultisample = infoMap->set(vk::StructureType::ePipelineMultisampleStateCreateInfo, vk::PipelineMultisampleStateCreateInfo{
-
+        .rasterizationSamples = vk::SampleCountFlagBits::e1,
+        .sampleShadingEnable = false
       });
 
       //
       decltype(auto) pDepthStencil = infoMap->set(vk::StructureType::ePipelineDepthStencilStateCreateInfo, vk::PipelineDepthStencilStateCreateInfo{
-
+        .depthTestEnable = true,
+        .depthWriteEnable = true,
+        .depthCompareOp = vk::CompareOp::eLessOrEqual,
+        .depthBoundsTestEnable = true,
+        .stencilTestEnable = false,
+        .minDepthBounds = 0.f,
+        .maxDepthBounds = 1.f
       });
 
       //
       decltype(auto) pColorBlend = infoMap->set(vk::StructureType::ePipelineColorBlendStateCreateInfo, vk::PipelineColorBlendStateCreateInfo{
-
+        .logicOpEnable = false
       });
 
       //
@@ -150,6 +167,44 @@ namespace lxvc {
         pipelineStages.push_back(makePipelineStageInfo(device, *pair.second, pair.first, "main"));
       };
 
+      //
+      dynamicStates.insert(dynamicStates.end(), { 
+        vk::DynamicState::eViewport, 
+        vk::DynamicState::eScissor, 
+        vk::DynamicState::eScissorWithCount, 
+        vk::DynamicState::eViewportWithCount, 
+        vk::DynamicState::eVertexInputBindingStride,
+        vk::DynamicState::eVertexInputEXT,
+        vk::DynamicState::eCullMode,
+        vk::DynamicState::eBlendConstants,
+        vk::DynamicState::ePrimitiveTopology
+      });
+
+      // 
+      formats.colorAttachmentFormats.insert(formats.colorAttachmentFormats.end(), {vk::Format::eR32G32B32A32Sfloat, vk::Format::eR32G32B32A32Sfloat });
+
+      // for 1st image of framebuffer
+      blendStates.push_back(vk::PipelineColorBlendAttachmentState{ 
+        .blendEnable = false,
+        .srcColorBlendFactor = vk::BlendFactor::eOneMinusDstAlpha,
+        .dstColorBlendFactor = vk::BlendFactor::eDstAlpha,
+        .colorBlendOp = vk::BlendOp::eAdd,
+        .srcAlphaBlendFactor = vk::BlendFactor::eOne,
+        .dstAlphaBlendFactor = vk::BlendFactor::eOne,
+        .alphaBlendOp = vk::BlendOp::eMax
+      });
+
+      // for 2st image of framebuffer
+      blendStates.push_back(vk::PipelineColorBlendAttachmentState{
+        .blendEnable = false,
+        .srcColorBlendFactor = vk::BlendFactor::eOneMinusDstAlpha,
+        .dstColorBlendFactor = vk::BlendFactor::eDstAlpha,
+        .colorBlendOp = vk::BlendOp::eAdd,
+        .srcAlphaBlendFactor = vk::BlendFactor::eOne,
+        .dstAlphaBlendFactor = vk::BlendFactor::eOne,
+        .alphaBlendOp = vk::BlendOp::eMax
+      });
+
       // 
       decltype(auto) pInfo = infoMap->set(vk::StructureType::eGraphicsPipelineCreateInfo, vk::GraphicsPipelineCreateInfo{
         .pNext = &pRendering->setColorAttachmentFormats(formats.colorAttachmentFormats),
@@ -161,7 +216,7 @@ namespace lxvc {
         .pRasterizationState = pRasterization.get(),
         .pMultisampleState = pMultisample.get(),
         .pDepthStencilState = pDepthStencil.get(),
-        .pColorBlendState = pColorBlend.get(),
+        .pColorBlendState = &pColorBlend->setAttachments(blendStates),
         .pDynamicState = &pDynamic->setDynamicStates(this->dynamicStates),
         .layout = this->cInfo->layout
       });
