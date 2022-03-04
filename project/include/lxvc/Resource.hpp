@@ -19,6 +19,7 @@ namespace lxvc {
     friend DescriptorsObj;
     friend UploaderObj;
     friend FramebufferObj;
+    friend SwapchainObj;
 
     // 
     //vk::Buffer buffer = {};
@@ -167,7 +168,7 @@ namespace lxvc {
 
       //
       device.getImageMemoryRequirements2(infoMap->set(vk::StructureType::eImageMemoryRequirementsInfo2, vk::ImageMemoryRequirementsInfo2{
-        .image = (this->handle = device.createImage(imageInfo->setQueueFamilyIndices(deviceObj->queueFamilies.indices)))
+        .image = (this->handle = this->cInfo->image ? this->cInfo->image.value() : device.createImage(imageInfo->setQueueFamilyIndices(deviceObj->queueFamilies.indices)))
       }).get(), memReqInfo2.get());
 
       //
@@ -297,7 +298,7 @@ namespace lxvc {
 
       //
       device.getBufferMemoryRequirements2(infoMap->set(vk::StructureType::eBufferMemoryRequirementsInfo2, vk::BufferMemoryRequirementsInfo2{
-        .buffer = (this->handle = device.createBuffer(bufferInfo->setQueueFamilyIndices(deviceObj->queueFamilies.indices)))
+        .buffer = (this->handle = this->cInfo->buffer ? this->cInfo->buffer.value() : device.createBuffer(bufferInfo->setQueueFamilyIndices(deviceObj->queueFamilies.indices)))
       }).get(), memReqInfo2.get());
 
       //

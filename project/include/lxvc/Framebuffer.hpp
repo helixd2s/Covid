@@ -89,6 +89,7 @@ namespace lxvc {
 
     //
     virtual void createImage(ImageType const& imageType = ImageType::eColorAttachment, vk::Format const& format_ = vk::Format::eR32G32B32A32Sfloat) {
+      decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
       decltype(auto) format = imageType == ImageType::eDepthAttachment ? vk::Format::eD32Sfloat : (imageType == ImageType::eStencilAttachment ? vk::Format::eS8Uint : format_);
@@ -152,6 +153,9 @@ namespace lxvc {
           .subresourceRange = subresourceRange
         });
       });
+
+      //
+      this->handle = uintptr_t(this);
 
       //lxvc::context->get<DeviceObj>(this->base)
     };

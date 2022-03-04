@@ -10,7 +10,7 @@
 #include "./Framebuffer.hpp"
 #include "./Pipeline.hpp"
 #include "./Uploader.hpp"
-
+#include "./Swapchain.hpp"
 
 // 
 namespace lxvc {

@@ -87,7 +87,11 @@ namespace lxvc {
     ePipeline = 8u,
     eUploader = 9u,
     eDescriptors = 10u,
-    eQueueFamily = 11u
+    eQueueFamily = 11u,
+    eSurface = 12u,
+    eSwapchain = 13u,
+    eFramebuffer = 14u,
+    eAccelerationStructure = 15u
   };
 
   //
@@ -110,6 +114,12 @@ namespace lxvc {
     eShaderRead = 1u
   };
 
+  //
+  enum class SwapchainState : uint32_t {
+    ePresent = 0u,
+    eReady = 1u
+  };
+
 
   //
   class AccelerationStructureObj;
@@ -122,6 +132,7 @@ namespace lxvc {
   class PipelineObj;
   class UploaderObj;
   class FramebufferObj;
+  class SwapchainObj;
 
   //
   struct ContextCreateInfo {
@@ -200,6 +211,8 @@ namespace lxvc {
 
   //
   struct ResourceCreateInfo {
+    std::optional<vk::Buffer> buffer = {};
+    std::optional<vk::Image> image = {};
     std::optional<BufferCreateInfo> bufferInfo = {};
     std::optional<ImageCreateInfo> imageInfo = {};
   };
@@ -315,6 +328,7 @@ namespace lxvc {
   //
   struct SwapchainCreateInfo {
     vk::SurfaceKHR surface = {};
+    vk::PipelineLayout layout = {};
   };
 
   //
@@ -416,10 +430,14 @@ namespace lxvc {
     lxvc::handleTypeMap[std::type_index(typeid(vk::CommandBuffer))] = HandleType::eCommandBuffer;
 
     // 
+    lxvc::handleTypeMap[std::type_index(typeid(vk::SwapchainKHR))] = HandleType::eSwapchain;
+    lxvc::handleTypeMap[std::type_index(typeid(vk::SurfaceKHR))] = HandleType::eSurface;
     lxvc::handleTypeMap[std::type_index(typeid(vk::Buffer))] = HandleType::eBuffer;
     lxvc::handleTypeMap[std::type_index(typeid(vk::Image))] = HandleType::eImage;
     lxvc::handleTypeMap[std::type_index(typeid(vk::Pipeline))] = HandleType::ePipeline;
     lxvc::handleTypeMap[std::type_index(typeid(vk::PipelineLayout))] = HandleType::eDescriptors;
+    lxvc::handleTypeMap[std::type_index(typeid(vk::AccelerationStructureKHR))] = HandleType::eAccelerationStructure;
+    lxvc::handleTypeMap[std::type_index(typeid(vk::Framebuffer))] = HandleType::eFramebuffer;
 
     //
     return handleTypeMap;

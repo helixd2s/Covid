@@ -370,6 +370,8 @@ namespace lxvc {
           .size = this->cInfo->cacheSize,
         }
       }).as<vk::Buffer>();
+
+      this->handle = uintptr_t(this);
     };
   };
 

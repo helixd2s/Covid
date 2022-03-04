@@ -29,6 +29,7 @@ namespace lxvc {
     friend PipelineObj;
     friend ResourceObj;
     friend FramebufferObj;
+    friend SwapchainObj;
 
     //
     vk::PipelineCache cache = {};
@@ -46,6 +47,7 @@ namespace lxvc {
     //
     cpp21::bucket<vk::DescriptorImageInfo> textures = std::vector<vk::DescriptorImageInfo>{};
     cpp21::bucket<vk::DescriptorImageInfo> samplers = std::vector<vk::DescriptorImageInfo>{};
+    cpp21::bucket<vk::DescriptorImageInfo> images = std::vector<vk::DescriptorImageInfo>{};
     std::optional<vk::DescriptorBufferInfo> uniformBufferDesc = {};
 
     // 
@@ -128,7 +130,8 @@ namespace lxvc {
       })->setPoolSizes(this->DPC = std::vector<vk::DescriptorPoolSize>{
         vk::DescriptorPoolSize{ vk::DescriptorType::eSampler, 64u },
         vk::DescriptorPoolSize{ vk::DescriptorType::eSampledImage, 256u },
-        vk::DescriptorPoolSize{ vk::DescriptorType::eUniformBuffer, 2u }
+        vk::DescriptorPoolSize{ vk::DescriptorType::eUniformBuffer, 2u },
+        vk::DescriptorPoolSize{ vk::DescriptorType::eStorageImage, 64u },
       });
 
       // 
@@ -140,6 +143,7 @@ namespace lxvc {
       this->createDescriptorLayout(vk::DescriptorType::eUniformBuffer, 1u);
       this->createDescriptorLayout(vk::DescriptorType::eSampledImage, 256u);
       this->createDescriptorLayout(vk::DescriptorType::eSampler, 64u);
+      this->createDescriptorLayout(vk::DescriptorType::eStorageImage, 64u);
 
       //
       this->sets = device.allocateDescriptorSets(this->infoMap->set(vk::StructureType::eDescriptorSetAllocateInfo, vk::DescriptorSetAllocateInfo{
@@ -185,9 +189,11 @@ namespace lxvc {
     virtual void updateDescriptors() {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) writes = std::vector<vk::WriteDescriptorSet>{};
-      writes.push_back(vk::WriteDescriptorSet{ .dstSet = this->sets[0u], .dstBinding = 0u, .dstArrayElement = 0u, .descriptorCount = 1u, .descriptorType = vk::DescriptorType::eUniformBuffer, .pBufferInfo = &this->uniformBufferDesc.value() });
-      if (this->textures->size() > 0ull) writes.push_back(vk::WriteDescriptorSet{ .dstSet = this->sets[1u], .dstBinding = 0u, .dstArrayElement = 0u, .descriptorCount = (uint32_t)this->textures->size(), .descriptorType = vk::DescriptorType::eSampledImage, .pImageInfo = this->textures->data() });
-      if (this->samplers->size() > 0ull) writes.push_back(vk::WriteDescriptorSet{ .dstSet = this->sets[2u], .dstBinding = 0u, .dstArrayElement = 0u, .descriptorCount = (uint32_t)this->samplers->size(), .descriptorType = vk::DescriptorType::eSampler, .pImageInfo = this->samplers->data() });
+      decltype(auto) temp = vk::WriteDescriptorSet{ .dstSet = this->sets[0u], .dstBinding = 0u, .dstArrayElement = 0u, .descriptorType = vk::DescriptorType::eUniformBuffer };
+      writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[0u]).setDescriptorType(vk::DescriptorType::eUniformBuffer).setPBufferInfo(&this->uniformBufferDesc.value()).setDescriptorCount(1u));
+      if (this->textures->size() > 0ull) { writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[1u]).setPImageInfo(this->textures.data()).setDescriptorCount(uint32_t(this->textures.size())).setDescriptorType(vk::DescriptorType::eSampledImage)); };
+      if (this->samplers->size() > 0ull) { writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[2u]).setPImageInfo(this->samplers.data()).setDescriptorCount(uint32_t(this->samplers.size())).setDescriptorType(vk::DescriptorType::eSampler)); };
+      if (this->images->size() > 0ull) { writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[3u]).setPImageInfo(this->images.data()).setDescriptorCount(uint32_t(this->images.size())).setDescriptorType(vk::DescriptorType::eStorageImage)); };
       device.updateDescriptorSets(writes, {});
       //return this->SFT();
     };
