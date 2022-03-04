@@ -4,6 +4,7 @@
 #include "./Core.hpp"
 #include "./Device.hpp"
 #include "./Descriptors.hpp"
+#include "./Framebuffer.hpp"
 
 // 
 namespace lxvc {
