@@ -149,6 +149,8 @@ namespace lxvc {
             .dstAccessMask = correctAccessMask,
             .oldLayout = imageLayout,
             .newLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
+            .srcQueueFamilyIndex = info->queueFamilyIndex,
+            .dstQueueFamilyIndex = info->queueFamilyIndex,
             .image = image,
             .subresourceRange = subresourceRange
           }
@@ -179,6 +181,8 @@ namespace lxvc {
             .dstAccessMask = correctAccessMask,
             .oldLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
             .newLayout = imageLayout,
+            .srcQueueFamilyIndex = info->queueFamilyIndex,
+            .dstQueueFamilyIndex = info->queueFamilyIndex,
             .image = image,
             .subresourceRange = subresourceRange
           }

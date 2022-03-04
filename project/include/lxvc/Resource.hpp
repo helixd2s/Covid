@@ -198,6 +198,8 @@ namespace lxvc {
           .dstAccessMask = correctAccessMask,
           .oldLayout = imageInfo->initialLayout,
           .newLayout = cInfo->layout,
+          .srcQueueFamilyIndex = cInfo->info->queueFamilyIndex,
+          .dstQueueFamilyIndex = cInfo->info->queueFamilyIndex,
           .image = this->handle.as<vk::Image>(),
           .subresourceRange = vk::ImageSubresourceRange{
             .aspectMask = 
