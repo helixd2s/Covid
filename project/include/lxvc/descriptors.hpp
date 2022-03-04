@@ -28,6 +28,7 @@ namespace lxvc {
     friend DeviceObj;
     friend PipelineObj;
     friend ResourceObj;
+    friend FramebufferObj;
 
     //
     vk::PipelineCache cache = {};

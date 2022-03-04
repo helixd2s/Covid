@@ -9,6 +9,7 @@
 #include "./Descriptors.hpp"
 #include "./Pipeline.hpp"
 #include "./Uploader.hpp"
+#include "./Framebuffer.hpp"
 
 // 
 namespace lxvc {

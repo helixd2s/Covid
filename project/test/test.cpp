@@ -72,6 +72,17 @@ int main() {
   auto uploadeFence = uploader->executeDownloadFromBufferOnce(lxvc::BufferRegion{ buffer, lxvc::DataRegion{0ull, 1024ull} }, dataview);
   auto awaited = std::get<0u>(uploadeFence).get();
 
+
+  //
+  auto framebuffer = lxvc::FramebufferObj::make(device.with(0u), lxvc::FramebufferCreateInfo{
+    .extent = {1280u, 720u},
+    .layout = descriptions.as<vk::PipelineLayout>()
+  });
+
+  //
+  framebuffer->switchToShaderRead();
+  framebuffer->switchToAttachment();
+
   //
   decltype(auto) buf = (std::cout << "");
   for (decltype(auto) rc : results) {

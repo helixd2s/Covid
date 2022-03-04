@@ -147,6 +147,7 @@ namespace lxvc {
 
       // 
       decltype(auto) imageInfo = infoMap->set(vk::StructureType::eImageCreateInfo, vk::ImageCreateInfo{
+        .imageType = cInfo->imageType,
         .format = cInfo->format,
         .extent = cInfo->extent,
         .mipLevels = 1u,
@@ -199,7 +200,9 @@ namespace lxvc {
           .newLayout = cInfo->layout,
           .image = this->handle.as<vk::Image>(),
           .subresourceRange = vk::ImageSubresourceRange{
-            .aspectMask = vk::ImageAspectFlagBits::eColor,
+            .aspectMask = 
+               cInfo->type == ImageType::eDepthAttachment ? vk::ImageAspectFlagBits::eDepth : 
+              (cInfo->type == ImageType::eStencilAttachment ? vk::ImageAspectFlagBits::eStencil : vk::ImageAspectFlagBits::eColor),
             .baseMipLevel = 0u,
             .levelCount = imageInfo->mipLevels,
             .baseArrayLayer = 0u,

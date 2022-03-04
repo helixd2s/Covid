@@ -100,6 +100,11 @@ namespace lxvc {
     eShaderReadWrite = VkAccessFlagBits2(vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eShaderWrite),
   };
 
+  //
+  enum class FramebufferState : uint32_t {
+    eAttachment = 0u,
+    eShaderRead = 1u
+  };
 
 
   //
@@ -112,6 +117,7 @@ namespace lxvc {
   class DescriptorsObj;
   class PipelineObj;
   class UploaderObj;
+  class FramebufferObj;
 
   //
   struct ContextCreateInfo {
@@ -175,6 +181,7 @@ namespace lxvc {
   struct ImageCreateInfo {
     std::optional<QueueGetInfo> info = QueueGetInfo{};
     ImageType type = ImageType::eStorage;
+    vk::ImageType imageType = vk::ImageType::e2D;
     vk::Extent3D extent = {};
     vk::Format format = vk::Format::eUndefined;
     vk::ImageLayout layout = vk::ImageLayout::eGeneral;
@@ -271,6 +278,17 @@ namespace lxvc {
     vk::PipelineLayout layout = {};
     std::optional<ComputePipelineCreateInfo> compute = {};
     std::optional<GraphicsPipelineCreateInfo> graphics = {};
+  };
+
+  //
+  struct FramebufferCreateInfo {
+    vk::Extent2D extent = {640u, 480u};
+    vk::PipelineLayout layout = {};
+  };
+
+  //
+  struct SwapchainCreateInfo {
+    vk::SurfaceKHR surface = {};
   };
 
   //
