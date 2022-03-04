@@ -136,67 +136,21 @@ namespace lxvc {
       this->imageViewIndices.push_back(descriptorsObj->textures.add(vk::DescriptorImageInfo{ .imageView = this->imageViews.back(), .imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal }));
 
       // TODO: use pre-built command buffer
-      this->switchToShaderReadFn.push_back([=](std::optional<QueueGetInfo> const& info = QueueGetInfo{}, FramebufferState const& previousState = {}) {
-        // 
-        decltype(auto) submission = CommandOnceSubmission{ .info = info };
-        decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
-        decltype(auto) correctAccessMask = vku::getCorrectAccessMaskByImageLayout<vk::AccessFlagBits2>(cInfo->layout);
-        decltype(auto) transferBarrier = std::vector<vk::ImageMemoryBarrier2>{
-          vk::ImageMemoryBarrier2{
-            .srcStageMask = vk::PipelineStageFlagBits2::eAllCommands,
-            .srcAccessMask = vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eMemoryWrite,
-            .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(correctAccessMask),
-            .dstAccessMask = correctAccessMask,
-            .oldLayout = imageLayout,
-            .newLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
-            .srcQueueFamilyIndex = info->queueFamilyIndex,
-            .dstQueueFamilyIndex = info->queueFamilyIndex,
-            .image = image,
-            .subresourceRange = subresourceRange
-          }
-        };
-
-        // 
-        submission.commandInits.push_back([=](vk::CommandBuffer const& cmdBuf) {
-          auto _depInfo = depInfo;
-          cmdBuf.pipelineBarrier2(_depInfo.setImageMemoryBarriers(transferBarrier));
-          return cmdBuf;
+      this->switchToAttachmentFn.push_back([=](std::optional<QueueGetInfo> const& info = QueueGetInfo{}, FramebufferState const& previousState = {}) {
+        return deviceObj->get<ResourceObj>(image)->switchLayout(ImageLayoutSwitchInfo{
+          .newImageLayout = imageLayout,
+          .info = info,
+          .subresourceRange = subresourceRange
         });
-
-        //
-        return deviceObj->executeCommandOnce(submission);
       });
 
-      // TODO: use pre-built command buffer
-      this->switchToAttachmentFn.push_back([=](std::optional<QueueGetInfo> const& info = QueueGetInfo{}, FramebufferState const& previousState = {}) {
-        // 
-        decltype(auto) submission = CommandOnceSubmission{ .info = info };
-        decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
-        decltype(auto) correctAccessMask = vku::getCorrectAccessMaskByImageLayout<vk::AccessFlagBits2>(cInfo->layout);
-        decltype(auto) transferBarrier = std::vector<vk::ImageMemoryBarrier2>{
-          vk::ImageMemoryBarrier2{
-            .srcStageMask = vk::PipelineStageFlagBits2::eAllCommands,
-            .srcAccessMask = vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eMemoryWrite,
-            .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(correctAccessMask),
-            .dstAccessMask = correctAccessMask,
-            .oldLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
-            .newLayout = imageLayout,
-            .srcQueueFamilyIndex = info->queueFamilyIndex,
-            .dstQueueFamilyIndex = info->queueFamilyIndex,
-            .image = image,
-            .subresourceRange = subresourceRange
-          }
-        };
-
-        // 
-        submission.commandInits.push_back([=](vk::CommandBuffer const& cmdBuf) {
-          auto _depInfo = depInfo;
-          cmdBuf.pipelineBarrier2(_depInfo.setImageMemoryBarriers(transferBarrier));
-          return cmdBuf;
+      //
+      this->switchToShaderReadFn.push_back([=](std::optional<QueueGetInfo> const& info = QueueGetInfo{}, FramebufferState const& previousState = {}) {
+        return deviceObj->get<ResourceObj>(image)->switchLayout(ImageLayoutSwitchInfo{
+          .newImageLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
+          .info = info,
+          .subresourceRange = subresourceRange
         });
-
-        //
-        return deviceObj->executeCommandOnce(submission);
       });
 
       //lxvc::context->get<DeviceObj>(this->base)

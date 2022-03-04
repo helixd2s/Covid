@@ -18,6 +18,7 @@ namespace lxvc {
     friend DeviceObj;
     friend DescriptorsObj;
     friend UploaderObj;
+    friend FramebufferObj;
 
     // 
     //vk::Buffer buffer = {};
@@ -187,24 +188,39 @@ namespace lxvc {
       device.bindImageMemory2(bindInfos);
 
       // 
-      decltype(auto) submission = CommandOnceSubmission{ .info = cInfo->info };
+      if (cInfo->info) {
+        this->switchLayout(ImageLayoutSwitchInfo{
+          .newImageLayout = cInfo->layout,
+          .info = cInfo->info,
+          .oldImageLayout = imageInfo->initialLayout
+        });
+      };
+    };
+
+    //
+    virtual FenceType switchLayout(ImageLayoutSwitchInfo const& switchInfo = {}) {
+      decltype(auto) info = switchInfo.info ? switchInfo.info : this->cInfo->imageInfo->info;
+      decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
+      decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
+      decltype(auto) oldImageLayout = switchInfo.oldImageLayout ? switchInfo.oldImageLayout.value() : this->cInfo->imageInfo->layout;
+      decltype(auto) submission = CommandOnceSubmission{ .info = switchInfo.info };
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
-      decltype(auto) correctAccessMask = vku::getCorrectAccessMaskByImageLayout<vk::AccessFlagBits2>(cInfo->layout);
+      decltype(auto) correctAccessMask = vku::getCorrectAccessMaskByImageLayout<vk::AccessFlagBits2>(switchInfo.newImageLayout);
       decltype(auto) transferBarrier = std::vector<vk::ImageMemoryBarrier2>{
         vk::ImageMemoryBarrier2{
           .srcStageMask = vk::PipelineStageFlagBits2::eAllCommands,
           .srcAccessMask = vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eMemoryWrite,
-          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(correctAccessMask),
+          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(correctAccessMask) | (correctAccessMask & vk::AccessFlagBits2::eShaderRead ? vk::PipelineStageFlagBits2::eAllCommands : vk::PipelineStageFlagBits2{}),
           .dstAccessMask = correctAccessMask,
-          .oldLayout = imageInfo->initialLayout,
-          .newLayout = cInfo->layout,
-          .srcQueueFamilyIndex = cInfo->info->queueFamilyIndex,
-          .dstQueueFamilyIndex = cInfo->info->queueFamilyIndex,
+          .oldLayout = oldImageLayout,
+          .newLayout = switchInfo.newImageLayout,
+          .srcQueueFamilyIndex = info->queueFamilyIndex,
+          .dstQueueFamilyIndex = info->queueFamilyIndex,
           .image = this->handle.as<vk::Image>(),
-          .subresourceRange = vk::ImageSubresourceRange{
-            .aspectMask = 
-               cInfo->type == ImageType::eDepthAttachment ? vk::ImageAspectFlagBits::eDepth : 
-              (cInfo->type == ImageType::eStencilAttachment ? vk::ImageAspectFlagBits::eStencil : vk::ImageAspectFlagBits::eColor),
+          .subresourceRange = switchInfo.subresourceRange ? switchInfo.subresourceRange.value() : vk::ImageSubresourceRange{
+            .aspectMask =
+               this->cInfo->imageInfo->type == ImageType::eDepthAttachment ? vk::ImageAspectFlagBits::eDepth :
+              (this->cInfo->imageInfo->type == ImageType::eStencilAttachment ? vk::ImageAspectFlagBits::eStencil : vk::ImageAspectFlagBits::eColor),
             .baseMipLevel = 0u,
             .levelCount = imageInfo->mipLevels,
             .baseArrayLayer = 0u,
@@ -221,9 +237,13 @@ namespace lxvc {
       });
 
       //
-      return deviceObj->executeCommandOnce(submission);
-      // 
-      //return this->SFT();
+      decltype(auto) fence = deviceObj->executeCommandOnce(submission);
+
+      //
+      this->cInfo->imageInfo->layout = switchInfo.newImageLayout;
+
+      //
+      return fence;
     };
 
     // 

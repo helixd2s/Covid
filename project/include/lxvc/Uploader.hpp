@@ -66,6 +66,124 @@ namespace lxvc {
       return std::make_shared<UploaderObj>(handle, cInfo)->registerSelf();
     };
 
+
+
+    //
+    virtual FenceType executeUploadToImageOnce(std::span<char8_t> const& host, std::optional<ImageRegion> imageRegion) {
+      decltype(auto) submission = CommandOnceSubmission{ .info = this->cInfo->info };
+      decltype(auto) uploadBuffer = this->uploadBuffer;
+      decltype(auto) downloadBuffer = this->downloadBuffer;
+      decltype(auto) device = this->base.as<vk::Device>();
+      decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
+      decltype(auto) size = host.size();
+      decltype(auto) copyInfo = vk::CopyBufferToImageInfo2{ .srcBuffer = uploadBuffer, .dstImage = imageRegion->image, .dstImageLayout = vk::ImageLayout::eTransferDstOptimal };
+      decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
+      decltype(auto) imageObj = deviceObj->get<ResourceObj>(imageRegion->image);
+      decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
+      
+      //
+      decltype(auto) subresourceRange = vk::ImageSubresourceRange{
+          .aspectMask =
+             imageObj->cInfo->imageInfo->type == ImageType::eDepthAttachment ? vk::ImageAspectFlagBits::eDepth :
+            (imageObj->cInfo->imageInfo->type == ImageType::eStencilAttachment ? vk::ImageAspectFlagBits::eStencil : vk::ImageAspectFlagBits::eColor),
+          .baseMipLevel = imageRegion->region.baseMipLevel,
+          .levelCount = 1u,//imageInfo->mipLevels - imageRegion->region->baseMipLevel,
+          .baseArrayLayer = 0u,
+          .layerCount = imageInfo->arrayLayers
+      };
+
+      //
+      decltype(auto) subresourceLayers = vk::ImageSubresourceLayers{
+        .aspectMask = subresourceRange.aspectMask,
+        .mipLevel = subresourceRange.baseMipLevel,
+        .baseArrayLayer = subresourceRange.baseArrayLayer,
+        .layerCount = subresourceRange.layerCount
+      };
+
+      //
+      decltype(auto) regions = std::vector<vk::BufferImageCopy2>{ vk::BufferImageCopy2{
+        .bufferOffset = 0ull, .imageSubresource = subresourceLayers, .imageOffset = imageRegion->region.offset, .imageExtent = imageRegion->region.extent
+      } };
+
+      //
+      decltype(auto) bufferBarriersBegin = std::vector<vk::BufferMemoryBarrier2>{
+        vk::BufferMemoryBarrier2{
+          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eHostMapWrite),
+          .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eHostMapWrite),
+          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eHostMapRead),
+          .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eHostMapRead),
+          .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
+          .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
+          .buffer = uploadBuffer,
+          .offset = 0ull,
+          .size = size
+        }
+      };
+
+      //
+      decltype(auto) imageBarriersBegin = std::vector<vk::ImageMemoryBarrier2>{
+        vk::ImageMemoryBarrier2{
+          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralRead),
+          .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite),
+          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferWrite),
+          .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
+          .oldLayout = imageObj->cInfo->imageInfo->layout,
+          .newLayout = vk::ImageLayout::eTransferDstOptimal,
+          .srcQueueFamilyIndex = imageRegion->queueFamilyIndex,
+          .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
+          .subresourceRange = subresourceRange
+        }
+      };
+
+      //
+      decltype(auto) bufferBarriersEnd = std::vector<vk::BufferMemoryBarrier2>{
+        vk::BufferMemoryBarrier2{
+          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eHostMapRead),
+          .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eHostMapRead),
+          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eHostMapWrite),
+          .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eHostMapWrite),
+          .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
+          .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
+          .buffer = uploadBuffer,
+          .offset = 0ull,
+          .size = size
+        }
+      };
+
+      // 
+      decltype(auto) imageBarriersEnd = std::vector<vk::ImageMemoryBarrier2>{
+        vk::ImageMemoryBarrier2{
+          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferWrite),
+          .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
+          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralRead),
+          .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite),
+          .oldLayout = vk::ImageLayout::eTransferDstOptimal,
+          .newLayout = imageObj->cInfo->imageInfo->layout,
+          .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
+          .dstQueueFamilyIndex = imageRegion->queueFamilyIndex,
+          .subresourceRange = subresourceRange
+        }
+      };
+
+      //
+      memcpy(lxvc::context->get<DeviceObj>(this->base)->get<ResourceObj>(uploadBuffer)->mappedMemory, host.data(), size);
+
+      // 
+      submission.commandInits.push_back([=](vk::CommandBuffer const& cmdBuf) {
+        auto _copyInfo = copyInfo;
+        auto _depInfo = depInfo;
+        cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersBegin));
+        cmdBuf.copyBufferToImage2(_copyInfo.setRegions(regions));
+        cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersEnd));
+        return cmdBuf;
+      });
+
+      //
+      return lxvc::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
+    };
+
+
+
     //
     virtual FenceType executeUploadToBufferOnce(std::span<char8_t> const& host, std::optional<BufferRegion> bufferRegion) {
       decltype(auto) submission = CommandOnceSubmission{ .info = this->cInfo->info };

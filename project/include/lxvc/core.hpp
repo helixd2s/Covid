@@ -214,10 +214,32 @@ namespace lxvc {
   };
 
   //
+  struct ImageDataRegion {
+    vk::Offset3D offset = { 0u, 0u, 0u };
+    vk::Extent3D extent = { 1u, 1u, 1u };
+    uint32_t baseMipLevel = 0u;
+  };
+
+  //
   struct BufferRegion {
     vk::Buffer buffer = {};
     DataRegion region = {};
     uint32_t queueFamilyIndex = 0u;
+  };
+
+  //
+  struct ImageRegion {
+    vk::Image image = {};
+    ImageDataRegion region = {};
+    uint32_t queueFamilyIndex = 0u;
+  };
+
+  //
+  struct ImageLayoutSwitchInfo {
+    vk::ImageLayout const& newImageLayout = vk::ImageLayout::eGeneral;
+    std::optional<QueueGetInfo> info = {};
+    std::optional<vk::ImageLayout> oldImageLayout = {};
+    std::optional<vk::ImageSubresourceRange> subresourceRange = {};
   };
 
   // 
