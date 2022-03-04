@@ -65,7 +65,7 @@ int main() {
 
   //
   std::vector<uint32_t> results(256ull); // data_view - vector without changing pointer address!
-  std::span<char8_t, 1024ull> dataview((char8_t*)results.data(), 0ull);
+  std::span<char8_t> dataview{ (char8_t*)results.data(), 1024ull };
 
 
   //
