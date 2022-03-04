@@ -56,7 +56,7 @@ file(GLOB_RECURSE _source_list
 
 # 
 add_executable(${PROJECT_NAME} ${_source_list})
-target_compile_definitions(${PROJECT_NAME} PUBLIC )
+target_compile_definitions(${PROJECT_NAME} PUBLIC VULKAN_HPP_NO_CONSTRUCTORS)
 target_include_directories(${PROJECT_NAME} PUBLIC 
   ${PROJECT_SOURCE_DIR}/project/include 
   ${PROJECT_SOURCE_DIR}/prebuild/include 
@@ -74,6 +74,27 @@ target_link_directories(${PROJECT_NAME} PUBLIC
   ${PROJECT_SOURCE_DIR}/../external/lib
 )
 target_link_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS} ${Vulkan_LIBRARIES} glfw)
+target_precompile_headers(${PROJECT_NAME}
+  PUBLIC
+  <memory>
+  <vector>
+  <map>
+  <future>
+  <iostream>
+  <optional>
+  <coroutine>
+  <tuple>
+  <type_traits>
+  <utility>
+  <unordered_map>
+  <iterator>
+  <fstream>
+  <typeindex>
+  <vulkan/vulkan.h>
+  <vulkan/vulkan.hpp>
+  <vulkan/vulkan_raii.hpp>
+  <glm/glm.hpp>
+)
 
 # 
 if (MSVC)

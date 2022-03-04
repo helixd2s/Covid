@@ -1,7 +1,9 @@
 #pragma once
 
 //
+#ifndef VULKAN_HPP_NO_CONSTRUCTORS
 #define VULKAN_HPP_NO_CONSTRUCTORS
+#endif
 
 // 
 #include <vector>
@@ -17,10 +19,12 @@
 //#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 //#define VULKAN_HPP_DEFAULT_DISPATCHER vk::DispatchLoaderDynamic
 
-// 
+// but used by precompiled headers
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_raii.hpp>
+
+// 
 #include <vk-utils/cpp21.hpp>
 #include <vk-utils/chain.hpp>
 
@@ -287,7 +291,7 @@ namespace lxvc {
 
   //
   struct GraphicsPipelineCreateInfo {
-
+    std::unordered_map<vk::ShaderStageFlagBits, cpp21::shared_vector<uint32_t>> stageCodes = {};
   };
 
   //
