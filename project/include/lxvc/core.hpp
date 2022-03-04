@@ -215,7 +215,7 @@ namespace lxvc {
 
   // 
   struct UniformDataSet {
-    cpp21::data_view<char8_t> data = {};
+    std::span<char8_t> data = {};
     std::optional<DataRegion> region = DataRegion{};
     std::optional<QueueGetInfo> info = QueueGetInfo{};
   };
@@ -403,13 +403,16 @@ namespace lxvc {
 
   public:
     Handle() {};
-    Handle(auto const& _handle, HandleType const& type) : value(reinterpret_cast<uintptr_t const&>(_handle)), type(type) {};
-    Handle(auto const& _handle) : value(reinterpret_cast<uintptr_t const&>(_handle)), type(getHandleType(_handle)) {};
+    Handle(auto const& _handle, HandleType const& type, uint32_t const& family = 0u) : value(reinterpret_cast<uintptr_t const&>(_handle)), type(type), family(family) {};
+    Handle(auto const& _handle, uint32_t const& family = 0u) : value(reinterpret_cast<uintptr_t const&>(_handle)), type(getHandleType(_handle)), family(family) {};
     Handle(Handle const& _handle) : value(_handle.value), type(_handle.type), family(_handle.family) {};
 
     // 
     template<class T = uintptr_t> inline decltype(auto) as() { return reinterpret_cast<T&>(this->value); };
     template<class T = uintptr_t> inline decltype(auto) as() const { return reinterpret_cast<T const&>(this->value); };
+
+    // 
+    inline decltype(auto) with(uint32_t const& family = 0u) const { return Handle(this->value, this->type, family); };
 
     // 
     template<class T = uintptr_t> inline operator T& () { return this->as<T>(); };
@@ -522,6 +525,8 @@ namespace lxvc {
     template<class T = uintptr_t> inline decltype(auto) as() { return this->ptr->handle.as<T>(); };
     template<class T = uintptr_t> inline decltype(auto) as() const { return this->ptr->handle.as<T>(); };
 
+    // 
+    inline decltype(auto) with(uint32_t const& family = 0u) const { return this->ptr->handle.with(family); };
 
     // we forbid to change handle directly
 

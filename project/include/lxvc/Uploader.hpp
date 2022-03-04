@@ -67,7 +67,7 @@ namespace lxvc {
     };
 
     //
-    virtual FenceType executeUploadToBufferOnce(cpp21::data_view<char8_t> const& host, std::optional<BufferRegion> bufferRegion) {
+    virtual FenceType executeUploadToBufferOnce(std::span<char8_t> const& host, std::optional<BufferRegion> bufferRegion) {
       decltype(auto) submission = CommandOnceSubmission{ .info = this->cInfo->info };
       decltype(auto) uploadBuffer = this->uploadBuffer;
       decltype(auto) downloadBuffer = this->downloadBuffer;
@@ -149,7 +149,7 @@ namespace lxvc {
     };
 
     //
-    virtual FenceType executeDownloadFromBufferOnce(std::optional<BufferRegion> bufferRegion, cpp21::data_view<char8_t> const& host = {}) {
+    virtual FenceType executeDownloadFromBufferOnce(std::optional<BufferRegion> bufferRegion, std::span<char8_t> const& host = {}) {
       decltype(auto) submission = CommandOnceSubmission{ .info = this->cInfo->info };
       decltype(auto) uploadBuffer = this->uploadBuffer;
       decltype(auto) downloadBuffer = this->downloadBuffer;

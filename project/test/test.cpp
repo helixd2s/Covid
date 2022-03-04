@@ -16,7 +16,7 @@ int main() {
   });
 
   // final cherep for today
-  decltype(auto) descriptions = lxvc::DescriptorsObj::make(device, lxvc::DescriptorsCreateInfo{
+  decltype(auto) descriptions = lxvc::DescriptorsObj::make(device.with(0u), lxvc::DescriptorsCreateInfo{
 
   });
 
@@ -33,26 +33,27 @@ int main() {
 
   });
 
+  //
+  decltype(auto) compute = lxvc::PipelineObj::make(device.with(0u), lxvc::PipelineCreateInfo{
+    .layout = descriptions.as<vk::PipelineLayout>(),
+    .compute = lxvc::ComputePipelineCreateInfo{
+      .code = cpp21::readBinaryU32("./test.comp.spv")
+    }
+  });
+
 
   //
   uint64_t address = device.as<vk::Device>().getBufferAddress(vk::BufferDeviceAddressInfo{
     .buffer = buffer
   });
 
-  // no, that is really final cherep...
-  descriptions->executeUniformUpdateOnce(lxvc::UniformDataSet{
-    .data = cpp21::data_view<char8_t>((char8_t*)&address, 8ull),
+  // 
+  auto uniformFence = descriptions->executeUniformUpdateOnce(lxvc::UniformDataSet{
+    .data = std::span<char8_t>((char8_t*)&address, 8ull),
     .region = lxvc::DataRegion{0ull, 8ull},
     .info = lxvc::QueueGetInfo{0u, 0u}
   });
 
-  //
-  decltype(auto) compute = lxvc::PipelineObj::make(device, lxvc::PipelineCreateInfo{
-    .layout = descriptions.as<vk::PipelineLayout>(),
-    .compute = lxvc::ComputePipelineCreateInfo{
-      .code = cpp21::readBinaryU32("./test.comp.spv")
-    }
-  });
 
   //
   auto computeFence = compute->executeComputeOnce(lxvc::ExecuteComputeInfo{
@@ -61,16 +62,23 @@ int main() {
     .info = lxvc::QueueGetInfo{ 0u, 0u }
   });
 
+
   //
-  std::vector<uint32_t> results(256ull);
-  cpp21::data_view<char8_t> dataview((char8_t*)results.data(), 1024ull, 0ull);
+  std::vector<uint32_t> results(256ull); // data_view - vector without changing pointer address!
+  std::span<char8_t, 1024ull> dataview((char8_t*)results.data(), 0ull);
+
 
   //
   auto uploadeFence = uploader->executeDownloadFromBufferOnce(lxvc::BufferRegion{ buffer, lxvc::DataRegion{0ull, 1024ull} }, dataview);
   auto awaited = std::get<0u>(uploadeFence).get();
 
   //
-  //for (decltype(auto) element : results) {
-    //std::cout << element << std::endl;
-  //}
+  decltype(auto) buf = (std::cout << "");
+  for (decltype(auto) rc : results) {
+    buf << rc << ", ";
+  };
+  buf << std::endl;
+
+
 };
+
