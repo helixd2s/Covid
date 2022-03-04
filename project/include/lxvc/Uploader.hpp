@@ -172,9 +172,9 @@ namespace lxvc {
       submission.commandInits.push_back([=](vk::CommandBuffer const& cmdBuf) {
         auto _copyInfo = copyInfo;
         auto _depInfo = depInfo;
-        cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersBegin));
+        cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersBegin).setImageMemoryBarriers(imageBarriersBegin));
         cmdBuf.copyBufferToImage2(_copyInfo.setRegions(regions));
-        cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersEnd));
+        cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersEnd).setImageMemoryBarriers(imageBarriersEnd));
         return cmdBuf;
       });
 
