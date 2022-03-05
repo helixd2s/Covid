@@ -71,7 +71,8 @@ namespace lxvc {
     eColorAttachment = 2u,
     eDepthAttachment = 3u,
     eStencilAttachment = 4u,
-    eSwapchain = 5u
+    eDepthStencilAttachment = 5u,
+    eSwapchain = 6u
   };
 
   //
@@ -174,7 +175,7 @@ namespace lxvc {
 
   // 
   struct DeviceCreateInfo {
-    cpp21::shared_vector<std::string> extensionList = std::vector<std::string>{ "VK_KHR_deferred_host_operations", "VK_KHR_acceleration_structure", "VK_KHR_ray_query", "VK_KHR_ray_tracing_pipeline", "VK_KHR_swapchain", "VK_EXT_multi_draw"};
+    cpp21::shared_vector<std::string> extensionList = std::vector<std::string>{ "VK_KHR_deferred_host_operations", "VK_KHR_acceleration_structure", "VK_KHR_ray_query", "VK_KHR_ray_tracing_pipeline", "VK_KHR_swapchain", "VK_EXT_multi_draw", "VK_KHR_separate_depth_stencil_layouts", "VK_KHR_dynamic_rendering"};
     cpp21::shared_vector<std::string> layerList = std::vector<std::string>{ "VK_LAYER_KHRONOS_validation" , "VK_LAYER_KHRONOS_synchronization2" };
     cpp21::shared_vector<QueueFamilyCreateInfo> queueFamilyInfos = std::vector<QueueFamilyCreateInfo>{ QueueFamilyCreateInfo{} };
     uint32_t physicalDeviceGroupIndex = 0u;

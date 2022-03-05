@@ -80,12 +80,13 @@ namespace lxvc {
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
       decltype(auto) imageObj = deviceObj->get<ResourceObj>(imageRegion->image);
       decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
-      
+
       //
       decltype(auto) subresourceRange = vk::ImageSubresourceRange{
           .aspectMask =
-             imageObj->cInfo->imageInfo->type == ImageType::eDepthAttachment ? vk::ImageAspectFlagBits::eDepth :
-            (imageObj->cInfo->imageInfo->type == ImageType::eStencilAttachment ? vk::ImageAspectFlagBits::eStencil : vk::ImageAspectFlagBits::eColor),
+             imageObj->cInfo->imageInfo->type == ImageType::eDepthStencilAttachment ? vk::ImageAspectFlagBits::eDepth :
+            (imageObj->cInfo->imageInfo->type == ImageType::eDepthAttachment ? vk::ImageAspectFlagBits::eDepth :
+            (imageObj->cInfo->imageInfo->type == ImageType::eStencilAttachment ? vk::ImageAspectFlagBits::eStencil : vk::ImageAspectFlagBits::eColor)),
           .baseMipLevel = imageRegion->region.baseMipLevel,
           .levelCount = 1u,//imageInfo->mipLevels - imageRegion->region->baseMipLevel,
           .baseArrayLayer = 0u,

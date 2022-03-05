@@ -9,9 +9,6 @@
 #extension GL_EXT_nonuniform_qualifier : require
 #extension GL_EXT_samplerless_texture_functions : require
 
-//
-layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
-
 // 
 layout(set = 0, binding = 0, scalar, row_major) uniform MatrixBlock
 {
@@ -26,7 +23,17 @@ layout(set = 1, binding = 0) uniform texture2D textures[];
 layout(set = 2, binding = 0) uniform sampler samplers[];
 layout(set = 3, binding = 0, rgba32f) uniform image2D images[];
 
+//
+const vec2 positions[6] = { 
+  vec2(0.f, 0.f), vec2(1.f, 0.f), vec2(0.f, 1.f),
+  vec2(1.f, 1.f), vec2(0.f, 1.f), vec2(1.f, 0.f),
+};
+
+//
+layout(location = 0) out vec4 pcolor;
+
 // 
 void main() {
-  imageStore(images[imageIndices[currentImage]], ivec2(gl_GlobalInvocationID.xy), texelFetch(textures[textureIndices[0]], ivec2(gl_GlobalInvocationID.xy), 0));
+  gl_Position = vec4(positions[gl_VertexIndex] * 2.f - 1.f, 0.f, 1.f);
+  pcolor = vec4(positions[gl_VertexIndex], 0.f, 1.f);
 };

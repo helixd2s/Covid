@@ -242,7 +242,7 @@ namespace lxvc {
       descriptorsObj->updateDescriptors();
 
       //
-      this->handle = uintptr_t(this);
+      //this->handle = uintptr_t(this);
     };
 
 

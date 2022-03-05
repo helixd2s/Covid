@@ -148,6 +148,11 @@ namespace lxvc {
         imageUsage |= vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled;
         break;
 
+      case ImageType::eDepthStencilAttachment:
+        memoryUsage = MemoryUsage::eGpuOnly;
+        imageUsage |= vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled;
+        break;
+
       case ImageType::eStencilAttachment:
         memoryUsage = MemoryUsage::eGpuOnly;
         imageUsage |= vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled;
@@ -235,8 +240,9 @@ namespace lxvc {
           .image = this->handle.as<vk::Image>(),
           .subresourceRange = switchInfo.subresourceRange ? switchInfo.subresourceRange.value() : vk::ImageSubresourceRange{
             .aspectMask =
-               this->cInfo->imageInfo->type == ImageType::eDepthAttachment ? vk::ImageAspectFlagBits::eDepth :
-              (this->cInfo->imageInfo->type == ImageType::eStencilAttachment ? vk::ImageAspectFlagBits::eStencil : vk::ImageAspectFlagBits::eColor),
+              this->cInfo->imageInfo->type == ImageType::eDepthStencilAttachment ? (vk::ImageAspectFlagBits::eDepth) :
+              (this->cInfo->imageInfo->type == ImageType::eDepthAttachment ? vk::ImageAspectFlagBits::eDepth :
+              (this->cInfo->imageInfo->type == ImageType::eStencilAttachment ? vk::ImageAspectFlagBits::eStencil : vk::ImageAspectFlagBits::eColor)),
             .baseMipLevel = 0u,
             .levelCount = imageInfo->mipLevels,
             .baseArrayLayer = 0u,

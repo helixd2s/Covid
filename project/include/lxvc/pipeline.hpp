@@ -11,8 +11,8 @@ namespace lxvc {
 
   //
   struct AttachmentsInfo {
-    vk::Format depthAttachmentFormat = vk::Format::eD32Sfloat;
-    vk::Format stencilAttachmentFormat = vk::Format::eS8Uint;
+    vk::Format depthAttachmentFormat = vk::Format::eD32SfloatS8Uint;//eD32Sfloat;
+    vk::Format stencilAttachmentFormat = vk::Format::eD32SfloatS8Uint;//eS8Uint;
     std::vector<vk::Format> colorAttachmentFormats = {};
     std::vector<vk::PipelineColorBlendAttachmentState> blendStates = {};
   };
@@ -97,8 +97,8 @@ namespace lxvc {
 
       //
       decltype(auto) pRendering = infoMap->set(vk::StructureType::ePipelineRenderingCreateInfo, vk::PipelineRenderingCreateInfo{
-        .depthAttachmentFormat = vk::Format::eD32Sfloat,
-        .stencilAttachmentFormat = vk::Format::eS8Uint
+        .depthAttachmentFormat = attachments.depthAttachmentFormat,
+        .stencilAttachmentFormat = attachments.stencilAttachmentFormat
       });
 
       //
@@ -148,8 +148,10 @@ namespace lxvc {
         .depthTestEnable = true,
         .depthWriteEnable = true,
         .depthCompareOp = vk::CompareOp::eLessOrEqual,
-        .depthBoundsTestEnable = true,
+        .depthBoundsTestEnable = false,
         .stencilTestEnable = false,
+        .front = vk::StencilOpState{.failOp = vk::StencilOp::eKeep, .passOp = vk::StencilOp::eKeep, .compareOp = vk::CompareOp::eAlways },
+        .back = vk::StencilOpState{.failOp = vk::StencilOp::eKeep, .passOp = vk::StencilOp::eKeep, .compareOp = vk::CompareOp::eAlways },
         .minDepthBounds = 0.f,
         .maxDepthBounds = 1.f
       });
@@ -171,12 +173,9 @@ namespace lxvc {
 
       //
       this->dynamicStates.insert(dynamicStates.end(), {
-        vk::DynamicState::eViewport, 
-        vk::DynamicState::eScissor, 
         vk::DynamicState::eScissorWithCount, 
         vk::DynamicState::eViewportWithCount, 
         vk::DynamicState::eVertexInputBindingStride,
-        vk::DynamicState::eVertexInputEXT,
         vk::DynamicState::eCullMode,
         vk::DynamicState::eBlendConstants,
         vk::DynamicState::ePrimitiveTopology
@@ -221,10 +220,10 @@ namespace lxvc {
         .pColorBlendState = &pColorBlend->setAttachments(this->attachments.blendStates),
         .pDynamicState = &pDynamic->setDynamicStates(this->dynamicStates),
         .layout = this->cInfo->layout
-      });
+      })->setStages(pipelineStages);
 
       //
-      this->handle = std::move<vk::Pipeline>(device.createGraphicsPipeline(descriptors->cache, pInfo->setStages(pipelineStages)));
+      this->handle = std::move<vk::Pipeline>(device.createGraphicsPipeline(descriptors->cache, pInfo));
     };
 
     // 

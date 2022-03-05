@@ -59,6 +59,19 @@ int main() {
     }
   });
 
+  //
+  std::unordered_map<vk::ShaderStageFlagBits, cpp21::shared_vector<uint32_t>> stageMaps = {};
+  stageMaps[vk::ShaderStageFlagBits::eVertex] = cpp21::readBinaryU32("./test.vert.spv");
+  stageMaps[vk::ShaderStageFlagBits::eFragment] = cpp21::readBinaryU32("./test.frag.spv");
+
+  //
+  decltype(auto) graphics = lxvc::PipelineObj::make(device.with(0u), lxvc::PipelineCreateInfo{
+    .layout = descriptions.as<vk::PipelineLayout>(),
+    .graphics = lxvc::GraphicsPipelineCreateInfo{
+      .stageCodes = stageMaps
+    }
+  });
+
 
   //
   uint64_t address = device.as<vk::Device>().getBufferAddress(vk::BufferDeviceAddressInfo{
@@ -120,6 +133,9 @@ int main() {
   memcpy(uniformData.textureIndices, textureIndices.data(), std::min(textureIndices.size(), 4ull) * sizeof(uint32_t));
 
   //
+  decltype(auto) renderArea = swapchain->getRenderArea();
+
+  //
   uint32_t currentImage = 0u;
   decltype(auto) qfAndQueue = lxvc::QueueGetInfo{ 0u, 0u };
 
@@ -129,16 +145,16 @@ int main() {
 
     // 
     decltype(auto) semIndex = (currentImage + 1u) % imageIndices.size();
-    decltype(auto) acquired = device.as<vk::Device>().acquireNextImage2KHR(vk::AcquireNextImageInfoKHR{ .swapchain = swapchain.as<vk::SwapchainKHR>(), .timeout = 10000000000, .semaphore = presentSemaphoreInfos[semIndex].semaphore});
+    decltype(auto) acquired = device.as<vk::Device>().acquireNextImage2KHR(vk::AcquireNextImageInfoKHR{ .swapchain = swapchain.as<vk::SwapchainKHR>(), .timeout = 10000000000, .semaphore = presentSemaphoreInfos[semIndex].semaphore, .deviceMask = 0x1u });
     uniformData.currentImage = acquired;
 
     //
-    decltype(auto) graphicsFence = compute->executeGraphicsOnce(lxvc::ExecuteGraphicsInfo{
+    decltype(auto) graphicsFence = graphics->executeGraphicsOnce(lxvc::ExecuteGraphicsInfo{
       .framebuffer = framebuffer.as<uintptr_t>(),
       .layout = descriptions.as<vk::PipelineLayout>(),
       .info = qfAndQueue,
-      .waitSemaphores = presentSemaphoreInfos[semIndex],
-      .signalSemaphores = readySemaphoreInfos[semIndex],
+      .waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{presentSemaphoreInfos[semIndex]},
+      .signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{readySemaphoreInfos[semIndex]},
     });
 
     // 
@@ -150,15 +166,15 @@ int main() {
 
     //
     decltype(auto) computeFence = compute->executeComputeOnce(lxvc::ExecuteComputeInfo{
-      .dispatch = vk::Extent3D{1u,1u,1u},
+      .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 256u), renderArea.extent.height, 1u},
       .layout = descriptions.as<vk::PipelineLayout>(),
       .info = qfAndQueue,
-      .waitSemaphores = presentSemaphoreInfos[semIndex],
-      .signalSemaphores = readySemaphoreInfos[semIndex],
+      .waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{presentSemaphoreInfos[semIndex]},
+      .signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{readySemaphoreInfos[semIndex]},
     });
 
     //
-    device->getQueue(qfAndQueue).presentKHR(vk::PresentInfoKHR{
+    decltype(auto) result = device->getQueue(qfAndQueue).presentKHR(vk::PresentInfoKHR{
       .waitSemaphoreCount = 1u,
       .pWaitSemaphores = &readySemaphoreInfos[semIndex].semaphore,
       .swapchainCount = 1u,

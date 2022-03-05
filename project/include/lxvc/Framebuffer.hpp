@@ -123,16 +123,18 @@ namespace lxvc {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
-      decltype(auto) format = imageType == ImageType::eDepthAttachment ? vk::Format::eD32Sfloat : (imageType == ImageType::eStencilAttachment ? vk::Format::eS8Uint : format_);
+      decltype(auto) format = imageType == ImageType::eDepthStencilAttachment ? vk::Format::eD32SfloatS8Uint : (imageType == ImageType::eDepthAttachment ? vk::Format::eD32Sfloat : (imageType == ImageType::eStencilAttachment ? vk::Format::eS8Uint : format_));
       decltype(auto) aspectMask =
-        imageType == ImageType::eDepthAttachment ? vk::ImageAspectFlagBits::eDepth :
-        (imageType == ImageType::eStencilAttachment ? vk::ImageAspectFlagBits::eStencil : vk::ImageAspectFlagBits::eColor);
-      decltype(auto) components = imageType == ImageType::eDepthAttachment || imageType == ImageType::eStencilAttachment
+           imageType == ImageType::eDepthStencilAttachment ? (vk::ImageAspectFlagBits::eDepth) :
+          (imageType == ImageType::eDepthAttachment ? vk::ImageAspectFlagBits::eDepth :
+          (imageType == ImageType::eStencilAttachment ? vk::ImageAspectFlagBits::eStencil : vk::ImageAspectFlagBits::eColor));
+      decltype(auto) components = imageType == ImageType::eDepthStencilAttachment || imageType == ImageType::eDepthAttachment || imageType == ImageType::eStencilAttachment
         ? vk::ComponentMapping{ .r = vk::ComponentSwizzle::eZero, .g = vk::ComponentSwizzle::eZero, .b = vk::ComponentSwizzle::eZero, .a = vk::ComponentSwizzle::eZero }
         : vk::ComponentMapping{ .r = vk::ComponentSwizzle::eR, .g = vk::ComponentSwizzle::eG, .b = vk::ComponentSwizzle::eB, .a = vk::ComponentSwizzle::eA };
       decltype(auto) imageLayout = 
-          imageType == ImageType::eDepthAttachment ? vk::ImageLayout::eDepthAttachmentOptimal :
-        (imageType == ImageType::eStencilAttachment ? vk::ImageLayout::eStencilAttachmentOptimal : vk::ImageLayout::eColorAttachmentOptimal);
+         imageType == ImageType::eDepthStencilAttachment ? vk::ImageLayout::eDepthStencilAttachmentOptimal :
+        (imageType == ImageType::eDepthAttachment ? vk::ImageLayout::eDepthAttachmentOptimal :
+        (imageType == ImageType::eStencilAttachment ? vk::ImageLayout::eStencilAttachmentOptimal : vk::ImageLayout::eColorAttachmentOptimal));
       decltype(auto) subresourceRange =
         vk::ImageSubresourceRange{
           .aspectMask = aspectMask,
@@ -192,6 +194,10 @@ namespace lxvc {
       glm::vec4 color = glm::vec4(0.f, 0.f, 0.f, 0.f);
 
       //
+      if (imageType == ImageType::eDepthStencilAttachment) {
+        stencilAttachment = depthAttachment = vk::RenderingAttachmentInfo{ .imageView = this->imageViews.back(), .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eLoad, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = vk::ClearValue{.depthStencil = vk::ClearDepthStencilValue{.depth = 1.f, .stencil = 0u} } };
+      }
+      else
       if (imageType == ImageType::eDepthAttachment) {
         depthAttachment = vk::RenderingAttachmentInfo{ .imageView = this->imageViews.back(), .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eLoad, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = vk::ClearValue{ .depthStencil = vk::ClearDepthStencilValue{.depth = 1.f} } };
       }
@@ -218,8 +224,8 @@ namespace lxvc {
       // 
       this->createImage(ImageType::eColorAttachment); // for albedo
       this->createImage(ImageType::eColorAttachment); // for triangle data
-      this->createImage(ImageType::eDepthAttachment);
-      this->createImage(ImageType::eStencilAttachment);
+      this->createImage(ImageType::eDepthStencilAttachment);
+      //this->createImage(ImageType::eStencilAttachment);
 
       // 
       descriptorsObj->updateDescriptors();
