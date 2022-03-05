@@ -1,6 +1,8 @@
 #pragma once
 #include <LXVC/lxvc.hpp>
 #include <GLFW/glfw3.h>
+#include <windows.h>
+#include "renderdoc_app.h"
 
 // 
 void error(int errnum, const char* errmsg)
@@ -142,9 +144,37 @@ int main() {
   //
   std::array<std::optional<lxvc::FenceType>, 4> fences = {};
 
+  //
+  RENDERDOC_API_1_1_2* rdoc_api = NULL;
+
+#ifdef _WIN32
+  // At init, on windows
+  if (HMODULE mod = GetModuleHandleA("renderdoc.dll"))
+  {
+    pRENDERDOC_GetAPI RENDERDOC_GetAPI =
+      (pRENDERDOC_GetAPI)GetProcAddress(mod, "RENDERDOC_GetAPI");
+    int ret = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_1_2, (void**)&rdoc_api);
+    assert(ret == 1);
+  }
+#else
+#ifdef __linux__
+  // At init, on linux/android.
+  // For android replace librenderdoc.so with libVkLayer_GLES_RenderDoc.so
+  if (void* mod = dlopen("librenderdoc.so", RTLD_NOW | RTLD_NOLOAD))
+  {
+    pRENDERDOC_GetAPI RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)dlsym(mod, "RENDERDOC_GetAPI");
+    int ret = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_1_2, (void**)&rdoc_api);
+    assert(ret == 1);
+  }
+#endif
+#endif
+
   // 
   while (!glfwWindowShouldClose(window)) { // 
     glfwPollEvents();
+
+    //
+    if (rdoc_api) rdoc_api->StartFrameCapture(NULL, NULL);
 
     // 
     decltype(auto) semIndex = (uniformData.currentImage + 1u) % imageIndices.size();
@@ -188,11 +218,6 @@ int main() {
     if (fence) { decltype(auto) unleak = std::get<0u>(*fence); device->deleteTrash(); };
     fence = swapchain->switchToPresent(uniformData.currentImage, qfAndQueue);
     
-
-    //
-    // 
-    //decltype(auto) unleak = std::get<0u>(swapchain->switchToPresent(uniformData.currentImage, qfAndQueue)).get();
-
     //
     decltype(auto) result = device->getQueue(qfAndQueue).presentKHR(vk::PresentInfoKHR{
       .waitSemaphoreCount = 1u,
@@ -201,6 +226,9 @@ int main() {
       .pSwapchains = &swapchain.as<vk::SwapchainKHR>(),
       .pImageIndices = &uniformData.currentImage
     });
+
+    // stop the capture
+    if (rdoc_api) rdoc_api->EndFrameCapture(NULL, NULL);
   };
 
   // 
