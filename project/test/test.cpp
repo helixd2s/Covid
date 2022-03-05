@@ -186,6 +186,7 @@ int main() {
 
     //
     std::get<0u>(presentFence).get();
+    device->deleteTrash();
 
     //
     decltype(auto) result = device->getQueue(qfAndQueue).presentKHR(vk::PresentInfoKHR{

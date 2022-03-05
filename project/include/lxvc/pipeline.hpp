@@ -146,7 +146,11 @@ namespace lxvc {
       //
       decltype(auto) pMultisample = infoMap->set(vk::StructureType::ePipelineMultisampleStateCreateInfo, vk::PipelineMultisampleStateCreateInfo{
         .rasterizationSamples = vk::SampleCountFlagBits::e1,
-        .sampleShadingEnable = false
+        .sampleShadingEnable = false,
+        .minSampleShading = 0.f,
+        .pSampleMask = nullptr,
+        .alphaToCoverageEnable = false,
+        .alphaToOneEnable = false
       });
 
       //

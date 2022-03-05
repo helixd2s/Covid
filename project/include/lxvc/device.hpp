@@ -44,7 +44,10 @@ namespace lxvc {
     inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
     inline decltype(auto) SFT() const { using T = const std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
 
-    
+    //
+    std::array<std::function<void()>, 128> destructors = {};
+    std::atomic_int32_t destructorCount = 0;
+
     //
     //std::shared_ptr<InstanceObj> instanceObj = {};
 
@@ -58,6 +61,8 @@ namespace lxvc {
 
     //
     QueueFamilies queueFamilies = {};
+
+    
 
     //
     virtual std::tuple<uint32_t, uint32_t> findMemoryTypeAndHeapIndex(vk::PhysicalDevice const& physicalDevice, std::optional<MemoryRequirements> req = MemoryRequirements{}) {
@@ -290,8 +295,12 @@ namespace lxvc {
       decltype(auto) promise = std::async(std::launch::async | std::launch::deferred, [=,this]() {
         decltype(auto) result = device.waitForFences(fence, true, 10000000000);
         for (decltype(auto) fn : submission->onDone) { fn(result); };
-        device.destroyFence(fence);
-        device.freeCommandBuffers(commandPool, commandBuffers);
+        if (destructorCount < destructors.size()) {
+          destructors[destructorCount++] = [=, this]() {
+            device.destroyFence(fence);
+            device.freeCommandBuffers(commandPool, commandBuffers);
+          };
+        };
         return result;
       });
 
@@ -357,6 +366,13 @@ namespace lxvc {
     };
 
   public:
+
+    //
+    virtual void deleteTrash() {
+      do {
+        destructors[--destructorCount]();
+      } while (destructorCount > 0);
+    };
 
     // TODO: caching...
     virtual vk::Queue const& getQueue(cpp21::optional_ref<QueueGetInfo> info = {}) const {
