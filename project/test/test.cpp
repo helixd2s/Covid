@@ -20,7 +20,56 @@ struct UniformData {
 
 // 
 int main() {
+
+  //
+  RENDERDOC_API_1_1_2* rdoc_api = NULL;
+
+#ifdef _WIN32
+  // At init, on windows
+  if (HMODULE mod = GetModuleHandleA("renderdoc.dll"))
+  {
+    pRENDERDOC_GetAPI RENDERDOC_GetAPI =
+      (pRENDERDOC_GetAPI)GetProcAddress(mod, "RENDERDOC_GetAPI");
+    int ret = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_1_2, (void**)&rdoc_api);
+    assert(ret == 1);
+  }
+#else
+#ifdef __linux__
+  // At init, on linux/android.
+  // For android replace librenderdoc.so with libVkLayer_GLES_RenderDoc.so
+  if (void* mod = dlopen("librenderdoc.so", RTLD_NOW | RTLD_NOLOAD))
+  {
+    pRENDERDOC_GetAPI RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)dlsym(mod, "RENDERDOC_GetAPI");
+    int ret = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_1_2, (void**)&rdoc_api);
+    assert(ret == 1);
+  }
+#endif
+#endif
+
+  //
+  if (rdoc_api) rdoc_api->SetCaptureOptionU32(eRENDERDOC_Option_DebugOutputMute, true);
+
+  //
+  glfwSetErrorCallback(error);
+  glfwInit();
+
+  // 
+  if (GLFW_FALSE == glfwVulkanSupported()) {
+    glfwTerminate(); return -1;
+  };
+
+  // 
+  glfwDefaultWindowHints();
+  glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+  glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_NATIVE_CONTEXT_API);
+  glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+
+  //
   lxvc::initialize();
+
+
+
+
 
   // first cherep
   decltype(auto) instance = lxvc::InstanceObj::make(lxvc::context, lxvc::InstanceCreateInfo{
@@ -74,31 +123,21 @@ int main() {
     }
   });
 
-
   //
   uint64_t address = device.as<vk::Device>().getBufferAddress(vk::BufferDeviceAddressInfo{
     .buffer = buffer
   });
 
   //
-  glfwSetErrorCallback(error);
-  glfwInit();
+  decltype(auto) qfAndQueue = lxvc::QueueGetInfo{ 0u, 0u };
+  std::array<std::optional<lxvc::FenceType>, 4> fences = {};
 
-  // 
-  if (GLFW_FALSE == glfwVulkanSupported()) {
-    glfwTerminate(); return -1;
-  };
-
-  // 
-  glfwDefaultWindowHints();
-  glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-  glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_NATIVE_CONTEXT_API);
-  glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+  //
+  std::cout << "" << std::endl;
+  system("PAUSE");
 
   //
   uint32_t WIDTH = 640u, HEIGHT = 360u;
-
-  // 
   float xscale = 1.f, yscale = 1.f;
   GLFWmonitor* primary = glfwGetPrimaryMonitor();
   glfwGetMonitorContentScale(primary, &xscale, &yscale);
@@ -136,38 +175,11 @@ int main() {
 
   //
   decltype(auto) renderArea = swapchain->getRenderArea();
-  decltype(auto) qfAndQueue = lxvc::QueueGetInfo{ 0u, 0u };
+  uniformData.currentImage = uint32_t(imageIndices.size()) - 1u;
 
   //
-  uniformData.currentImage = uint32_t(imageIndices.size())-1u;
-
-  //
-  std::array<std::optional<lxvc::FenceType>, 4> fences = {};
-
-  //
-  RENDERDOC_API_1_1_2* rdoc_api = NULL;
-
-#ifdef _WIN32
-  // At init, on windows
-  if (HMODULE mod = GetModuleHandleA("renderdoc.dll"))
-  {
-    pRENDERDOC_GetAPI RENDERDOC_GetAPI =
-      (pRENDERDOC_GetAPI)GetProcAddress(mod, "RENDERDOC_GetAPI");
-    int ret = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_1_2, (void**)&rdoc_api);
-    assert(ret == 1);
-  }
-#else
-#ifdef __linux__
-  // At init, on linux/android.
-  // For android replace librenderdoc.so with libVkLayer_GLES_RenderDoc.so
-  if (void* mod = dlopen("librenderdoc.so", RTLD_NOW | RTLD_NOLOAD))
-  {
-    pRENDERDOC_GetAPI RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)dlsym(mod, "RENDERDOC_GetAPI");
-    int ret = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_1_2, (void**)&rdoc_api);
-    assert(ret == 1);
-  }
-#endif
-#endif
+  std::cout << "" << std::endl;
+  system("PAUSE");
 
   // 
   while (!glfwWindowShouldClose(window)) { // 
