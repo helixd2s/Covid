@@ -1,5 +1,13 @@
 #pragma once
 #include <LXVC/lxvc.hpp>
+#include <GLFW/glfw3.h>
+
+// 
+void error(int errnum, const char* errmsg)
+{
+  std::cerr << errnum << ": " << errmsg << std::endl;
+};
+
 
 // 
 int main() {
@@ -48,7 +56,7 @@ int main() {
   });
 
   // 
-  auto uniformFence = descriptions->executeUniformUpdateOnce(lxvc::UniformDataSet{
+  decltype(auto) uniformFence = descriptions->executeUniformUpdateOnce(lxvc::UniformDataSet{
     .data = std::span<char8_t>((char8_t*)&address, 8ull),
     .region = lxvc::DataRegion{0ull, 8ull},
     .info = lxvc::QueueGetInfo{0u, 0u}
@@ -56,7 +64,7 @@ int main() {
 
 
   //
-  auto computeFence = compute->executeComputeOnce(lxvc::ExecuteComputeInfo{
+  decltype(auto) computeFence = compute->executeComputeOnce(lxvc::ExecuteComputeInfo{
     .dispatch = vk::Extent3D{1u,1u,1u},
     .layout = descriptions.as<vk::PipelineLayout>(),
     .info = lxvc::QueueGetInfo{ 0u, 0u }
@@ -69,19 +77,19 @@ int main() {
 
 
   //
-  auto uploadeFence = uploader->executeDownloadFromBufferOnce(lxvc::BufferRegion{ buffer, lxvc::DataRegion{0ull, 1024ull} }, dataview);
-  auto awaited = std::get<0u>(uploadeFence).get();
+  decltype(auto) uploadeFence = uploader->executeDownloadFromBufferOnce(lxvc::BufferRegion{ buffer, lxvc::DataRegion{0ull, 1024ull} }, dataview);
+  decltype(auto) awaited = std::get<0u>(uploadeFence).get();
 
 
   //
-  auto framebuffer = lxvc::FramebufferObj::make(device.with(0u), lxvc::FramebufferCreateInfo{
+  decltype(auto) framebuffer = lxvc::FramebufferObj::make(device.with(0u), lxvc::FramebufferCreateInfo{
     .extent = {1280u, 720u},
     .layout = descriptions.as<vk::PipelineLayout>()
   });
 
   //
-  framebuffer->switchToShaderRead();
-  framebuffer->switchToAttachment();
+  //framebuffer->switchToShaderRead();
+  //framebuffer->switchToAttachment();
 
   //
   decltype(auto) buf = (std::cout << "");
@@ -91,5 +99,50 @@ int main() {
   buf << std::endl;
 
 
+
+  //
+  glfwSetErrorCallback(error);
+  glfwInit();
+
+  // 
+  if (GLFW_FALSE == glfwVulkanSupported()) {
+    glfwTerminate(); return -1;
+  };
+
+  // 
+  glfwDefaultWindowHints();
+  glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+  glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_NATIVE_CONTEXT_API);
+  glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+
+  //
+  uint32_t WIDTH = 640u, HEIGHT = 360u;
+
+  // 
+  float xscale = 1.f, yscale = 1.f;
+  GLFWmonitor* primary = glfwGetPrimaryMonitor();
+  glfwGetMonitorContentScale(primary, &xscale, &yscale);
+  uint32_t SC_WIDTH = WIDTH * xscale, SC_HEIGHT = HEIGHT * yscale;
+
+  //
+  vk::SurfaceKHR surface = {};
+  std::string title = "LXVC.TEON.A";
+  decltype(auto) window = glfwCreateWindow(SC_WIDTH, SC_HEIGHT, title.c_str(), nullptr, nullptr);
+  glfwCreateWindowSurface(instance.as<VkInstance>(), window, nullptr, (VkSurfaceKHR*)&surface);
+
+  //
+  decltype(auto) swapchain = lxvc::SwapchainObj::make(device, lxvc::SwapchainCreateInfo{
+    .surface = surface,
+    .layout = descriptions.as<vk::PipelineLayout>()
+  });
+
+  // 
+  while (!glfwWindowShouldClose(window)) { // 
+    glfwPollEvents();
+
+  };
+
+  // 
+  return 0;
 };
 

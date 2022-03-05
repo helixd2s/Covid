@@ -99,7 +99,7 @@ namespace lxvc {
   protected:
 
     //
-    virtual void createImage(vk::Image const& image, ImageType const& imageType = ImageType::eStorage, vk::SurfaceFormat2KHR const& surfaceFormat2 = {}) {
+    virtual void createImage(vk::Image const& image, ImageType const& imageType = ImageType::eSwapchain, vk::SurfaceFormat2KHR const& surfaceFormat2 = {}, ImageSwapchainInfo const& swapchainInfo = {}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
@@ -120,6 +120,7 @@ namespace lxvc {
       ResourceObj::make(this->base, ResourceCreateInfo{
         .image = image,
         .imageInfo = ImageCreateInfo{
+          .swapchain = swapchainInfo,
           .type = imageType,
           .extent = { capInfo.capabilities->currentExtent.width, capInfo.capabilities->currentExtent.height, 1u },
           .format = format,
@@ -178,8 +179,8 @@ namespace lxvc {
       capInfo.presentModes = physicalDevice.getSurfacePresentModesKHR(cInfo->surface);
 
       // TODO: search needed surface format
-      decltype(auto) surfaceFormat2 = capInfo.formats2[0u];
-      decltype(auto) presentMode = capInfo.presentModes[0u];
+      decltype(auto) surfaceFormat2 = capInfo.formats2.back();
+      decltype(auto) presentMode = capInfo.presentModes.front();
 
       //
       this->handle = device.createSwapchainKHR(infoMap->set(vk::StructureType::eSwapchainCreateInfoKHR, vk::SwapchainCreateInfoKHR{
@@ -200,8 +201,12 @@ namespace lxvc {
       images = device.getSwapchainImagesKHR(this->handle.as<vk::SwapchainKHR>());
 
       // 
+      uint32_t imageIndex = 0u;
       for (decltype(auto) image : images) {
-        this->createImage(image, ImageType::eStorage, surfaceFormat2); // 
+        this->createImage(image, ImageType::eSwapchain, surfaceFormat2, ImageSwapchainInfo{
+          .swapchain = this->handle.as<vk::SwapchainKHR>(),
+          .index = imageIndex++
+        }); // 
       };
 
       // 

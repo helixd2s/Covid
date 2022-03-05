@@ -107,15 +107,27 @@ namespace lxvc {
           requiredBits |= vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCached | vk::MemoryPropertyFlagBits::eHostCoherent;
           break;
 
-        default:
-          requiredBits |= vk::MemoryPropertyFlagBits::eDeviceLocal;
+        default:;
+          //requiredBits |= vk::MemoryPropertyFlagBits::eDeviceLocal;
         };
 
+        //
+        //std::cout << "MemoryTypeIndex: " << uint32_t(memoryTypeIndex) << std::endl;
+        //std::cout << "MemoryPropertyFlags: " << uint32_t(memoryType.propertyFlags) << std::endl;
+        //std::cout << "RequiredBits: " << uint32_t(requiredBits) << std::endl;
+
         // 
-        if ((memoryType.propertyFlags & requiredBits) == requiredBits) {
+        if (((memoryType.propertyFlags & requiredBits) == requiredBits) || (!memoryType.propertyFlags && !requiredBits)) {
+          //std::cout << "ResolvedMemTypeAndHeap: " << uint32_t(memoryTypeIndex) << ", " << uint32_t(memoryHeapIndex) << std::endl;
+          //std::cout << "" << std::endl;
           memoryTypeAndHeapIndex = { memoryTypeIndex, memoryHeapIndex };
           break;
-        };
+        }
+        else {
+          //std::cout << "Not capable..." << std::endl;
+          //std::cout << "" << std::endl;
+        }
+        
       };
 
       return memoryTypeAndHeapIndex;

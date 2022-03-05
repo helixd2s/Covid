@@ -79,12 +79,16 @@ namespace lxvc {
       decltype(auto) allocated = cpp21::opt_ref<AllocatedMemory>((this->allocated = AllocatedMemory{}).value());
 
       // 
+      bool imageCondition = this->cInfo->imageInfo && this->cInfo->imageInfo->type != ImageType::eSwapchain;
+      bool bufferCondition = true;
+
+      // 
       allocated = AllocatedMemory{
         .memory = device.allocateMemory(infoMap->set(vk::StructureType::eMemoryAllocateInfo, vk::MemoryAllocateInfo{
           .pNext = infoMap->set(vk::StructureType::eMemoryAllocateFlagsInfo, vk::MemoryAllocateFlagsInfo{
             .pNext = infoMap->set(vk::StructureType::eMemoryDedicatedAllocateInfo, vk::MemoryDedicatedAllocateInfo{
-              .image = requirements->dedicated && this->handle.type == HandleType::eImage ? this->handle.as<vk::Image>() : vk::Image{},
-              .buffer = requirements->dedicated && this->handle.type == HandleType::eBuffer ? this->handle.as<vk::Buffer>() : vk::Buffer{}
+              .image = requirements->dedicated && this->handle.type == HandleType::eImage && imageCondition ? this->handle.as<vk::Image>() : vk::Image{},
+              .buffer = requirements->dedicated && this->handle.type == HandleType::eBuffer && bufferCondition ? this->handle.as<vk::Buffer>() : vk::Buffer{}
             }),
             .flags = this->cInfo->bufferInfo->type == BufferType::eDevice ? vk::MemoryAllocateFlagBits::eDeviceAddress : vk::MemoryAllocateFlagBits{},
           }),
@@ -119,6 +123,11 @@ namespace lxvc {
 
       // 
       switch (cInfo->type) {
+      case ImageType::eSwapchain:
+        memoryUsage = MemoryUsage::eGpuOnly;
+        imageUsage |= vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment;
+        break;
+
       case ImageType::eStorage:
         memoryUsage = MemoryUsage::eGpuOnly;
         imageUsage |= vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eSampled;
@@ -163,7 +172,9 @@ namespace lxvc {
 
       // 
       decltype(auto) memReqInfo2 = infoMap->set(vk::StructureType::eMemoryRequirements2, vk::MemoryRequirements2{
-        .pNext = infoMap->set(vk::StructureType::eMemoryDedicatedRequirements, vk::MemoryDedicatedRequirements{})
+        .pNext = infoMap->set(vk::StructureType::eMemoryDedicatedRequirements, vk::MemoryDedicatedRequirements{
+          
+        })
       });
 
       //
@@ -176,15 +187,19 @@ namespace lxvc {
 
       // 
       decltype(auto) memReqInfo = memReqInfo2->memoryRequirements;
-      this->allocated = this->allocateMemory(opt_ref((this->mReqs = MemoryRequirements{
+      this->allocated = this->allocateMemory(this->mReqs = MemoryRequirements{
         .memoryUsage = memoryUsage,
         .memoryTypeBits = memReqInfo.memoryTypeBits,
         .size = memReqInfo.size
-      }).value()));
+      });
 
       //
       std::vector<vk::BindImageMemoryInfo> bindInfos = { *infoMap->set(vk::StructureType::eBindImageMemoryInfo, vk::BindImageMemoryInfo{
-        .image = this->handle , .memory = this->allocated->memory, .memoryOffset = this->allocated->offset
+        .pNext = cInfo->swapchain ? infoMap->set(vk::StructureType::eBindImageMemorySwapchainInfoKHR, vk::BindImageMemorySwapchainInfoKHR{
+          .swapchain = cInfo->swapchain->swapchain,
+          .imageIndex = cInfo->swapchain->index
+         }).get() : nullptr,
+        .image = this->handle , .memory = cInfo->swapchain ? vk::DeviceMemory{} : this->allocated->memory, .memoryOffset = cInfo->swapchain ? 0ull : this->allocated->offset
       }) };
       device.bindImageMemory2(bindInfos);
 

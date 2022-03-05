@@ -70,7 +70,8 @@ namespace lxvc {
     eTexture = 1u,
     eColorAttachment = 2u,
     eDepthAttachment = 3u,
-    eStencilAttachment = 4u
+    eStencilAttachment = 4u,
+    eSwapchain = 5u
   };
 
   //
@@ -153,7 +154,11 @@ namespace lxvc {
   struct InstanceCreateInfo {
     std::string appName = "LXVC_APP";
     uint32_t appVersion = VK_MAKE_VERSION(1, 0, 0);
-    cpp21::shared_vector<std::string> extensionList = std::vector<std::string>{ "VK_KHR_surface", "VK_EXT_debug_utils" };
+    cpp21::shared_vector<std::string> extensionList = std::vector<std::string>{ "VK_KHR_surface", "VK_EXT_debug_utils", "VK_KHR_get_surface_capabilities2"
+#ifdef _WIN32
+      , "VK_KHR_win32_surface"
+#endif
+    };
     cpp21::shared_vector<std::string> layerList = std::vector<std::string>{ "VK_LAYER_KHRONOS_validation", "VK_LAYER_KHRONOS_synchronization2"};
   };
 
@@ -193,7 +198,14 @@ namespace lxvc {
   };
 
   //
+  struct ImageSwapchainInfo {
+    vk::SwapchainKHR swapchain = {};
+    uint32_t index = 0u;
+  };
+
+  //
   struct ImageCreateInfo {
+    std::optional<ImageSwapchainInfo> swapchain = {};
     std::optional<QueueGetInfo> info = QueueGetInfo{};
     ImageType type = ImageType::eStorage;
     vk::ImageType imageType = vk::ImageType::e2D;
