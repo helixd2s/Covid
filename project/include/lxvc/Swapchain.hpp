@@ -96,23 +96,25 @@ namespace lxvc {
     };
 
     //
-    virtual std::vector<FenceType> switchToPresent(std::optional<QueueGetInfo> const& info = QueueGetInfo{}) {
-      std::vector<FenceType> fences = {};
-      if (this->state != SwapchainState::ePresent) {
-        for (decltype(auto) fn : switchToPresentFn) { fences.push_back(fn(info, this->state)); };
-        this->state = SwapchainState::ePresent;
-      };
-      return fences;
+    virtual FenceType switchToPresent(uint32_t const& imageIndex, std::optional<QueueGetInfo> const& info = QueueGetInfo{}) {
+      //std::vector<FenceType> fences = {};
+      //if (this->state != SwapchainState::ePresent) {
+        //for (decltype(auto) fn : switchToPresentFn) { fences.push_back(fn(info, this->state)); };
+        //this->state = SwapchainState::ePresent;
+      //};
+      //return fences;
+      return switchToPresentFn[imageIndex](info, this->state);
     };
 
     //
-    virtual std::vector<FenceType> switchToReady(std::optional<QueueGetInfo> const& info = QueueGetInfo{}) {
-      std::vector<FenceType> fences = {};
-      if (this->state != SwapchainState::eReady) {
-        for (decltype(auto) fn : switchToReadyFn) { fences.push_back(fn(info, this->state)); };
-        this->state = SwapchainState::eReady;
-      };
-      return fences;
+    virtual FenceType switchToReady(uint32_t const& imageIndex, std::optional<QueueGetInfo> const& info = QueueGetInfo{}) {
+      //std::vector<FenceType> fences = {};
+      //if (this->state != SwapchainState::eReady) {
+        //for (decltype(auto) fn : switchToReadyFn) { fences.push_back(fn(info, this->state)); };
+        //this->state = SwapchainState::eReady;
+      //};
+      //return fences;
+      return switchToReadyFn[imageIndex](info, this->state);
     };
 
   protected:
@@ -184,12 +186,17 @@ namespace lxvc {
       });
 
       //
-      this->readySemaphores.push_back(device.createSemaphore(vk::SemaphoreCreateInfo{ .flags = {} }));
-      this->presentSemaphores.push_back(device.createSemaphore(vk::SemaphoreCreateInfo{ .flags = {} }));
+      vk::SemaphoreTypeCreateInfo timeline = {};
+      timeline.semaphoreType = vk::SemaphoreType::eBinary;
+      timeline.initialValue = 0ull;//this->readySemaphores.size();
 
       //
-      this->readySemaphoreInfos.push_back(vk::SemaphoreSubmitInfo{ .semaphore = this->readySemaphores.back(), .stageMask = vk::PipelineStageFlagBits2::eAllCommands });
-      this->presentSemaphoreInfos.push_back(vk::SemaphoreSubmitInfo{ .semaphore = this->presentSemaphores.back(), .stageMask = vk::PipelineStageFlagBits2::eAllCommands });
+      this->readySemaphores.push_back(device.createSemaphore(vk::SemaphoreCreateInfo{ .pNext = &timeline, .flags = {} }));
+      this->presentSemaphores.push_back(device.createSemaphore(vk::SemaphoreCreateInfo{ .pNext = &timeline, .flags = {} }));
+
+      //
+      this->readySemaphoreInfos.push_back(vk::SemaphoreSubmitInfo{ .semaphore = this->readySemaphores.back(), .value = timeline.initialValue, .stageMask = vk::PipelineStageFlagBits2::eAllCommands });
+      this->presentSemaphoreInfos.push_back(vk::SemaphoreSubmitInfo{ .semaphore = this->presentSemaphores.back(), .value = timeline.initialValue, .stageMask = vk::PipelineStageFlagBits2::eAllCommands });
       //lxvc::context->get<DeviceObj>(this->base)
     };
 

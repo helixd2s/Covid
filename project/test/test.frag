@@ -31,5 +31,7 @@ layout(location = 0) out vec4 albedo;
 
 // 
 void main() {
-  albedo = pcolor;
+  albedo = vec4(gl_FragCoord.xy/vec2(1280.f,720.f), 0.f, 1.f);
+  ivec2 coord = ivec2(gl_FragCoord.xy);
+  //imageStore(images[imageIndices[currentImage]], coord, vec4(gl_FragCoord.xy/vec2(1280.f,720.f), 0.f, 1.f));
 };

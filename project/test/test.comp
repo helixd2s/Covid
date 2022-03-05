@@ -29,4 +29,5 @@ layout(set = 3, binding = 0, rgba32f) uniform image2D images[];
 // 
 void main() {
   imageStore(images[imageIndices[currentImage]], ivec2(gl_GlobalInvocationID.xy), texelFetch(textures[textureIndices[0]], ivec2(gl_GlobalInvocationID.xy), 0));
+  //imageStore(images[imageIndices[currentImage]], ivec2(gl_GlobalInvocationID.xy), vec4(vec2(gl_GlobalInvocationID.xy)/vec2(1280.f,720.f), 0.f, 1.f));
 };

@@ -169,8 +169,11 @@ namespace lxvc {
         .subresourceRange = subresourceRange
       }));
 
+      //
+      decltype(auto) imageView = this->imageViews.back();
+
       // 
-      this->imageViewIndices.push_back(descriptorsObj->textures.add(vk::DescriptorImageInfo{ .imageView = this->imageViews.back(), .imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal }));
+      this->imageViewIndices.push_back(descriptorsObj->textures.add(vk::DescriptorImageInfo{ .imageView = imageView,.imageLayout = vk::ImageLayout::eGeneral }));
 
       // TODO: use pre-built command buffer
       this->switchToAttachmentFn.push_back([=](std::optional<QueueGetInfo> const& info = QueueGetInfo{}, FramebufferState const& previousState = {}) {
@@ -184,7 +187,7 @@ namespace lxvc {
       //
       this->switchToShaderReadFn.push_back([=](std::optional<QueueGetInfo> const& info = QueueGetInfo{}, FramebufferState const& previousState = {}) {
         return deviceObj->get<ResourceObj>(image)->switchLayout(ImageLayoutSwitchInfo{
-          .newImageLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
+          .newImageLayout = vk::ImageLayout::eGeneral,
           .subresourceRange = subresourceRange,
           .info = info
         });
@@ -195,22 +198,22 @@ namespace lxvc {
 
       //
       if (imageType == ImageType::eDepthStencilAttachment) {
-        stencilAttachment = depthAttachment = vk::RenderingAttachmentInfo{ .imageView = this->imageViews.back(), .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eLoad, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = vk::ClearValue{.depthStencil = vk::ClearDepthStencilValue{.depth = 1.f, .stencil = 0u} } };
+        stencilAttachment = depthAttachment = vk::RenderingAttachmentInfo{ .imageView = imageView, .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eClear, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = vk::ClearValue{.depthStencil = vk::ClearDepthStencilValue{.depth = 1.f, .stencil = 0u} } };
       }
       else
       if (imageType == ImageType::eDepthAttachment) {
-        depthAttachment = vk::RenderingAttachmentInfo{ .imageView = this->imageViews.back(), .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eLoad, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = vk::ClearValue{ .depthStencil = vk::ClearDepthStencilValue{.depth = 1.f} } };
+        depthAttachment = vk::RenderingAttachmentInfo{ .imageView = imageView, .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eClear, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = vk::ClearValue{ .depthStencil = vk::ClearDepthStencilValue{.depth = 1.f} } };
       }
       else 
       if (imageType == ImageType::eStencilAttachment) {
-        stencilAttachment = vk::RenderingAttachmentInfo{ .imageView = this->imageViews.back(), .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eLoad, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = vk::ClearValue{.depthStencil = vk::ClearDepthStencilValue{.stencil = 0u} } };
+        stencilAttachment = vk::RenderingAttachmentInfo{ .imageView = imageView, .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eClear, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = vk::ClearValue{.depthStencil = vk::ClearDepthStencilValue{.stencil = 0u} } };
       }
       else {
-        colorAttachments.push_back(vk::RenderingAttachmentInfo{ .imageView = this->imageViews.back(), .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eLoad, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = vk::ClearValue{.color = reinterpret_cast<vk::ClearColorValue&>(color)}});
+        colorAttachments.push_back(vk::RenderingAttachmentInfo{ .imageView = imageView, .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eDontCare, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = vk::ClearValue{.color = reinterpret_cast<vk::ClearColorValue&>(color)}});
       }
 
       //
-      this->handle = uintptr_t(this);
+      //this->handle = uintptr_t(this);
 
       //lxvc::context->get<DeviceObj>(this->base)
     };
@@ -229,6 +232,7 @@ namespace lxvc {
 
       // 
       descriptorsObj->updateDescriptors();
+      this->handle = uintptr_t(this);
     };
 
 

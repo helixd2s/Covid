@@ -97,6 +97,7 @@ namespace lxvc {
 
       //
       decltype(auto) pRendering = infoMap->set(vk::StructureType::ePipelineRenderingCreateInfo, vk::PipelineRenderingCreateInfo{
+        .viewMask = 0x0u,
         .depthAttachmentFormat = attachments.depthAttachmentFormat,
         .stencilAttachmentFormat = attachments.stencilAttachmentFormat
       });
@@ -112,9 +113,9 @@ namespace lxvc {
       });
 
       //
-      decltype(auto) pTessellation = infoMap->set(vk::StructureType::ePipelineTessellationStateCreateInfo, vk::PipelineTessellationStateCreateInfo{
-        .patchControlPoints = 1u
-      });
+      //decltype(auto) pTessellation = infoMap->set(vk::StructureType::ePipelineTessellationStateCreateInfo, vk::PipelineTessellationStateCreateInfo{
+        //.patchControlPoints = 1u
+      //});
 
       //
       decltype(auto) pViewport = infoMap->set(vk::StructureType::ePipelineViewportStateCreateInfo, vk::PipelineViewportStateCreateInfo{
@@ -122,18 +123,18 @@ namespace lxvc {
       });
 
       //
-      decltype(auto) pRasterizationConservative = infoMap->set(vk::StructureType::ePipelineRasterizationConservativeStateCreateInfoEXT, vk::PipelineRasterizationConservativeStateCreateInfoEXT{
-
-      });
+      //decltype(auto) pRasterizationConservative = infoMap->set(vk::StructureType::ePipelineRasterizationConservativeStateCreateInfoEXT, vk::PipelineRasterizationConservativeStateCreateInfoEXT{
+        //.conservativeRasterizationMode = vk::ConservativeRasterizationModeEXT::eOverestimate
+      //});
 
       //
       decltype(auto) pRasterization = infoMap->set(vk::StructureType::ePipelineRasterizationStateCreateInfo, vk::PipelineRasterizationStateCreateInfo{
-        .pNext = pRasterizationConservative.get(),
-        .depthClampEnable = true,
-        .rasterizerDiscardEnable = true,
+        //.pNext = pRasterizationConservative.get(),
+        .depthClampEnable = false,
+        .rasterizerDiscardEnable = false,
         .polygonMode = vk::PolygonMode::eFill,
         .cullMode = vk::CullModeFlagBits::eNone,
-        .frontFace = vk::FrontFace::eClockwise,
+        .frontFace = vk::FrontFace::eCounterClockwise,
         .depthBiasEnable = false
       });
 
@@ -174,11 +175,7 @@ namespace lxvc {
       //
       this->dynamicStates.insert(dynamicStates.end(), {
         vk::DynamicState::eScissorWithCount, 
-        vk::DynamicState::eViewportWithCount, 
-        vk::DynamicState::eVertexInputBindingStride,
-        vk::DynamicState::eCullMode,
-        vk::DynamicState::eBlendConstants,
-        vk::DynamicState::ePrimitiveTopology
+        vk::DynamicState::eViewportWithCount
       });
 
       // 
@@ -212,7 +209,7 @@ namespace lxvc {
         .flags = vk::PipelineCreateFlags{},
         .pVertexInputState = pVertexInput.get(),
         .pInputAssemblyState = pInputAssembly.get(),
-        .pTessellationState = pTessellation.get(),
+        //.pTessellationState = pTessellation.get(),
         .pViewportState = pViewport.get(),
         .pRasterizationState = pRasterization.get(),
         .pMultisampleState = pMultisample.get(),
@@ -243,7 +240,7 @@ namespace lxvc {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(exec->layout ? exec->layout : this->cInfo->layout);
-      decltype(auto) submission = CommandOnceSubmission{ .info = exec->info };
+      decltype(auto) submission = CommandOnceSubmission{ .info = exec->info, .waitSemaphores = exec->waitSemaphores, .signalSemaphores = exec->signalSemaphores };
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
 
       //
@@ -287,7 +284,7 @@ namespace lxvc {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(exec->layout ? exec->layout : this->cInfo->layout);
-      decltype(auto) submission = CommandOnceSubmission{ .info = exec->info };
+      decltype(auto) submission = CommandOnceSubmission{ .info = exec->info, .waitSemaphores = exec->waitSemaphores, .signalSemaphores = exec->signalSemaphores };
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
       decltype(auto) framebuffers = deviceObj->get<FramebufferObj>(exec->framebuffer);
 
@@ -317,22 +314,33 @@ namespace lxvc {
       decltype(auto) colorAttachments = framebuffers->getColorAttachments();
       decltype(auto) renderArea = framebuffers->getRenderArea();
 
+      //
+      std::vector<vk::Viewport> viewports = { vk::Viewport{ .x = 0.f, .y = 0.f, .width = float(renderArea.extent.width), .height = float(renderArea.extent.height), .minDepth = 0.f, .maxDepth = 1.f} };
+      std::vector<vk::Rect2D> scissors = { renderArea };
+
       // 
       std::vector<uint32_t> offsets = {};
       submission.commandInits.push_back([=](vk::CommandBuffer const& cmdBuf) {
         auto _depInfo = depInfo;
-        cmdBuf.beginRendering(vk::RenderingInfoKHR{ .renderArea = renderArea, .layerCount = 1u, .colorAttachmentCount = uint32_t(colorAttachments.size()), .pColorAttachments = colorAttachments.data(), .pDepthAttachment = &depthAttachment, .pStencilAttachment = &stencilAttachment });
         cmdBuf.pipelineBarrier2(_depInfo.setMemoryBarriers(memoryBarriersBegin));
-        cmdBuf.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, descriptorsObj->handle.as<vk::PipelineLayout>(), 0u, descriptorsObj->sets, offsets);
+        cmdBuf.beginRendering(vk::RenderingInfoKHR{ .renderArea = renderArea, .layerCount = 1u, .viewMask = 0x0u, .colorAttachmentCount = uint32_t(colorAttachments.size()), .pColorAttachments = colorAttachments.data(), .pDepthAttachment = &depthAttachment, .pStencilAttachment = &stencilAttachment });
         cmdBuf.bindPipeline(vk::PipelineBindPoint::eGraphics, this->handle.as<vk::Pipeline>());
+        cmdBuf.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, descriptorsObj->handle.as<vk::PipelineLayout>(), 0u, descriptorsObj->sets, offsets);
+        cmdBuf.setViewportWithCount(viewports);
+        cmdBuf.setScissorWithCount(scissors);
         cmdBuf.drawMultiEXT(exec->multiDrawInfo, 1u, 0u, sizeof(vk::MultiDrawInfoEXT), deviceObj->dispatch);
-        cmdBuf.pipelineBarrier2(_depInfo.setMemoryBarriers(memoryBarriersEnd));
         cmdBuf.endRendering();
+        cmdBuf.pipelineBarrier2(_depInfo.setMemoryBarriers(memoryBarriersEnd));
         return cmdBuf;
       });
 
       //
-      return deviceObj->executeCommandOnce(submission);
+      decltype(auto) switchToAttachmentFence = framebuffers->switchToAttachment();
+      decltype(auto) graphicsFence = deviceObj->executeCommandOnce(submission);
+      decltype(auto) switchToShaderReadFence = framebuffers->switchToShaderRead();
+
+      //
+      return graphicsFence;
     };
 
   };

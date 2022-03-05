@@ -290,6 +290,8 @@ namespace lxvc {
       decltype(auto) promise = std::async(std::launch::async | std::launch::deferred, [=,this]() {
         decltype(auto) result = device.waitForFences(fence, true, 10000000000);
         for (decltype(auto) fn : submission->onDone) { fn(result); };
+        device.destroyFence(fence);
+        device.freeCommandBuffers(commandPool, commandBuffers);
         return result;
       });
 
@@ -317,7 +319,9 @@ namespace lxvc {
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceVulkan11Features, vk::PhysicalDeviceVulkan11Features{
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceVulkan12Features, vk::PhysicalDeviceVulkan12Features{
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceVulkan13Features, vk::PhysicalDeviceVulkan13Features{
+        .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceMultiDrawFeaturesEXT, vk::PhysicalDeviceMultiDrawFeaturesEXT{
 
+        })
         })
         })
         })
