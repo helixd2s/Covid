@@ -139,6 +139,9 @@ int main() {
   //
   uniformData.currentImage = uint32_t(imageIndices.size())-1u;
 
+  //
+  std::array<std::optional<lxvc::FenceType>, 4> fences = {};
+
   // 
   while (!glfwWindowShouldClose(window)) { // 
     glfwPollEvents();
@@ -180,13 +183,15 @@ int main() {
       .signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{readySemaphoreInfos[semIndex]},
     });
 
+    //
+    auto& fence = fences[uniformData.currentImage];
+    if (fence) { decltype(auto) unleak = std::get<0u>(*fence); device->deleteTrash(); };
+    fence = swapchain->switchToPresent(uniformData.currentImage, qfAndQueue);
+    
 
     //
-    decltype(auto) presentFence = swapchain->switchToPresent(uniformData.currentImage, qfAndQueue);
-
-    //
-    std::get<0u>(presentFence).get();
-    device->deleteTrash();
+    // 
+    //decltype(auto) unleak = std::get<0u>(swapchain->switchToPresent(uniformData.currentImage, qfAndQueue)).get();
 
     //
     decltype(auto) result = device->getQueue(qfAndQueue).presentKHR(vk::PresentInfoKHR{

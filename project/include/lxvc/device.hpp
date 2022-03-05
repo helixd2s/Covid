@@ -45,7 +45,8 @@ namespace lxvc {
     inline decltype(auto) SFT() const { using T = const std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
 
     //
-    std::array<std::function<void()>, 128> destructors = {};
+    //std::unordered_map<uintptr_t, std::function<void()>> destMap = {};
+    std::array<std::atomic<std::shared_ptr<std::function<void()>>>, 128> destIds = {};
     std::atomic_int32_t destructorCount = 0;
 
     //
@@ -295,11 +296,11 @@ namespace lxvc {
       decltype(auto) promise = std::async(std::launch::async | std::launch::deferred, [=,this]() {
         decltype(auto) result = device.waitForFences(fence, true, 10000000000);
         for (decltype(auto) fn : submission->onDone) { fn(result); };
-        if (destructorCount < destructors.size()) {
-          destructors[destructorCount++] = [=, this]() {
+        if (destructorCount < destIds.size()) {
+          destIds[destructorCount++] = std::make_shared<std::function<void()>>([=, this]() {
             device.destroyFence(fence);
             device.freeCommandBuffers(commandPool, commandBuffers);
-          };
+          });
         };
         return result;
       });
@@ -370,7 +371,7 @@ namespace lxvc {
     //
     virtual void deleteTrash() {
       do {
-        destructors[--destructorCount]();
+        auto destId = destIds[--destructorCount].exchange({}); if (destId) { (*destId)(); };
       } while (destructorCount > 0);
     };
 
