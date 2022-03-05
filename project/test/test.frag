@@ -10,7 +10,7 @@
 #extension GL_EXT_samplerless_texture_functions : require
 
 // 
-layout(set = 0, binding = 0, scalar, row_major) uniform MatrixBlock
+layout(set = 0, binding = 0, scalar) uniform MatrixBlock
 {
   uint32_t imageIndices[4];
   uint32_t textureIndices[4];

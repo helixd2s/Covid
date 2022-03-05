@@ -32,8 +32,9 @@ namespace lxvc {
     std::vector<vk::PipelineShaderStageCreateInfo> pipelineStages = {};
     std::vector<vk::DynamicState> dynamicStates = {};
     
-    //std::vector<vk::Viewport> viewports = {};
-    //std::vector<vk::Rect2D> scissors = {};
+    // 
+    std::vector<vk::Viewport> viewports = {};
+    std::vector<vk::Rect2D> scissors = {};
     //std::shared_ptr<DeviceObj> deviceObj = {};
 
     AttachmentsInfo attachments = {};
@@ -94,6 +95,10 @@ namespace lxvc {
       //return this->SFT();
       decltype(auto) descriptors = lxvc::context->get<DeviceObj>(this->base)->get<DescriptorsObj>(this->cInfo->layout);
       decltype(auto) device = this->base.as<vk::Device>();
+
+      //
+      viewports = { vk::Viewport{.x = 0.f, .y = 0.f, .width = 1.f, .height = 1.f, .minDepth = 0.f, .maxDepth = 1.f} };
+      scissors = { vk::Rect2D{{0,0},{1u,1u}} };
 
       //
       decltype(auto) pRendering = infoMap->set(vk::StructureType::ePipelineRenderingCreateInfo, vk::PipelineRenderingCreateInfo{
@@ -210,7 +215,7 @@ namespace lxvc {
         .pVertexInputState = pVertexInput.get(),
         .pInputAssemblyState = pInputAssembly.get(),
         //.pTessellationState = pTessellation.get(),
-        .pViewportState = pViewport.get(),
+        .pViewportState = pViewport.get(),//->setViewports(viewports).setScissors(scissors),
         .pRasterizationState = pRasterization.get(),
         .pMultisampleState = pMultisample.get(),
         .pDepthStencilState = pDepthStencil.get(),
@@ -248,16 +253,16 @@ namespace lxvc {
         vk::MemoryBarrier2{
           .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
           .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite),
-          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eShaderReadWrite) | vk::PipelineStageFlagBits2::eComputeShader,
-          .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eShaderReadWrite)
+          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eComputeShaderReadWrite) | vk::PipelineStageFlagBits2::eComputeShader,
+          .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eComputeShaderReadWrite)
         }
       };
 
       //
       decltype(auto) memoryBarriersEnd = std::vector<vk::MemoryBarrier2>{
         vk::MemoryBarrier2{
-          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eShaderReadWrite) | vk::PipelineStageFlagBits2::eComputeShader,
-          .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eShaderReadWrite),
+          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eComputeShaderReadWrite) | vk::PipelineStageFlagBits2::eComputeShader,
+          .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eComputeShaderReadWrite),
           .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
           .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite)
         }
@@ -293,16 +298,16 @@ namespace lxvc {
         vk::MemoryBarrier2{
           .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
           .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite),
-          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eShaderReadWrite) | vk::PipelineStageFlagBits2::eAllCommands,
-          .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eShaderReadWrite)
+          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGraphicsShaderReadWrite) | vk::PipelineStageFlagBits2::eAllCommands,
+          .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGraphicsShaderReadWrite)
         }
       };
 
       //
       decltype(auto) memoryBarriersEnd = std::vector<vk::MemoryBarrier2>{
         vk::MemoryBarrier2{
-          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eShaderReadWrite) | vk::PipelineStageFlagBits2::eAllCommands,
-          .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eShaderReadWrite),
+          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGraphicsShaderReadWrite) | vk::PipelineStageFlagBits2::eAllCommands,
+          .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGraphicsShaderReadWrite),
           .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
           .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite)
         }
@@ -315,8 +320,8 @@ namespace lxvc {
       decltype(auto) renderArea = framebuffers->getRenderArea();
 
       //
-      std::vector<vk::Viewport> viewports = { vk::Viewport{ .x = 0.f, .y = 0.f, .width = float(renderArea.extent.width), .height = float(renderArea.extent.height), .minDepth = 0.f, .maxDepth = 1.f} };
-      std::vector<vk::Rect2D> scissors = { renderArea };
+      viewports = { vk::Viewport{ .x = 0.f, .y = 0.f, .width = float(renderArea.extent.width), .height = float(renderArea.extent.height), .minDepth = 0.f, .maxDepth = 1.f} };
+      scissors = { renderArea };
 
       // 
       std::vector<uint32_t> offsets = {};

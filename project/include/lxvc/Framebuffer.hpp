@@ -209,7 +209,7 @@ namespace lxvc {
         stencilAttachment = vk::RenderingAttachmentInfo{ .imageView = imageView, .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eClear, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = vk::ClearValue{.depthStencil = vk::ClearDepthStencilValue{.stencil = 0u} } };
       }
       else {
-        colorAttachments.push_back(vk::RenderingAttachmentInfo{ .imageView = imageView, .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eDontCare, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = vk::ClearValue{.color = reinterpret_cast<vk::ClearColorValue&>(color)}});
+        colorAttachments.push_back(vk::RenderingAttachmentInfo{ .imageView = imageView, .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eClear, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = vk::ClearValue{.color = reinterpret_cast<vk::ClearColorValue&>(color)}});
       }
 
       //
