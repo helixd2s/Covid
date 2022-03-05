@@ -174,7 +174,7 @@ namespace lxvc {
 
   // 
   struct DeviceCreateInfo {
-    cpp21::shared_vector<std::string> extensionList = std::vector<std::string>{ "VK_KHR_deferred_host_operations", "VK_KHR_acceleration_structure", "VK_KHR_ray_query", "VK_KHR_ray_tracing_pipeline", "VK_KHR_swapchain" };
+    cpp21::shared_vector<std::string> extensionList = std::vector<std::string>{ "VK_KHR_deferred_host_operations", "VK_KHR_acceleration_structure", "VK_KHR_ray_query", "VK_KHR_ray_tracing_pipeline", "VK_KHR_swapchain", "VK_EXT_multi_draw"};
     cpp21::shared_vector<std::string> layerList = std::vector<std::string>{ "VK_LAYER_KHRONOS_validation" , "VK_LAYER_KHRONOS_synchronization2" };
     cpp21::shared_vector<QueueFamilyCreateInfo> queueFamilyInfos = std::vector<QueueFamilyCreateInfo>{ QueueFamilyCreateInfo{} };
     uint32_t physicalDeviceGroupIndex = 0u;
@@ -276,6 +276,8 @@ namespace lxvc {
     std::span<char8_t> data = {};
     std::optional<DataRegion> region = DataRegion{};
     std::optional<QueueGetInfo> info = QueueGetInfo{};
+    cpp21::shared_vector<vk::SemaphoreSubmitInfo> waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
+    cpp21::shared_vector<vk::SemaphoreSubmitInfo> signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
   };
 
   //
@@ -283,6 +285,18 @@ namespace lxvc {
     vk::Extent3D dispatch = { 1u, 1u, 1u };
     vk::PipelineLayout layout = {};
     std::optional<QueueGetInfo> info = QueueGetInfo{};
+    cpp21::shared_vector<vk::SemaphoreSubmitInfo> waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
+    cpp21::shared_vector<vk::SemaphoreSubmitInfo> signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
+  };
+
+  //
+  struct ExecuteGraphicsInfo {
+    uintptr_t framebuffer = 0ull;
+    std::vector<vk::MultiDrawInfoEXT> multiDrawInfo = {};
+    vk::PipelineLayout layout = {};
+    std::optional<QueueGetInfo> info = QueueGetInfo{};
+    cpp21::shared_vector<vk::SemaphoreSubmitInfo> waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
+    cpp21::shared_vector<vk::SemaphoreSubmitInfo> signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
   };
 
   //

@@ -34,6 +34,12 @@ namespace lxvc {
     std::vector<vk::Image> images = {};
     std::vector<vk::ImageView> imageViews = {};
     std::vector<uint32_t> imageViewIndices = {};
+    std::vector<vk::ClearValue> clearValues = {};
+
+    //
+    std::vector<vk::RenderingAttachmentInfo> colorAttachments = {};
+    vk::RenderingAttachmentInfo depthAttachment = {};
+    vk::RenderingAttachmentInfo stencilAttachment = {};
 
     //
     std::vector<std::function<FenceType(std::optional<QueueGetInfo> const&, FramebufferState const&)>> switchToShaderReadFn = {};
@@ -41,6 +47,10 @@ namespace lxvc {
 
     //
     FramebufferState state = FramebufferState::eAttachment;
+
+    //
+    vk::Rect2D renderArea = {};
+
 
   public:
     // 
@@ -53,6 +63,27 @@ namespace lxvc {
     FramebufferObj(Handle const& handle, std::optional<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{}) : cInfo(cInfo) {
       this->construct(lxvc::context->get<DeviceObj>(this->base = handle), cInfo);
     };
+
+    //
+    virtual std::vector<uint32_t> const& getImageViewIndices() const { return imageViewIndices; };
+
+    //
+    virtual vk::RenderingAttachmentInfo const& getDepthAttachment() const {
+      return depthAttachment;
+    };
+
+    //
+    virtual vk::RenderingAttachmentInfo const& getStencilAttachment() const {
+      return stencilAttachment;
+    };
+
+    //
+    virtual std::vector<vk::RenderingAttachmentInfo> const& getColorAttachments() {
+      return colorAttachments;
+    };
+
+    //
+    virtual vk::Rect2D const& getRenderArea() const { return renderArea; };
 
     //
     virtual tType registerSelf() {
@@ -121,6 +152,9 @@ namespace lxvc {
         }
       }).as<vk::Image>());
 
+      // 
+      renderArea = vk::Rect2D{ vk::Offset2D{0u, 0u}, cInfo->extent };
+
       //
       decltype(auto) image = this->images.back();
 
@@ -153,6 +187,21 @@ namespace lxvc {
           .info = info
         });
       });
+
+      //
+      glm::vec4 color = glm::vec4(0.f, 0.f, 0.f, 0.f);
+
+      //
+      if (imageType == ImageType::eDepthAttachment) {
+        depthAttachment = vk::RenderingAttachmentInfo{ .imageView = this->imageViews.back(), .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eLoad, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = vk::ClearValue{ .depthStencil = vk::ClearDepthStencilValue{.depth = 1.f} } };
+      }
+      else 
+      if (imageType == ImageType::eStencilAttachment) {
+        stencilAttachment = vk::RenderingAttachmentInfo{ .imageView = this->imageViews.back(), .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eLoad, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = vk::ClearValue{.depthStencil = vk::ClearDepthStencilValue{.stencil = 0u} } };
+      }
+      else {
+        colorAttachments.push_back(vk::RenderingAttachmentInfo{ .imageView = this->imageViews.back(), .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eLoad, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = vk::ClearValue{.color = reinterpret_cast<vk::ClearColorValue&>(color)}});
+      }
 
       //
       this->handle = uintptr_t(this);

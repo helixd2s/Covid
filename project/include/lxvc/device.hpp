@@ -249,18 +249,6 @@ namespace lxvc {
       return this->queueFamilies.commandPools;
     };
 
-    // TODO: caching...
-    virtual vk::Queue const& getQueue(cpp21::optional_ref<QueueGetInfo> info = {}) const {
-      //return this->device.getQueue(info->queueFamilyIndex, info->queueIndex);
-      decltype(auto) qfIndices = cpp21::opt_ref(this->queueFamilies.indices);
-      decltype(auto) qfQueuesStack = cpp21::opt_ref(this->queueFamilies.queues);
-      uintptr_t indexOfQF = std::distance(qfIndices->begin(), std::find(qfIndices->begin(), qfIndices->end(), info->queueFamilyIndex));
-      return qfQueuesStack[indexOfQF][info->queueIndex];
-    };
-
-    //
-    virtual FenceType executeCopyBuffersOnce(cpp21::optional_ref<CopyBufferInfo> copyInfoRaw);
-
     //
     virtual FenceType executeCommandOnce(cpp21::optional_ref<CommandOnceSubmission> submissionRef = {}) {
       decltype(auto) device = this->handle.as<vk::Device>();
@@ -365,6 +353,19 @@ namespace lxvc {
     };
 
   public:
+
+    // TODO: caching...
+    virtual vk::Queue const& getQueue(cpp21::optional_ref<QueueGetInfo> info = {}) const {
+      //return this->device.getQueue(info->queueFamilyIndex, info->queueIndex);
+      decltype(auto) qfIndices = cpp21::opt_ref(this->queueFamilies.indices);
+      decltype(auto) qfQueuesStack = cpp21::opt_ref(this->queueFamilies.queues);
+      uintptr_t indexOfQF = std::distance(qfIndices->begin(), std::find(qfIndices->begin(), qfIndices->end(), info->queueFamilyIndex));
+      return qfQueuesStack[indexOfQF][info->queueIndex];
+    };
+
+    //
+    virtual FenceType executeCopyBuffersOnce(cpp21::optional_ref<CopyBufferInfo> copyInfoRaw);
+
 
     // 
     DeviceObj(std::shared_ptr<InstanceObj> instanceObj = {}, std::optional<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) : cInfo(cInfo) {

@@ -8,6 +8,13 @@ void error(int errnum, const char* errmsg)
   std::cerr << errnum << ": " << errmsg << std::endl;
 };
 
+//
+struct UniformData {
+  uint32_t imageIndices[4] = { 0u,0u,0u,0u };
+  uint32_t textureIndices[4] = { 0u,0u,0u,0u };
+  uint32_t currentImage = 0u;
+  uint32_t reserved = 0u;
+};
 
 // 
 int main() {
@@ -27,6 +34,9 @@ int main() {
   decltype(auto) descriptions = lxvc::DescriptorsObj::make(device.with(0u), lxvc::DescriptorsCreateInfo{
 
   });
+
+  //
+  decltype(auto) uniformData = UniformData{};
 
   //
   decltype(auto) buffer = lxvc::ResourceObj::make(device, lxvc::ResourceCreateInfo{
@@ -54,51 +64,6 @@ int main() {
   uint64_t address = device.as<vk::Device>().getBufferAddress(vk::BufferDeviceAddressInfo{
     .buffer = buffer
   });
-
-  // 
-  decltype(auto) uniformFence = descriptions->executeUniformUpdateOnce(lxvc::UniformDataSet{
-    .data = std::span<char8_t>((char8_t*)&address, 8ull),
-    .region = lxvc::DataRegion{0ull, 8ull},
-    .info = lxvc::QueueGetInfo{0u, 0u}
-  });
-
-
-  //
-  decltype(auto) computeFence = compute->executeComputeOnce(lxvc::ExecuteComputeInfo{
-    .dispatch = vk::Extent3D{1u,1u,1u},
-    .layout = descriptions.as<vk::PipelineLayout>(),
-    .info = lxvc::QueueGetInfo{ 0u, 0u }
-  });
-
-
-  //
-  std::vector<uint32_t> results(256ull); // data_view - vector without changing pointer address!
-  std::span<char8_t> dataview{ (char8_t*)results.data(), 1024ull };
-
-
-  //
-  decltype(auto) uploadeFence = uploader->executeDownloadFromBufferOnce(lxvc::BufferRegion{ buffer, lxvc::DataRegion{0ull, 1024ull} }, dataview);
-  decltype(auto) awaited = std::get<0u>(uploadeFence).get();
-
-
-  //
-  decltype(auto) framebuffer = lxvc::FramebufferObj::make(device.with(0u), lxvc::FramebufferCreateInfo{
-    .extent = {1280u, 720u},
-    .layout = descriptions.as<vk::PipelineLayout>()
-  });
-
-  //
-  //framebuffer->switchToShaderRead();
-  //framebuffer->switchToAttachment();
-
-  //
-  decltype(auto) buf = (std::cout << "");
-  for (decltype(auto) rc : results) {
-    buf << rc << ", ";
-  };
-  buf << std::endl;
-
-
 
   //
   glfwSetErrorCallback(error);
@@ -136,10 +101,70 @@ int main() {
     .layout = descriptions.as<vk::PipelineLayout>()
   });
 
+  //
+  decltype(auto) framebuffer = lxvc::FramebufferObj::make(device.with(0u), lxvc::FramebufferCreateInfo{
+    .extent = swapchain->getRenderArea().extent,
+    .layout = descriptions.as<vk::PipelineLayout>()
+  });
+
+  //
+  decltype(auto) readySemaphoreInfos = swapchain->getReadySemaphoreInfos();
+  decltype(auto) presentSemaphoreInfos = swapchain->getPresentSemaphoreInfos();
+
+  // 
+  decltype(auto) imageIndices = swapchain->getImageViewIndices();
+  memcpy(uniformData.imageIndices, imageIndices.data(), std::min(imageIndices.size(), 4ull) * sizeof(uint32_t));
+
+  // 
+  decltype(auto) textureIndices = framebuffer->getImageViewIndices();
+  memcpy(uniformData.textureIndices, textureIndices.data(), std::min(textureIndices.size(), 4ull) * sizeof(uint32_t));
+
+  //
+  uint32_t currentImage = 0u;
+  decltype(auto) qfAndQueue = lxvc::QueueGetInfo{ 0u, 0u };
+
   // 
   while (!glfwWindowShouldClose(window)) { // 
     glfwPollEvents();
 
+    // 
+    decltype(auto) semIndex = (currentImage + 1u) % imageIndices.size();
+    decltype(auto) acquired = device.as<vk::Device>().acquireNextImage2KHR(vk::AcquireNextImageInfoKHR{ .swapchain = swapchain.as<vk::SwapchainKHR>(), .timeout = 10000000000, .semaphore = presentSemaphoreInfos[semIndex].semaphore});
+    uniformData.currentImage = acquired;
+
+    //
+    decltype(auto) graphicsFence = compute->executeGraphicsOnce(lxvc::ExecuteGraphicsInfo{
+      .framebuffer = framebuffer.as<uintptr_t>(),
+      .layout = descriptions.as<vk::PipelineLayout>(),
+      .info = qfAndQueue,
+      .waitSemaphores = presentSemaphoreInfos[semIndex],
+      .signalSemaphores = readySemaphoreInfos[semIndex],
+    });
+
+    // 
+    decltype(auto) uniformFence = descriptions->executeUniformUpdateOnce(lxvc::UniformDataSet{
+      .data = std::span<char8_t>((char8_t*)&uniformData, sizeof(UniformData)),
+      .region = lxvc::DataRegion{0ull, sizeof(UniformData)},
+      .info = qfAndQueue
+    });
+
+    //
+    decltype(auto) computeFence = compute->executeComputeOnce(lxvc::ExecuteComputeInfo{
+      .dispatch = vk::Extent3D{1u,1u,1u},
+      .layout = descriptions.as<vk::PipelineLayout>(),
+      .info = qfAndQueue,
+      .waitSemaphores = presentSemaphoreInfos[semIndex],
+      .signalSemaphores = readySemaphoreInfos[semIndex],
+    });
+
+    //
+    device->getQueue(qfAndQueue).presentKHR(vk::PresentInfoKHR{
+      .waitSemaphoreCount = 1u,
+      .pWaitSemaphores = &readySemaphoreInfos[semIndex].semaphore,
+      .swapchainCount = 1u,
+      .pSwapchains = &swapchain.as<vk::SwapchainKHR>(),
+      .pImageIndices = &uniformData.currentImage
+    });
   };
 
   // 

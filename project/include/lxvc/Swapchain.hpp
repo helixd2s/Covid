@@ -46,12 +46,23 @@ namespace lxvc {
     std::vector<uint32_t> imageViewIndices = {};
 
     //
+    std::vector<vk::Semaphore> readySemaphores = {};
+    std::vector<vk::Semaphore> presentSemaphores = {};
+
+    //
+    std::vector<vk::SemaphoreSubmitInfo> readySemaphoreInfos = {};
+    std::vector<vk::SemaphoreSubmitInfo> presentSemaphoreInfos = {};
+
+    //
     std::vector<std::function<FenceType(std::optional<QueueGetInfo> const&, SwapchainState const&)>> switchToPresentFn = {};
     std::vector<std::function<FenceType(std::optional<QueueGetInfo> const&, SwapchainState const&)>> switchToReadyFn = {};
 
     //
     SwapchainState state = SwapchainState::eReady;
     SurfaceCapabilitiesInfo capInfo = {};
+
+    //
+    vk::Rect2D renderArea = {};
 
   public:
     // 
@@ -64,6 +75,14 @@ namespace lxvc {
     SwapchainObj(Handle const& handle, std::optional<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) : cInfo(cInfo) {
       this->construct(lxvc::context->get<DeviceObj>(this->base = handle), cInfo);
     };
+
+    //
+    virtual std::vector<uint32_t> const& getImageViewIndices() const { return imageViewIndices; };
+    virtual std::vector<vk::Semaphore> const& getWaitSemaphores() const { return readySemaphores; };
+    virtual std::vector<vk::Semaphore> const& getPresentSemaphores() const { return presentSemaphores; };
+    virtual std::vector<vk::SemaphoreSubmitInfo> const& getReadySemaphoreInfos() const { return readySemaphoreInfos; };
+    virtual std::vector<vk::SemaphoreSubmitInfo> const& getPresentSemaphoreInfos() const { return presentSemaphoreInfos; };
+    virtual vk::Rect2D const& getRenderArea() const { return renderArea; };
 
     //
     virtual tType registerSelf() {
@@ -128,6 +147,9 @@ namespace lxvc {
         }
       });
 
+      // 
+      renderArea = vk::Rect2D{ vk::Offset2D{0u, 0u}, capInfo.capabilities->currentExtent };
+
       //
       //decltype(auto) image = this->images.back();
 
@@ -161,6 +183,13 @@ namespace lxvc {
         });
       });
 
+      //
+      this->readySemaphores.push_back(device.createSemaphore(vk::SemaphoreCreateInfo{ .flags = {} }));
+      this->presentSemaphores.push_back(device.createSemaphore(vk::SemaphoreCreateInfo{ .flags = {} }));
+
+      //
+      this->readySemaphoreInfos.push_back(vk::SemaphoreSubmitInfo{ .semaphore = this->readySemaphores.back(), .stageMask = vk::PipelineStageFlagBits2::eAllCommands });
+      this->presentSemaphoreInfos.push_back(vk::SemaphoreSubmitInfo{ .semaphore = this->presentSemaphores.back(), .stageMask = vk::PipelineStageFlagBits2::eAllCommands });
       //lxvc::context->get<DeviceObj>(this->base)
     };
 

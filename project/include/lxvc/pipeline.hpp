@@ -283,6 +283,59 @@ namespace lxvc {
       return deviceObj->executeCommandOnce(submission);
     };
 
+    // TODO: using multiple-command
+    virtual FenceType executeGraphicsOnce(std::optional<ExecuteGraphicsInfo> exec = ExecuteGraphicsInfo{}) {
+      decltype(auto) device = this->base.as<vk::Device>();
+      decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
+      decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(exec->layout ? exec->layout : this->cInfo->layout);
+      decltype(auto) submission = CommandOnceSubmission{ .info = exec->info };
+      decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
+      decltype(auto) framebuffers = deviceObj->get<FramebufferObj>(exec->framebuffer);
+
+      //
+      decltype(auto) memoryBarriersBegin = std::vector<vk::MemoryBarrier2>{
+        vk::MemoryBarrier2{
+          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
+          .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite),
+          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eShaderReadWrite) | vk::PipelineStageFlagBits2::eAllCommands,
+          .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eShaderReadWrite)
+        }
+      };
+
+      //
+      decltype(auto) memoryBarriersEnd = std::vector<vk::MemoryBarrier2>{
+        vk::MemoryBarrier2{
+          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eShaderReadWrite) | vk::PipelineStageFlagBits2::eAllCommands,
+          .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eShaderReadWrite),
+          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
+          .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite)
+        }
+      };
+
+      //
+      decltype(auto) depthAttachment = framebuffers->getDepthAttachment();
+      decltype(auto) stencilAttachment = framebuffers->getStencilAttachment();
+      decltype(auto) colorAttachments = framebuffers->getColorAttachments();
+      decltype(auto) renderArea = framebuffers->getRenderArea();
+
+      // 
+      std::vector<uint32_t> offsets = {};
+      submission.commandInits.push_back([=](vk::CommandBuffer const& cmdBuf) {
+        auto _depInfo = depInfo;
+        cmdBuf.beginRendering(vk::RenderingInfoKHR{ .renderArea = renderArea, .layerCount = 1u, .colorAttachmentCount = uint32_t(colorAttachments.size()), .pColorAttachments = colorAttachments.data(), .pDepthAttachment = &depthAttachment, .pStencilAttachment = &stencilAttachment });
+        cmdBuf.pipelineBarrier2(_depInfo.setMemoryBarriers(memoryBarriersBegin));
+        cmdBuf.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, descriptorsObj->handle.as<vk::PipelineLayout>(), 0u, descriptorsObj->sets, offsets);
+        cmdBuf.bindPipeline(vk::PipelineBindPoint::eGraphics, this->handle.as<vk::Pipeline>());
+        cmdBuf.drawMultiEXT(exec->multiDrawInfo, 1u, 0u, sizeof(vk::MultiDrawInfoEXT), deviceObj->dispatch);
+        cmdBuf.pipelineBarrier2(_depInfo.setMemoryBarriers(memoryBarriersEnd));
+        cmdBuf.endRendering();
+        return cmdBuf;
+      });
+
+      //
+      return deviceObj->executeCommandOnce(submission);
+    };
+
   };
   
 };
