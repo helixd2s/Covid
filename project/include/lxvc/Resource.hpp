@@ -207,8 +207,8 @@ namespace lxvc {
       if (cInfo->info) {
         this->switchLayout(ImageLayoutSwitchInfo{
           .newImageLayout = cInfo->layout,
-          .info = cInfo->info,
-          .oldImageLayout = imageInfo->initialLayout
+          .oldImageLayout = imageInfo->initialLayout,
+          .info = cInfo->info
         });
       };
     };

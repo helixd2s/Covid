@@ -147,8 +147,8 @@ namespace lxvc {
       this->switchToReadyFn.push_back([=](std::optional<QueueGetInfo> const& info = QueueGetInfo{}, SwapchainState const& previousState = {}) {
         return deviceObj->get<ResourceObj>(image)->switchLayout(ImageLayoutSwitchInfo{
           .newImageLayout = imageLayout,
-          .info = info,
-          .subresourceRange = subresourceRange
+          .subresourceRange = subresourceRange,
+          .info = info
         });
       });
 
@@ -156,8 +156,8 @@ namespace lxvc {
       this->switchToPresentFn.push_back([=](std::optional<QueueGetInfo> const& info = QueueGetInfo{}, SwapchainState const& previousState = {}) {
         return deviceObj->get<ResourceObj>(image)->switchLayout(ImageLayoutSwitchInfo{
           .newImageLayout = vk::ImageLayout::ePresentSrcKHR,
-          .info = info,
-          .subresourceRange = subresourceRange
+          .subresourceRange = subresourceRange,
+          .info = info
         });
       });
 

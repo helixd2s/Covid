@@ -266,9 +266,9 @@ namespace lxvc {
   //
   struct ImageLayoutSwitchInfo {
     vk::ImageLayout const& newImageLayout = vk::ImageLayout::eGeneral;
-    std::optional<QueueGetInfo> info = {};
     std::optional<vk::ImageLayout> oldImageLayout = {};
     std::optional<vk::ImageSubresourceRange> subresourceRange = {};
+    std::optional<QueueGetInfo> info = {};
   };
 
   // 

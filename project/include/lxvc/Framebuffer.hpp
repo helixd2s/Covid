@@ -140,8 +140,8 @@ namespace lxvc {
       this->switchToAttachmentFn.push_back([=](std::optional<QueueGetInfo> const& info = QueueGetInfo{}, FramebufferState const& previousState = {}) {
         return deviceObj->get<ResourceObj>(image)->switchLayout(ImageLayoutSwitchInfo{
           .newImageLayout = imageLayout,
-          .info = info,
-          .subresourceRange = subresourceRange
+          .subresourceRange = subresourceRange,
+          .info = info
         });
       });
 
@@ -149,8 +149,8 @@ namespace lxvc {
       this->switchToShaderReadFn.push_back([=](std::optional<QueueGetInfo> const& info = QueueGetInfo{}, FramebufferState const& previousState = {}) {
         return deviceObj->get<ResourceObj>(image)->switchLayout(ImageLayoutSwitchInfo{
           .newImageLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
-          .info = info,
-          .subresourceRange = subresourceRange
+          .subresourceRange = subresourceRange,
+          .info = info
         });
       });
 
