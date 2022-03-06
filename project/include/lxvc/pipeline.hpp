@@ -112,9 +112,9 @@ namespace lxvc {
       });
 
       //
-      //decltype(auto) pTessellation = infoMap->set(vk::StructureType::ePipelineTessellationStateCreateInfo, vk::PipelineTessellationStateCreateInfo{
-        //.patchControlPoints = 1u
-      //});
+      decltype(auto) pTessellation = infoMap->set(vk::StructureType::ePipelineTessellationStateCreateInfo, vk::PipelineTessellationStateCreateInfo{
+        .patchControlPoints = 1u
+      });
 
       //
       decltype(auto) pViewport = infoMap->set(vk::StructureType::ePipelineViewportStateCreateInfo, vk::PipelineViewportStateCreateInfo{
@@ -122,14 +122,14 @@ namespace lxvc {
       });
 
       //
-      //decltype(auto) pRasterizationConservative = infoMap->set(vk::StructureType::ePipelineRasterizationConservativeStateCreateInfoEXT, vk::PipelineRasterizationConservativeStateCreateInfoEXT{
-        //.conservativeRasterizationMode = vk::ConservativeRasterizationModeEXT::eOverestimate
-      //});
+      decltype(auto) pRasterizationConservative = infoMap->set(vk::StructureType::ePipelineRasterizationConservativeStateCreateInfoEXT, vk::PipelineRasterizationConservativeStateCreateInfoEXT{
+        .conservativeRasterizationMode = vk::ConservativeRasterizationModeEXT::eOverestimate
+      });
 
       //
       decltype(auto) pRasterization = infoMap->set(vk::StructureType::ePipelineRasterizationStateCreateInfo, vk::PipelineRasterizationStateCreateInfo{
-        //.pNext = pRasterizationConservative.get(),
-        .depthClampEnable = false,
+        .pNext = pRasterizationConservative.get(),
+        .depthClampEnable = true,
         .rasterizerDiscardEnable = false,
         .polygonMode = vk::PolygonMode::eFill,
         .cullMode = vk::CullModeFlagBits::eNone,
@@ -149,9 +149,9 @@ namespace lxvc {
 
       //
       decltype(auto) pDepthStencil = infoMap->set(vk::StructureType::ePipelineDepthStencilStateCreateInfo, vk::PipelineDepthStencilStateCreateInfo{
-        .depthTestEnable = false,
+        .depthTestEnable = true,
         .depthWriteEnable = true,
-        .depthCompareOp = vk::CompareOp::eAlways,
+        .depthCompareOp = vk::CompareOp::eLessOrEqual,
         .depthBoundsTestEnable = false,
         .stencilTestEnable = false,
         .front = vk::StencilOpState{.failOp = vk::StencilOp::eKeep, .passOp = vk::StencilOp::eReplace, .compareOp = vk::CompareOp::eAlways },
@@ -188,7 +188,7 @@ namespace lxvc {
         .flags = vk::PipelineCreateFlags{},
         .pVertexInputState = pVertexInput.get(),
         .pInputAssemblyState = pInputAssembly.get(),
-        //.pTessellationState = pTessellation.get(),
+        .pTessellationState = pTessellation.get(),
         .pViewportState = pViewport.get(),//->setViewports(viewports).setScissors(scissors),
         .pRasterizationState = pRasterization.get(),
         .pMultisampleState = pMultisample.get(),

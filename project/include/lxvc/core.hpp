@@ -156,12 +156,18 @@ namespace lxvc {
   struct InstanceCreateInfo {
     std::string appName = "LXVC_APP";
     uint32_t appVersion = VK_MAKE_VERSION(1, 0, 0);
-    cpp21::shared_vector<std::string> extensionList = std::vector<std::string>{ "VK_KHR_surface", "VK_EXT_debug_utils", "VK_KHR_get_surface_capabilities2"
+    cpp21::shared_vector<std::string> extensionList = std::vector<std::string>{ 
+      "VK_KHR_surface", 
+      "VK_EXT_debug_utils", 
+      "VK_KHR_get_surface_capabilities2",
 #ifdef _WIN32
-      , "VK_KHR_win32_surface"
+      "VK_KHR_win32_surface"
 #endif
     };
-    cpp21::shared_vector<std::string> layerList = std::vector<std::string>{ "VK_LAYER_KHRONOS_validation", "VK_LAYER_KHRONOS_synchronization2"};
+    cpp21::shared_vector<std::string> layerList = std::vector<std::string>{ 
+      "VK_LAYER_KHRONOS_validation", 
+      "VK_LAYER_KHRONOS_synchronization2"
+    };
   };
 
   //
@@ -176,8 +182,26 @@ namespace lxvc {
 
   // 
   struct DeviceCreateInfo {
-    cpp21::shared_vector<std::string> extensionList = std::vector<std::string>{ "VK_KHR_deferred_host_operations", "VK_KHR_acceleration_structure", "VK_KHR_ray_query", "VK_KHR_ray_tracing_pipeline", "VK_KHR_swapchain", "VK_EXT_multi_draw", "VK_KHR_separate_depth_stencil_layouts", "VK_KHR_dynamic_rendering"};
-    cpp21::shared_vector<std::string> layerList = std::vector<std::string>{ "VK_LAYER_KHRONOS_validation" , "VK_LAYER_KHRONOS_synchronization2" };
+    cpp21::shared_vector<std::string> extensionList = std::vector<std::string>{ 
+      "VK_KHR_deferred_host_operations", 
+      "VK_KHR_acceleration_structure", 
+      "VK_KHR_ray_query", 
+      "VK_KHR_ray_tracing_pipeline", 
+      "VK_KHR_swapchain", 
+      "VK_EXT_multi_draw", 
+      "VK_KHR_separate_depth_stencil_layouts", 
+      "VK_EXT_depth_range_unrestricted", 
+      "VK_EXT_depth_clip_enable", 
+      "VK_EXT_depth_clip_control", 
+      "VK_EXT_vertex_input_dynamic_state",
+      "VK_EXT_conservative_rasterization", 
+      "VK_EXT_blend_operation_advanced", 
+      "VK_EXT_validation_cache"
+    };
+    cpp21::shared_vector<std::string> layerList = std::vector<std::string>{ 
+      "VK_LAYER_KHRONOS_validation" , 
+      "VK_LAYER_KHRONOS_synchronization2" 
+    };
     cpp21::shared_vector<QueueFamilyCreateInfo> queueFamilyInfos = std::vector<QueueFamilyCreateInfo>{ QueueFamilyCreateInfo{} };
     uint32_t physicalDeviceGroupIndex = 0u;
     uint32_t physicalDeviceIndex = 0u;
