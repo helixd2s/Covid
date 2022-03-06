@@ -465,6 +465,12 @@ namespace lxvc {
     SubmissionInfo submission = {};
   };
 
+  //
+  struct CopyBuffersExecutionOnce {
+    CopyBufferWriteInfo writeInfo = {};
+    SubmissionInfo submission = {};
+  };
+
 
 
   //

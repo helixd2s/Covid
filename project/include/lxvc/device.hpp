@@ -437,6 +437,22 @@ namespace lxvc {
     virtual tType writeCopyBuffersCommand(CopyBufferWriteInfo const& copyInfoRaw);
 
     //
+    virtual FenceType copyBuffersOnce(CopyBuffersExecutionOnce const& copyInfo) {
+      decltype(auto) submission = CommandOnceSubmission{ .submission = copyInfo.submission };
+      decltype(auto) device = this->base.as<vk::Device>();
+      decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
+      
+      // 
+      submission.commandInits.push_back([=, this](vk::CommandBuffer const& cmdBuf) {
+        this->writeCopyBuffersCommand(copyInfo.writeInfo.with(cmdBuf));
+        return cmdBuf;
+      });
+
+      //
+      return this->executeCommandOnce(submission);
+    };
+
+    //
     ~DeviceObj() {
       this->tickProcessing();
     };
