@@ -207,7 +207,8 @@ namespace lxvc {
         .colorBlendOp = vk::BlendOp::eAdd,
         .srcAlphaBlendFactor = vk::BlendFactor::eOne,
         .dstAlphaBlendFactor = vk::BlendFactor::eOne,
-        .alphaBlendOp = vk::BlendOp::eMax
+        .alphaBlendOp = vk::BlendOp::eMax,
+        .colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
       },
       vk::PipelineColorBlendAttachmentState{
         .blendEnable = false,
@@ -216,7 +217,8 @@ namespace lxvc {
         .colorBlendOp = vk::BlendOp::eAdd,
         .srcAlphaBlendFactor = vk::BlendFactor::eOne,
         .dstAlphaBlendFactor = vk::BlendFactor::eOne,
-        .alphaBlendOp = vk::BlendOp::eMax
+        .alphaBlendOp = vk::BlendOp::eMax,
+        .colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
       }
     };
   };

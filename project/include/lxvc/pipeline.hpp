@@ -133,7 +133,7 @@ namespace lxvc {
         .rasterizerDiscardEnable = false,
         .polygonMode = vk::PolygonMode::eFill,
         .cullMode = vk::CullModeFlagBits::eNone,
-        .frontFace = vk::FrontFace::eCounterClockwise,
+        .frontFace = vk::FrontFace::eClockwise,
         .depthBiasEnable = false
       });
 
@@ -162,7 +162,8 @@ namespace lxvc {
 
       //
       decltype(auto) pColorBlend = infoMap->set(vk::StructureType::ePipelineColorBlendStateCreateInfo, vk::PipelineColorBlendStateCreateInfo{
-        .logicOpEnable = false
+        .logicOpEnable = false,
+        .logicOp = vk::LogicOp::eCopy
       });
 
       //
