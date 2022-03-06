@@ -16,18 +16,13 @@ layout(set = 0, binding = 0, scalar, row_major) uniform MatrixBlock
   uint32_t textureIndices[4];
   uint32_t currentImage;
   uint32_t reserved;
+  vec2 positions[6];
 };
 
 //
 layout(set = 1, binding = 0) uniform texture2D textures[];
 layout(set = 2, binding = 0) uniform sampler samplers[];
 layout(set = 3, binding = 0, rgba32f) uniform image2D images[];
-
-//
-const vec2 positions[6] = { 
-  vec2(0.f, 0.f), vec2(0.f, 1.f), vec2(1.f, 0.f),
-  vec2(1.f, 1.f), vec2(0.f, 1.f), vec2(1.f, 0.f),
-};
 
 //
 layout(location = 0) out vec4 pcolor;

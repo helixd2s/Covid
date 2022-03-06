@@ -157,13 +157,13 @@ namespace lxvc {
 
       //
       decltype(auto) pDepthStencil = infoMap->set(vk::StructureType::ePipelineDepthStencilStateCreateInfo, vk::PipelineDepthStencilStateCreateInfo{
-        .depthTestEnable = true,
+        .depthTestEnable = false,
         .depthWriteEnable = true,
-        .depthCompareOp = vk::CompareOp::eLessOrEqual,
+        .depthCompareOp = vk::CompareOp::eAlways,
         .depthBoundsTestEnable = false,
         .stencilTestEnable = false,
-        .front = vk::StencilOpState{.failOp = vk::StencilOp::eKeep, .passOp = vk::StencilOp::eKeep, .compareOp = vk::CompareOp::eAlways },
-        .back = vk::StencilOpState{.failOp = vk::StencilOp::eKeep, .passOp = vk::StencilOp::eKeep, .compareOp = vk::CompareOp::eAlways },
+        .front = vk::StencilOpState{.failOp = vk::StencilOp::eKeep, .passOp = vk::StencilOp::eReplace, .compareOp = vk::CompareOp::eAlways },
+        .back = vk::StencilOpState{.failOp = vk::StencilOp::eKeep, .passOp = vk::StencilOp::eReplace, .compareOp = vk::CompareOp::eAlways },
         .minDepthBounds = 0.f,
         .maxDepthBounds = 1.f
       });
@@ -190,7 +190,7 @@ namespace lxvc {
       });
 
       // 
-      this->attachments.colorAttachmentFormats.insert(attachments.colorAttachmentFormats.end(), {vk::Format::eR32G32B32A32Sfloat, vk::Format::eR32G32B32A32Sfloat });
+      this->attachments.colorAttachmentFormats.insert(attachments.colorAttachmentFormats.end(), {vk::Format::eR8G8B8A8Unorm, vk::Format::eR8G8B8A8Unorm });
 
       // for 1st image of framebuffer
       this->attachments.blendStates.push_back(vk::PipelineColorBlendAttachmentState{

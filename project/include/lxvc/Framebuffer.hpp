@@ -121,7 +121,7 @@ namespace lxvc {
   protected:
 
     //
-    virtual void createImage(ImageType const& imageType = ImageType::eColorAttachment, vk::Format const& format_ = vk::Format::eR32G32B32A32Sfloat) {
+    virtual void createImage(ImageType const& imageType = ImageType::eColorAttachment, vk::Format const& format_ = vk::Format::eR8G8B8A8Unorm) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);

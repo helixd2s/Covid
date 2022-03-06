@@ -144,6 +144,7 @@ namespace lxvc {
         .image = image,
         .imageInfo = ImageCreateInfo{
           .swapchain = swapchainInfo,
+          .info = QueueGetInfo{0u,0u},
           .type = imageType,
           .extent = { capInfo.capabilities->currentExtent.width, capInfo.capabilities->currentExtent.height, 1u },
           .format = format,
