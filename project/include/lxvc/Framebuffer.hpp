@@ -237,10 +237,17 @@ namespace lxvc {
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
 
       // 
-      this->createImage(ImageType::eColorAttachment); // for albedo
-      this->createImage(ImageType::eColorAttachment); // for triangle data
-      this->createImage(ImageType::eDepthStencilAttachment);
-      //this->createImage(ImageType::eStencilAttachment);
+      for (auto& format : descriptorsObj->cInfo->attachments.colorAttachmentFormats) {
+        this->createImage(ImageType::eColorAttachment);
+      };
+
+      // 
+      if (descriptorsObj->cInfo->attachments.depthAttachmentFormat == descriptorsObj->cInfo->attachments.stencilAttachmentFormat) {
+        this->createImage(ImageType::eDepthStencilAttachment);
+      } else {
+        this->createImage(ImageType::eDepthAttachment);
+        this->createImage(ImageType::eStencilAttachment);
+      };
 
       // 
       descriptorsObj->updateDescriptors();
