@@ -198,7 +198,7 @@ namespace lxvc {
   struct AttachmentsInfo {
     vk::Format depthAttachmentFormat = vk::Format::eD32SfloatS8Uint;//eD32Sfloat;
     vk::Format stencilAttachmentFormat = vk::Format::eD32SfloatS8Uint;//eS8Uint;
-    std::vector<vk::Format> colorAttachmentFormats = { vk::Format::eR8G8B8A8Unorm, vk::Format::eR8G8B8A8Unorm };
+    std::vector<vk::Format> colorAttachmentFormats = { vk::Format::eR32G32B32A32Sfloat, vk::Format::eR32G32B32A32Sfloat };
     std::vector<vk::PipelineColorBlendAttachmentState> blendStates = {
       vk::PipelineColorBlendAttachmentState{
         .blendEnable = false,
