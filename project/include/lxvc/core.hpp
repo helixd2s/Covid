@@ -165,8 +165,8 @@ namespace lxvc {
 #endif
     };
     cpp21::shared_vector<std::string> layerList = std::vector<std::string>{ 
-      "VK_LAYER_KHRONOS_validation", 
-      "VK_LAYER_KHRONOS_synchronization2"
+      "VK_LAYER_KHRONOS_synchronization2",
+      "VK_LAYER_KHRONOS_validation"
     };
   };
 

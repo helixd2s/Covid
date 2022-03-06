@@ -380,11 +380,20 @@ namespace lxvc {
         deviceInfo->setPEnabledLayerNames(this->filterLayers(physicalDevice, this->cInfo->layerList));
 
         // 
-        this->handle = physicalDevice.createDevice(deviceInfo);
-        //VULKAN_HPP_DEFAULT_DISPATCHER.init(this->handle.as<vk::Device>());
-        this->dispatch = vk::DispatchLoaderDynamic(this->base.as<vk::Instance>(), vkGetInstanceProcAddr, this->handle.as<vk::Device>(), vkGetDeviceProcAddr);
-        this->createCommandPools(this->cInfo->queueFamilyInfos);
-        
+        if (deviceInfo) {
+          try {
+            this->handle = physicalDevice.createDevice(deviceInfo);
+          }
+          catch (std::exception e) {
+            std::cerr << "Unable to create device..." << std::endl;
+            std::cerr << e.what() << std::endl;
+          }
+        };
+        if (this->handle) {
+          //VULKAN_HPP_DEFAULT_DISPATCHER.init(this->handle.as<vk::Device>());
+          this->dispatch = vk::DispatchLoaderDynamic(this->base.as<vk::Instance>(), vkGetInstanceProcAddr, this->handle.as<vk::Device>(), vkGetDeviceProcAddr);
+          this->createCommandPools(this->cInfo->queueFamilyInfos);
+        };
       }
       else {
         std::cerr << "Physical Device Not Detected" << std::endl;
