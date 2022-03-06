@@ -65,20 +65,6 @@ int main() {
   //
   if (rdoc_api) rdoc_api->SetCaptureOptionU32(eRENDERDOC_Option_DebugOutputMute, true);
 
-  //
-  glfwSetErrorCallback(error);
-  glfwInit();
-
-  // 
-  if (GLFW_FALSE == glfwVulkanSupported()) {
-    glfwTerminate(); return -1;
-  };
-
-  // 
-  glfwDefaultWindowHints();
-  glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-  glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_NATIVE_CONTEXT_API);
-  glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
   //
   lxvc::initialize();
@@ -148,11 +134,22 @@ int main() {
 
   //
   decltype(auto) qfAndQueue = lxvc::QueueGetInfo{ 0u, 0u };
-  std::array<std::optional<lxvc::FenceType>, 4> fences = {};
+  std::array<lxvc::FenceType, 4> fences = {};
 
   //
-  std::cout << "" << std::endl;
-  //system("PAUSE");
+  glfwSetErrorCallback(error);
+  glfwInit();
+
+  // 
+  if (GLFW_FALSE == glfwVulkanSupported()) {
+    glfwTerminate(); return -1;
+  };
+
+  // 
+  glfwDefaultWindowHints();
+  glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+  glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_NATIVE_CONTEXT_API);
+  glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
   //
   uint32_t WIDTH = 640u, HEIGHT = 360u;
@@ -210,7 +207,7 @@ int main() {
 
     // 
     decltype(auto) semIndex = (uniformData.currentImage + 1u) % imageIndices.size();
-    decltype(auto) acquired = device.as<vk::Device>().acquireNextImage2KHR(vk::AcquireNextImageInfoKHR{ .swapchain = swapchain.as<vk::SwapchainKHR>(), .timeout = 10000000000, .semaphore = presentSemaphoreInfos[semIndex].semaphore, .deviceMask = 0x1u });
+    decltype(auto) acquired = device.as<vk::Device>().acquireNextImage2KHR(vk::AcquireNextImageInfoKHR{ .swapchain = swapchain.as<vk::SwapchainKHR>(), .timeout = 1000*1000*1000, .semaphore = presentSemaphoreInfos[semIndex].semaphore, .deviceMask = 0x1u });
 
     //
     swapchain->switchToReady(semIndex = uniformData.currentImage = acquired, qfAndQueue);
@@ -246,9 +243,9 @@ int main() {
     });
 
     //
-    auto& fence = fences[uniformData.currentImage];
-    if (fence) { decltype(auto) unleak = std::get<0u>(*fence); device->deleteTrash(); };
-    fence = swapchain->switchToPresent(uniformData.currentImage, qfAndQueue);
+    auto& fence = fences[semIndex]; 
+    if (fence) { decltype(auto) unleak = std::get<0u>(*fence); }; device->tickProcessing();
+    fence = swapchain->switchToPresent(semIndex, qfAndQueue);
     
     //
     decltype(auto) result = device->getQueue(qfAndQueue).presentKHR(vk::PresentInfoKHR{

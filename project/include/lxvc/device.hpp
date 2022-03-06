@@ -16,6 +16,16 @@ namespace lxvc {
     std::vector<std::vector<vk::Queue>> queues = {};
   };
 
+  template<typename T>
+  inline void atomic_max(std::atomic<T>& maximum_value, T const& value) noexcept
+  {
+    T prev_value = maximum_value;
+    while (prev_value < value &&
+      !maximum_value.compare_exchange_weak(prev_value, value))
+    {
+    }
+  }
+
   // 
   class DeviceObj : public BaseObj {
   public:
@@ -47,7 +57,11 @@ namespace lxvc {
     //
     //std::unordered_map<uintptr_t, std::function<void()>> destMap = {};
     std::array<std::atomic<std::shared_ptr<std::function<void()>>>, 128> destIds = {};
-    std::atomic_int32_t destructorCount = 0;
+    std::array<std::atomic<std::shared_ptr<std::function<void()>>>, 128> callIds = {};
+    std::shared_ptr<std::atomic_int32_t> destructorCount;
+    std::shared_ptr<std::atomic_int32_t> callbackCount;
+    std::shared_ptr<std::atomic_bool> threadLocked;
+    std::shared_ptr<std::atomic_bool> actionLocked;
 
     //
     //std::shared_ptr<InstanceObj> instanceObj = {};
@@ -299,19 +313,21 @@ namespace lxvc {
 
       // 
       decltype(auto) promise = std::async(std::launch::async | std::launch::deferred, [=,this]() {
-        decltype(auto) result = device.waitForFences(fence, true, 10000000000);
-        for (decltype(auto) fn : submission->onDone) { fn(result); };
-        if (destructorCount < destIds.size()) {
-          destIds[destructorCount++] = std::make_shared<std::function<void()>>([=, this]() {
+        decltype(auto) result = device.waitForFences(fence, true, 1000 * 1000 * 1000);
+        do { /* but nothing to do */ } while (this->threadLocked); (*this->actionLocked) = true;
+        for (decltype(auto) fn : submission->onDone) { if ((*callbackCount) < callIds.size()) { callIds[(*callbackCount)++] = std::make_shared<std::function<void()>>(std::bind(fn, result)); }; };
+        if ((*destructorCount) < destIds.size()) {
+          destIds[(*destructorCount)++] = std::make_shared<std::function<void()>>([=, this]() {
             device.destroyFence(fence);
             device.freeCommandBuffers(commandPool, commandBuffers);
           });
         };
+        (*this->actionLocked) = false;
         return result;
       });
 
       // 
-      return std::make_tuple(std::forward<std::future<vk::Result>>(promise), std::forward<vk::Fence>(fence));
+      return std::make_shared<FenceTypeRaw>(std::move(std::make_tuple(std::forward<std::future<vk::Result>>(promise), std::forward<vk::Fence>(fence))));
     };
 
     // 
@@ -323,6 +339,13 @@ namespace lxvc {
       this->layerNames = {};
       this->infoMap = std::make_shared<MSS>();
       this->cInfo = cInfo;
+
+      // 
+      this->destructorCount = std::make_shared<std::atomic_int32_t>(std::move(0ull));
+      this->callbackCount = std::make_shared<std::atomic_int32_t>(std::move(0ull));
+      this->threadLocked = std::make_shared<std::atomic_bool>(std::move(false));
+      this->actionLocked = std::make_shared<std::atomic_bool>(std::move(false));
+
       //memcpy(&this->cInfo, &cInfo, sizeof(DeviceCreateInfo));
 
       // TODO: get rid from spagetti code or nesting
@@ -335,7 +358,7 @@ namespace lxvc {
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceVulkan12Features, vk::PhysicalDeviceVulkan12Features{
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceVulkan13Features, vk::PhysicalDeviceVulkan13Features{
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceMultiDrawFeaturesEXT, vk::PhysicalDeviceMultiDrawFeaturesEXT{
-
+        .pNext = nullptr
         })
         })
         })
@@ -374,10 +397,17 @@ namespace lxvc {
   public:
 
     //
-    virtual void deleteTrash() {
-      do {
-        auto destId = destIds[--destructorCount].exchange({}); if (destId) { (*destId)(); };
-      } while (destructorCount > 0);
+    virtual void tickProcessing() {
+      if (!(*actionLocked)) {
+        *threadLocked = true;
+        do {
+          auto destId = destIds[--(*destructorCount)].exchange({}); if (destId) { (*destId)(); };
+        } while ((*destructorCount) > 0); atomic_max(*destructorCount, 0);
+        do {
+          auto callId = callIds[--(*callbackCount)].exchange({}); if (callId) { (*callId)(); };
+        } while ((*callbackCount) > 0); atomic_max(*callbackCount, 0);
+        *threadLocked = false;
+      };
     };
 
     // TODO: caching...
@@ -394,7 +424,7 @@ namespace lxvc {
 
     //
     ~DeviceObj() {
-      this->deleteTrash();
+      this->tickProcessing();
     };
 
     // 

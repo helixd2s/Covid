@@ -391,7 +391,8 @@ namespace lxvc {
   };
 
   //
-  using FenceType = std::tuple<std::future<vk::Result>, vk::Fence>;
+  using FenceTypeRaw = std::tuple<std::future<vk::Result>, vk::Fence>;
+  using FenceType = std::shared_ptr<FenceTypeRaw>;
 
   // 
   struct ComputeStageCreateInfo {
