@@ -249,6 +249,7 @@ namespace lxvc {
 
   //
   struct DescriptorsCreateInfo {
+    std::optional<QueueGetInfo> info = QueueGetInfo{};
     AttachmentsInfo attachments = {};
   };
 
@@ -319,49 +320,93 @@ namespace lxvc {
   };
 
   //
-  struct ImageLayoutSwitchInfo {
+  struct ImageLayoutSwitchWriteInfo {
+    vk::CommandBuffer cmdBuf = {};
     vk::ImageLayout const& newImageLayout = vk::ImageLayout::eGeneral;
+    uint32_t queueFamilyIndex = 0u;
+
+    // 
     std::optional<vk::ImageLayout> oldImageLayout = {};
     std::optional<vk::ImageSubresourceRange> subresourceRange = {};
-    std::optional<QueueGetInfo> info = {};
+    
+    //
+    decltype(auto) with(vk::CommandBuffer const& cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
+  };
+
+  //
+  struct SubmissionInfo {
+    std::optional<QueueGetInfo> info = QueueGetInfo{};
+    std::optional<vk::CommandBufferInheritanceInfo> inheritanceInfo = {};
+    cpp21::shared_vector<vk::SemaphoreSubmitInfo> waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
+    cpp21::shared_vector<vk::SemaphoreSubmitInfo> signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
+  };
+
+  //
+  struct ImageLayoutSwitchInfo {
+    std::optional<QueueGetInfo> info = QueueGetInfo{};
+    std::optional<ImageLayoutSwitchWriteInfo> switchInfo = {};
+
+    // 
+    SubmissionInfo submission = {};
+  };
+
+  
+
+  //
+  struct UniformDataWriteSet {
+    vk::CommandBuffer cmdBuf = {};
+    std::optional<QueueGetInfo> info = QueueGetInfo{};
+    std::optional<DataRegion> region = DataRegion{};
+    std::span<char8_t> data = {};
+
+    //
+    decltype(auto) with(vk::CommandBuffer const& cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
   };
 
   // 
   struct UniformDataSet {
-    std::span<char8_t> data = {};
-    std::optional<DataRegion> region = DataRegion{};
+    std::optional<UniformDataWriteSet> writeInfo = {};
     std::optional<QueueGetInfo> info = QueueGetInfo{};
-    cpp21::shared_vector<vk::SemaphoreSubmitInfo> waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
-    cpp21::shared_vector<vk::SemaphoreSubmitInfo> signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
+    SubmissionInfo submission = {};
   };
 
+
   //
-  struct ExecuteComputeInfo {
+  struct WriteComputeInfo {
+    vk::CommandBuffer cmdBuf = {};
     vk::Extent3D dispatch = { 1u, 1u, 1u };
     vk::PipelineLayout layout = {};
-    std::optional<QueueGetInfo> info = QueueGetInfo{};
-    cpp21::shared_vector<vk::SemaphoreSubmitInfo> waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
-    cpp21::shared_vector<vk::SemaphoreSubmitInfo> signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
+    
+    //
+    decltype(auto) with(vk::CommandBuffer const& cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
   };
 
   //
-  struct ExecuteGraphicsInfo {
-    uintptr_t framebuffer = 0ull;
+  struct WriteGraphicsInfo {
+    vk::CommandBuffer cmdBuf = {};
+    uintptr_t framebuffer = {};
     std::vector<vk::MultiDrawInfoEXT> multiDrawInfo = {};
     vk::PipelineLayout layout = {};
-    std::optional<QueueGetInfo> info = QueueGetInfo{};
-    cpp21::shared_vector<vk::SemaphoreSubmitInfo> waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
-    cpp21::shared_vector<vk::SemaphoreSubmitInfo> signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
+    
+    //
+    decltype(auto) with(vk::CommandBuffer const& cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
   };
+
+
+  //
+  struct ExecutePipelineInfo {
+    std::optional<WriteGraphicsInfo> graphics = {};
+    std::optional<WriteComputeInfo> compute = {};
+    std::optional<QueueGetInfo> info = QueueGetInfo{};
+    SubmissionInfo submission = {};
+  };
+
 
   //
   struct CommandOnceSubmission {
-    std::optional<QueueGetInfo> info = QueueGetInfo{};
     std::vector<std::function<vk::CommandBuffer const& (vk::CommandBuffer const&)>> commandInits = {};
     std::vector<std::function<void(vk::Result const&)>> onDone = {};
-    std::optional<vk::CommandBufferInheritanceInfo> inheritanceInfo = {};
-    cpp21::shared_vector<vk::SemaphoreSubmitInfo> waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
-    cpp21::shared_vector<vk::SemaphoreSubmitInfo> signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
+    SubmissionInfo submission = {};
   };
 
   //
@@ -371,11 +416,56 @@ namespace lxvc {
   //};
 
   //
-  struct CopyBufferInfo {
-    //std::optional<QueueGetInfo> info = QueueGetInfo{};
+  struct CopyBufferWriteInfo {
+    vk::CommandBuffer cmdBuf = {};
+
+    // 
     std::optional<BufferRegion> src = BufferRegion{};
     std::optional<BufferRegion> dst = BufferRegion{};
+
+    //
+    decltype(auto) with(vk::CommandBuffer const& cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
   };
+
+  //
+  struct UploadCommandWriteInfo {
+    vk::CommandBuffer cmdBuf = {};
+
+    // 
+    std::optional<ImageRegion> dstImage = {};
+    std::optional<BufferRegion> dstBuffer = {};
+
+    //
+    decltype(auto) with(vk::CommandBuffer const& cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
+  };
+
+  //
+  struct DownloadCommandWriteInfo {
+    vk::CommandBuffer cmdBuf = {};
+
+    // 
+    std::optional<BufferRegion> srcBuffer = {};
+
+    //
+    decltype(auto) with(vk::CommandBuffer const& cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
+  };
+
+
+  //
+  struct UploadExecutionOnce {
+    std::span<char8_t> host = {};
+    UploadCommandWriteInfo writeInfo = {};
+    SubmissionInfo submission = {};
+  };
+
+  //
+  struct DownloadExecutionOnce {
+    std::span<char8_t> const& host = {};
+    DownloadCommandWriteInfo writeInfo = {};
+    SubmissionInfo submission = {};
+  };
+
+
 
   //
   struct UploaderCreateInfo {
@@ -506,6 +596,9 @@ namespace lxvc {
   inline static decltype(auto) registerTypes() {
     lxvc::handleTypeMap = {};
 
+    //
+    lxvc::handleTypeMap[std::type_index(typeid(uintptr_t))] = HandleType::eUnknown;
+
     // 
     lxvc::handleTypeMap[std::type_index(typeid(vk::Instance))] = HandleType::eInstance;
     lxvc::handleTypeMap[std::type_index(typeid(vk::PhysicalDevice))] = HandleType::ePhysicalDevice;
@@ -579,6 +672,37 @@ namespace lxvc {
   };
 
   //
+  template<class T = BaseObj, class Tw = cpp21::wrap_shared_ptr<T>>
+  class WrapShared : public Tw {
+  public:
+    using Tw::Tw;
+
+    // 
+    operator Handle& () { return this->ptr->handle; };
+    operator Handle const& () const { return this->ptr->handle; };
+
+    // 
+    inline decltype(auto) type() { return this->ptr->handle.type; };
+    inline decltype(auto) type() const { return this->ptr->handle.type; };
+
+    // 
+    inline decltype(auto) family() { return this->ptr->handle.family; };
+    inline decltype(auto) family() const { return this->ptr->handle.family; };
+
+    // 
+    template<class T = uintptr_t> inline decltype(auto) as() { return this->ptr->handle.as<T>(); };
+    template<class T = uintptr_t> inline decltype(auto) as() const { return this->ptr->handle.as<T>(); };
+
+    // 
+    inline decltype(auto) with(uint32_t const& family = 0u) const { return this->ptr->handle.with(family); };
+
+    // we forbid to change handle directly
+
+    //
+
+  };
+
+  //
   class BaseObj : public std::enable_shared_from_this<BaseObj> {
   protected:
     using SBP = std::shared_ptr<BaseObj>;
@@ -638,47 +762,18 @@ namespace lxvc {
       // 
       decltype(auto) objMap = handleObjectMap.at(handle.type);
       if (objMap->find(handle.value) == objMap->end()) { objMap.set(handle.value, std::make_shared<T>(this->handle, handle)); };
-      return std::dynamic_pointer_cast<T>(objMap.at(handle.value).shared());
+      return WrapShared<T>(std::dynamic_pointer_cast<T>(objMap.at(handle.value).shared()));
     };
 
     //
     template<class T = BaseObj>
     inline decltype(auto) get(Handle const& handle) const {
       decltype(auto) objMap = handleObjectMap.at(handle.type);
-      return std::dynamic_pointer_cast<T>(objMap.at(handle.value).shared());
+      return WrapShared<T>(std::dynamic_pointer_cast<T>(objMap.at(handle.value).shared()));
     };
   };
 
-  //
-  template<class T = BaseObj, class Tw = cpp21::wrap_shared_ptr<T>>
-  class WrapShared : public Tw {
-  public:
-    using Tw::Tw;
 
-    // 
-    operator Handle& () { return this->ptr->handle; };
-    operator Handle const& () const { return this->ptr->handle; };
-
-    // 
-    inline decltype(auto) type() { return this->ptr->handle.type; };
-    inline decltype(auto) type() const { return this->ptr->handle.type; };
-
-    // 
-    inline decltype(auto) family() { return this->ptr->handle.family; };
-    inline decltype(auto) family() const { return this->ptr->handle.family; };
-
-    // 
-    template<class T = uintptr_t> inline decltype(auto) as() { return this->ptr->handle.as<T>(); };
-    template<class T = uintptr_t> inline decltype(auto) as() const { return this->ptr->handle.as<T>(); };
-
-    // 
-    inline decltype(auto) with(uint32_t const& family = 0u) const { return this->ptr->handle.with(family); };
-
-    // we forbid to change handle directly
-
-    //
-
-  };
 
   //
 

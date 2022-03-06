@@ -44,11 +44,11 @@ namespace lxvc {
     vk::RenderingAttachmentInfo stencilAttachment = {};
 
     //
-    std::vector<std::function<FenceType(std::optional<QueueGetInfo> const&, FramebufferState const&)>> switchToShaderReadFn = {};
-    std::vector<std::function<FenceType(std::optional<QueueGetInfo> const&, FramebufferState const&)>> switchToAttachmentFn = {};
+    std::vector<std::function<void(vk::CommandBuffer const&, FramebufferState const&)>> switchToShaderReadFn = {};
+    std::vector<std::function<void(vk::CommandBuffer const&, FramebufferState const&)>> switchToAttachmentFn = {};
 
     //
-    FramebufferState state = FramebufferState::eAttachment;
+    FramebufferState state = FramebufferState::eShaderRead;
 
     //
     vk::Rect2D renderArea = {};
@@ -101,23 +101,56 @@ namespace lxvc {
     };
 
     //
-    virtual std::vector<FenceType> switchToShaderRead(std::optional<QueueGetInfo> const& info = QueueGetInfo{}) {
-      std::vector<FenceType> fences = {};
+    virtual tType writeSwitchToShaderRead(vk::CommandBuffer const& cmdBuf) {
       if (this->state != FramebufferState::eShaderRead) {
-        for (decltype(auto) fn : switchToShaderReadFn) { fences.push_back(fn(info, this->state)); };
+        for (decltype(auto) fn : switchToShaderReadFn) { fn(cmdBuf, this->state); };
         this->state = FramebufferState::eShaderRead;
       };
-      return fences;
+      return SFT();
     };
 
     //
-    virtual std::vector<FenceType> switchToAttachment(std::optional<QueueGetInfo> const& info = QueueGetInfo{}) {
-      std::vector<FenceType> fences = {};
+    virtual tType writeSwitchToAttachment(vk::CommandBuffer const& cmdBuf) {
       if (this->state != FramebufferState::eAttachment) {
-        for (decltype(auto) fn : switchToAttachmentFn) { fences.push_back(fn(info, this->state)); };
+        for (decltype(auto) fn : switchToAttachmentFn) { fn(cmdBuf, this->state); };
         this->state = FramebufferState::eAttachment;
       };
-      return fences;
+      return SFT();
+    };
+
+
+    //
+    virtual FenceType switchToShaderRead(std::optional<QueueGetInfo> const& info = QueueGetInfo{}) {
+      // 
+      if (this->state != FramebufferState::eShaderRead) {
+        decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo{.info = info } };
+        submission.commandInits.push_back([=, this](vk::CommandBuffer const& cmdBuf) {
+          this->writeSwitchToShaderRead(cmdBuf);
+          return cmdBuf;
+        });
+        this->state = FramebufferState::eShaderRead;
+        lxvc::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
+      };
+
+      //
+      return FenceType{};
+    };
+
+    //
+    virtual FenceType switchToAttachment(std::optional<QueueGetInfo> const& info = QueueGetInfo{}) {
+      // 
+      if (this->state != FramebufferState::eAttachment) {
+        decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo{.info = info } };
+        submission.commandInits.push_back([=, this](vk::CommandBuffer const& cmdBuf) {
+          this->writeSwitchToAttachment(cmdBuf);
+          return cmdBuf;
+        });
+        this->state = FramebufferState::eAttachment;
+        lxvc::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
+      };
+
+      //
+      return FenceType{};
     };
 
   protected:
@@ -159,15 +192,12 @@ namespace lxvc {
           .type = imageType,
           .extent = vk::Extent3D{ cInfo->extent.width, cInfo->extent.height, 1u },
           .format = format,
-          .layout = imageLayout
+          .layout = vk::ImageLayout::eShaderReadOnlyOptimal
         }
       });
 
       //
       this->images.push_back(imageObj.as<vk::Image>());
-
-      // 
-      renderArea = vk::Rect2D{ vk::Offset2D{0u, 0u}, cInfo->extent };
 
       //
       decltype(auto) image = this->images.back();
@@ -185,23 +215,23 @@ namespace lxvc {
       decltype(auto) imageView = this->imageViews.back();
 
       // 
-      this->imageViewIndices.push_back(descriptorsObj->textures.add(vk::DescriptorImageInfo{ .imageView = imageView,.imageLayout = vk::ImageLayout::eGeneral }));
+      this->imageViewIndices.push_back(descriptorsObj->textures.add(vk::DescriptorImageInfo{ .imageView = imageView,.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal }));
 
       // TODO: use pre-built command buffer
-      this->switchToAttachmentFn.push_back([=](std::optional<QueueGetInfo> const& info = QueueGetInfo{}, FramebufferState const& previousState = {}) {
-        return deviceObj->get<ResourceObj>(image)->switchLayout(ImageLayoutSwitchInfo{
+      this->switchToAttachmentFn.push_back([=](vk::CommandBuffer const& cmdBuf, FramebufferState const& previousState = {}) {
+        imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
+          .cmdBuf = cmdBuf,
           .newImageLayout = imageLayout,
           .subresourceRange = subresourceRange,
-          .info = info
         });
       });
 
       //
-      this->switchToShaderReadFn.push_back([=](std::optional<QueueGetInfo> const& info = QueueGetInfo{}, FramebufferState const& previousState = {}) {
-        return deviceObj->get<ResourceObj>(image)->switchLayout(ImageLayoutSwitchInfo{
-          .newImageLayout = vk::ImageLayout::eGeneral,
+      this->switchToShaderReadFn.push_back([=](vk::CommandBuffer const& cmdBuf, FramebufferState const& previousState = {}) {
+        imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
+          .cmdBuf = cmdBuf,
+          .newImageLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
           .subresourceRange = subresourceRange,
-          .info = info
         });
       });
 
@@ -235,6 +265,9 @@ namespace lxvc {
       this->cInfo = cInfo;
       //decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
+
+      //
+      this->renderArea = vk::Rect2D{ vk::Offset2D{0u, 0u}, cInfo->extent };
 
       // 
       for (auto& format : descriptorsObj->cInfo->attachments.colorAttachmentFormats) {

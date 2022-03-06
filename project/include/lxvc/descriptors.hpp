@@ -201,9 +201,8 @@ namespace lxvc {
     };
 
     //
-    virtual FenceType executeUniformUpdateOnce(UniformDataSet const& cInfo) {
+    virtual tType writeUniformUpdateCommand(UniformDataWriteSet const& cInfo) {
       size_t size = std::min(cInfo.data.size(), cInfo.region->size);
-      decltype(auto) submission = CommandOnceSubmission{ .info = cInfo.info };
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
 
@@ -238,11 +237,21 @@ namespace lxvc {
       };
 
       // 
+      cInfo.cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersBegin));
+      cInfo.cmdBuf.updateBuffer(this->uniformBuffer, cInfo.region->offset, size, cInfo.data.data());
+      cInfo.cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersEnd));
+
+      // 
+      return SFT();
+    };
+
+    //
+    virtual FenceType executeUniformUpdateOnce(UniformDataSet const& cInfo) {
+      decltype(auto) submission = CommandOnceSubmission{ .submission = cInfo.submission };
+
+      // 
       submission.commandInits.push_back([=](vk::CommandBuffer const& cmdBuf) {
-        auto _depInfo = depInfo;
-        cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersBegin));
-        cmdBuf.updateBuffer(this->uniformBuffer, cInfo.region->offset, size, cInfo.data.data());
-        cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersEnd));
+        this->writeUniformUpdateCommand(cInfo.writeInfo->with(cmdBuf));
         return cmdBuf;
       });
 

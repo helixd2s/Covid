@@ -54,8 +54,8 @@ namespace lxvc {
     std::vector<vk::SemaphoreSubmitInfo> presentSemaphoreInfos = {};
 
     //
-    std::vector<std::function<FenceType(std::optional<QueueGetInfo> const&, SwapchainState const&)>> switchToPresentFn = {};
-    std::vector<std::function<FenceType(std::optional<QueueGetInfo> const&, SwapchainState const&)>> switchToReadyFn = {};
+    std::vector<std::function<void(vk::CommandBuffer const&, SwapchainState const&)>> switchToPresentFn = {};
+    std::vector<std::function<void(vk::CommandBuffer const&, SwapchainState const&)>> switchToReadyFn = {};
 
     //
     SwapchainState state = SwapchainState::eReady;
@@ -99,24 +99,30 @@ namespace lxvc {
 
     //
     virtual FenceType switchToPresent(uint32_t const& imageIndex, std::optional<QueueGetInfo> const& info = QueueGetInfo{}) {
-      //std::vector<FenceType> fences = {};
-      //if (this->state != SwapchainState::ePresent) {
-        //for (decltype(auto) fn : switchToPresentFn) { fences.push_back(fn(info, this->state)); };
-        //this->state = SwapchainState::ePresent;
-      //};
-      //return fences;
-      return switchToPresentFn[imageIndex](info, this->state);
+      decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = info ? info.value() : this->cInfo->info } };
+
+      // 
+      submission.commandInits.push_back([=, this](vk::CommandBuffer const& cmdBuf) {
+        switchToPresentFn[imageIndex](cmdBuf, this->state);
+        return cmdBuf;
+      });
+
+      //
+      return lxvc::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
     };
 
     //
     virtual FenceType switchToReady(uint32_t const& imageIndex, std::optional<QueueGetInfo> const& info = QueueGetInfo{}) {
-      //std::vector<FenceType> fences = {};
-      //if (this->state != SwapchainState::eReady) {
-        //for (decltype(auto) fn : switchToReadyFn) { fences.push_back(fn(info, this->state)); };
-        //this->state = SwapchainState::eReady;
-      //};
-      //return fences;
-      return switchToReadyFn[imageIndex](info, this->state);
+      decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = info ? info.value() : this->cInfo->info } };
+
+      // 
+      submission.commandInits.push_back([=, this](vk::CommandBuffer const& cmdBuf) {
+        switchToReadyFn[imageIndex](cmdBuf, this->state);
+        return cmdBuf;
+      });
+
+      //
+      return lxvc::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
     };
 
   protected:
@@ -140,7 +146,7 @@ namespace lxvc {
         };
 
       //
-      ResourceObj::make(this->base, ResourceCreateInfo{
+      decltype(auto) imageObj = ResourceObj::make(this->base, ResourceCreateInfo{
         .image = image,
         .imageInfo = ImageCreateInfo{
           .swapchain = swapchainInfo,
@@ -171,20 +177,20 @@ namespace lxvc {
       this->imageViewIndices.push_back(descriptorsObj->images.add(vk::DescriptorImageInfo{ .imageView = this->imageViews.back(), .imageLayout = vk::ImageLayout::eGeneral }));
 
       // TODO: use pre-built command buffer
-      this->switchToReadyFn.push_back([=](std::optional<QueueGetInfo> const& info = QueueGetInfo{}, SwapchainState const& previousState = {}) {
-        return deviceObj->get<ResourceObj>(image)->switchLayout(ImageLayoutSwitchInfo{
+      this->switchToReadyFn.push_back([=](vk::CommandBuffer const& cmdBuf, SwapchainState const& previousState = {}) {
+        imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
+          .cmdBuf = cmdBuf,
           .newImageLayout = imageLayout,
           .subresourceRange = subresourceRange,
-          .info = info
         });
       });
 
       //
-      this->switchToPresentFn.push_back([=](std::optional<QueueGetInfo> const& info = QueueGetInfo{}, SwapchainState const& previousState = {}) {
-        return deviceObj->get<ResourceObj>(image)->switchLayout(ImageLayoutSwitchInfo{
+      this->switchToPresentFn.push_back([=](vk::CommandBuffer const& cmdBuf, SwapchainState const& previousState = {}) {
+        imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
+          .cmdBuf = cmdBuf,
           .newImageLayout = vk::ImageLayout::ePresentSrcKHR,
           .subresourceRange = subresourceRange,
-          .info = info
         });
       });
 

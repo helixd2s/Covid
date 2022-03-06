@@ -68,231 +68,168 @@ namespace lxvc {
       return wrap;
     };
 
-
-
-    //
-    virtual FenceType executeUploadToImageOnce(std::span<char8_t> const& host, std::optional<ImageRegion> imageRegion) {
-      decltype(auto) submission = CommandOnceSubmission{ .info = this->cInfo->info };
+    // you can copy from host to device Buffer and Image together!
+    virtual FenceType writeUploadToResourceCmd(UploadCommandWriteInfo const& copyRegionInfo) {
+      //decltype(auto) submission = CommandOnceSubmission{ .info = this->cInfo->info };
       decltype(auto) uploadBuffer = this->uploadBuffer;
       decltype(auto) downloadBuffer = this->downloadBuffer;
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
-      decltype(auto) size = host.size();
-      decltype(auto) copyInfo = vk::CopyBufferToImageInfo2{ .srcBuffer = uploadBuffer, .dstImage = imageRegion->image, .dstImageLayout = vk::ImageLayout::eTransferDstOptimal };
+      decltype(auto) size = copyRegionInfo.dstBuffer ? copyRegionInfo.dstBuffer->region.size : VK_WHOLE_SIZE;
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
-      decltype(auto) imageObj = deviceObj->get<ResourceObj>(imageRegion->image);
-      decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
 
       //
-      decltype(auto) subresourceRange = vk::ImageSubresourceRange{
+      decltype(auto) subresourceRange = vk::ImageSubresourceRange{};
+      decltype(auto) subresourceLayers = vk::ImageSubresourceLayers{};
+
+      // 
+      decltype(auto) BtI = vk::CopyBufferToImageInfo2{};
+      decltype(auto) BtB = vk::CopyBufferInfo2{};
+      decltype(auto) BtBRegions = std::vector<vk::BufferCopy2>{  };
+      decltype(auto) BtIRegions = std::vector<vk::BufferImageCopy2>{  };
+
+      //
+      decltype(auto) imageBarriersBegin = std::vector<vk::ImageMemoryBarrier2>{};
+      decltype(auto) imageBarriersEnd = std::vector<vk::ImageMemoryBarrier2>{};
+
+      //
+      decltype(auto) bufferBarriersBegin = std::vector<vk::BufferMemoryBarrier2>{
+        vk::BufferMemoryBarrier2{
+          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eHostMapWrite),
+          .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eHostMapWrite),
+          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eHostMapRead),
+          .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eHostMapRead),
+          .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
+          .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
+          .buffer = uploadBuffer,
+          .offset = 0ull,
+          .size = size
+        }
+      };
+
+      //
+      decltype(auto) bufferBarriersEnd = std::vector<vk::BufferMemoryBarrier2>{
+        vk::BufferMemoryBarrier2{
+          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eHostMapRead),
+          .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eHostMapRead),
+          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eHostMapWrite),
+          .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eHostMapWrite),
+          .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
+          .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
+          .buffer = uploadBuffer,
+          .offset = 0ull,
+          .size = size
+        }
+      };
+
+      // 
+      if (copyRegionInfo.dstImage) {
+        auto& imageRegion = copyRegionInfo.dstImage.value();
+
+        decltype(auto) imageObj = deviceObj->get<ResourceObj>(imageRegion.image);
+        decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
+
+        BtIRegions.push_back(vk::BufferImageCopy2{
+          .bufferOffset = 0ull, .imageSubresource = subresourceLayers, .imageOffset = imageRegion.region.offset, .imageExtent = imageRegion.region.extent
+        });
+        BtI = vk::CopyBufferToImageInfo2{ .srcBuffer = uploadBuffer, .dstImage = imageRegion.image, .dstImageLayout = vk::ImageLayout::eTransferDstOptimal };
+
+        subresourceRange = vk::ImageSubresourceRange{
           .aspectMask =
              imageObj->cInfo->imageInfo->type == ImageType::eDepthStencilAttachment ? vk::ImageAspectFlagBits::eDepth :
             (imageObj->cInfo->imageInfo->type == ImageType::eDepthAttachment ? vk::ImageAspectFlagBits::eDepth :
             (imageObj->cInfo->imageInfo->type == ImageType::eStencilAttachment ? vk::ImageAspectFlagBits::eStencil : vk::ImageAspectFlagBits::eColor)),
-          .baseMipLevel = imageRegion->region.baseMipLevel,
+          .baseMipLevel = imageRegion.region.baseMipLevel,
           .levelCount = 1u,//imageInfo->mipLevels - imageRegion->region->baseMipLevel,
           .baseArrayLayer = 0u,
           .layerCount = imageInfo->arrayLayers
+        };
+
+        subresourceLayers = vk::ImageSubresourceLayers{
+          .aspectMask = subresourceRange.aspectMask,
+          .mipLevel = subresourceRange.baseMipLevel,
+          .baseArrayLayer = subresourceRange.baseArrayLayer,
+          .layerCount = subresourceRange.layerCount
+        };
+
+        //
+        imageBarriersBegin.push_back(vk::ImageMemoryBarrier2{
+            .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferWrite),
+            .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
+            .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
+            .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite),
+            .oldLayout = vk::ImageLayout::eTransferDstOptimal,
+            .newLayout = imageObj->cInfo->imageInfo->layout,
+            .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
+            .dstQueueFamilyIndex = imageRegion.queueFamilyIndex,
+            .subresourceRange = subresourceRange
+          });
+
+        //
+        imageBarriersEnd.push_back(vk::ImageMemoryBarrier2{
+            .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
+            .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite),
+            .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferWrite),
+            .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
+            .oldLayout = imageObj->cInfo->imageInfo->layout,
+            .newLayout = vk::ImageLayout::eTransferDstOptimal,
+            .srcQueueFamilyIndex = imageRegion.queueFamilyIndex,
+            .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
+            .subresourceRange = subresourceRange
+          });
       };
 
-      //
-      decltype(auto) subresourceLayers = vk::ImageSubresourceLayers{
-        .aspectMask = subresourceRange.aspectMask,
-        .mipLevel = subresourceRange.baseMipLevel,
-        .baseArrayLayer = subresourceRange.baseArrayLayer,
-        .layerCount = subresourceRange.layerCount
-      };
+      // 
+      if (copyRegionInfo.dstBuffer) {
+        auto& bufferRegion = copyRegionInfo.dstBuffer.value();
 
-      //
-      decltype(auto) regions = std::vector<vk::BufferImageCopy2>{ vk::BufferImageCopy2{
-        .bufferOffset = 0ull, .imageSubresource = subresourceLayers, .imageOffset = imageRegion->region.offset, .imageExtent = imageRegion->region.extent
-      } };
+        BtBRegions.push_back(vk::BufferCopy2{ .srcOffset = 0ull, .dstOffset = bufferRegion.region.offset, .size = size });
+        BtB = vk::CopyBufferInfo2{ .srcBuffer = uploadBuffer, .dstBuffer = bufferRegion.buffer };
 
-      //
-      decltype(auto) bufferBarriersBegin = std::vector<vk::BufferMemoryBarrier2>{
-        vk::BufferMemoryBarrier2{
-          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eHostMapWrite),
-          .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eHostMapWrite),
-          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eHostMapRead),
-          .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eHostMapRead),
-          .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
-          .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
-          .buffer = uploadBuffer,
-          .offset = 0ull,
-          .size = size
-        }
-      };
-
-      //
-      decltype(auto) imageBarriersBegin = std::vector<vk::ImageMemoryBarrier2>{
-        vk::ImageMemoryBarrier2{
+        bufferBarriersBegin.push_back(vk::BufferMemoryBarrier2{
           .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
           .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite),
           .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferWrite),
           .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
-          .oldLayout = imageObj->cInfo->imageInfo->layout,
-          .newLayout = vk::ImageLayout::eTransferDstOptimal,
-          .srcQueueFamilyIndex = imageRegion->queueFamilyIndex,
+          .srcQueueFamilyIndex = bufferRegion.queueFamilyIndex,
           .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
-          .subresourceRange = subresourceRange
-        }
-      };
-
-      //
-      decltype(auto) bufferBarriersEnd = std::vector<vk::BufferMemoryBarrier2>{
-        vk::BufferMemoryBarrier2{
-          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eHostMapRead),
-          .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eHostMapRead),
-          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eHostMapWrite),
-          .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eHostMapWrite),
-          .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
-          .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
-          .buffer = uploadBuffer,
-          .offset = 0ull,
+          .buffer = bufferRegion.buffer,
+          .offset = bufferRegion.region.offset,
           .size = size
-        }
-      };
+        });
 
-      // 
-      decltype(auto) imageBarriersEnd = std::vector<vk::ImageMemoryBarrier2>{
-        vk::ImageMemoryBarrier2{
-          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferWrite),
-          .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
-          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
-          .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite),
-          .oldLayout = vk::ImageLayout::eTransferDstOptimal,
-          .newLayout = imageObj->cInfo->imageInfo->layout,
-          .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
-          .dstQueueFamilyIndex = imageRegion->queueFamilyIndex,
-          .subresourceRange = subresourceRange
-        }
-      };
-
-      //
-      memcpy(lxvc::context->get<DeviceObj>(this->base)->get<ResourceObj>(uploadBuffer)->mappedMemory, host.data(), size);
-
-      // 
-      submission.commandInits.push_back([=](vk::CommandBuffer const& cmdBuf) {
-        auto _copyInfo = copyInfo;
-        auto _depInfo = depInfo;
-        cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersBegin).setImageMemoryBarriers(imageBarriersBegin));
-        cmdBuf.copyBufferToImage2(_copyInfo.setRegions(regions));
-        cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersEnd).setImageMemoryBarriers(imageBarriersEnd));
-        return cmdBuf;
-      });
-
-      //
-      return lxvc::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
-    };
-
-
-
-    //
-    virtual FenceType executeUploadToBufferOnce(std::span<char8_t> const& host, std::optional<BufferRegion> bufferRegion) {
-      decltype(auto) submission = CommandOnceSubmission{ .info = this->cInfo->info };
-      decltype(auto) uploadBuffer = this->uploadBuffer;
-      decltype(auto) downloadBuffer = this->downloadBuffer;
-      decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) size = std::min(host.size(), bufferRegion->region.size);
-      decltype(auto) copyInfo = vk::CopyBufferInfo2{ .srcBuffer = uploadBuffer, .dstBuffer = bufferRegion->buffer };
-      decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
-
-      //
-      decltype(auto) regions = std::vector<vk::BufferCopy2>{ vk::BufferCopy2{.srcOffset = 0ull, .dstOffset = bufferRegion->region.offset, .size = size} };
-
-      //
-      decltype(auto) bufferBarriersBegin = std::vector<vk::BufferMemoryBarrier2>{
-        vk::BufferMemoryBarrier2{
-          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eHostMapWrite),
-          .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eHostMapWrite),
-          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eHostMapRead),
-          .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eHostMapRead),
-          .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
-          .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
-          .buffer = uploadBuffer,
-          .offset = 0ull, 
-          .size = size
-        },
-        vk::BufferMemoryBarrier2{
-          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
-          .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite),
-          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferWrite),
-          .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
-          .srcQueueFamilyIndex = bufferRegion->queueFamilyIndex,
-          .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
-          .buffer = bufferRegion->buffer,
-          .offset = bufferRegion->region.offset,
-          .size = size
-        }
-      };
-
-      //
-      decltype(auto) bufferBarriersEnd = std::vector<vk::BufferMemoryBarrier2>{
-        vk::BufferMemoryBarrier2{
-          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eHostMapRead),
-          .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eHostMapRead),
-          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eHostMapWrite),
-          .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eHostMapWrite),
-          .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
-          .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
-          .buffer = uploadBuffer,
-          .offset = 0ull,
-          .size = size
-        },
-        vk::BufferMemoryBarrier2{
+        bufferBarriersEnd.push_back(vk::BufferMemoryBarrier2{
           .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferWrite),
           .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
           .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
           .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite),
           .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
-          .dstQueueFamilyIndex = bufferRegion->queueFamilyIndex,
-          .buffer = bufferRegion->buffer,
-          .offset = bufferRegion->region.offset,
+          .dstQueueFamilyIndex = bufferRegion.queueFamilyIndex,
+          .buffer = bufferRegion.buffer,
+          .offset = bufferRegion.region.offset,
           .size = size
-        }
+        });
       };
 
-      //
-      memcpy(lxvc::context->get<DeviceObj>(this->base)->get<ResourceObj>(uploadBuffer)->mappedMemory, host.data(), size);
-
-      // 
-      submission.commandInits.push_back([=](vk::CommandBuffer const& cmdBuf) {
-        auto _copyInfo = copyInfo;
-        auto _depInfo = depInfo;
-        cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersBegin));
-        cmdBuf.copyBuffer2(_copyInfo.setRegions(regions));
-        cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersEnd));
-        return cmdBuf;
-      });
-
-      //
-      return lxvc::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
+      copyRegionInfo.cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersBegin).setImageMemoryBarriers(imageBarriersBegin));
+      if (copyRegionInfo.dstImage) copyRegionInfo.cmdBuf.copyBufferToImage2(BtI.setRegions(BtIRegions));
+      if (copyRegionInfo.dstBuffer) copyRegionInfo.cmdBuf.copyBuffer2(BtB.setRegions(BtBRegions));
+      copyRegionInfo.cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersEnd).setImageMemoryBarriers(imageBarriersEnd));
     };
 
     //
-    virtual FenceType executeDownloadFromBufferOnce(std::optional<BufferRegion> bufferRegion, std::span<char8_t> const& host = {}) {
-      decltype(auto) submission = CommandOnceSubmission{ .info = this->cInfo->info };
+    virtual tType writeDownloadToResourceCmd(DownloadCommandWriteInfo const& info) {
+      //decltype(auto) submission = CommandOnceSubmission{ .info = SubmissionInfo {.info = this->cInfo->info } };
       decltype(auto) uploadBuffer = this->uploadBuffer;
       decltype(auto) downloadBuffer = this->downloadBuffer;
       decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) size = std::min(host.size(), bufferRegion->region.size);
-      decltype(auto) regions = std::vector<vk::BufferCopy2>{ vk::BufferCopy2{ .srcOffset = bufferRegion->region.offset, .dstOffset = 0ull, .size = size } };
-      decltype(auto) copyInfo = vk::CopyBufferInfo2{ .srcBuffer = bufferRegion->buffer, .dstBuffer = downloadBuffer };
+      decltype(auto) regions = std::vector<vk::BufferCopy2>{  };
+      decltype(auto) copyInfo = vk::CopyBufferInfo2{};
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
+      decltype(auto) size = info.srcBuffer ? info.srcBuffer->region.size : VK_WHOLE_SIZE;
 
       //
       decltype(auto) bufferBarriersBegin = std::vector<vk::BufferMemoryBarrier2>{
-        vk::BufferMemoryBarrier2{
-          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
-          .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite),
-          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferRead),
-          .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferRead),
-          .srcQueueFamilyIndex = bufferRegion->queueFamilyIndex,
-          .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
-          .buffer = bufferRegion->buffer,
-          .offset = bufferRegion->region.offset,
-          .size = size
-        },
         vk::BufferMemoryBarrier2{
           .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eHostMapRead),
           .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eHostMapRead),
@@ -309,48 +246,108 @@ namespace lxvc {
       //
       decltype(auto) bufferBarriersEnd = std::vector<vk::BufferMemoryBarrier2>{
         vk::BufferMemoryBarrier2{
+          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eHostMapWrite),
+          .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eHostMapWrite),
+          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eHostMapRead),
+          .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eHostMapRead),
+          .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
+          .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
+          .buffer = downloadBuffer,
+          .offset = 0ull,
+          .size = size
+        }
+      };
+
+      if (info.srcBuffer) {
+        copyInfo = vk::CopyBufferInfo2{ .srcBuffer = info.srcBuffer->buffer, .dstBuffer = downloadBuffer };
+        regions.push_back(vk::BufferCopy2{ .srcOffset = info.srcBuffer->region.offset, .dstOffset = 0ull, .size = size });
+
+        bufferBarriersBegin.push_back(vk::BufferMemoryBarrier2{
+          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
+          .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite),
+          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferRead),
+          .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferRead),
+          .srcQueueFamilyIndex = info.srcBuffer->queueFamilyIndex,
+          .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
+          .buffer = info.srcBuffer->buffer,
+          .offset = info.srcBuffer->region.offset,
+          .size = size
+        });
+
+        bufferBarriersEnd.push_back(vk::BufferMemoryBarrier2{
           .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferRead),
           .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferRead),
           .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
           .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite),
           .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
-          .dstQueueFamilyIndex = bufferRegion->queueFamilyIndex,
-          .buffer = bufferRegion->buffer,
-          .offset = bufferRegion->region.offset,
+          .dstQueueFamilyIndex = info.srcBuffer->queueFamilyIndex,
+          .buffer = info.srcBuffer->buffer,
+          .offset = info.srcBuffer->region.offset,
           .size = size
-        },
-        vk::BufferMemoryBarrier2{
-          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eHostMapWrite),
-          .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eHostMapWrite),
-          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eHostMapRead),
-          .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eHostMapRead),
-          .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
-          .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
-          .buffer = downloadBuffer,
-          .offset = 0ull,
-          .size = size
-        }
+        });
       };
 
+      if (info.srcBuffer) {
+        info.cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersBegin));
+        info.cmdBuf.copyBuffer2(copyInfo.setRegions(regions));
+        info.cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersEnd));
+      };
+
+      return SFT();
+    };
+
+
+    //
+    virtual FenceType executeUploadToResourceOnce(UploadExecutionOnce const& exec) {
+      decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo {.info = this->cInfo->info } };
+      decltype(auto) uploadBuffer = this->uploadBuffer;
+      decltype(auto) downloadBuffer = this->downloadBuffer;
+      decltype(auto) device = this->base.as<vk::Device>();
+      decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
+      decltype(auto) size = exec.host.size();
+      decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
+      decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
+
+      //
+      memcpy(lxvc::context->get<DeviceObj>(this->base)->get<ResourceObj>(uploadBuffer)->mappedMemory, exec.host.data(), size);
+
       // 
-      submission.commandInits.push_back([=](vk::CommandBuffer const& cmdBuf) {
-        auto _copyInfo = copyInfo;
-        auto _depInfo = depInfo;
-        cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersBegin));
-        cmdBuf.copyBuffer2(_copyInfo.setRegions(regions));
-        cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersEnd));
+      submission.commandInits.push_back([=,this](vk::CommandBuffer const& cmdBuf) {
+        this->writeUploadToResourceCmd(exec.writeInfo.with(cmdBuf));
+        return cmdBuf;
+      });
+
+      //
+      return lxvc::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
+    };
+
+    //
+    virtual FenceType executeDownloadToResourceOnce(DownloadExecutionOnce const& exec) {
+      decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = this->cInfo->info } };
+      decltype(auto) uploadBuffer = this->uploadBuffer;
+      decltype(auto) downloadBuffer = this->downloadBuffer;
+      decltype(auto) device = this->base.as<vk::Device>();
+      decltype(auto) size = std::min(exec.host.size(), exec.writeInfo.srcBuffer->region.size);
+      decltype(auto) regions = std::vector<vk::BufferCopy2>{  };
+      decltype(auto) copyInfo = vk::CopyBufferInfo2{};
+      decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
+
+      // 
+      submission.commandInits.push_back([=,this](vk::CommandBuffer const& cmdBuf) {
+        this->writeDownloadToResourceCmd(exec.writeInfo.with(cmdBuf));
         return cmdBuf;
       });
 
       //
       submission.onDone.push_back([=](vk::Result const& result) {
-        auto _host = host;
+        auto _host = exec.host;
         memcpy(_host.data(), lxvc::context->get<DeviceObj>(this->base)->get<ResourceObj>(downloadBuffer)->mappedMemory, size);
       });
 
       //
       return lxvc::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
     };
+
 
   protected:
 

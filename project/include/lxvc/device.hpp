@@ -275,29 +275,29 @@ namespace lxvc {
     };
 
     //
-    virtual FenceType executeCommandOnce(cpp21::optional_ref<CommandOnceSubmission> submissionRef = {}) {
+    virtual FenceType executeCommandOnce(CommandOnceSubmission const& submissionRef = {}) {
+      auto& submission = submissionRef.submission;
       decltype(auto) device = this->handle.as<vk::Device>();
-      std::optional<CommandOnceSubmission> submission = submissionRef;
       decltype(auto) qfIndices = cpp21::opt_ref(this->queueFamilies.indices);
       decltype(auto) qfCommandPools = cpp21::opt_ref(this->queueFamilies.commandPools);
-      uintptr_t indexOfQF = std::distance(qfIndices->begin(), std::find(qfIndices->begin(), qfIndices->end(), submissionRef->info->queueFamilyIndex));
-      decltype(auto) queue = this->getQueue(submissionRef->info);
+      uintptr_t indexOfQF = std::distance(qfIndices->begin(), std::find(qfIndices->begin(), qfIndices->end(), submission.info->queueFamilyIndex));
+      decltype(auto) queue = this->getQueue(submission.info);
       decltype(auto) commandPool = qfCommandPools[indexOfQF];
       decltype(auto) commandBuffers = device.allocateCommandBuffers(vk::CommandBufferAllocateInfo{
         .commandPool = commandPool,
         .level = vk::CommandBufferLevel::ePrimary,
-        .commandBufferCount = (uint32_t)submission->commandInits.size()
+        .commandBufferCount = (uint32_t)submissionRef.commandInits.size()
       });
 
       //
       decltype(auto) cmdInfos = std::vector<vk::CommandBufferSubmitInfo >{};
       decltype(auto) submitInfo = vk::SubmitInfo2{};
-      decltype(auto) cIndex = 0u; for (decltype(auto) fn : submission->commandInits) {
+      decltype(auto) cIndex = 0u; for (decltype(auto) fn : submissionRef.commandInits) {
         decltype(auto) cmdBuf = commandBuffers[cIndex++];
-        cmdBuf.begin(vk::CommandBufferBeginInfo{ .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit, .pInheritanceInfo = cpp21::pointer(submissionRef->inheritanceInfo) });
+        cmdBuf.begin(vk::CommandBufferBeginInfo{ .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit, .pInheritanceInfo = cpp21::pointer(submission.inheritanceInfo) });
         decltype(auto) result = fn(cmdBuf);
         cmdInfos.push_back(vk::CommandBufferSubmitInfo{
-          .commandBuffer = result ? result : cmdBuf,
+          .commandBuffer = cmdBuf,
           .deviceMask = 0x1
         });
         cmdBuf.end();
@@ -307,7 +307,7 @@ namespace lxvc {
       //decltype(auto) 
       decltype(auto) fence = device.createFence(vk::FenceCreateInfo{ .flags = {} });
       decltype(auto) submits = std::vector<vk::SubmitInfo2>{
-        submitInfo.setCommandBufferInfos(cmdInfos).setWaitSemaphoreInfos(*submission->waitSemaphores).setSignalSemaphoreInfos(*submission->signalSemaphores)
+        submitInfo.setCommandBufferInfos(cmdInfos).setWaitSemaphoreInfos(*submission.waitSemaphores).setSignalSemaphoreInfos(*submission.signalSemaphores)
       };
       queue.submit2(submits, fence);
 
@@ -315,7 +315,7 @@ namespace lxvc {
       decltype(auto) promise = std::async(std::launch::async | std::launch::deferred, [=,this]() {
         decltype(auto) result = device.waitForFences(fence, true, 1000 * 1000 * 1000);
         do { /* but nothing to do */ } while (this->threadLocked); (*this->actionLocked) = true;
-        for (decltype(auto) fn : submission->onDone) { if ((*callbackCount) < callIds.size()) { callIds[(*callbackCount)++] = std::make_shared<std::function<void()>>(std::bind(fn, result)); }; };
+        for (decltype(auto) fn : submissionRef.onDone) { if ((*callbackCount) < callIds.size()) { callIds[(*callbackCount)++] = std::make_shared<std::function<void()>>(std::bind(fn, result)); }; };
         if ((*destructorCount) < destIds.size()) {
           destIds[(*destructorCount)++] = std::make_shared<std::function<void()>>([=, this]() {
             device.destroyFence(fence);
@@ -416,7 +416,7 @@ namespace lxvc {
     };
 
     // TODO: caching...
-    virtual vk::Queue const& getQueue(cpp21::optional_ref<QueueGetInfo> info = {}) const {
+    virtual vk::Queue const& getQueue(std::optional<QueueGetInfo> const& info = {}) const {
       //return this->device.getQueue(info->queueFamilyIndex, info->queueIndex);
       decltype(auto) qfIndices = cpp21::opt_ref(this->queueFamilies.indices);
       decltype(auto) qfQueuesStack = cpp21::opt_ref(this->queueFamilies.queues);
@@ -425,7 +425,7 @@ namespace lxvc {
     };
 
     //
-    virtual FenceType executeCopyBuffersOnce(cpp21::optional_ref<CopyBufferInfo> copyInfoRaw);
+    virtual tType writeCopyBuffersCommand(CopyBufferWriteInfo const& copyInfoRaw);
 
     //
     ~DeviceObj() {

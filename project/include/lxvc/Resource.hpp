@@ -221,22 +221,24 @@ namespace lxvc {
 
       // 
       if (cInfo->info) {
-        this->switchLayout(ImageLayoutSwitchInfo{
-          .newImageLayout = cInfo->layout,
-          .oldImageLayout = imageInfo->initialLayout,
-          .info = cInfo->info
+        this->executeSwitchLayoutOnce(ImageLayoutSwitchInfo{
+          .info = cInfo->info,
+          .switchInfo = ImageLayoutSwitchWriteInfo{
+            .newImageLayout = cInfo->layout,
+            .oldImageLayout = imageInfo->initialLayout,
+          },
         });
       };
     };
 
     //
-    virtual FenceType switchLayout(ImageLayoutSwitchInfo const& switchInfo = {}) {
+    virtual tType writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo const switchInfo) {
       if (this->cInfo->imageInfo && this->handle.type == HandleType::eImage) {
-        decltype(auto) info = switchInfo.info ? switchInfo.info : this->cInfo->imageInfo->info;
+        //decltype(auto) info = switchInfo.info ? switchInfo.info : this->cInfo->imageInfo->info;
         decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
         decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
         decltype(auto) oldImageLayout = switchInfo.oldImageLayout ? switchInfo.oldImageLayout.value() : this->cInfo->imageInfo->layout;
-        decltype(auto) submission = CommandOnceSubmission{ .info = switchInfo.info };
+        //decltype(auto) submission = CommandOnceSubmission{ .info = switchInfo.info };
         decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
         decltype(auto) correctAccessMask = vku::getCorrectAccessMaskByImageLayout<vk::AccessFlagBits2>(switchInfo.newImageLayout);
         decltype(auto) transferBarrier = std::vector<vk::ImageMemoryBarrier2>{
@@ -247,8 +249,8 @@ namespace lxvc {
             .dstAccessMask = correctAccessMask,
             .oldLayout = oldImageLayout,
             .newLayout = switchInfo.newImageLayout,
-            .srcQueueFamilyIndex = info->queueFamilyIndex,
-            .dstQueueFamilyIndex = info->queueFamilyIndex,
+            .srcQueueFamilyIndex = switchInfo.queueFamilyIndex,
+            .dstQueueFamilyIndex = switchInfo.queueFamilyIndex,
             .image = this->handle.as<vk::Image>(),
             .subresourceRange = switchInfo.subresourceRange ? switchInfo.subresourceRange.value() : vk::ImageSubresourceRange{
               .aspectMask =
@@ -263,23 +265,37 @@ namespace lxvc {
           }
         };
 
-        // 
-        submission.commandInits.push_back([=](vk::CommandBuffer const& cmdBuf) {
-          auto _depInfo = depInfo;
-          cmdBuf.pipelineBarrier2(_depInfo.setImageMemoryBarriers(transferBarrier));
-          return cmdBuf;
-          });
-
-        //
-        decltype(auto) fence = deviceObj->executeCommandOnce(submission);
-
-        //
+        switchInfo.cmdBuf.pipelineBarrier2(depInfo.setImageMemoryBarriers(transferBarrier));
         this->cInfo->imageInfo->layout = switchInfo.newImageLayout;
+      };
+    };
+
+
+    //
+    virtual FenceType executeSwitchLayoutOnce(ImageLayoutSwitchInfo const& execInfo = {}) {
+      // 
+      decltype(auto) switchInfo = execInfo.switchInfo.value();
+      decltype(auto) info = execInfo.info ? execInfo.info : this->cInfo->imageInfo->info;
+      decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
+      decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
+      decltype(auto) oldImageLayout = switchInfo.oldImageLayout ? switchInfo.oldImageLayout.value() : this->cInfo->imageInfo->layout;
+      decltype(auto) submission = CommandOnceSubmission{ .submission = execInfo.submission };
+      decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
+      decltype(auto) correctAccessMask = vku::getCorrectAccessMaskByImageLayout<vk::AccessFlagBits2>(switchInfo.newImageLayout);
+
+      //
+      if (this->cInfo->imageInfo && this->handle.type == HandleType::eImage) {
+        submission.commandInits.push_back([=, this](vk::CommandBuffer const& cmdBuf) {
+          this->writeSwitchLayoutCommand(switchInfo.with(cmdBuf));
+          return cmdBuf;
+        });
 
         //
-        return fence;
-
+        //this->cInfo->imageInfo->layout = switchInfo.newImageLayout;
+        return deviceObj->executeCommandOnce(submission);
       };
+
+      // 
       return FenceType{};
     };
 
@@ -366,13 +382,13 @@ namespace lxvc {
   };
 
   // 
-  inline FenceType DeviceObj::executeCopyBuffersOnce(cpp21::optional_ref<CopyBufferInfo> copyInfoRaw) {
-    decltype(auto) submission = CommandOnceSubmission{ .info = QueueGetInfo {.queueFamilyIndex = copyInfoRaw->dst->queueFamilyIndex } };
+  inline WrapShared<DeviceObj> DeviceObj::writeCopyBuffersCommand(CopyBufferWriteInfo const& copyInfoRaw) {
+    //decltype(auto) submission = CommandOnceSubmission{ .info = QueueGetInfo {.queueFamilyIndex = copyInfoRaw.dst->queueFamilyIndex } };
     decltype(auto) device = this->base.as<vk::Device>();
-    decltype(auto) size = std::min(copyInfoRaw->src->region.size, copyInfoRaw->dst->region.size);
-    decltype(auto) copyInfo = vk::CopyBufferInfo2{ .srcBuffer = copyInfoRaw->src->buffer, .dstBuffer = copyInfoRaw->dst->buffer };
+    decltype(auto) size = std::min(copyInfoRaw.src->region.size, copyInfoRaw.dst->region.size);
+    decltype(auto) copyInfo = vk::CopyBufferInfo2{ .srcBuffer = copyInfoRaw.src->buffer, .dstBuffer = copyInfoRaw.dst->buffer };
     decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
-    decltype(auto) regions = std::vector<vk::BufferCopy2>{ vk::BufferCopy2{.srcOffset = copyInfoRaw->src->region.offset, .dstOffset = copyInfoRaw->dst->region.offset, .size = size} };
+    decltype(auto) regions = std::vector<vk::BufferCopy2>{ vk::BufferCopy2{.srcOffset = copyInfoRaw.src->region.offset, .dstOffset = copyInfoRaw.dst->region.offset, .size = size} };
 
     //
     decltype(auto) bufferBarriersBegin = std::vector<vk::BufferMemoryBarrier2>{
@@ -381,10 +397,10 @@ namespace lxvc {
         .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite),
         .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferRead),
         .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferRead),
-        .srcQueueFamilyIndex = copyInfoRaw->src->queueFamilyIndex,
-        .dstQueueFamilyIndex = copyInfoRaw->dst->queueFamilyIndex,
-        .buffer = copyInfoRaw->src->buffer,
-        .offset = copyInfoRaw->src->region.offset,
+        .srcQueueFamilyIndex = copyInfoRaw.src->queueFamilyIndex,
+        .dstQueueFamilyIndex = copyInfoRaw.dst->queueFamilyIndex,
+        .buffer = copyInfoRaw.src->buffer,
+        .offset = copyInfoRaw.src->region.offset,
         .size = size
       },
       vk::BufferMemoryBarrier2{
@@ -392,10 +408,10 @@ namespace lxvc {
         .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralRead),
         .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferWrite),
         .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
-        .srcQueueFamilyIndex = copyInfoRaw->src->queueFamilyIndex,
-        .dstQueueFamilyIndex = copyInfoRaw->dst->queueFamilyIndex,
-        .buffer = copyInfoRaw->dst->buffer,
-        .offset = copyInfoRaw->dst->region.offset,
+        .srcQueueFamilyIndex = copyInfoRaw.src->queueFamilyIndex,
+        .dstQueueFamilyIndex = copyInfoRaw.dst->queueFamilyIndex,
+        .buffer = copyInfoRaw.dst->buffer,
+        .offset = copyInfoRaw.dst->region.offset,
         .size = size
       }
     };
@@ -407,10 +423,10 @@ namespace lxvc {
         .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferRead),
         .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
         .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite),
-        .srcQueueFamilyIndex = copyInfoRaw->dst->queueFamilyIndex,
-        .dstQueueFamilyIndex = copyInfoRaw->src->queueFamilyIndex,
-        .buffer = copyInfoRaw->src->buffer,
-        .offset = copyInfoRaw->src->region.offset,
+        .srcQueueFamilyIndex = copyInfoRaw.dst->queueFamilyIndex,
+        .dstQueueFamilyIndex = copyInfoRaw.src->queueFamilyIndex,
+        .buffer = copyInfoRaw.src->buffer,
+        .offset = copyInfoRaw.src->region.offset,
         .size = size
       },
       vk::BufferMemoryBarrier2{
@@ -418,26 +434,26 @@ namespace lxvc {
         .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
         .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralRead),
         .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralRead),
-        .srcQueueFamilyIndex = copyInfoRaw->dst->queueFamilyIndex,
-        .dstQueueFamilyIndex = copyInfoRaw->src->queueFamilyIndex,
-        .buffer = copyInfoRaw->dst->buffer,
-        .offset = copyInfoRaw->dst->region.offset,
+        .srcQueueFamilyIndex = copyInfoRaw.dst->queueFamilyIndex,
+        .dstQueueFamilyIndex = copyInfoRaw.src->queueFamilyIndex,
+        .buffer = copyInfoRaw.dst->buffer,
+        .offset = copyInfoRaw.dst->region.offset,
         .size = size
       }
     };
 
     // 
-    submission.commandInits.push_back([=](vk::CommandBuffer const& cmdBuf) {
+    //submission.commandInits.push_back([=](vk::CommandBuffer const& cmdBuf) {
       auto _copyInfo = copyInfo;
       auto _depInfo = depInfo;
-      cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersBegin));
-      cmdBuf.copyBuffer2(_copyInfo.setRegions(regions));
-      cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersEnd));
-      return cmdBuf;
-    });
+      copyInfoRaw.cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersBegin));
+      copyInfoRaw.cmdBuf.copyBuffer2(_copyInfo.setRegions(regions));
+      copyInfoRaw.cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersEnd));
+    //});
 
     //
-    return this->executeCommandOnce(submission);
+    //return this->executeCommandOnce(submission);
+    return this->SFT();
   };
 
   

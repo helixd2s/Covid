@@ -214,12 +214,12 @@ namespace lxvc {
     };
 
   public:
+
     // TODO: using multiple-command
-    virtual FenceType executeComputeOnce(std::optional<ExecuteComputeInfo> exec = ExecuteComputeInfo{}) {
+    virtual tType writeComputeCommand(std::optional<WriteComputeInfo> exec = WriteComputeInfo{}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(exec->layout ? exec->layout : this->cInfo->layout);
-      decltype(auto) submission = CommandOnceSubmission{ .info = exec->info, .waitSemaphores = exec->waitSemaphores, .signalSemaphores = exec->signalSemaphores };
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
 
       //
@@ -244,28 +244,24 @@ namespace lxvc {
 
       // 
       std::vector<uint32_t> offsets = {};
-      submission.commandInits.push_back([=](vk::CommandBuffer const& cmdBuf) {
-        auto _depInfo = depInfo;
-        cmdBuf.pipelineBarrier2(_depInfo.setMemoryBarriers(memoryBarriersBegin));
-        cmdBuf.bindDescriptorSets(vk::PipelineBindPoint::eCompute, descriptorsObj->handle.as<vk::PipelineLayout>(), 0u, descriptorsObj->sets, offsets);
-        cmdBuf.bindPipeline(vk::PipelineBindPoint::eCompute, this->handle.as<vk::Pipeline>());
-        cmdBuf.dispatch(exec->dispatch.width, exec->dispatch.height, exec->dispatch.depth);
-        cmdBuf.pipelineBarrier2(_depInfo.setMemoryBarriers(memoryBarriersEnd));
-        return cmdBuf;
-      });
 
-      //
-      return deviceObj->executeCommandOnce(submission);
+        auto _depInfo = depInfo;
+        exec->cmdBuf.pipelineBarrier2(_depInfo.setMemoryBarriers(memoryBarriersBegin));
+        exec->cmdBuf.bindDescriptorSets(vk::PipelineBindPoint::eCompute, descriptorsObj->handle.as<vk::PipelineLayout>(), 0u, descriptorsObj->sets, offsets);
+        exec->cmdBuf.bindPipeline(vk::PipelineBindPoint::eCompute, this->handle.as<vk::Pipeline>());
+        exec->cmdBuf.dispatch(exec->dispatch.width, exec->dispatch.height, exec->dispatch.depth);
+        exec->cmdBuf.pipelineBarrier2(_depInfo.setMemoryBarriers(memoryBarriersEnd));
+
+        return SFT();
     };
 
     // TODO: using multiple-command
-    virtual FenceType executeGraphicsOnce(std::optional<ExecuteGraphicsInfo> exec = ExecuteGraphicsInfo{}) {
+    virtual tType writeGraphicsCommand(std::optional<WriteGraphicsInfo> exec = WriteGraphicsInfo{}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(exec->layout ? exec->layout : this->cInfo->layout);
-      decltype(auto) submission = CommandOnceSubmission{ .info = exec->info, .waitSemaphores = exec->waitSemaphores, .signalSemaphores = exec->signalSemaphores };
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
-      decltype(auto) framebuffers = deviceObj->get<FramebufferObj>(exec->framebuffer);
+      decltype(auto) framebuffer = deviceObj->get<FramebufferObj>(exec->framebuffer).shared();
 
       //
       decltype(auto) memoryBarriersBegin = std::vector<vk::MemoryBarrier2>{
@@ -288,57 +284,78 @@ namespace lxvc {
       };
 
       //
-      decltype(auto) depthAttachment = framebuffers->getDepthAttachment();
-      decltype(auto) stencilAttachment = framebuffers->getStencilAttachment();
-      decltype(auto) colorAttachments = framebuffers->getColorAttachments();
-      decltype(auto) renderArea = framebuffers->getRenderArea();
+      decltype(auto) depthAttachment = framebuffer->getDepthAttachment();
+      decltype(auto) stencilAttachment = framebuffer->getStencilAttachment();
+      decltype(auto) colorAttachments = framebuffer->getColorAttachments();
+      decltype(auto) renderArea = framebuffer->getRenderArea();
 
       //
-      viewports = { vk::Viewport{ .x = 0.f, .y = 0.f, .width = float(renderArea.extent.width), .height = float(renderArea.extent.height), .minDepth = 0.f, .maxDepth = 1.f} };
+      viewports = { vk::Viewport{.x = 0.f, .y = 0.f, .width = float(renderArea.extent.width), .height = float(renderArea.extent.height), .minDepth = 0.f, .maxDepth = 1.f} };
       scissors = { renderArea };
 
       // 
       std::vector<uint32_t> offsets = {};
-      submission.commandInits.push_back([=](vk::CommandBuffer const& cmdBuf) {
+      //submission.commandInits.push_back([=](vk::CommandBuffer const& cmdBuf) {
         auto _depInfo = depInfo;
-        cmdBuf.pipelineBarrier2(_depInfo.setMemoryBarriers(memoryBarriersBegin));
-        cmdBuf.beginRendering(vk::RenderingInfoKHR{ .renderArea = renderArea, .layerCount = 1u, .viewMask = 0x0u, .colorAttachmentCount = uint32_t(colorAttachments.size()), .pColorAttachments = colorAttachments.data(), .pDepthAttachment = &depthAttachment, .pStencilAttachment = &stencilAttachment });
-        cmdBuf.bindPipeline(vk::PipelineBindPoint::eGraphics, this->handle.as<vk::Pipeline>());
-        cmdBuf.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, descriptorsObj->handle.as<vk::PipelineLayout>(), 0u, descriptorsObj->sets, offsets);
-        cmdBuf.setViewportWithCount(viewports);
-        cmdBuf.setScissorWithCount(scissors);
+        //if (framebuffer) { framebuffer->writeSwitchToAttachment(exec->cmdBuf); };
+        exec->cmdBuf.pipelineBarrier2(_depInfo.setMemoryBarriers(memoryBarriersBegin));
+        exec->cmdBuf.beginRendering(vk::RenderingInfoKHR{ .renderArea = renderArea, .layerCount = 1u, .viewMask = 0x0u, .colorAttachmentCount = uint32_t(colorAttachments.size()), .pColorAttachments = colorAttachments.data(), .pDepthAttachment = &depthAttachment, .pStencilAttachment = &stencilAttachment });
+        exec->cmdBuf.bindPipeline(vk::PipelineBindPoint::eGraphics, this->handle.as<vk::Pipeline>());
+        exec->cmdBuf.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, descriptorsObj->handle.as<vk::PipelineLayout>(), 0u, descriptorsObj->sets, offsets);
+        exec->cmdBuf.setViewportWithCount(viewports);
+        exec->cmdBuf.setScissorWithCount(scissors);
         decltype(auto) catchFn = [&, this](std::optional<std::exception> e = {}) {
           //std::cerr << "Failed to MultiDraw or not supported, trying to reform command..." << std::endl;
           if (e) {
             std::cerr << e->what() << std::endl;
           };
           for (auto drawInfo : exec->multiDrawInfo) {
-            cmdBuf.draw(drawInfo.vertexCount, 1u, drawInfo.firstVertex, 0u);
+            exec->cmdBuf.draw(drawInfo.vertexCount, 1u, drawInfo.firstVertex, 0u);
           };
         };
 
         if (deviceObj->dispatch.vkCmdDrawMultiEXT) {
           try {
-            cmdBuf.drawMultiEXT(exec->multiDrawInfo, 1u, 0u, sizeof(vk::MultiDrawInfoEXT), deviceObj->dispatch);
+            exec->cmdBuf.drawMultiEXT(exec->multiDrawInfo, 1u, 0u, sizeof(vk::MultiDrawInfoEXT), deviceObj->dispatch);
           }
           catch (std::exception e) {
             catchFn(e);
           };
         }
         else { catchFn(); };
+
         
-        cmdBuf.endRendering();
-        cmdBuf.pipelineBarrier2(_depInfo.setMemoryBarriers(memoryBarriersEnd));
+        exec->cmdBuf.endRendering();
+        exec->cmdBuf.pipelineBarrier2(_depInfo.setMemoryBarriers(memoryBarriersEnd));
+        //if (framebuffer) { framebuffer->writeSwitchToShaderRead(exec->cmdBuf); };
+        //return cmdBuf;
+      //});
+
+      //
+      //decltype(auto) switchToAttachmentFence = framebuffers->switchToAttachment();
+      //decltype(auto) graphicsFence = deviceObj->executeCommandOnce(submission);
+      //decltype(auto) switchToShaderReadFence = framebuffers->switchToShaderRead();
+
+      //
+        return SFT();
+    };
+
+    // TODO: using multiple-command
+    virtual FenceType executePipelineOnce(std::optional<ExecutePipelineInfo> exec = ExecutePipelineInfo{}) {
+      decltype(auto) device = this->base.as<vk::Device>();
+      decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
+      decltype(auto) submission = CommandOnceSubmission{ .submission = exec->submission };
+      decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
+
+      // 
+      submission.commandInits.push_back([=,this](vk::CommandBuffer const& cmdBuf) {
+        if (exec->graphics) { this->writeGraphicsCommand(exec->graphics->with(cmdBuf)); };
+        if (exec->compute) { this->writeComputeCommand(exec->compute->with(cmdBuf)); };
         return cmdBuf;
       });
 
       //
-      decltype(auto) switchToAttachmentFence = framebuffers->switchToAttachment();
-      decltype(auto) graphicsFence = deviceObj->executeCommandOnce(submission);
-      decltype(auto) switchToShaderReadFence = framebuffers->switchToShaderRead();
-
-      //
-      return graphicsFence;
+      return deviceObj->executeCommandOnce(submission);
     };
 
   };

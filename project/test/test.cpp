@@ -214,32 +214,45 @@ int main() {
 
     // 
     decltype(auto) uniformFence = descriptions->executeUniformUpdateOnce(lxvc::UniformDataSet{
-      .data = std::span<char8_t>((char8_t*)&uniformData, sizeof(UniformData)),
-      .region = lxvc::DataRegion{0ull, sizeof(UniformData)},
-      .info = qfAndQueue
+      .writeInfo = lxvc::UniformDataWriteSet{
+        .region = lxvc::DataRegion{0ull, sizeof(UniformData)},
+        .data = std::span<char8_t>((char8_t*)&uniformData, sizeof(UniformData)),
+      },
+      .submission = lxvc::SubmissionInfo{
+        .info = qfAndQueue,
+      }
     });
 
     //
-    framebuffer->switchToAttachment();
+    framebuffer->switchToAttachment(qfAndQueue);
 
     //
-    decltype(auto) graphicsFence = graphics->executeGraphicsOnce(lxvc::ExecuteGraphicsInfo{
-      .framebuffer = framebuffer.as<uintptr_t>(),
-      .multiDrawInfo = std::vector<vk::MultiDrawInfoEXT>{ vk::MultiDrawInfoEXT{ .firstVertex = 0u, .vertexCount = 6u } },
-      .layout = descriptions.as<vk::PipelineLayout>(),
-      .info = qfAndQueue,
+    decltype(auto) graphicsFence = graphics->executePipelineOnce(lxvc::ExecutePipelineInfo{
+      .graphics = lxvc::WriteGraphicsInfo{
+        .framebuffer = framebuffer.as<uintptr_t>(),
+        .multiDrawInfo = std::vector<vk::MultiDrawInfoEXT>{ vk::MultiDrawInfoEXT{.firstVertex = 0u, .vertexCount = 6u } },
+        .layout = descriptions.as<vk::PipelineLayout>(),
+      },
+      .submission = lxvc::SubmissionInfo{
+        .info = qfAndQueue,
+      }
     });
 
     //
-    framebuffer->switchToShaderRead();
+    framebuffer->switchToShaderRead(qfAndQueue);
 
     //
-    decltype(auto) computeFence = compute->executeComputeOnce(lxvc::ExecuteComputeInfo{
-      .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 256u), renderArea.extent.height, 1u},
-      .layout = descriptions.as<vk::PipelineLayout>(),
-      .info = qfAndQueue,
-      .waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{presentSemaphoreInfos[semIndex]},
-      .signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{readySemaphoreInfos[semIndex]},
+    decltype(auto) computeFence = compute->executePipelineOnce(lxvc::ExecutePipelineInfo{
+      .compute = lxvc::WriteComputeInfo{
+        .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 256u), renderArea.extent.height, 1u},
+        .layout = descriptions.as<vk::PipelineLayout>(),
+      },
+      
+      .submission = lxvc::SubmissionInfo{
+        .info = qfAndQueue,
+        .waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{presentSemaphoreInfos[semIndex]},
+        .signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{readySemaphoreInfos[semIndex]},
+      }
     });
 
     //
