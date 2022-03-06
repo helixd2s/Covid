@@ -17,10 +17,6 @@ struct UniformData {
   uint32_t textureIndices[4] = { 0u,0u,0u,0u };
   uint32_t currentImage = 0u;
   uint32_t reserved = 0u;
-  glm::vec2 vertices[6] = {
-    glm::vec2(0.f, 0.f), glm::vec2(0.f, 1.f), glm::vec2(1.f, 0.f),
-    glm::vec2(1.f, 1.f), glm::vec2(0.f, 1.f), glm::vec2(1.f, 0.f),
-  };
 };
 
 // 
