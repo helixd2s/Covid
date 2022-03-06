@@ -21,7 +21,7 @@ layout(set = 0, binding = 0, scalar) uniform MatrixBlock
 //
 layout(set = 1, binding = 0) uniform texture2D textures[];
 layout(set = 2, binding = 0) uniform sampler samplers[];
-layout(set = 3, binding = 0, rgba32f) uniform image2D images[];
+layout(set = 3, binding = 0, rgb10_a2) uniform image2D images[];
 
 //
 layout(location = 0) in vec4 pcolor;
