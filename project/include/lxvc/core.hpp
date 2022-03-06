@@ -335,9 +335,9 @@ namespace lxvc {
     std::optional<QueueGetInfo> info = QueueGetInfo{};
     std::vector<std::function<vk::CommandBuffer const& (vk::CommandBuffer const&)>> commandInits = {};
     std::vector<std::function<void(vk::Result const&)>> onDone = {};
+    std::optional<vk::CommandBufferInheritanceInfo> inheritanceInfo = {};
     cpp21::shared_vector<vk::SemaphoreSubmitInfo> waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
     cpp21::shared_vector<vk::SemaphoreSubmitInfo> signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
-    std::optional<vk::CommandBufferInheritanceInfo> inheritanceInfo = {};
   };
 
   //
@@ -380,12 +380,14 @@ namespace lxvc {
   struct FramebufferCreateInfo {
     vk::PipelineLayout layout = {};
     vk::Extent2D extent = {640u, 480u};
+    std::optional<QueueGetInfo> info = {};
   };
 
   //
   struct SwapchainCreateInfo {
     vk::PipelineLayout layout = {};
     vk::SurfaceKHR surface = {};
+    std::optional<QueueGetInfo> info = {};
   };
 
   //

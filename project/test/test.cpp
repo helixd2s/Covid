@@ -170,13 +170,15 @@ int main() {
   //
   decltype(auto) swapchain = lxvc::SwapchainObj::make(device, lxvc::SwapchainCreateInfo{
     .layout = descriptions.as<vk::PipelineLayout>(),
-    .surface = surface
+    .surface = surface,
+    .info = qfAndQueue
   });
 
   //
   decltype(auto) framebuffer = lxvc::FramebufferObj::make(device.with(0u), lxvc::FramebufferCreateInfo{
     .layout = descriptions.as<vk::PipelineLayout>(),
-    .extent = swapchain->getRenderArea().extent
+    .extent = swapchain->getRenderArea().extent,
+    .info = qfAndQueue
   });
 
   //
