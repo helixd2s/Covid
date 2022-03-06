@@ -401,11 +401,16 @@ namespace lxvc {
       if (!(*actionLocked)) {
         *threadLocked = true;
         do {
-          auto destId = destIds[--(*destructorCount)].exchange({}); if (destId) { (*destId)(); };
-        } while ((*destructorCount) > 0); atomic_max(*destructorCount, 0);
-        do {
           auto callId = callIds[--(*callbackCount)].exchange({}); if (callId) { (*callId)(); };
         } while ((*callbackCount) > 0); atomic_max(*callbackCount, 0);
+        *threadLocked = false;
+      };
+
+      if (!(*actionLocked)) {
+        *threadLocked = true;
+        do {
+          auto destId = destIds[--(*destructorCount)].exchange({}); if (destId) { (*destId)(); };
+        } while ((*destructorCount) > 0); atomic_max(*destructorCount, 0);
         *threadLocked = false;
       };
     };
