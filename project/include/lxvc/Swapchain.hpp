@@ -92,7 +92,9 @@ namespace lxvc {
 
     //
     inline static tType make(Handle const& handle, std::optional<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) {
-      return std::make_shared<SwapchainObj>(handle, cInfo)->registerSelf();
+      auto shared = std::make_shared<SwapchainObj>(handle, cInfo);
+      auto wrap = shared->registerSelf();
+      return wrap;
     };
 
     //

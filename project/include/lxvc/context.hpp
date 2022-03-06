@@ -34,7 +34,9 @@ namespace lxvc {
 
     //
     inline static tType make(Handle const& handle, std::optional<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
-      return WrapShared<ContextObj>(std::make_shared<ContextObj>(handle, cInfo));
+      auto shared = std::make_shared<ContextObj>(handle, cInfo);
+      auto wrap = shared->SFT();//->registerSelf();
+      return wrap;
     };
 
   protected: 

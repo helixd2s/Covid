@@ -65,7 +65,9 @@ namespace lxvc {
 
     //
     inline static tType make(Handle const& handle, std::optional<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
-      return std::make_shared<ResourceObj>(handle, cInfo)->registerSelf();
+      auto shared = std::make_shared<ResourceObj>(handle, cInfo);
+      auto wrap = shared->registerSelf();
+      return wrap;
     };
 
   protected:
@@ -105,12 +107,21 @@ namespace lxvc {
 
     // 
     virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
-      this->base = deviceObj->handle;
-      //this->deviceObj = deviceObj;
-      this->cInfo = cInfo;
-      this->infoMap = std::make_shared<MSS>();
-      if (this->cInfo->imageInfo) { this->createImage(this->cInfo->imageInfo.value()); };
-      if (this->cInfo->bufferInfo) { this->createBuffer(this->cInfo->bufferInfo.value()); };
+      try {
+        this->base = deviceObj->handle;
+        //this->deviceObj = deviceObj;
+        this->cInfo = cInfo;
+        this->infoMap = std::make_shared<MSS>();
+      }
+      catch (std::exception e) {
+        std::cerr << "Unable to initialize ResourceObj itself" << std::endl; std::cerr << e.what() << std::endl;
+      };
+
+      // 
+      if (this->cInfo) {
+        if (this->cInfo->imageInfo) { try { this->createImage(this->cInfo->imageInfo.value()); } catch (std::exception e) { std::cerr << "Unable to initialize ResourceObj as Image" << std::endl; std::cerr << e.what() << std::endl; } };
+        if (this->cInfo->bufferInfo) { try { this->createBuffer(this->cInfo->bufferInfo.value()); } catch (std::exception e) { std::cerr << "Unable to initialize ResourceObj as Buffer" << std::endl; std::cerr << e.what() << std::endl; } };
+      };
     };
 
     // 
@@ -220,52 +231,56 @@ namespace lxvc {
 
     //
     virtual FenceType switchLayout(ImageLayoutSwitchInfo const& switchInfo = {}) {
-      decltype(auto) info = switchInfo.info ? switchInfo.info : this->cInfo->imageInfo->info;
-      decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
-      decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
-      decltype(auto) oldImageLayout = switchInfo.oldImageLayout ? switchInfo.oldImageLayout.value() : this->cInfo->imageInfo->layout;
-      decltype(auto) submission = CommandOnceSubmission{ .info = switchInfo.info };
-      decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
-      decltype(auto) correctAccessMask = vku::getCorrectAccessMaskByImageLayout<vk::AccessFlagBits2>(switchInfo.newImageLayout);
-      decltype(auto) transferBarrier = std::vector<vk::ImageMemoryBarrier2>{
-        vk::ImageMemoryBarrier2{
-          .srcStageMask = vk::PipelineStageFlagBits2::eAllCommands,
-          .srcAccessMask = vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eMemoryWrite,
-          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(correctAccessMask) | (correctAccessMask & vk::AccessFlagBits2::eShaderRead ? vk::PipelineStageFlagBits2::eAllCommands : vk::PipelineStageFlagBits2{}),
-          .dstAccessMask = correctAccessMask,
-          .oldLayout = oldImageLayout,
-          .newLayout = switchInfo.newImageLayout,
-          .srcQueueFamilyIndex = info->queueFamilyIndex,
-          .dstQueueFamilyIndex = info->queueFamilyIndex,
-          .image = this->handle.as<vk::Image>(),
-          .subresourceRange = switchInfo.subresourceRange ? switchInfo.subresourceRange.value() : vk::ImageSubresourceRange{
-            .aspectMask =
-              this->cInfo->imageInfo->type == ImageType::eDepthStencilAttachment ? (vk::ImageAspectFlagBits::eDepth) :
-              (this->cInfo->imageInfo->type == ImageType::eDepthAttachment ? vk::ImageAspectFlagBits::eDepth :
-              (this->cInfo->imageInfo->type == ImageType::eStencilAttachment ? vk::ImageAspectFlagBits::eStencil : vk::ImageAspectFlagBits::eColor)),
-            .baseMipLevel = 0u,
-            .levelCount = imageInfo->mipLevels,
-            .baseArrayLayer = 0u,
-            .layerCount = imageInfo->arrayLayers
+      if (this->cInfo->imageInfo && this->handle.type == HandleType::eImage) {
+        decltype(auto) info = switchInfo.info ? switchInfo.info : this->cInfo->imageInfo->info;
+        decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
+        decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
+        decltype(auto) oldImageLayout = switchInfo.oldImageLayout ? switchInfo.oldImageLayout.value() : this->cInfo->imageInfo->layout;
+        decltype(auto) submission = CommandOnceSubmission{ .info = switchInfo.info };
+        decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
+        decltype(auto) correctAccessMask = vku::getCorrectAccessMaskByImageLayout<vk::AccessFlagBits2>(switchInfo.newImageLayout);
+        decltype(auto) transferBarrier = std::vector<vk::ImageMemoryBarrier2>{
+          vk::ImageMemoryBarrier2{
+            .srcStageMask = vk::PipelineStageFlagBits2::eAllCommands,
+            .srcAccessMask = vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eMemoryWrite,
+            .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(correctAccessMask) | (correctAccessMask & vk::AccessFlagBits2::eShaderRead ? vk::PipelineStageFlagBits2::eAllCommands : vk::PipelineStageFlagBits2{}),
+            .dstAccessMask = correctAccessMask,
+            .oldLayout = oldImageLayout,
+            .newLayout = switchInfo.newImageLayout,
+            .srcQueueFamilyIndex = info->queueFamilyIndex,
+            .dstQueueFamilyIndex = info->queueFamilyIndex,
+            .image = this->handle.as<vk::Image>(),
+            .subresourceRange = switchInfo.subresourceRange ? switchInfo.subresourceRange.value() : vk::ImageSubresourceRange{
+              .aspectMask =
+                this->cInfo->imageInfo->type == ImageType::eDepthStencilAttachment ? (vk::ImageAspectFlagBits::eDepth) :
+                (this->cInfo->imageInfo->type == ImageType::eDepthAttachment ? vk::ImageAspectFlagBits::eDepth :
+                (this->cInfo->imageInfo->type == ImageType::eStencilAttachment ? vk::ImageAspectFlagBits::eStencil : vk::ImageAspectFlagBits::eColor)),
+              .baseMipLevel = 0u,
+              .levelCount = imageInfo->mipLevels,
+              .baseArrayLayer = 0u,
+              .layerCount = imageInfo->arrayLayers
+            }
           }
-        }
+        };
+
+        // 
+        submission.commandInits.push_back([=](vk::CommandBuffer const& cmdBuf) {
+          auto _depInfo = depInfo;
+          cmdBuf.pipelineBarrier2(_depInfo.setImageMemoryBarriers(transferBarrier));
+          return cmdBuf;
+          });
+
+        //
+        decltype(auto) fence = deviceObj->executeCommandOnce(submission);
+
+        //
+        this->cInfo->imageInfo->layout = switchInfo.newImageLayout;
+
+        //
+        return fence;
+
       };
-
-      // 
-      submission.commandInits.push_back([=](vk::CommandBuffer const& cmdBuf) {
-        auto _depInfo = depInfo;
-        cmdBuf.pipelineBarrier2(_depInfo.setImageMemoryBarriers(transferBarrier));
-        return cmdBuf;
-      });
-
-      //
-      decltype(auto) fence = deviceObj->executeCommandOnce(submission);
-
-      //
-      this->cInfo->imageInfo->layout = switchInfo.newImageLayout;
-
-      //
-      return fence;
+      return FenceType{};
     };
 
     // 

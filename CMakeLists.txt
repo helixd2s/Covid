@@ -98,7 +98,7 @@ target_precompile_headers(${PROJECT_NAME}
 
 # 
 if (MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest /bigobj /MP /incremental")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest /bigobj /MP /incremental /EHa")
     set(CMAKE_EXE_LINKER_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj /MP /MAP /incremental /debug:fastlink /experimental /errorReport")
 endif()
 

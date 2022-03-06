@@ -68,7 +68,9 @@ namespace lxvc {
 
     //
     inline static tType make(Handle const& handle, std::optional<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) {
-      return std::make_shared<PipelineObj>(handle, cInfo)->registerSelf();
+      auto shared = std::make_shared<PipelineObj>(handle, cInfo);
+      auto wrap = shared->registerSelf();
+      return wrap;
     };
 
   protected:
@@ -337,7 +339,26 @@ namespace lxvc {
         cmdBuf.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, descriptorsObj->handle.as<vk::PipelineLayout>(), 0u, descriptorsObj->sets, offsets);
         cmdBuf.setViewportWithCount(viewports);
         cmdBuf.setScissorWithCount(scissors);
-        cmdBuf.drawMultiEXT(exec->multiDrawInfo, 1u, 0u, sizeof(vk::MultiDrawInfoEXT), deviceObj->dispatch);
+        decltype(auto) catchFn = [&, this](std::optional<std::exception> e = {}) {
+          //std::cerr << "Failed to MultiDraw or not supported, trying to reform command..." << std::endl;
+          if (e) {
+            std::cerr << e->what() << std::endl;
+          };
+          for (auto drawInfo : exec->multiDrawInfo) {
+            cmdBuf.draw(drawInfo.vertexCount, 1u, drawInfo.firstVertex, 0u);
+          };
+        };
+
+        if (deviceObj->dispatch.vkCmdDrawMultiEXT) {
+          try {
+            cmdBuf.drawMultiEXT(exec->multiDrawInfo, 1u, 0u, sizeof(vk::MultiDrawInfoEXT), deviceObj->dispatch);
+          }
+          catch (std::exception e) {
+            catchFn(e);
+          };
+        }
+        else { catchFn(); };
+        
         cmdBuf.endRendering();
         cmdBuf.pipelineBarrier2(_depInfo.setMemoryBarriers(memoryBarriersEnd));
         return cmdBuf;

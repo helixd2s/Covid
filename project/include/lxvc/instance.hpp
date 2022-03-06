@@ -60,7 +60,9 @@ namespace lxvc {
 
     //
     inline static tType make(Handle const& handle, std::optional<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
-      return std::make_shared<InstanceObj>(handle, cInfo)->registerSelf();
+      auto shared = std::make_shared<InstanceObj>(handle, cInfo);
+      auto wrap = shared->registerSelf();
+      return wrap;
     };
 
   protected:
@@ -77,12 +79,28 @@ namespace lxvc {
 
     //
     virtual std::vector<vk::PhysicalDeviceGroupProperties>& enumeratePhysicalDeviceGroups() {
-      return (this->physicalDeviceGroups = (this->physicalDeviceGroups.size() > 0 ? this->physicalDeviceGroups : this->handle.as<vk::Instance>().enumeratePhysicalDeviceGroups()));
+      if (this->physicalDeviceGroups.size() > 0) {
+        try {
+          this->physicalDeviceGroups = this->handle.as<vk::Instance>().enumeratePhysicalDeviceGroups();
+        }
+        catch (std::exception e) {
+          std::cerr << "Failed to get physical device group, probably not supported..." << std::endl;
+          std::cerr << e.what() << std::endl;
+        };
+      }
+      return this->physicalDeviceGroups;
     };
 
     //
     virtual std::vector<vk::PhysicalDeviceGroupProperties> const& enumeratePhysicalDeviceGroups() const {
-      return (this->physicalDeviceGroups.size() > 0 ? this->physicalDeviceGroups : this->handle.as<vk::Instance>().enumeratePhysicalDeviceGroups());
+      try {
+        return (this->physicalDeviceGroups.size() > 0 ? this->physicalDeviceGroups : this->handle.as<vk::Instance>().enumeratePhysicalDeviceGroups());
+      }
+      catch (std::exception e) {
+        std::cerr << "Failed to get physical device group, probably not supported..." << std::endl;
+        std::cerr << e.what() << std::endl;
+        return this->physicalDeviceGroups;
+      };
     };
 
     //

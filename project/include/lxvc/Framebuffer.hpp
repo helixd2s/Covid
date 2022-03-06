@@ -93,7 +93,9 @@ namespace lxvc {
 
     //
     inline static tType make(Handle const& handle, std::optional<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{}) {
-      return std::make_shared<FramebufferObj>(handle, cInfo)->registerSelf();
+      auto shared = std::make_shared<FramebufferObj>(handle, cInfo);
+      auto wrap = shared->registerSelf();
+      return wrap;
     };
 
     //
@@ -145,14 +147,17 @@ namespace lxvc {
         };
 
       //
-      this->images.push_back(ResourceObj::make(this->base, ResourceCreateInfo{
+      auto imageObj = ResourceObj::make(this->base, ResourceCreateInfo{
         .imageInfo = ImageCreateInfo{
           .type = imageType,
-          .extent = { cInfo->extent.width, cInfo->extent.height, 1u },
+          .extent = vk::Extent3D{ cInfo->extent.width, cInfo->extent.height, 1u },
           .format = format,
           .layout = imageLayout
         }
-      }).as<vk::Image>());
+      });
+
+      //
+      this->images.push_back(imageObj.as<vk::Image>());
 
       // 
       renderArea = vk::Rect2D{ vk::Offset2D{0u, 0u}, cInfo->extent };

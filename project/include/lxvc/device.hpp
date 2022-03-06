@@ -192,13 +192,18 @@ namespace lxvc {
       //this->physicalDevices = {};
       decltype(auto) instanceObj = lxvc::context->get<InstanceObj>(this->base);
       decltype(auto) deviceGroups = instanceObj->enumeratePhysicalDeviceGroups();
-      decltype(auto) deviceGroup = deviceGroups[groupIndex];
-      vk::PhysicalDevice* PDP = deviceGroup.physicalDevices;
-      decltype(auto) physicalDevices = (this->physicalDevices = std::vector<vk::PhysicalDevice>(PDP, PDP + deviceGroup.physicalDeviceCount));
+      auto& physicalDevices = this->physicalDevices;
+      if (deviceGroups.size() > 0) {
+        decltype(auto) deviceGroup = deviceGroups[groupIndex];
+        vk::PhysicalDevice* PDP = deviceGroup.physicalDevices;
+        physicalDevices = std::vector<vk::PhysicalDevice>(PDP, PDP + deviceGroup.physicalDeviceCount);
+      } else {
+        physicalDevices = instanceObj->enumeratePhysicalDevices();
+      };
       for (decltype(auto) PD : physicalDevices) {
         PDInfoMaps->push_back(std::make_shared<MSS>());
       };
-      return physicalDevices;
+      return this->physicalDevices;
     };
 
     // 
@@ -387,6 +392,10 @@ namespace lxvc {
     //
     virtual FenceType executeCopyBuffersOnce(cpp21::optional_ref<CopyBufferInfo> copyInfoRaw);
 
+    //
+    ~DeviceObj() {
+      this->deleteTrash();
+    };
 
     // 
     DeviceObj(std::shared_ptr<InstanceObj> instanceObj = {}, std::optional<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) : cInfo(cInfo) {
@@ -412,7 +421,9 @@ namespace lxvc {
     
     //
     inline static tType make(Handle const& handle, std::optional<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
-      return std::make_shared<DeviceObj>(handle, cInfo)->registerSelf();
+      auto shared = std::make_shared<DeviceObj>(handle, cInfo);
+      auto wrap = shared->registerSelf();
+      return wrap;
     };
 
   };

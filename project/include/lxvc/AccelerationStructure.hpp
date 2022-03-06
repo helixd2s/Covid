@@ -48,11 +48,6 @@ namespace lxvc {
     };
 
     //
-    inline static tType make(Handle const& handle, std::optional<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
-      return WrapShared<ContextObj>(std::make_shared<ContextObj>(handle, cInfo)->registerSelf().shared());
-    };
-
-    //
     virtual tType registerSelf() {
       lxvc::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
       return SFT();
@@ -60,7 +55,9 @@ namespace lxvc {
 
     //
     inline static tType make(Handle const& handle, std::optional<AccelerationStructureCreateInfo> cInfo = AccelerationStructureCreateInfo{}) {
-      return std::make_shared<AccelerationStructureObj>(handle, cInfo)->registerSelf();
+      auto shared = std::make_shared<AccelerationStructureObj>(handle, cInfo);
+      auto wrap = shared->registerSelf();
+      return wrap;
     };
 
   protected:

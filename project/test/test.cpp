@@ -3,6 +3,7 @@
 #include <GLFW/glfw3.h>
 #include <windows.h>
 #include "renderdoc_app.h"
+#include <eh.h>
 
 // 
 void error(int errnum, const char* errmsg)
@@ -20,6 +21,21 @@ struct UniformData {
 
 // 
 int main() {
+
+  // Be sure to enable "Yes with SEH Exceptions (/EHa)" in C++ / Code Generation;
+  _set_se_translator([](unsigned int u, EXCEPTION_POINTERS* pExp) {
+    std::string error = "SE Exception: ";
+    switch (u) {
+    case 0xC0000005:
+      error += "Access Violation";
+      break;
+    default:
+      char result[11];
+      sprintf_s(result, 11, "0x%08X", u);
+      error += result;
+    };
+    throw std::exception(error.c_str());
+  });
 
   //
   RENDERDOC_API_1_1_2* rdoc_api = NULL;
@@ -68,7 +84,9 @@ int main() {
   lxvc::initialize();
 
 
-
+  //
+  std::cout << "" << std::endl;
+  system("PAUSE");
 
 
   // first cherep
