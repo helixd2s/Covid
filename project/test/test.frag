@@ -32,6 +32,6 @@ layout(location = 0) out vec4 albedo;
 // 
 void main() {
   albedo = pcolor;
-  gl_FragDepth = 0.f;
+  //gl_FragDepth = 0.f;
   //imageStore(images[imageIndices[currentImage]], ivec2(gl_FragCoord.xy), albedo);
 };

@@ -29,7 +29,7 @@ layout(location = 0) out vec4 pcolor;
 
 //
 const vec2 positions[6] = {
-    vec2(0.f, 0.f), vec2(0.f, 1.f), vec2(1.f, 0.f),
+    vec2(0.f, 0.f), vec2(1.f, 0.f), vec2(0.f, 1.f),
     vec2(1.f, 1.f), vec2(0.f, 1.f), vec2(1.f, 0.f),
 };
 
