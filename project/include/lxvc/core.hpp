@@ -195,8 +195,35 @@ namespace lxvc {
   };
 
   //
-  struct DescriptorsCreateInfo {
+  struct AttachmentsInfo {
+    vk::Format depthAttachmentFormat = vk::Format::eD32SfloatS8Uint;//eD32Sfloat;
+    vk::Format stencilAttachmentFormat = vk::Format::eD32SfloatS8Uint;//eS8Uint;
+    std::vector<vk::Format> colorAttachmentFormats = { vk::Format::eR8G8B8A8Unorm, vk::Format::eR8G8B8A8Unorm };
+    std::vector<vk::PipelineColorBlendAttachmentState> blendStates = {
+      vk::PipelineColorBlendAttachmentState{
+        .blendEnable = false,
+        .srcColorBlendFactor = vk::BlendFactor::eOneMinusDstAlpha,
+        .dstColorBlendFactor = vk::BlendFactor::eDstAlpha,
+        .colorBlendOp = vk::BlendOp::eAdd,
+        .srcAlphaBlendFactor = vk::BlendFactor::eOne,
+        .dstAlphaBlendFactor = vk::BlendFactor::eOne,
+        .alphaBlendOp = vk::BlendOp::eMax
+      },
+      vk::PipelineColorBlendAttachmentState{
+        .blendEnable = false,
+        .srcColorBlendFactor = vk::BlendFactor::eOneMinusDstAlpha,
+        .dstColorBlendFactor = vk::BlendFactor::eDstAlpha,
+        .colorBlendOp = vk::BlendOp::eAdd,
+        .srcAlphaBlendFactor = vk::BlendFactor::eOne,
+        .dstAlphaBlendFactor = vk::BlendFactor::eOne,
+        .alphaBlendOp = vk::BlendOp::eMax
+      }
+    };
+  };
 
+  //
+  struct DescriptorsCreateInfo {
+    AttachmentsInfo attachments = {};
   };
 
   //
@@ -349,14 +376,14 @@ namespace lxvc {
 
   //
   struct FramebufferCreateInfo {
-    vk::Extent2D extent = {640u, 480u};
     vk::PipelineLayout layout = {};
+    vk::Extent2D extent = {640u, 480u};
   };
 
   //
   struct SwapchainCreateInfo {
-    vk::SurfaceKHR surface = {};
     vk::PipelineLayout layout = {};
+    vk::SurfaceKHR surface = {};
   };
 
   //

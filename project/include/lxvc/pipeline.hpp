@@ -9,14 +9,6 @@
 // 
 namespace lxvc {
 
-  //
-  struct AttachmentsInfo {
-    vk::Format depthAttachmentFormat = vk::Format::eD32SfloatS8Uint;//eD32Sfloat;
-    vk::Format stencilAttachmentFormat = vk::Format::eD32SfloatS8Uint;//eS8Uint;
-    std::vector<vk::Format> colorAttachmentFormats = {};
-    std::vector<vk::PipelineColorBlendAttachmentState> blendStates = {};
-  };
-
   // 
   class PipelineObj : public BaseObj {
   public: 
@@ -25,6 +17,8 @@ namespace lxvc {
     
   protected:
     friend DeviceObj;
+    friend FramebufferObj;
+    friend DescriptorsObj;
 
     // 
     //vk::Pipeline pipeline = {};
@@ -36,8 +30,6 @@ namespace lxvc {
     std::vector<vk::Viewport> viewports = {};
     std::vector<vk::Rect2D> scissors = {};
     //std::shared_ptr<DeviceObj> deviceObj = {};
-
-    AttachmentsInfo attachments = {};
 
     // 
     inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
@@ -105,8 +97,8 @@ namespace lxvc {
       //
       decltype(auto) pRendering = infoMap->set(vk::StructureType::ePipelineRenderingCreateInfo, vk::PipelineRenderingCreateInfo{
         .viewMask = 0x0u,
-        .depthAttachmentFormat = attachments.depthAttachmentFormat,
-        .stencilAttachmentFormat = attachments.stencilAttachmentFormat
+        .depthAttachmentFormat = descriptors->cInfo->attachments.depthAttachmentFormat,
+        .stencilAttachmentFormat = descriptors->cInfo->attachments.stencilAttachmentFormat
       });
 
       //
@@ -190,33 +182,8 @@ namespace lxvc {
       });
 
       // 
-      this->attachments.colorAttachmentFormats.insert(attachments.colorAttachmentFormats.end(), {vk::Format::eR8G8B8A8Unorm, vk::Format::eR8G8B8A8Unorm });
-
-      // for 1st image of framebuffer
-      this->attachments.blendStates.push_back(vk::PipelineColorBlendAttachmentState{
-        .blendEnable = false,
-        .srcColorBlendFactor = vk::BlendFactor::eOneMinusDstAlpha,
-        .dstColorBlendFactor = vk::BlendFactor::eDstAlpha,
-        .colorBlendOp = vk::BlendOp::eAdd,
-        .srcAlphaBlendFactor = vk::BlendFactor::eOne,
-        .dstAlphaBlendFactor = vk::BlendFactor::eOne,
-        .alphaBlendOp = vk::BlendOp::eMax
-      });
-
-      // for 2st image of framebuffer
-      this->attachments.blendStates.push_back(vk::PipelineColorBlendAttachmentState{
-        .blendEnable = false,
-        .srcColorBlendFactor = vk::BlendFactor::eOneMinusDstAlpha,
-        .dstColorBlendFactor = vk::BlendFactor::eDstAlpha,
-        .colorBlendOp = vk::BlendOp::eAdd,
-        .srcAlphaBlendFactor = vk::BlendFactor::eOne,
-        .dstAlphaBlendFactor = vk::BlendFactor::eOne,
-        .alphaBlendOp = vk::BlendOp::eMax
-      });
-
-      // 
       decltype(auto) pInfo = infoMap->set(vk::StructureType::eGraphicsPipelineCreateInfo, vk::GraphicsPipelineCreateInfo{
-        .pNext = &pRendering->setColorAttachmentFormats(this->attachments.colorAttachmentFormats),
+        .pNext = &pRendering->setColorAttachmentFormats(descriptors->cInfo->attachments.colorAttachmentFormats),
         .flags = vk::PipelineCreateFlags{},
         .pVertexInputState = pVertexInput.get(),
         .pInputAssemblyState = pInputAssembly.get(),
@@ -225,7 +192,7 @@ namespace lxvc {
         .pRasterizationState = pRasterization.get(),
         .pMultisampleState = pMultisample.get(),
         .pDepthStencilState = pDepthStencil.get(),
-        .pColorBlendState = &pColorBlend->setAttachments(this->attachments.blendStates),
+        .pColorBlendState = &pColorBlend->setAttachments(descriptors->cInfo->attachments.blendStates),
         .pDynamicState = &pDynamic->setDynamicStates(this->dynamicStates),
         .layout = this->cInfo->layout
       })->setStages(pipelineStages);

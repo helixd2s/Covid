@@ -22,6 +22,8 @@ namespace lxvc {
     friend DeviceObj;
     friend PipelineObj;
     friend ResourceObj;
+    friend PipelineObj;
+    friend DescriptorsObj;
 
     // 
     inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
@@ -121,11 +123,16 @@ namespace lxvc {
   protected:
 
     //
-    virtual void createImage(ImageType const& imageType = ImageType::eColorAttachment, vk::Format const& format_ = vk::Format::eR8G8B8A8Unorm) {
+    virtual void createImage(ImageType const& imageType = ImageType::eColorAttachment) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
-      decltype(auto) format = imageType == ImageType::eDepthStencilAttachment ? vk::Format::eD32SfloatS8Uint : (imageType == ImageType::eDepthAttachment ? vk::Format::eD32Sfloat : (imageType == ImageType::eStencilAttachment ? vk::Format::eS8Uint : format_));
+
+      decltype(auto) lastColorFormat = descriptorsObj->cInfo->attachments.colorAttachmentFormats[colorAttachments.size()];
+      decltype(auto) lastDepthFormat = descriptorsObj->cInfo->attachments.depthAttachmentFormat;
+      decltype(auto) lastStencilFormat = descriptorsObj->cInfo->attachments.stencilAttachmentFormat;
+
+      decltype(auto) format = imageType == ImageType::eDepthStencilAttachment ? lastDepthFormat : (imageType == ImageType::eDepthAttachment ? lastDepthFormat : (imageType == ImageType::eStencilAttachment ? lastStencilFormat : lastColorFormat));
       decltype(auto) aspectMask =
            imageType == ImageType::eDepthStencilAttachment ? (vk::ImageAspectFlagBits::eDepth) :
           (imageType == ImageType::eDepthAttachment ? vk::ImageAspectFlagBits::eDepth :
