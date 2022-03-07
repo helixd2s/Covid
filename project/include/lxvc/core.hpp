@@ -176,7 +176,7 @@ namespace lxvc {
   };
 
   //
-  using MSS = cpp21::map_of_shared<vk::StructureType, vk::BaseInStructure>;
+  using MSS = cpp21::map_of_shared<vk::StructureType, vku::EmptyChain>;
 
   //
   struct QueueFamilyCreateInfo {
