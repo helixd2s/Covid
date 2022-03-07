@@ -76,8 +76,9 @@ namespace lxvc {
     virtual AllocatedMemory& allocateMemory(cpp21::optional_ref<MemoryRequirements> requirements) {
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       auto& device = this->base.as<vk::Device>();
-      auto& physicalDevice = deviceObj->physicalDevices[deviceObj->cInfo->physicalDeviceIndex];
-      auto memTypeHeap = deviceObj->findMemoryTypeAndHeapIndex(deviceObj->cInfo->physicalDeviceIndex, *requirements);
+      auto& physicalDevice = deviceObj->getPhysicalDevice();
+      auto& PDInfoMap = deviceObj->getPhysicalDeviceInfoMap();
+      auto memTypeHeap = deviceObj->findMemoryTypeAndHeapIndex(*requirements);
       auto& allocated = (this->allocated = AllocatedMemory{}).value();
 
       // 

@@ -214,10 +214,11 @@ namespace lxvc {
       if (cInfo) { this->cInfo = cInfo; };
       //decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
-      decltype(auto) device = this->base.as<vk::Device>();
+      auto& device = this->base.as<vk::Device>();
 
       //
-      decltype(auto) physicalDevice = deviceObj->physicalDevices[deviceObj->cInfo->physicalDeviceIndex];
+      auto& physicalDevice = deviceObj->getPhysicalDevice();
+      auto& PDInfoMap = deviceObj->getPhysicalDeviceInfoMap();
       capInfo.capabilities2 = physicalDevice.getSurfaceCapabilities2KHR(vk::PhysicalDeviceSurfaceInfo2KHR{ .surface = cInfo->surface });
       capInfo.capabilities = opt_ref(capInfo.capabilities2.surfaceCapabilities);
       capInfo.formats2 = physicalDevice.getSurfaceFormats2KHR(vk::PhysicalDeviceSurfaceInfo2KHR{ .surface = cInfo->surface });

@@ -80,11 +80,10 @@ namespace lxvc {
     
 
     //
-    virtual std::tuple<uint32_t, uint32_t> findMemoryTypeAndHeapIndex(uintptr_t const& physicalDeviceIndex, std::optional<MemoryRequirements> req = MemoryRequirements{}) {
-      decltype(auto) physicalDevice = this->physicalDevices[physicalDeviceIndex];
-      //uintptr_t physicalDeviceIndex = std::distance(this->physicalDevices.begin(), std::find(this->physicalDevices.begin(), this->physicalDevices.end(), physicalDevice));
-      decltype(auto) PDInfoMap = this->PDInfoMaps[physicalDeviceIndex];
-      decltype(auto) memoryProperties2 = PDInfoMap->set(vk::StructureType::ePhysicalDeviceMemoryProperties2, vk::PhysicalDeviceMemoryProperties2{
+    virtual std::tuple<uint32_t, uint32_t> findMemoryTypeAndHeapIndex(std::optional<MemoryRequirements> req = MemoryRequirements{}, std::optional<uintptr_t> const& physicalDeviceIndex = {}) {
+      auto& physicalDevice = this->getPhysicalDevice(physicalDeviceIndex);
+      decltype(auto) PDInfoMap = this->getPhysicalDeviceInfoMap(physicalDeviceIndex);
+      auto memoryProperties2 = PDInfoMap->set(vk::StructureType::ePhysicalDeviceMemoryProperties2, vk::PhysicalDeviceMemoryProperties2{
 
       });
       auto& memoryProperties = memoryProperties2->memoryProperties; // get ref
@@ -103,10 +102,10 @@ namespace lxvc {
       //uint32_t memoryTypeIndex = 0u;
       //for (decltype(auto) memoryType : memoryTypes) {
       std::tuple<uint32_t, uint32_t> memoryTypeAndHeapIndex = { 0u, 0u };
-      for (decltype(auto) memoryTypeIndex : requiredMemoryTypeIndices) {
-        decltype(auto) memoryType = memoryTypes[memoryTypeIndex];
-        decltype(auto) memoryHeapIndex = memoryType.heapIndex;
-        decltype(auto) requiredBits = vk::MemoryPropertyFlags{};// | vk::MemoryPropertyFlagBits::eDeviceLocal;
+      for (auto& memoryTypeIndex : requiredMemoryTypeIndices) {
+        auto& memoryType = memoryTypes[memoryTypeIndex];
+        auto& memoryHeapIndex = memoryType.heapIndex;
+        auto requiredBits = vk::MemoryPropertyFlags{};// | vk::MemoryPropertyFlagBits::eDeviceLocal;
 
         // 
         switch (req->memoryUsage) {
@@ -329,6 +328,14 @@ namespace lxvc {
       return std::make_shared<FenceTypeRaw>(std::move(std::make_tuple(std::forward<std::future<vk::Result>>(promise), std::forward<vk::Fence>(fence))));
     };
 
+    //
+    vk::PhysicalDevice& getPhysicalDevice(std::optional<uintptr_t> const& physicalDeviceIndex = {}) { return this->physicalDevices[std::min(physicalDeviceIndex ? physicalDeviceIndex.value() : this->cInfo->physicalDeviceIndex, this->physicalDevices.size() - 1)]; };
+    vk::PhysicalDevice const& getPhysicalDevice(std::optional<uintptr_t> const& physicalDeviceIndex = {}) const { return this->physicalDevices[std::min(physicalDeviceIndex ? physicalDeviceIndex.value() : this->cInfo->physicalDeviceIndex, this->physicalDevices.size() - 1)]; };
+
+    //
+    std::shared_ptr<MSS>& getPhysicalDeviceInfoMap(std::optional<uintptr_t> const& physicalDeviceIndex = {}) { return this->PDInfoMaps[std::min(physicalDeviceIndex ? physicalDeviceIndex.value() : this->cInfo->physicalDeviceIndex, this->PDInfoMaps.size() - 1)]; };
+    std::shared_ptr<MSS> const& getPhysicalDeviceInfoMap(std::optional<uintptr_t> const& physicalDeviceIndex = {}) const { return this->PDInfoMaps[std::min(physicalDeviceIndex ? physicalDeviceIndex.value() : this->cInfo->physicalDeviceIndex, this->PDInfoMaps.size() - 1)]; };
+
     // 
     virtual void construct(std::shared_ptr<InstanceObj> instanceObj = {}, std::optional<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
       //this->instanceObj = instanceObj;
@@ -349,8 +356,8 @@ namespace lxvc {
 
       // TODO: get rid from spagetti code or nesting
       auto& physicalDevices = this->filterPhysicalDevices(this->cInfo->physicalDeviceGroupIndex);
-      auto PDInfoMap = this->PDInfoMaps[this->cInfo->physicalDeviceIndex];
-      auto& physicalDevice = physicalDevices[this->cInfo->physicalDeviceIndex];
+      auto& physicalDevice = this->getPhysicalDevice();
+      auto PDInfoMap = this->getPhysicalDeviceInfoMap();
       auto deviceGroupInfo = this->infoMap->set(vk::StructureType::eDeviceGroupDeviceCreateInfo, vk::DeviceGroupDeviceCreateInfo{
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceFeatures2, vk::PhysicalDeviceFeatures2{
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceVulkan11Features, vk::PhysicalDeviceVulkan11Features{
