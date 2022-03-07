@@ -400,7 +400,7 @@ namespace lxvc {
         // 
         if (deviceInfo) {
           try {
-            this->handle = physicalDevice.createDevice(deviceInfo, nullptr, instanceObj->dispatch);
+            this->handle = physicalDevice.createDevice(deviceInfo.ref(), nullptr, instanceObj->dispatch);
           }
           catch (std::exception e) {
             std::cerr << "Unable to create device..." << std::endl;
