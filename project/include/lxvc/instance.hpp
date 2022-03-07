@@ -117,7 +117,7 @@ namespace lxvc {
     virtual std::vector<cType>& filterExtensions(std::vector<std::string> const& names) {
       //std::vector<vk::ExtensionProperties> props(1024u); uint32_t size = 0ull;
       //vk::enumerateInstanceExtensionProperties("", &size, props.data()); props.resize(size);
-      decltype(auto) props = vk::enumerateInstanceExtensionProperties();
+      decltype(auto) props = vk::enumerateInstanceExtensionProperties(std::string(""));
       auto& selected = (this->extensionNames);
 
       // 

@@ -178,7 +178,7 @@ namespace lxvc {
 
     //
     virtual std::vector<cType>& filterExtensions(vk::PhysicalDevice const& physicalDevice, std::vector<std::string> const& names) {
-      decltype(auto) props = physicalDevice.enumerateDeviceExtensionProperties();
+      decltype(auto) props = physicalDevice.enumerateDeviceExtensionProperties(std::string(""));
       auto& selected = (this->extensionNames);
 
       // 
@@ -373,10 +373,17 @@ namespace lxvc {
       });
 
       // 
+      auto properties2 = PDInfoMap->set(vk::StructureType::ePhysicalDeviceProperties2, vk::PhysicalDeviceProperties2{
+        .pNext = nullptr
+      });
+      auto& properties = properties2->properties;
+
+      // 
       decltype(auto) deviceInfo = infoMap->set(vk::StructureType::eDeviceCreateInfo, vk::DeviceCreateInfo{ .pNext = deviceGroupInfo });
       
       //
       if (!!physicalDevice) {
+        physicalDevice.getProperties2(properties2.get());
         physicalDevice.getFeatures2(PDInfoMap->get<vk::PhysicalDeviceFeatures2>(vk::StructureType::ePhysicalDeviceFeatures2).get());
         deviceGroupInfo->setPhysicalDevices(physicalDevices);
 
@@ -384,6 +391,11 @@ namespace lxvc {
         deviceInfo->setQueueCreateInfos(this->filterQueueFamilies(this->cInfo->queueFamilyInfos));
         deviceInfo->setPEnabledExtensionNames(this->filterExtensions(physicalDevice, this->cInfo->extensionList));
         deviceInfo->setPEnabledLayerNames(this->filterLayers(physicalDevice, this->cInfo->layerList));
+
+        //
+        std::cout << "Used Device:" << std::endl;
+        std::cout << std::string_view(properties.deviceName) << std::endl;
+        std::cout << "" << std::endl;
 
         // 
         if (deviceInfo) {
