@@ -414,13 +414,13 @@ namespace lxvc {
 
         // 
         if (deviceInfo) {
-          try {
+          //try {
             this->handle = physicalDevice.createDevice(deviceInfo.ref(), nullptr, instanceObj->dispatch);
-          }
-          catch (std::exception e) {
-            std::cerr << "Unable to create device..." << std::endl;
-            std::cerr << e.what() << std::endl;
-          }
+          //}
+          //catch (std::exception e) {
+            //std::cerr << "Unable to create device..." << std::endl;
+            //std::cerr << e.what() << std::endl;
+          //}
         };
         if (this->handle) {
           //VULKAN_HPP_DEFAULT_DISPATCHER.init(this->handle.as<vk::Device>());

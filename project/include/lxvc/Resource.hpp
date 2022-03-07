@@ -108,20 +108,20 @@ namespace lxvc {
 
     // 
     virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
-      try {
+      //try {
         this->base = deviceObj->handle;
         //this->deviceObj = deviceObj;
         if (cInfo) { this->cInfo = cInfo; };
         this->infoMap = std::make_shared<MSS>(MSS());
-      }
-      catch (std::exception e) {
-        std::cerr << "Unable to initialize ResourceObj itself" << std::endl; std::cerr << e.what() << std::endl;
-      };
+      //}
+      //catch (std::exception e) {
+        //std::cerr << "Unable to initialize ResourceObj itself" << std::endl; std::cerr << e.what() << std::endl;
+      //};
 
       // 
       if (this->cInfo) {
-        if (this->cInfo->imageInfo) { try { this->createImage(this->cInfo->imageInfo.value()); } catch (std::exception e) { std::cerr << "Unable to initialize ResourceObj as Image" << std::endl; std::cerr << e.what() << std::endl; } };
-        if (this->cInfo->bufferInfo) { try { this->createBuffer(this->cInfo->bufferInfo.value()); } catch (std::exception e) { std::cerr << "Unable to initialize ResourceObj as Buffer" << std::endl; std::cerr << e.what() << std::endl; } };
+        if (this->cInfo->imageInfo) { this->createImage(this->cInfo->imageInfo.value()); };
+        if (this->cInfo->bufferInfo) { this->createBuffer(this->cInfo->bufferInfo.value()); };
       };
     };
 
@@ -235,7 +235,7 @@ namespace lxvc {
     };
 
     //
-    virtual tType writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo const switchInfo) {
+    virtual void writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo const switchInfo) {
       if (this->cInfo->imageInfo && this->handle.type == HandleType::eImage) {
         //decltype(auto) info = switchInfo.info ? switchInfo.info : this->cInfo->imageInfo->info;
         decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
@@ -272,7 +272,7 @@ namespace lxvc {
         this->cInfo->imageInfo->layout = switchInfo.newImageLayout;
       };
 
-      return SFT();
+      //return SFT();
     };
 
 

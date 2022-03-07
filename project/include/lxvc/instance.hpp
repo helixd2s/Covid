@@ -80,27 +80,27 @@ namespace lxvc {
     //
     virtual std::vector<vk::PhysicalDeviceGroupProperties>& enumeratePhysicalDeviceGroups() {
       if (this->physicalDeviceGroups.size() > 0) {
-        try {
+        //try {
           this->physicalDeviceGroups = this->handle.as<vk::Instance>().enumeratePhysicalDeviceGroups();
-        }
-        catch (std::exception e) {
-          std::cerr << "Failed to get physical device group, probably not supported..." << std::endl;
-          std::cerr << e.what() << std::endl;
-        };
+        //}
+        //catch (std::exception e) {
+          //std::cerr << "Failed to get physical device group, probably not supported..." << std::endl;
+          //std::cerr << e.what() << std::endl;
+        //};
       }
       return this->physicalDeviceGroups;
     };
 
     //
     virtual std::vector<vk::PhysicalDeviceGroupProperties> const& enumeratePhysicalDeviceGroups() const {
-      try {
+      //try {
         return (this->physicalDeviceGroups.size() > 0 ? this->physicalDeviceGroups : this->handle.as<vk::Instance>().enumeratePhysicalDeviceGroups());
-      }
-      catch (std::exception e) {
-        std::cerr << "Failed to get physical device group, probably not supported..." << std::endl;
-        std::cerr << e.what() << std::endl;
-        return this->physicalDeviceGroups;
-      };
+      //}
+      //catch (std::exception e) {
+        //std::cerr << "Failed to get physical device group, probably not supported..." << std::endl;
+        //std::cerr << e.what() << std::endl;
+        //return this->physicalDeviceGroups;
+      //};
     };
 
     //
