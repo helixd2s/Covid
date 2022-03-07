@@ -515,7 +515,7 @@ namespace lxvc {
   };
 
   //
-  using FenceTypeRaw = std::tuple<std::future<vk::Result>, vk::Fence>;
+  using FenceTypeRaw = std::tuple<std::future<vk::Result>, std::shared_ptr<vk::Fence>>;
   using FenceType = std::shared_ptr<FenceTypeRaw>;
 
   // 
@@ -582,7 +582,7 @@ namespace lxvc {
       .pSpecializationInfo = nullptr
     };
     if (code.size() > 0u && (!spi.module)) { spi.module = createShaderModule(device, code); };
-    return std::move(spi);
+    return spi;
   };
 
   // create compute
@@ -593,10 +593,11 @@ namespace lxvc {
     f.spi.module = createShaderModule(device, eTempCode = code);
     if (subgroupSize && subgroupSize.value() > 0u) {
       f.sgmp = vk::PipelineShaderStageRequiredSubgroupSizeCreateInfoEXT{};
+      f.sgmp.pNext = nullptr;
       f.sgmp.requiredSubgroupSize = subgroupSize.value();
-      f.spi.pNext = &f.sgmp;
+      f.spi.pNext = nullptr;//&f.sgmp;
     };
-    return std::move(f);
+    return f;
   };
 
   //

@@ -70,12 +70,15 @@ namespace lxvc {
     virtual void createCompute(cpp21::optional_ref<ComputePipelineCreateInfo> compute = {}) {
       decltype(auto) descriptors = lxvc::context->get<DeviceObj>(this->base)->get<DescriptorsObj>(this->cInfo->layout);
       decltype(auto) device = this->base.as<vk::Device>();
-      this->pipelineStages.push_back(makeComputePipelineStageInfo(device, *compute->code));
-      this->handle = std::move<vk::Pipeline>(device.createComputePipeline(descriptors->cache, infoMap->set(vk::StructureType::eComputePipelineCreateInfo, vk::ComputePipelineCreateInfo{
+      decltype(auto) crInfo = makeComputePipelineStageInfo(device, *compute->code); this->pipelineStages.push_back(crInfo);
+      decltype(auto) cmInfo = infoMap->set(vk::StructureType::eComputePipelineCreateInfo, vk::ComputePipelineCreateInfo{
         .flags = vk::PipelineCreateFlags{},
         .stage = this->pipelineStages.back(),
         .layout = this->cInfo->layout
-      }).ref()));
+      });
+
+      
+      this->handle = std::move<vk::Pipeline>(device.createComputePipeline(descriptors->cache, cmInfo.ref()));
       //
       //lxvc::context->get(this->base)->registerObj(this->handle, shared_from_this());
       //return this->SFT();

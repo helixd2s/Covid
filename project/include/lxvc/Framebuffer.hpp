@@ -161,11 +161,10 @@ namespace lxvc {
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
 
-      decltype(auto) lastColorFormat = descriptorsObj->cInfo->attachments.colorAttachmentFormats[colorAttachments.size()];
       decltype(auto) lastDepthFormat = descriptorsObj->cInfo->attachments.depthAttachmentFormat;
       decltype(auto) lastStencilFormat = descriptorsObj->cInfo->attachments.stencilAttachmentFormat;
 
-      decltype(auto) format = imageType == ImageType::eDepthStencilAttachment ? lastDepthFormat : (imageType == ImageType::eDepthAttachment ? lastDepthFormat : (imageType == ImageType::eStencilAttachment ? lastStencilFormat : lastColorFormat));
+      decltype(auto) format = imageType == ImageType::eDepthStencilAttachment ? lastDepthFormat : (imageType == ImageType::eDepthAttachment ? lastDepthFormat : (imageType == ImageType::eStencilAttachment ? lastStencilFormat : descriptorsObj->cInfo->attachments.colorAttachmentFormats[colorAttachments.size()]));
       decltype(auto) aspectMask =
            imageType == ImageType::eDepthStencilAttachment ? (vk::ImageAspectFlagBits::eDepth) :
           (imageType == ImageType::eDepthAttachment ? vk::ImageAspectFlagBits::eDepth :

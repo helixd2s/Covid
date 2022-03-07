@@ -92,12 +92,12 @@ namespace lxvc {
             .pNext = infoMap->set(vk::StructureType::eMemoryDedicatedAllocateInfo, vk::MemoryDedicatedAllocateInfo{
               .image = requirements->dedicated && this->handle.type == HandleType::eImage && imageCondition ? this->handle.as<vk::Image>() : vk::Image{},
               .buffer = requirements->dedicated && this->handle.type == HandleType::eBuffer && bufferCondition ? this->handle.as<vk::Buffer>() : vk::Buffer{}
-            }),
-            .flags = this->cInfo->bufferInfo->type == BufferType::eDevice ? vk::MemoryAllocateFlagBits::eDeviceAddress : vk::MemoryAllocateFlagBits{},
-          }),
+            }).get(),
+            .flags = (this->cInfo->bufferInfo && this->cInfo->bufferInfo->type == BufferType::eDevice) ? vk::MemoryAllocateFlagBits::eDeviceAddress : vk::MemoryAllocateFlagBits{},
+          }).get(),
           .allocationSize = requirements->size,
           .memoryTypeIndex = std::get<0>(memTypeHeap)
-        })),
+        }).ref()),
         .offset = 0ull,
         .size = requirements->size
       };

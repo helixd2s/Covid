@@ -303,21 +303,27 @@ namespace lxvc {
       };
 
       // 
-      auto fence = device.createFence(vk::FenceCreateInfo{ .flags = {} });
+      auto fence = std::make_shared<vk::Fence>(device.createFence(vk::FenceCreateInfo{ .flags = {} }));
       auto submits = std::vector<vk::SubmitInfo2>{
         submitInfo.setCommandBufferInfos(cmdInfos).setWaitSemaphoreInfos(*submission.waitSemaphores).setSignalSemaphoreInfos(*submission.signalSemaphores)
       };
-      queue.submit2(submits, fence);
+      queue.submit2(submits, *fence);
+
+      // clean and call events
+      this->tickProcessing();
 
       // 
       auto promise = std::async(std::launch::async | std::launch::deferred, [=,this]() {
-        auto result = device.waitForFences(fence, true, 1000 * 1000 * 1000);
-        do { /* but nothing to do */ } while (this->threadLocked); (*this->actionLocked) = true;
+        auto result = device.waitForFences(*fence, true, 1000 * 1000 * 1000);
+        do { /* but nothing to do */ } while (this->threadLocked->load()); (*this->actionLocked) = true;
         for (auto& fn : submissionRef.onDone) { if ((*callbackCount) < callIds.size()) { callIds[(*callbackCount)++] = std::make_shared<std::function<void()>>(std::bind(fn, result)); }; };
         if ((*destructorCount) < destIds.size()) {
           destIds[(*destructorCount)++] = std::make_shared<std::function<void()>>([=, this]() {
-            device.destroyFence(fence);
-            device.freeCommandBuffers(commandPool, commandBuffers);
+            if (fence && *fence) {
+              device.destroyFence(*fence);
+              device.freeCommandBuffers(commandPool, commandBuffers);
+              *fence = vk::Fence{};
+            };
           });
         };
         (*this->actionLocked) = false;
@@ -325,7 +331,7 @@ namespace lxvc {
       });
 
       // 
-      return std::make_shared<FenceTypeRaw>(std::move(std::make_tuple(std::forward<std::future<vk::Result>>(promise), std::forward<vk::Fence>(fence))));
+      return std::make_shared<FenceTypeRaw>(std::move(std::make_tuple(std::forward<std::future<vk::Result>>(promise), std::forward<std::shared_ptr<vk::Fence>>(fence))));
     };
 
     //
@@ -373,18 +379,19 @@ namespace lxvc {
       });
 
       // 
+      auto features2 = PDInfoMap->get<vk::PhysicalDeviceFeatures2>(vk::StructureType::ePhysicalDeviceFeatures2);
       auto properties2 = PDInfoMap->set(vk::StructureType::ePhysicalDeviceProperties2, vk::PhysicalDeviceProperties2{
         .pNext = nullptr
       });
       auto& properties = properties2->properties;
 
       // 
-      decltype(auto) deviceInfo = infoMap->set(vk::StructureType::eDeviceCreateInfo, vk::DeviceCreateInfo{ .pNext = deviceGroupInfo });
+      decltype(auto) deviceInfo = infoMap->set(vk::StructureType::eDeviceCreateInfo, vk::DeviceCreateInfo{ .pNext = features2.get() });
       
       //
       if (!!physicalDevice) {
         physicalDevice.getProperties2(properties2.get());
-        physicalDevice.getFeatures2(PDInfoMap->get<vk::PhysicalDeviceFeatures2>(vk::StructureType::ePhysicalDeviceFeatures2).get());
+        physicalDevice.getFeatures2(features2.get());
         deviceGroupInfo->setPhysicalDevices(physicalDevices);
 
         // 
@@ -425,19 +432,19 @@ namespace lxvc {
 
     //
     virtual void tickProcessing() {
-      if (!(*actionLocked)) {
+      if (!actionLocked->load()) {
         *threadLocked = true;
-        do {
+        while ((*callbackCount) > 0) {
           auto callId = callIds[--(*callbackCount)].exchange({}); if (callId) { (*callId)(); };
-        } while ((*callbackCount) > 0); atomic_max(*callbackCount, 0);
+        }; atomic_max(*callbackCount, 0);
         *threadLocked = false;
       };
 
-      if (!(*actionLocked)) {
+      if (!actionLocked->load()) {
         *threadLocked = true;
-        do {
+        while ((*destructorCount) > 0) {
           auto destId = destIds[--(*destructorCount)].exchange({}); if (destId) { (*destId)(); };
-        } while ((*destructorCount) > 0); atomic_max(*destructorCount, 0);
+        }; atomic_max(*destructorCount, 0);
         *threadLocked = false;
       };
     };
