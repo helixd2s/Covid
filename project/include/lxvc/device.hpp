@@ -364,8 +364,9 @@ namespace lxvc {
       auto& physicalDevices = this->filterPhysicalDevices(this->cInfo->physicalDeviceGroupIndex);
       auto& physicalDevice = this->getPhysicalDevice();
       auto PDInfoMap = this->getPhysicalDeviceInfoMap();
-      auto deviceGroupInfo = this->infoMap->set(vk::StructureType::eDeviceGroupDeviceCreateInfo, vk::DeviceGroupDeviceCreateInfo{
-        .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceFeatures2, vk::PhysicalDeviceFeatures2{
+
+      // 
+      auto features2 = PDInfoMap->set(vk::StructureType::ePhysicalDeviceFeatures2, vk::PhysicalDeviceFeatures2{
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceVulkan11Features, vk::PhysicalDeviceVulkan11Features{
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceVulkan12Features, vk::PhysicalDeviceVulkan12Features{
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceVulkan13Features, vk::PhysicalDeviceVulkan13Features{
@@ -375,21 +376,32 @@ namespace lxvc {
         })
         })
         })
-        })
       });
 
       // 
-      auto features2 = PDInfoMap->get<vk::PhysicalDeviceFeatures2>(vk::StructureType::ePhysicalDeviceFeatures2);
+      auto deviceGroupInfo = this->infoMap->set(vk::StructureType::eDeviceGroupDeviceCreateInfo, vk::DeviceGroupDeviceCreateInfo{
+        .pNext = features2.get()
+      });
+
+      // 
       auto properties2 = PDInfoMap->set(vk::StructureType::ePhysicalDeviceProperties2, vk::PhysicalDeviceProperties2{
         .pNext = nullptr
       });
+
+      //
+      auto& features = features2->features;
       auto& properties = properties2->properties;
 
-      // 
+      // device group support was broken...
       decltype(auto) deviceInfo = infoMap->set(vk::StructureType::eDeviceCreateInfo, vk::DeviceCreateInfo{ .pNext = features2.get() });
       
       //
-      if (!!physicalDevice) {
+      std::cout << "Used Device:" << std::endl;
+      std::cout << std::string_view(properties.deviceName) << std::endl;
+      std::cout << "" << std::endl;
+
+      //
+      {
         physicalDevice.getProperties2(properties2.get());
         physicalDevice.getFeatures2(features2.get());
         deviceGroupInfo->setPhysicalDevices(physicalDevices);
@@ -398,11 +410,6 @@ namespace lxvc {
         deviceInfo->setQueueCreateInfos(this->filterQueueFamilies(this->cInfo->queueFamilyInfos));
         deviceInfo->setPEnabledExtensionNames(this->filterExtensions(physicalDevice, this->cInfo->extensionList));
         deviceInfo->setPEnabledLayerNames(this->filterLayers(physicalDevice, this->cInfo->layerList));
-
-        //
-        std::cout << "Used Device:" << std::endl;
-        std::cout << std::string_view(properties.deviceName) << std::endl;
-        std::cout << "" << std::endl;
 
         // 
         if (deviceInfo) {
@@ -419,9 +426,6 @@ namespace lxvc {
           this->dispatch = vk::DispatchLoaderDynamic(this->base.as<vk::Instance>(), vkGetInstanceProcAddr, this->handle.as<vk::Device>(), vkGetDeviceProcAddr);
           this->createCommandPools(this->cInfo->queueFamilyInfos);
         };
-      }
-      else {
-        std::cerr << "Physical Device Not Detected" << std::endl;
       };
 
       // 

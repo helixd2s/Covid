@@ -595,7 +595,7 @@ namespace lxvc {
       f.sgmp = vk::PipelineShaderStageRequiredSubgroupSizeCreateInfoEXT{};
       f.sgmp.pNext = nullptr;
       f.sgmp.requiredSubgroupSize = subgroupSize.value();
-      f.spi.pNext = nullptr;//&f.sgmp;
+      f.spi.pNext = &f.sgmp;
     };
     return f;
   };
