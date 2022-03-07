@@ -77,7 +77,7 @@ namespace lxvc {
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       auto& device = this->base.as<vk::Device>();
       auto& physicalDevice = deviceObj->physicalDevices[deviceObj->cInfo->physicalDeviceIndex];
-      auto memTypeHeap = deviceObj->findMemoryTypeAndHeapIndex(physicalDevice, *requirements);
+      auto memTypeHeap = deviceObj->findMemoryTypeAndHeapIndex(deviceObj->cInfo->physicalDeviceIndex, *requirements);
       auto& allocated = (this->allocated = AllocatedMemory{}).value();
 
       // 

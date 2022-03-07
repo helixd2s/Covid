@@ -82,7 +82,8 @@ int main() {
 
   // second cherep
   decltype(auto) device = lxvc::DeviceObj::make(instance, lxvc::DeviceCreateInfo{
-
+    .physicalDeviceGroupIndex = 0u,
+    .physicalDeviceIndex = 0u
   });
 
   // final cherep for today

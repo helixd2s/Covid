@@ -80,9 +80,9 @@ namespace lxvc {
     
 
     //
-    virtual std::tuple<uint32_t, uint32_t> findMemoryTypeAndHeapIndex(vk::PhysicalDevice const& physicalDevice, std::optional<MemoryRequirements> req = MemoryRequirements{}) {
-      //decltype(auto) physicalDevice = this->physicalDevices[req->physicalDeviceIndex];
-      uintptr_t physicalDeviceIndex = std::distance(this->physicalDevices.begin(), std::find(this->physicalDevices.begin(), this->physicalDevices.end(), physicalDevice));
+    virtual std::tuple<uint32_t, uint32_t> findMemoryTypeAndHeapIndex(uintptr_t const& physicalDeviceIndex, std::optional<MemoryRequirements> req = MemoryRequirements{}) {
+      decltype(auto) physicalDevice = this->physicalDevices[physicalDeviceIndex];
+      //uintptr_t physicalDeviceIndex = std::distance(this->physicalDevices.begin(), std::find(this->physicalDevices.begin(), this->physicalDevices.end(), physicalDevice));
       decltype(auto) PDInfoMap = this->PDInfoMaps[physicalDeviceIndex];
       decltype(auto) memoryProperties2 = PDInfoMap->set(vk::StructureType::ePhysicalDeviceMemoryProperties2, vk::PhysicalDeviceMemoryProperties2{
 
@@ -202,7 +202,7 @@ namespace lxvc {
     };
 
     //
-    virtual std::vector<vk::PhysicalDevice>& filterPhysicalDevices(uint32_t const& groupIndex) {
+    virtual std::vector<vk::PhysicalDevice>& filterPhysicalDevices(uint32_t const& groupIndex = 0u) {
       //this->physicalDevices = {};
       decltype(auto) instanceObj = lxvc::context->get<InstanceObj>(this->base);
       decltype(auto) deviceGroups = instanceObj->enumeratePhysicalDeviceGroups();
