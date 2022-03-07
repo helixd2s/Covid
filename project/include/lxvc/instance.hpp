@@ -118,16 +118,16 @@ namespace lxvc {
       //std::vector<vk::ExtensionProperties> props(1024u); uint32_t size = 0ull;
       //vk::enumerateInstanceExtensionProperties("", &size, props.data()); props.resize(size);
       decltype(auto) props = vk::enumerateInstanceExtensionProperties();
-      decltype(auto) selected = opt_ref(this->extensionNames);
+      auto& selected = (this->extensionNames);
 
       // 
       uintptr_t nameIndex = 0ull;
-      for (decltype(auto) name : names) {
+      for (auto& name : names) {
         uintptr_t propIndex = 0ull;
-        for (decltype(auto) prop : props) {
+        for (auto& prop : props) {
           std::string_view propName = { prop.extensionName };
           if (propName.find(name) != std::string::npos) {
-            selected->push_back(name.c_str()); break;
+            selected.push_back(name.c_str()); break;
           };
           propIndex++;
         };
@@ -135,7 +135,7 @@ namespace lxvc {
       };
 
       // 
-      return *selected;
+      return selected;
       //return (extensionList = selected);
     };
 
@@ -144,16 +144,16 @@ namespace lxvc {
       //std::vector<vk::LayerProperties> props(1024u); uint32_t size = 0ull;
       //vk::enumerateInstanceLayerProperties(&size, props.data()); props.resize(size);
       decltype(auto) props = vk::enumerateInstanceLayerProperties();
-      decltype(auto) selected = opt_ref(this->layerNames);
+      auto& selected = (this->layerNames);
 
       // 
       uintptr_t nameIndex = 0ull;
-      for (decltype(auto) name : names) {
+      for (auto& name : names) {
         uintptr_t propIndex = 0ull;
-        for (decltype(auto) prop : props) {
+        for (auto& prop : props) {
           std::string_view propName = { prop.layerName };
           if (propName.find(name) != std::string::npos) {
-            selected->push_back(name.c_str()); break;
+            selected.push_back(name.c_str()); break;
           };
           propIndex++;
         };
@@ -161,7 +161,7 @@ namespace lxvc {
       };
 
       // 
-      return *selected;
+      return selected;
       //return (layerList = selected);
     };
 
@@ -200,7 +200,7 @@ namespace lxvc {
       
       // 
       this->debugMessenger = this->handle.as<vk::Instance>().createDebugUtilsMessengerEXT(vk::DebugUtilsMessengerCreateInfoEXT{
-        .messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo | vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose,
+        .messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo,
         .messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation,
         .pfnUserCallback = &callbackFn,
         .pUserData = this

@@ -71,8 +71,8 @@ int main() {
 
 
   //
-  std::cout << "We running experimental renderer... continue?" << std::endl;
-  system("PAUSE");
+  //std::cout << "We running experimental renderer... continue?" << std::endl;
+  //system("PAUSE");
 
 
   // first cherep

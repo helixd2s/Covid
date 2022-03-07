@@ -165,6 +165,7 @@ namespace lxvc {
 #endif
     };
     cpp21::shared_vector<std::string> layerList = std::vector<std::string>{ 
+      // Broken?!
       "VK_LAYER_KHRONOS_synchronization2",
       "VK_LAYER_KHRONOS_validation"
     };
@@ -198,10 +199,7 @@ namespace lxvc {
       "VK_EXT_blend_operation_advanced", 
       "VK_EXT_validation_cache"
     };
-    cpp21::shared_vector<std::string> layerList = std::vector<std::string>{ 
-      "VK_LAYER_KHRONOS_validation" , 
-      "VK_LAYER_KHRONOS_synchronization2" 
-    };
+    cpp21::shared_vector<std::string> layerList = std::vector<std::string>{};
     cpp21::shared_vector<QueueFamilyCreateInfo> queueFamilyInfos = std::vector<QueueFamilyCreateInfo>{ QueueFamilyCreateInfo{} };
     uint32_t physicalDeviceGroupIndex = 0u;
     uint32_t physicalDeviceIndex = 0u;

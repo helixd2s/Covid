@@ -75,10 +75,10 @@ namespace lxvc {
     //
     virtual AllocatedMemory& allocateMemory(cpp21::optional_ref<MemoryRequirements> requirements) {
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
-      decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) physicalDevice = deviceObj->physicalDevices[deviceObj->cInfo->physicalDeviceIndex];
-      decltype(auto) memTypeHeap = deviceObj->findMemoryTypeAndHeapIndex(physicalDevice, *requirements);
-      decltype(auto) allocated = cpp21::opt_ref<AllocatedMemory>((this->allocated = AllocatedMemory{}).value());
+      auto& device = this->base.as<vk::Device>();
+      auto& physicalDevice = deviceObj->physicalDevices[deviceObj->cInfo->physicalDeviceIndex];
+      auto memTypeHeap = deviceObj->findMemoryTypeAndHeapIndex(physicalDevice, *requirements);
+      auto& allocated = (this->allocated = AllocatedMemory{}).value();
 
       // 
       bool imageCondition = this->cInfo->imageInfo && this->cInfo->imageInfo->type != ImageType::eSwapchain;

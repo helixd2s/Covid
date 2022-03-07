@@ -219,7 +219,7 @@ namespace lxvc {
       //
       decltype(auto) physicalDevice = deviceObj->physicalDevices[deviceObj->cInfo->physicalDeviceIndex];
       capInfo.capabilities2 = physicalDevice.getSurfaceCapabilities2KHR(vk::PhysicalDeviceSurfaceInfo2KHR{ .surface = cInfo->surface });
-      capInfo.capabilities = cpp21::opt_ref(capInfo.capabilities2.surfaceCapabilities);
+      capInfo.capabilities = opt_ref(capInfo.capabilities2.surfaceCapabilities);
       capInfo.formats2 = physicalDevice.getSurfaceFormats2KHR(vk::PhysicalDeviceSurfaceInfo2KHR{ .surface = cInfo->surface });
       capInfo.presentModes = physicalDevice.getSurfacePresentModesKHR(cInfo->surface);
 
