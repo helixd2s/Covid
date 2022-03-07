@@ -395,16 +395,17 @@ namespace lxvc {
       // device group support was broken...
       decltype(auto) deviceInfo = infoMap->set(vk::StructureType::eDeviceCreateInfo, vk::DeviceCreateInfo{ .pNext = features2.get() });
       
-      //
-      std::cout << "Used Device:" << std::endl;
-      std::cout << std::string_view(properties.deviceName) << std::endl;
-      std::cout << "" << std::endl;
+      
 
       //
       {
         physicalDevice.getProperties2(properties2.get());
         physicalDevice.getFeatures2(features2.get());
         deviceGroupInfo->setPhysicalDevices(physicalDevices);
+
+        //
+        std::cout << "Used Device: " << std::string_view(properties.deviceName) << std::endl;
+        std::cout << "" << std::endl;
 
         // 
         deviceInfo->setQueueCreateInfos(this->filterQueueFamilies(this->cInfo->queueFamilyInfos));
