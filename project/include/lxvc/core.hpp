@@ -176,7 +176,7 @@ namespace lxvc {
   };
 
   //
-  using MSS = cpp21::map_of_shared<vk::StructureType, vku::EmptyChain>;
+  using MSS = cpp21::map_of_shared<vk::StructureType, vk::BaseInStructure>;
 
   //
   struct QueueFamilyCreateInfo {
@@ -731,7 +731,7 @@ namespace lxvc {
     std::shared_ptr<MSS> infoMap = {};
 
     // 
-    BaseObj() : infoMap(std::make_shared<MSS>()) {};
+    BaseObj() : infoMap(std::make_shared<MSS>(MSS())) {};
     BaseObj(Handle const& base, Handle const& handle = {}) : base(base), handle(handle), infoMap(std::make_shared<MSS>()) {
 
     };
@@ -771,7 +771,11 @@ namespace lxvc {
 
       // 
       decltype(auto) objMap = handleObjectMap.at(handle.type);
-      if (objMap->find(handle.value) == objMap->end()) { objMap.set(handle.value, std::make_shared<T>(this->handle, handle)); };
+      if (objMap->find(handle.value) == objMap->end()) { 
+        auto obj = std::make_shared<T>(this->handle, handle); 
+        objMap.set(handle.value, obj); 
+        return WrapShared<T>(obj); 
+      };
       return WrapShared<T>(std::dynamic_pointer_cast<T>(objMap.at(handle.value).shared()));
     };
 

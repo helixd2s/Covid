@@ -101,7 +101,7 @@ namespace lxvc {
     virtual void createDescriptorLayout(vk::DescriptorType const& type, uint32_t const& count = 1u) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) last = this->layouts.size();
-      this->layoutInfoMaps->push_back(std::make_shared<MSS>());
+      this->layoutInfoMaps->push_back(std::make_shared<MSS>(MSS()));
       this->layoutBindings->push_back(std::make_shared<DescriptorBindings>());
       decltype(auto) layoutInfoMap = this->layoutInfoMaps[last];
       decltype(auto) layoutBindingStack = this->layoutBindings[last];
@@ -122,7 +122,7 @@ namespace lxvc {
       this->base = deviceObj->handle;
       //this->deviceObj = deviceObj;
       if (cInfo) { this->cInfo = cInfo; };
-      this->infoMap = std::make_shared<MSS>();
+      this->infoMap = std::make_shared<MSS>(MSS());
 
       //
       decltype(auto) device = this->base.as<vk::Device>();
@@ -137,10 +137,10 @@ namespace lxvc {
       });
 
       // 
-      this->layoutBindings = std::vector<std::shared_ptr<DescriptorBindings>>{};
+      this->layoutBindings = cpp21::vector_of_shared<DescriptorBindings>();
       this->layouts = std::vector<vk::DescriptorSetLayout>{};
       this->sets = std::vector<vk::DescriptorSet>{};
-      this->layoutInfoMaps = std::vector<std::shared_ptr<MSS>>{};
+      this->layoutInfoMaps = cpp21::vector_of_shared<MSS>();
       this->descriptorCounts = std::vector<uint32_t>{};
       this->createDescriptorLayout(vk::DescriptorType::eUniformBuffer, 1u);
       this->createDescriptorLayout(vk::DescriptorType::eSampledImage, 256u);

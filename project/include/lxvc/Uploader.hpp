@@ -69,7 +69,7 @@ namespace lxvc {
     };
 
     // you can copy from host to device Buffer and Image together!
-    virtual FenceType writeUploadToResourceCmd(UploadCommandWriteInfo const& copyRegionInfo) {
+    virtual tType writeUploadToResourceCmd(UploadCommandWriteInfo const& copyRegionInfo) {
       //decltype(auto) submission = CommandOnceSubmission{ .info = this->cInfo->info };
       decltype(auto) uploadBuffer = this->uploadBuffer;
       decltype(auto) downloadBuffer = this->downloadBuffer;
@@ -215,6 +215,9 @@ namespace lxvc {
       if (copyRegionInfo.dstImage) copyRegionInfo.cmdBuf.copyBufferToImage2(BtI.setRegions(BtIRegions));
       if (copyRegionInfo.dstBuffer) copyRegionInfo.cmdBuf.copyBuffer2(BtB.setRegions(BtBRegions));
       copyRegionInfo.cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersEnd).setImageMemoryBarriers(imageBarriersEnd));
+
+      //
+      return SFT();
     };
 
     //

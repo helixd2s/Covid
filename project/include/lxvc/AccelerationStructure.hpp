@@ -66,7 +66,7 @@ namespace lxvc {
       this->base = deviceObj->handle;
       //this->deviceObj = deviceObj;
       if (cInfo) { this->cInfo = cInfo; };
-      this->infoMap = std::make_shared<MSS>();
+      this->infoMap = std::make_shared<MSS>(MSS());
 
       //return this->SFT();
     };

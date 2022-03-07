@@ -77,7 +77,7 @@ namespace lxvc {
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       auto& device = this->base.as<vk::Device>();
       auto& physicalDevice = deviceObj->getPhysicalDevice();
-      auto& PDInfoMap = deviceObj->getPhysicalDeviceInfoMap();
+      auto PDInfoMap = deviceObj->getPhysicalDeviceInfoMap();
       auto memTypeHeap = deviceObj->findMemoryTypeAndHeapIndex(*requirements);
       auto& allocated = (this->allocated = AllocatedMemory{}).value();
 
@@ -112,7 +112,7 @@ namespace lxvc {
         this->base = deviceObj->handle;
         //this->deviceObj = deviceObj;
         if (cInfo) { this->cInfo = cInfo; };
-        this->infoMap = std::make_shared<MSS>();
+        this->infoMap = std::make_shared<MSS>(MSS());
       }
       catch (std::exception e) {
         std::cerr << "Unable to initialize ResourceObj itself" << std::endl; std::cerr << e.what() << std::endl;
@@ -222,7 +222,7 @@ namespace lxvc {
 
       // 
       if (cInfo->info) {
-        this->executeSwitchLayoutOnce(ImageLayoutSwitchInfo{
+        return this->executeSwitchLayoutOnce(ImageLayoutSwitchInfo{
           .info = cInfo->info,
           .switchInfo = ImageLayoutSwitchWriteInfo{
             .newImageLayout = cInfo->layout,
@@ -230,6 +230,8 @@ namespace lxvc {
           },
         });
       };
+
+      return FenceType{};
     };
 
     //
@@ -269,6 +271,8 @@ namespace lxvc {
         switchInfo.cmdBuf.pipelineBarrier2(depInfo.setImageMemoryBarriers(transferBarrier));
         this->cInfo->imageInfo->layout = switchInfo.newImageLayout;
       };
+
+      return SFT();
     };
 
 

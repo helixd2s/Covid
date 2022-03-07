@@ -218,7 +218,7 @@ namespace lxvc {
 
       //
       auto& physicalDevice = deviceObj->getPhysicalDevice();
-      auto& PDInfoMap = deviceObj->getPhysicalDeviceInfoMap();
+      auto PDInfoMap = deviceObj->getPhysicalDeviceInfoMap();
       capInfo.capabilities2 = physicalDevice.getSurfaceCapabilities2KHR(vk::PhysicalDeviceSurfaceInfo2KHR{ .surface = cInfo->surface });
       capInfo.capabilities = opt_ref(capInfo.capabilities2.surfaceCapabilities);
       capInfo.formats2 = physicalDevice.getSurfaceFormats2KHR(vk::PhysicalDeviceSurfaceInfo2KHR{ .surface = cInfo->surface });

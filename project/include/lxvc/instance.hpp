@@ -170,7 +170,7 @@ namespace lxvc {
       this->base = contextObj->handle;
       //this->deviceObj = deviceObj;
       if (cInfo) { this->cInfo = cInfo; };
-      this->infoMap = std::make_shared<MSS>();
+      this->infoMap = std::make_shared<MSS>(MSS());
       this->extensionNames = {};
       this->layerNames = {};
 

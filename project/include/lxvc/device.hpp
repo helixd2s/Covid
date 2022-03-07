@@ -214,7 +214,7 @@ namespace lxvc {
         physicalDevices = instanceObj->enumeratePhysicalDevices();
       };
       for (decltype(auto) PD : physicalDevices) {
-        PDInfoMaps->push_back(std::make_shared<MSS>());
+        PDInfoMaps->push_back(std::make_shared<MSS>(MSS()));
       };
       return this->physicalDevices;
     };
@@ -229,7 +229,7 @@ namespace lxvc {
       auto& qfCommandPools = (this->queueFamilies.commandPools = {});
       auto& qfQueuesStack = (this->queueFamilies.queues = {});
       for (auto& qfInfoIn : qfInfosIn) {
-        qfInfoMaps.push_back(std::make_shared<MSS>());
+        qfInfoMaps.push_back(std::make_shared<MSS>(MSS()));
         qfQueuesStack.push_back(std::vector<vk::Queue>{});
         auto& qfInfoMap = qfInfoMaps->back();
         auto qfInfoVk = qfInfoMap->set(vk::StructureType::eDeviceQueueCreateInfo, vk::DeviceQueueCreateInfo{
@@ -333,8 +333,8 @@ namespace lxvc {
     vk::PhysicalDevice const& getPhysicalDevice(std::optional<uintptr_t> const& physicalDeviceIndex = {}) const { return this->physicalDevices[std::min(physicalDeviceIndex ? physicalDeviceIndex.value() : this->cInfo->physicalDeviceIndex, this->physicalDevices.size() - 1)]; };
 
     //
-    std::shared_ptr<MSS>& getPhysicalDeviceInfoMap(std::optional<uintptr_t> const& physicalDeviceIndex = {}) { return this->PDInfoMaps[std::min(physicalDeviceIndex ? physicalDeviceIndex.value() : this->cInfo->physicalDeviceIndex, this->PDInfoMaps.size() - 1)]; };
-    std::shared_ptr<MSS> const& getPhysicalDeviceInfoMap(std::optional<uintptr_t> const& physicalDeviceIndex = {}) const { return this->PDInfoMaps[std::min(physicalDeviceIndex ? physicalDeviceIndex.value() : this->cInfo->physicalDeviceIndex, this->PDInfoMaps.size() - 1)]; };
+    std::shared_ptr<MSS> getPhysicalDeviceInfoMap(std::optional<uintptr_t> const& physicalDeviceIndex = {}) { return this->PDInfoMaps[std::min(physicalDeviceIndex ? physicalDeviceIndex.value() : this->cInfo->physicalDeviceIndex, this->PDInfoMaps.size() - 1)]; };
+    std::shared_ptr<MSS> getPhysicalDeviceInfoMap(std::optional<uintptr_t> const& physicalDeviceIndex = {}) const { return this->PDInfoMaps[std::min(physicalDeviceIndex ? physicalDeviceIndex.value() : this->cInfo->physicalDeviceIndex, this->PDInfoMaps.size() - 1)]; };
 
     // 
     virtual void construct(std::shared_ptr<InstanceObj> instanceObj = {}, std::optional<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
@@ -343,7 +343,7 @@ namespace lxvc {
       this->physicalDevices = {};
       this->extensionNames = {};
       this->layerNames = {};
-      this->infoMap = std::make_shared<MSS>();
+      this->infoMap = std::make_shared<MSS>(MSS());
       if (cInfo) { this->cInfo = cInfo; };
 
       // 
