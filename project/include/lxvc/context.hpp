@@ -15,7 +15,7 @@ namespace lxvc {
     //using SFT = shared_from_this;
 
   protected:
-    std::optional<ContextCreateInfo> cInfo = {};
+    std::optional<ContextCreateInfo> cInfo = ContextCreateInfo{};
 
     // 
     inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
@@ -43,6 +43,7 @@ namespace lxvc {
     // 
     virtual void construct(std::optional<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
       this->base = 0ull;
+      if (cInfo) { this->cInfo = cInfo; };
       //return SFT();
     };
   };

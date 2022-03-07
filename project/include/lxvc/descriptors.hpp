@@ -52,7 +52,7 @@ namespace lxvc {
 
     // 
     std::vector<vk::DescriptorPoolSize> DPC = {};
-    std::optional<DescriptorsCreateInfo> cInfo = {};
+    std::optional<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{};
 
     //
     //std::shared_ptr<DeviceObj> deviceObj = {};
@@ -121,7 +121,7 @@ namespace lxvc {
     virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) {
       this->base = deviceObj->handle;
       //this->deviceObj = deviceObj;
-      this->cInfo = cInfo;
+      if (cInfo) { this->cInfo = cInfo; };
       this->infoMap = std::make_shared<MSS>();
 
       //

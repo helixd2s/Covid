@@ -211,7 +211,7 @@ namespace lxvc {
 
     // 
     virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) {
-      this->cInfo = cInfo;
+      if (cInfo) { this->cInfo = cInfo; };
       //decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
       decltype(auto) device = this->base.as<vk::Device>();

@@ -28,8 +28,8 @@ namespace lxvc {
     void* mappedMemory = nullptr;
 
     // 
-    std::optional<AllocatedMemory> allocated = {};
-    std::optional<ResourceCreateInfo> cInfo = {};
+    std::optional<AllocatedMemory> allocated = AllocatedMemory{};
+    std::optional<ResourceCreateInfo> cInfo = ResourceCreateInfo{};
     std::optional<MemoryRequirements> mReqs = {};
     //std::shared_ptr<MSS> infoMap = {};
 
@@ -110,7 +110,7 @@ namespace lxvc {
       try {
         this->base = deviceObj->handle;
         //this->deviceObj = deviceObj;
-        this->cInfo = cInfo;
+        if (cInfo) { this->cInfo = cInfo; };
         this->infoMap = std::make_shared<MSS>();
       }
       catch (std::exception e) {

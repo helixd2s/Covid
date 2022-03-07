@@ -23,7 +23,7 @@ namespace lxvc {
     // 
     //vk::Instance instance = {};
     vk::DispatchLoaderDynamic dispatch = {};
-    std::optional<InstanceCreateInfo> cInfo = {};
+    std::optional<InstanceCreateInfo> cInfo = InstanceCreateInfo{};
 
     //
     //using dfnT = std::remove_pointer_t<std::decay_t<PFN_vkDebugUtilsMessengerCallbackEXT>>;
@@ -169,7 +169,7 @@ namespace lxvc {
     virtual void construct(std::shared_ptr<ContextObj> contextObj, std::optional<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
       this->base = contextObj->handle;
       //this->deviceObj = deviceObj;
-      this->cInfo = cInfo;
+      if (cInfo) { this->cInfo = cInfo; };
       this->infoMap = std::make_shared<MSS>();
       this->extensionNames = {};
       this->layerNames = {};

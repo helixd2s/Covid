@@ -165,9 +165,13 @@ namespace lxvc {
 #endif
     };
     cpp21::shared_vector<std::string> layerList = std::vector<std::string>{ 
-      // Broken?!
       "VK_LAYER_KHRONOS_synchronization2",
-      "VK_LAYER_KHRONOS_validation"
+      "VK_LAYER_KHRONOS_validation",
+      "VK_LAYER_KHRONOS_profiles",
+      "VK_LAYER_LUNARG_parameter_validation",
+      "VK_LAYER_LUNARG_core_validation",
+      "VK_LAYER_LUNARG_object_tracker",
+      //"VK_LAYER_LUNARG_api_dump"
     };
   };
 
@@ -197,9 +201,18 @@ namespace lxvc {
       "VK_EXT_vertex_input_dynamic_state",
       "VK_EXT_conservative_rasterization", 
       "VK_EXT_blend_operation_advanced", 
-      "VK_EXT_validation_cache"
+      "VK_EXT_validation_cache",
+      //"VK_KHR_portability_subset"
     };
-    cpp21::shared_vector<std::string> layerList = std::vector<std::string>{};
+    cpp21::shared_vector<std::string> layerList = std::vector<std::string>{
+      "VK_LAYER_KHRONOS_synchronization2",
+      "VK_LAYER_KHRONOS_validation",
+      "VK_LAYER_KHRONOS_profiles",
+      "VK_LAYER_LUNARG_parameter_validation",
+      "VK_LAYER_LUNARG_core_validation",
+      "VK_LAYER_LUNARG_object_tracker",
+      //"VK_LAYER_LUNARG_api_dump"
+    };
     cpp21::shared_vector<QueueFamilyCreateInfo> queueFamilyInfos = std::vector<QueueFamilyCreateInfo>{ QueueFamilyCreateInfo{} };
     uint32_t physicalDeviceGroupIndex = 0u;
     uint32_t physicalDeviceIndex = 0u;

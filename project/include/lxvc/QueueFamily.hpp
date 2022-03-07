@@ -19,7 +19,7 @@ namespace lxvc {
 
     // 
     std::vector<vk::Queue> queues = {};
-    std::optional<QueueFamilyCreateInfo> cInfo = {};
+    std::optional<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{};
     //std::shared_ptr<MSS> infoMap = {};
 
     //
@@ -63,7 +63,7 @@ namespace lxvc {
     virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{}) {
       this->base = deviceObj->handle;
       //this->deviceObj = deviceObj;
-      this->cInfo = cInfo;
+      if (cInfo) { this->cInfo = cInfo; };
       this->infoMap = std::make_shared<MSS>();
 
       //return this->SFT();

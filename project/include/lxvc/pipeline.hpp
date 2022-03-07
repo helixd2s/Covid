@@ -22,7 +22,7 @@ namespace lxvc {
 
     // 
     //vk::Pipeline pipeline = {};
-    std::optional<PipelineCreateInfo> cInfo = {};
+    std::optional<PipelineCreateInfo> cInfo = PipelineCreateInfo{};
     std::vector<vk::PipelineShaderStageCreateInfo> pipelineStages = {};
     std::vector<vk::DynamicState> dynamicStates = {};
     
@@ -206,7 +206,7 @@ namespace lxvc {
     virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) {
       this->base = deviceObj->handle;
       //this->deviceObj = deviceObj;
-      this->cInfo = cInfo;
+      if (cInfo) { this->cInfo = cInfo; };
       this->infoMap = std::make_shared<MSS>();
       if (this->cInfo->compute) { this->createCompute(this->cInfo->compute); };
       if (this->cInfo->graphics) { this->createGraphics(this->cInfo->graphics); };

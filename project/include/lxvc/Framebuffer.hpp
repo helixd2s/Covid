@@ -262,7 +262,7 @@ namespace lxvc {
 
     // 
     virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{}) {
-      this->cInfo = cInfo;
+      if (cInfo) { this->cInfo = cInfo; };
       //decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
 

@@ -38,7 +38,7 @@ namespace lxvc {
     // 
     //vk::Device device = {};
     vk::DispatchLoaderDynamic dispatch = {};
-    std::optional<DeviceCreateInfo> cInfo = {};
+    std::optional<DeviceCreateInfo> cInfo = DeviceCreateInfo{};
 
     //
     friend InstanceObj;
@@ -337,7 +337,7 @@ namespace lxvc {
       this->extensionNames = {};
       this->layerNames = {};
       this->infoMap = std::make_shared<MSS>();
-      this->cInfo = cInfo;
+      if (cInfo) { this->cInfo = cInfo; };
 
       // 
       this->destructorCount = std::make_shared<std::atomic_int32_t>(std::move(0ull));

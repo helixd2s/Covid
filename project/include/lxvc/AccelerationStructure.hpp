@@ -19,8 +19,8 @@ namespace lxvc {
 
     // 
     //vk::AccelerationStructureKHR acceleration = {};
-    std::optional<AllocatedMemory> allocated = {};
-    std::optional<AccelerationStructureCreateInfo> cInfo = {};
+    std::optional<AllocatedMemory> allocated = AllocatedMemory{};
+    std::optional<AccelerationStructureCreateInfo> cInfo = AccelerationStructureCreateInfo{};
     std::optional<MemoryRequirements> mReqs = {};
 
     //
@@ -65,7 +65,7 @@ namespace lxvc {
     virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<AccelerationStructureCreateInfo> cInfo = AccelerationStructureCreateInfo{}) {
       this->base = deviceObj->handle;
       //this->deviceObj = deviceObj;
-      this->cInfo = cInfo;
+      if (cInfo) { this->cInfo = cInfo; };
       this->infoMap = std::make_shared<MSS>();
 
       //return this->SFT();

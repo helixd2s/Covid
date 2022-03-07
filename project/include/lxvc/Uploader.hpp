@@ -23,7 +23,7 @@ namespace lxvc {
 
     // 
     cpp21::vector_of_shared<MSS> layoutInfoMaps = {};
-    std::optional<UploaderCreateInfo> cInfo = {};
+    std::optional<UploaderCreateInfo> cInfo = UploaderCreateInfo{};
     
 
     //
@@ -353,7 +353,7 @@ namespace lxvc {
 
     // 
     virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) {
-      this->cInfo = cInfo;
+      if (cInfo) { this->cInfo = cInfo; };
       this->base = deviceObj->handle;
       //this->deviceObj = deviceObj;
 
