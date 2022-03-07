@@ -348,10 +348,10 @@ namespace lxvc {
       //memcpy(&this->cInfo, &cInfo, sizeof(DeviceCreateInfo));
 
       // TODO: get rid from spagetti code or nesting
-      decltype(auto) physicalDevices = this->filterPhysicalDevices(this->cInfo->physicalDeviceGroupIndex);
-      decltype(auto) PDInfoMap = this->PDInfoMaps[this->cInfo->physicalDeviceIndex];
-      decltype(auto) physicalDevice = physicalDevices[this->cInfo->physicalDeviceIndex];
-      decltype(auto) deviceGroupInfo = this->infoMap->set(vk::StructureType::eDeviceGroupDeviceCreateInfo, vk::DeviceGroupDeviceCreateInfo{
+      auto& physicalDevices = this->filterPhysicalDevices(this->cInfo->physicalDeviceGroupIndex);
+      auto PDInfoMap = this->PDInfoMaps[this->cInfo->physicalDeviceIndex];
+      auto& physicalDevice = physicalDevices[this->cInfo->physicalDeviceIndex];
+      auto deviceGroupInfo = this->infoMap->set(vk::StructureType::eDeviceGroupDeviceCreateInfo, vk::DeviceGroupDeviceCreateInfo{
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceFeatures2, vk::PhysicalDeviceFeatures2{
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceVulkan11Features, vk::PhysicalDeviceVulkan11Features{
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceVulkan12Features, vk::PhysicalDeviceVulkan12Features{
