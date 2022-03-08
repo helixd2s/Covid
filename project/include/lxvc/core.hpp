@@ -5,6 +5,21 @@
 #define VULKAN_HPP_NO_CONSTRUCTORS
 #endif
 
+//
+#ifdef _WIN32
+#ifndef VK_USE_PLATFORM_WIN32_KHR
+#define VK_USE_PLATFORM_WIN32_KHR
+#endif
+#else
+#ifdef __linux__ 
+//FD defaultly
+#endif
+#endif
+
+// 
+#include <vk-utils/cpp21.hpp>
+#include <vk-utils/chain.hpp>
+
 // 
 #include <vector>
 #include <string>
@@ -15,18 +30,10 @@
 //
 #include <glm/glm.hpp>
 
-// 
-//#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
-//#define VULKAN_HPP_DEFAULT_DISPATCHER vk::DispatchLoaderDynamic
-
 // but used by precompiled headers
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_raii.hpp>
-
-// 
-#include <vk-utils/cpp21.hpp>
-#include <vk-utils/chain.hpp>
 
 // 
 namespace lxvc {
