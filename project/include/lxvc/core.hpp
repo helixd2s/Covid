@@ -714,6 +714,10 @@ namespace lxvc {
     operator cpp21::const_wrap_arg<Handle>() const { return this->ptr->handle; };
 
     // 
+    inline decltype(auto) getHandle() { return this->ptr->handle; };
+    inline decltype(auto) getHandle() const { return this->ptr->handle; };
+
+    // 
     inline decltype(auto) handle() { return this->ptr->handle; };
     inline decltype(auto) handle() const { return this->ptr->handle; };
 
