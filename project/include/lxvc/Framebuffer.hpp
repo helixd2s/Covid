@@ -188,25 +188,17 @@ namespace lxvc {
       //
       auto imageObj = ResourceObj::make(this->base, ResourceCreateInfo{
         .imageInfo = ImageCreateInfo{
-          .type = imageType,
-          .extent = vk::Extent3D{ cInfo->extent.width, cInfo->extent.height, 1u },
           .format = format,
-          .layout = vk::ImageLayout::eShaderReadOnlyOptimal
+          .extent = vk::Extent3D{ cInfo->extent.width, cInfo->extent.height, 1u },
+          .layout = vk::ImageLayout::eShaderReadOnlyOptimal,
+          .type = imageType,
         }
       });
 
       //
       this->images.push_back(imageObj.as<vk::Image>());
-
-      //
-      decltype(auto) image = this->images.back();
-
-      //
-      this->imageViews.push_back(this->base.as<vk::Device>().createImageView(vk::ImageViewCreateInfo{
-        .image = image,
+      this->imageViews.push_back(imageObj->createImageView(ImageViewCreateInfo{
         .viewType = vk::ImageViewType::e2D,
-        .format = format,
-        .components = components,
         .subresourceRange = subresourceRange
       }));
 

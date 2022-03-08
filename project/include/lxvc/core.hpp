@@ -267,20 +267,22 @@ namespace lxvc {
 
   //
   struct ImageCreateInfo {
+    vk::ImageType imageType = vk::ImageType::e2D;
+    vk::Format format = vk::Format::eUndefined;
+    vk::Extent3D extent = {2u,2u,2u};
+    uint32_t mipLevelCount = 1u;
+    uint32_t layerCount = 1u;
+
+    vk::ImageLayout layout = vk::ImageLayout::eGeneral;
     std::optional<ImageSwapchainInfo> swapchain = {};
     std::optional<QueueGetInfo> info = QueueGetInfo{};
     ImageType type = ImageType::eStorage;
-    vk::ImageType imageType = vk::ImageType::e2D;
-    vk::Extent3D extent = {};
-    vk::Format format = vk::Format::eUndefined;
-    vk::ImageLayout layout = vk::ImageLayout::eGeneral;
   };
 
   //
   struct BufferCreateInfo {
-    BufferType type = BufferType::eStorage;
     size_t size = 0ull;
-
+    BufferType type = BufferType::eStorage;
   };
 
   //
@@ -289,6 +291,12 @@ namespace lxvc {
     std::optional<vk::Image> image = {};
     std::optional<BufferCreateInfo> bufferInfo = {};
     std::optional<ImageCreateInfo> imageInfo = {};
+  };
+
+  //
+  struct ImageViewCreateInfo {
+    vk::ImageViewType viewType = vk::ImageViewType::e2D;
+    vk::ImageSubresourceRange subresourceRange = { vk::ImageAspectFlagBits::eColor, 0u, 1u, 0u, 1u };
   };
 
   //

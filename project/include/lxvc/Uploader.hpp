@@ -362,15 +362,15 @@ namespace lxvc {
 
       this->uploadBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
         .bufferInfo = BufferCreateInfo{
-          .type = BufferType::eHostMap,
           .size = this->cInfo->cacheSize,
+          .type = BufferType::eHostMap,
         }
       }).as<vk::Buffer>();
 
       this->downloadBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
         .bufferInfo = BufferCreateInfo{
-          .type = BufferType::eHostMap,
           .size = this->cInfo->cacheSize,
+          .type = BufferType::eHostMap,
         }
       }).as<vk::Buffer>();
 

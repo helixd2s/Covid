@@ -36,6 +36,11 @@ namespace lxvc {
     //
     //std::shared_ptr<DeviceObj> deviceObj = {};
 
+    //
+    std::vector<vk::ImageView> imageViews = {};
+    std::vector<vk::BufferView> bufferViews = {};
+
+
     // 
     inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
     inline decltype(auto) SFT() const { using T = const std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
@@ -50,6 +55,38 @@ namespace lxvc {
     // 
     ResourceObj(Handle const& handle, std::optional<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : cInfo(cInfo) {
       this->construct(lxvc::context->get<DeviceObj>(this->base = handle), cInfo);
+    };
+
+    //
+    vk::ImageView createImageView(ImageViewCreateInfo const& info = {}) {
+      decltype(auto) device = this->base.as<vk::Device>();
+      decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
+      
+      // 
+      auto& imageInfo = this->cInfo->imageInfo;
+
+      // 
+      decltype(auto) aspectMask =
+         imageInfo->type == ImageType::eDepthStencilAttachment ? (vk::ImageAspectFlagBits::eDepth) :
+        (imageInfo->type == ImageType::eDepthAttachment ? vk::ImageAspectFlagBits::eDepth :
+        (imageInfo->type == ImageType::eStencilAttachment ? vk::ImageAspectFlagBits::eStencil : vk::ImageAspectFlagBits::eColor));
+      decltype(auto) components = imageInfo->type == ImageType::eDepthStencilAttachment || imageInfo->type == ImageType::eDepthAttachment || imageInfo->type == ImageType::eStencilAttachment
+        ? vk::ComponentMapping{ .r = vk::ComponentSwizzle::eZero, .g = vk::ComponentSwizzle::eZero, .b = vk::ComponentSwizzle::eZero, .a = vk::ComponentSwizzle::eZero }
+        : vk::ComponentMapping{ .r = vk::ComponentSwizzle::eR, .g = vk::ComponentSwizzle::eG, .b = vk::ComponentSwizzle::eB, .a = vk::ComponentSwizzle::eA };
+      decltype(auto) imageLayout =
+         imageInfo->type == ImageType::eDepthStencilAttachment ? vk::ImageLayout::eDepthStencilAttachmentOptimal :
+        (imageInfo->type == ImageType::eDepthAttachment ? vk::ImageLayout::eDepthAttachmentOptimal :
+        (imageInfo->type == ImageType::eStencilAttachment ? vk::ImageLayout::eStencilAttachmentOptimal : vk::ImageLayout::eColorAttachmentOptimal));
+
+      //
+      this->imageViews.push_back(device.createImageView(vk::ImageViewCreateInfo{
+        .image = this->handle.as<vk::Image>(),
+        .viewType = info.viewType,
+        .format = imageInfo->format,
+        .components = components,
+        .subresourceRange = vk::ImageSubresourceRange(info.subresourceRange).setAspectMask(aspectMask)
+      }));
+      return this->imageViews.back(); // don't return reference, may broke vector
     };
 
     // 
@@ -178,8 +215,8 @@ namespace lxvc {
         .imageType = cInfo->imageType,
         .format = cInfo->format,
         .extent = cInfo->extent,
-        .mipLevels = 1u,
-        .arrayLayers = 1u, // TODO: correct array layers
+        .mipLevels = cInfo->mipLevelCount,
+        .arrayLayers = cInfo->layerCount, // TODO: correct array layers
         .samples = vk::SampleCountFlagBits::e1,
         .tiling = vk::ImageTiling::eOptimal,
         .usage = imageUsage,

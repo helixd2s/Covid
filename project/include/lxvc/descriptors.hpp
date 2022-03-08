@@ -67,6 +67,18 @@ namespace lxvc {
     inline decltype(auto) SFT() const { using T = const std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
 
   public:
+    //
+    virtual cpp21::bucket<vk::DescriptorImageInfo>& getTextureDescriptors() { return textures; };
+    virtual cpp21::bucket<vk::DescriptorImageInfo> const& getTextureDescriptors() const { return textures; };
+
+    //
+    virtual cpp21::bucket<vk::DescriptorImageInfo>& getSamplerDescriptors() { return samplers; };
+    virtual cpp21::bucket<vk::DescriptorImageInfo> const& getSamplerDescriptors() const { return samplers; };
+
+    //
+    virtual cpp21::bucket<vk::DescriptorImageInfo>& getImageDescriptors() { return images; };
+    virtual cpp21::bucket<vk::DescriptorImageInfo> const& getImageDescriptors() const { return images; };
+
     // 
     DescriptorsObj(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) : cInfo(cInfo) {
       this->base = deviceObj->handle;
@@ -172,8 +184,8 @@ namespace lxvc {
       decltype(auto) uniformSize = 65536ull;
       this->uniformBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
         .bufferInfo = BufferCreateInfo{
-          .type = BufferType::eUniform,
-          .size = uniformSize
+          .size = uniformSize,
+          .type = BufferType::eUniform
         }
       }).as<vk::Buffer>();
 

@@ -97,8 +97,8 @@ int main() {
   //
   decltype(auto) buffer = lxvc::ResourceObj::make(device, lxvc::ResourceCreateInfo{
     .bufferInfo = lxvc::BufferCreateInfo{
-      .type = lxvc::BufferType::eStorage,
       .size = 1024ull,
+      .type = lxvc::BufferType::eStorage,
     }
   }).as<vk::Buffer>();
 

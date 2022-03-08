@@ -149,27 +149,19 @@ namespace lxvc {
       decltype(auto) imageObj = ResourceObj::make(this->base, ResourceCreateInfo{
         .image = image,
         .imageInfo = ImageCreateInfo{
+          .format = format,
+          .extent = { capInfo.capabilities->currentExtent.width, capInfo.capabilities->currentExtent.height, 1u },
+          .layout = imageLayout,
           .swapchain = swapchainInfo,
           .info = this->cInfo->info ? this->cInfo->info : QueueGetInfo{0u, 0u},
-          .type = imageType,
-          .extent = { capInfo.capabilities->currentExtent.width, capInfo.capabilities->currentExtent.height, 1u },
-          .format = format,
-          .layout = imageLayout
+          .type = imageType
         }
       });
 
       // 
-      renderArea = vk::Rect2D{ vk::Offset2D{0u, 0u}, capInfo.capabilities->currentExtent };
-
-      //
-      //decltype(auto) image = this->images.back();
-
-      //
-      this->imageViews.push_back(this->base.as<vk::Device>().createImageView(vk::ImageViewCreateInfo{
-        .image = image,
+      this->renderArea = vk::Rect2D{ vk::Offset2D{0u, 0u}, capInfo.capabilities->currentExtent };
+      this->imageViews.push_back(imageObj->createImageView(ImageViewCreateInfo{
         .viewType = vk::ImageViewType::e2D,
-        .format = format,
-        .components = components,
         .subresourceRange = subresourceRange
       }));
 
