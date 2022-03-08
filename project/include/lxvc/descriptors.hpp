@@ -67,24 +67,13 @@ namespace lxvc {
     inline decltype(auto) SFT() const { using T = const std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
 
   public:
-    //
-    virtual cpp21::bucket<vk::DescriptorImageInfo>& getTextureDescriptors() { return textures; };
-    virtual cpp21::bucket<vk::DescriptorImageInfo> const& getTextureDescriptors() const { return textures; };
-
-    //
-    virtual cpp21::bucket<vk::DescriptorImageInfo>& getSamplerDescriptors() { return samplers; };
-    virtual cpp21::bucket<vk::DescriptorImageInfo> const& getSamplerDescriptors() const { return samplers; };
-
-    //
-    virtual cpp21::bucket<vk::DescriptorImageInfo>& getImageDescriptors() { return images; };
-    virtual cpp21::bucket<vk::DescriptorImageInfo> const& getImageDescriptors() const { return images; };
 
     // 
     DescriptorsObj(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) : cInfo(cInfo) {
       this->base = deviceObj->handle;
       this->construct(deviceObj, cInfo);
     };
-    
+
     // 
     DescriptorsObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) : cInfo(cInfo) {
       this->construct(lxvc::context->get<DeviceObj>(this->base = handle), cInfo);
@@ -100,6 +89,30 @@ namespace lxvc {
       lxvc::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
       return SFT();
     };
+
+    //
+    inline virtual std::vector<vk::DescriptorSet>& getDescriptorSets() { return this->sets; };
+    inline virtual std::vector<vk::DescriptorSet> const& getDescriptorSets() const { return this->sets; };
+
+    //
+    inline virtual vk::PipelineCache& getPipelineCache() { return this->cache; };
+    inline virtual vk::PipelineCache const& getPipelineCache() const { return this->cache; };
+
+    //
+    inline virtual vk::PipelineLayout& getPipelineLayout() { return this->handle.as<vk::PipelineLayout>(); };
+    inline virtual vk::PipelineLayout const& getPipelineLayout() const { return this->handle.as<vk::PipelineLayout>(); };
+
+    //
+    inline virtual cpp21::bucket<vk::DescriptorImageInfo>& getTextureDescriptors() { return textures; };
+    inline virtual cpp21::bucket<vk::DescriptorImageInfo> const& getTextureDescriptors() const { return textures; };
+
+    //
+    inline virtual cpp21::bucket<vk::DescriptorImageInfo>& getSamplerDescriptors() { return samplers; };
+    inline virtual cpp21::bucket<vk::DescriptorImageInfo> const& getSamplerDescriptors() const { return samplers; };
+
+    //
+    inline virtual cpp21::bucket<vk::DescriptorImageInfo>& getImageDescriptors() { return images; };
+    inline virtual cpp21::bucket<vk::DescriptorImageInfo> const& getImageDescriptors() const { return images; };
 
     //
     inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) {
