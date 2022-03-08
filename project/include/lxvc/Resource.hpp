@@ -93,7 +93,7 @@ namespace lxvc {
               .image = requirements->dedicated && this->handle.type == HandleType::eImage && imageCondition ? this->handle.as<vk::Image>() : vk::Image{},
               .buffer = requirements->dedicated && this->handle.type == HandleType::eBuffer && bufferCondition ? this->handle.as<vk::Buffer>() : vk::Buffer{}
             }).get(),
-            .flags = (this->cInfo->bufferInfo && this->cInfo->bufferInfo->type == BufferType::eDevice) ? vk::MemoryAllocateFlagBits::eDeviceAddress : vk::MemoryAllocateFlagBits{},
+            .flags = (this->cInfo->bufferInfo && this->cInfo->bufferInfo->type == BufferType::eStorage) ? vk::MemoryAllocateFlagBits::eDeviceAddress : vk::MemoryAllocateFlagBits{},
           }).get(),
           .allocationSize = requirements->size,
           .memoryTypeIndex = std::get<0>(memTypeHeap)
@@ -313,18 +313,36 @@ namespace lxvc {
 
       // 
       switch (cInfo->type) {
-      case BufferType::eDevice:
+      case BufferType::eStorage:
+        memoryUsage = MemoryUsage::eGpuOnly;
+        bufferUsage |=
+          vk::BufferUsageFlagBits::eShaderDeviceAddress |
+          vk::BufferUsageFlagBits::eStorageBuffer |
+          vk::BufferUsageFlagBits::eTransformFeedbackCounterBufferEXT |
+          vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR |
+          vk::BufferUsageFlagBits::eShaderBindingTableKHR |
+          vk::BufferUsageFlagBits::eStorageTexelBuffer;
+        break;
+
+      case BufferType::eVertex:
+        memoryUsage = MemoryUsage::eGpuOnly;
+        bufferUsage |=
+          vk::BufferUsageFlagBits::eShaderDeviceAddress |
+          vk::BufferUsageFlagBits::eStorageBuffer |
+          vk::BufferUsageFlagBits::eVertexBuffer |
+          vk::BufferUsageFlagBits::eTransformFeedbackBufferEXT |
+          vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR |
+          vk::BufferUsageFlagBits::eStorageTexelBuffer;
+        break;
+
+      case BufferType::eIndex:
         memoryUsage = MemoryUsage::eGpuOnly;
         bufferUsage |=
           vk::BufferUsageFlagBits::eShaderDeviceAddress |
           vk::BufferUsageFlagBits::eStorageBuffer |
           vk::BufferUsageFlagBits::eIndexBuffer |
-          vk::BufferUsageFlagBits::eVertexBuffer |
           vk::BufferUsageFlagBits::eTransformFeedbackBufferEXT |
-          vk::BufferUsageFlagBits::eTransformFeedbackCounterBufferEXT |
           vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR |
-          vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR |
-          vk::BufferUsageFlagBits::eShaderBindingTableKHR |
           vk::BufferUsageFlagBits::eStorageTexelBuffer;
         break;
 

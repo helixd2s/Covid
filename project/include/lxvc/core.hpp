@@ -59,9 +59,11 @@ namespace lxvc {
 
   //
   enum class BufferType : uint32_t {
-    eDevice = 0u,
+    eStorage = 0u,
     eHostMap = 1u,
-    eUniform = 2u
+    eUniform = 2u,
+    eVertex = 3u,
+    eIndex = 4u
   };
 
   //
@@ -276,7 +278,7 @@ namespace lxvc {
 
   //
   struct BufferCreateInfo {
-    BufferType type = BufferType::eDevice;
+    BufferType type = BufferType::eStorage;
     size_t size = 0ull;
 
   };

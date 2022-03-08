@@ -58,10 +58,10 @@ namespace lxvc {
     //std::unordered_map<uintptr_t, std::function<void()>> destMap = {};
     std::array<std::atomic<std::shared_ptr<std::function<void()>>>, 128> destIds = {};
     std::array<std::atomic<std::shared_ptr<std::function<void()>>>, 128> callIds = {};
-    std::shared_ptr<std::atomic_int32_t> destructorCount;
-    std::shared_ptr<std::atomic_int32_t> callbackCount;
-    std::shared_ptr<std::atomic_bool> threadLocked;
-    std::shared_ptr<std::atomic_bool> actionLocked;
+    std::shared_ptr<std::atomic_int32_t> destructorCount = {};
+    std::shared_ptr<std::atomic_int32_t> callbackCount = {};
+    std::shared_ptr<std::atomic_bool> threadLocked = {};
+    std::shared_ptr<std::atomic_bool> actionLocked = {};
 
     //
     //std::shared_ptr<InstanceObj> instanceObj = {};
