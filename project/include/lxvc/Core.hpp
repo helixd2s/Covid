@@ -718,8 +718,16 @@ namespace lxvc {
     inline decltype(auto) getHandle() const { return this->ptr->handle; };
 
     // 
+    inline decltype(auto) getBase() { return this->ptr->handle.base; };
+    inline decltype(auto) getBase() const { return this->ptr->handle.base; };
+
+    // 
     inline decltype(auto) handle() { return this->ptr->handle; };
     inline decltype(auto) handle() const { return this->ptr->handle; };
+
+    // 
+    inline decltype(auto) base() { return this->ptr->handle.base; };
+    inline decltype(auto) base() const { return this->ptr->handle.base; };
 
     // 
     inline decltype(auto) type() { return this->ptr->handle.type; };

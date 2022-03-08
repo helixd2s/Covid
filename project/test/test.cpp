@@ -89,12 +89,12 @@ int main() {
 
 
   // first cherep
-  decltype(auto) instance = lxvc::InstanceObj::make(lxvc::context->getHandle(), lxvc::InstanceCreateInfo{
+  decltype(auto) instance = lxvc::InstanceObj::make(lxvc::context, lxvc::InstanceCreateInfo{
 
   });
 
   // second cherep
-  decltype(auto) device = lxvc::DeviceObj::make(instance->getHandle(), lxvc::DeviceCreateInfo{
+  decltype(auto) device = lxvc::DeviceObj::make(instance, lxvc::DeviceCreateInfo{
     .physicalDeviceGroupIndex = 0u,
     .physicalDeviceIndex = 0u
   });
@@ -108,7 +108,7 @@ int main() {
   decltype(auto) uniformData = UniformData{};
 
   //
-  decltype(auto) buffer = lxvc::ResourceObj::make(device->getHandle(), lxvc::ResourceCreateInfo{
+  decltype(auto) buffer = lxvc::ResourceObj::make(device, lxvc::ResourceCreateInfo{
     .bufferInfo = lxvc::BufferCreateInfo{
       .size = 1024ull,
       .type = lxvc::BufferType::eStorage,
@@ -116,7 +116,7 @@ int main() {
   }).as<vk::Buffer>();
 
   //
-  decltype(auto) uploader = lxvc::UploaderObj::make(device->getHandle(), lxvc::UploaderCreateInfo{
+  decltype(auto) uploader = lxvc::UploaderObj::make(device, lxvc::UploaderCreateInfo{
 
   });
 
@@ -179,7 +179,7 @@ int main() {
   glfwCreateWindowSurface(instance.as<VkInstance>(), window, nullptr, (VkSurfaceKHR*)&surface);
 
   //
-  decltype(auto) swapchain = lxvc::SwapchainObj::make(device->getHandle(), lxvc::SwapchainCreateInfo{
+  decltype(auto) swapchain = lxvc::SwapchainObj::make(device, lxvc::SwapchainCreateInfo{
     .layout = descriptions.as<vk::PipelineLayout>(),
     .surface = surface,
     .info = qfAndQueue
