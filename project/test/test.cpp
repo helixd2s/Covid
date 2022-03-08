@@ -1,7 +1,20 @@
 #pragma once
+
+//
+#ifdef _WIN32
+#ifndef VK_USE_PLATFORM_WIN32_KHR
+#define VK_USE_PLATFORM_WIN32_KHR
+#include <windows.h>
+#endif
+#else
+#ifdef __linux__ 
+//FD defaultly
+#endif
+#endif
+
+// 
 #include <LXVC/lxvc.hpp>
 #include <GLFW/glfw3.h>
-#include <windows.h>
 #include "renderdoc_app.h"
 #include <eh.h>
 
