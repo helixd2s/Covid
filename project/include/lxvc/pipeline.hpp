@@ -300,7 +300,7 @@ namespace lxvc {
       std::vector<uint32_t> offsets = {};
       //submission.commandInits.push_back([=](vk::CommandBuffer const& cmdBuf) {
         auto _depInfo = depInfo;
-        //if (framebuffer) { framebuffer->writeSwitchToAttachment(exec->cmdBuf); };
+        if (framebuffer) { framebuffer->writeSwitchToAttachment(exec->cmdBuf); };
         exec->cmdBuf.pipelineBarrier2(_depInfo.setMemoryBarriers(memoryBarriersBegin));
         exec->cmdBuf.beginRendering(vk::RenderingInfoKHR{ .renderArea = renderArea, .layerCount = 1u, .viewMask = 0x0u, .colorAttachmentCount = uint32_t(colorAttachments.size()), .pColorAttachments = colorAttachments.data(), .pDepthAttachment = &depthAttachment, .pStencilAttachment = &stencilAttachment });
         exec->cmdBuf.bindPipeline(vk::PipelineBindPoint::eGraphics, this->handle.as<vk::Pipeline>());
@@ -330,7 +330,7 @@ namespace lxvc {
         
         exec->cmdBuf.endRendering();
         exec->cmdBuf.pipelineBarrier2(_depInfo.setMemoryBarriers(memoryBarriersEnd));
-        //if (framebuffer) { framebuffer->writeSwitchToShaderRead(exec->cmdBuf); };
+        if (framebuffer) { framebuffer->writeSwitchToShaderRead(exec->cmdBuf); };
         //return cmdBuf;
       //});
 

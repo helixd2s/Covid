@@ -224,8 +224,8 @@ int main() {
       }
     });
 
-    //
-    framebuffer->switchToAttachment(qfAndQueue);
+    // 
+    //framebuffer->switchToAttachment(qfAndQueue);
 
     //
     decltype(auto) graphicsFence = graphics->executePipelineOnce(lxvc::ExecutePipelineInfo{
@@ -240,7 +240,7 @@ int main() {
     });
 
     //
-    framebuffer->switchToShaderRead(qfAndQueue);
+    //framebuffer->switchToShaderRead(qfAndQueue);
 
     //
     decltype(auto) computeFence = compute->executePipelineOnce(lxvc::ExecutePipelineInfo{
