@@ -230,7 +230,7 @@ int main() {
     decltype(auto) uniformFence = descriptions->executeUniformUpdateOnce(lxvc::UniformDataSet{
       .writeInfo = lxvc::UniformDataWriteSet{
         .region = lxvc::DataRegion{0ull, sizeof(UniformData)},
-        .data = std::span<char8_t>((char8_t*)&uniformData, sizeof(UniformData)),
+        .data = cpp21::data_view<char8_t>((char8_t*)&uniformData, sizeof(UniformData)),
       },
       .submission = lxvc::SubmissionInfo{
         .info = qfAndQueue,

@@ -379,7 +379,7 @@ namespace lxvc {
     vk::CommandBuffer cmdBuf = {};
     std::optional<QueueGetInfo> info = QueueGetInfo{};
     std::optional<DataRegion> region = DataRegion{};
-    std::span<char8_t> data = {};
+    cpp21::data_view<char8_t> data = {};
 
     //
     decltype(auto) with(cpp21::const_wrap_arg<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
@@ -475,14 +475,14 @@ namespace lxvc {
 
   //
   struct UploadExecutionOnce {
-    std::span<char8_t> host = {};
+    cpp21::data_view<char8_t> host = {};
     UploadCommandWriteInfo writeInfo = {};
     SubmissionInfo submission = {};
   };
 
   //
   struct DownloadExecutionOnce {
-    std::span<char8_t> host = {};
+    cpp21::data_view<char8_t> host = {};
     DownloadCommandWriteInfo writeInfo = {};
     SubmissionInfo submission = {};
   };
