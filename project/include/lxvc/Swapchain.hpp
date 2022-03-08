@@ -6,6 +6,7 @@
 #include "./Device.hpp"
 #include "./Resource.hpp"
 #include "./Descriptors.hpp"
+#include "./Semaphore.hpp"
 
 // 
 namespace lxvc {
@@ -186,18 +187,25 @@ namespace lxvc {
         });
       });
 
+      // 
+      ;
+
       //
       vk::SemaphoreTypeCreateInfo timeline = {};
       timeline.semaphoreType = vk::SemaphoreType::eBinary;
       timeline.initialValue = 0ull;//this->readySemaphores.size();
 
       //
-      this->readySemaphores.push_back(device.createSemaphore(vk::SemaphoreCreateInfo{ .pNext = &timeline, .flags = {} }));
-      this->presentSemaphores.push_back(device.createSemaphore(vk::SemaphoreCreateInfo{ .pNext = &timeline, .flags = {} }));
+      decltype(auto) readySemaphore = SemaphoreObj::make(this->base, SemaphoreCreateInfo{  });
+      decltype(auto) presentSemaphore = SemaphoreObj::make(this->base, SemaphoreCreateInfo{  });
 
       //
-      this->readySemaphoreInfos.push_back(vk::SemaphoreSubmitInfo{ .semaphore = this->readySemaphores.back(), .value = timeline.initialValue, .stageMask = vk::PipelineStageFlagBits2::eAllCommands });
-      this->presentSemaphoreInfos.push_back(vk::SemaphoreSubmitInfo{ .semaphore = this->presentSemaphores.back(), .value = timeline.initialValue, .stageMask = vk::PipelineStageFlagBits2::eAllCommands });
+      this->readySemaphores.push_back(readySemaphore.as<vk::Semaphore>());
+      this->presentSemaphores.push_back(presentSemaphore.as<vk::Semaphore>());
+
+      //
+      this->readySemaphoreInfos.push_back(readySemaphore->infoMap->get<vk::SemaphoreSubmitInfo>(vk::StructureType::eSemaphoreSubmitInfo));
+      this->presentSemaphoreInfos.push_back(presentSemaphore->infoMap->get<vk::SemaphoreSubmitInfo>(vk::StructureType::eSemaphoreSubmitInfo));
       //lxvc::context->get<DeviceObj>(this->base)
     };
 

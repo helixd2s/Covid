@@ -10,6 +10,7 @@
 #include "./Framebuffer.hpp"
 #include "./Pipeline.hpp"
 #include "./Uploader.hpp"
+#include "./Semaphore.hpp"
 #include "./Swapchain.hpp"
 
 // 

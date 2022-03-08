@@ -104,7 +104,8 @@ namespace lxvc {
     eSurface = 12u,
     eSwapchain = 13u,
     eFramebuffer = 14u,
-    eAccelerationStructure = 15u
+    eSemaphore = 15u,
+    eAccelerationStructure = 16u
   };
 
   //
@@ -147,6 +148,7 @@ namespace lxvc {
   class UploaderObj;
   class FramebufferObj;
   class SwapchainObj;
+  class SemaphoreObj;
 
   //
   struct ContextCreateInfo {
@@ -266,6 +268,11 @@ namespace lxvc {
   struct DescriptorsCreateInfo {
     std::optional<QueueGetInfo> info = QueueGetInfo{};
     AttachmentsInfo attachments = {};
+  };
+
+  //
+  struct SemaphoreCreateInfo {
+
   };
 
   //
@@ -645,6 +652,7 @@ namespace lxvc {
     lxvc::handleTypeMap[std::type_index(typeid(vk::PipelineLayout))] = HandleType::eDescriptors;
     lxvc::handleTypeMap[std::type_index(typeid(vk::AccelerationStructureKHR))] = HandleType::eAccelerationStructure;
     lxvc::handleTypeMap[std::type_index(typeid(vk::Framebuffer))] = HandleType::eFramebuffer;
+    lxvc::handleTypeMap[std::type_index(typeid(vk::Semaphore))] = HandleType::eSemaphore;
 
     //
     return handleTypeMap;
