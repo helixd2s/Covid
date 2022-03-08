@@ -33,8 +33,8 @@ namespace lxvc {
     };
 
     //
-    inline static tType make(Handle const& handle, cpp21::const_wrap_arg<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
-      auto shared = std::make_shared<ContextObj>(handle, cInfo);
+    inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
+      auto shared = std::make_shared<ContextObj>(cInfo);
       auto wrap = shared->SFT();//->registerSelf();
       return wrap;
     };

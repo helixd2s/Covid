@@ -42,7 +42,7 @@ namespace lxvc {
     };
 
     // 
-    InstanceObj(Handle const& handle, cpp21::const_wrap_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : cInfo(cInfo) {
+    InstanceObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : cInfo(cInfo) {
       this->base = handle;
       this->construct(lxvc::context, cInfo);
     };
@@ -59,7 +59,7 @@ namespace lxvc {
     };
 
     //
-    inline static tType make(Handle const& handle, cpp21::const_wrap_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
+    inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
       auto shared = std::make_shared<InstanceObj>(handle, cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
@@ -114,7 +114,7 @@ namespace lxvc {
     };
 
     //
-    virtual std::vector<cType>& filterExtensions(std::vector<std::string> const& names) {
+    virtual std::vector<cType>& filterExtensions(cpp21::const_wrap_arg<std::vector<std::string>> names) {
       //std::vector<vk::ExtensionProperties> props(1024u); uint32_t size = 0ull;
       //vk::enumerateInstanceExtensionProperties("", &size, props.data()); props.resize(size);
       decltype(auto) props = vk::enumerateInstanceExtensionProperties(std::string(""));
@@ -122,7 +122,7 @@ namespace lxvc {
 
       // 
       uintptr_t nameIndex = 0ull;
-      for (auto& name : names) {
+      for (auto& name : (*names)) {
         uintptr_t propIndex = 0ull;
         for (auto& prop : props) {
           std::string_view propName = { prop.extensionName };
@@ -140,7 +140,7 @@ namespace lxvc {
     };
 
     //
-    virtual std::vector<cType>& filterLayers(std::vector<std::string> const& names) {
+    virtual std::vector<cType>& filterLayers(cpp21::const_wrap_arg<std::vector<std::string>> names) {
       //std::vector<vk::LayerProperties> props(1024u); uint32_t size = 0ull;
       //vk::enumerateInstanceLayerProperties(&size, props.data()); props.resize(size);
       decltype(auto) props = vk::enumerateInstanceLayerProperties();
@@ -148,7 +148,7 @@ namespace lxvc {
 
       // 
       uintptr_t nameIndex = 0ull;
-      for (auto& name : names) {
+      for (auto& name : (*names)) {
         uintptr_t propIndex = 0ull;
         for (auto& prop : props) {
           std::string_view propName = { prop.layerName };
@@ -190,8 +190,10 @@ namespace lxvc {
           .apiVersion = VK_API_VERSION_1_3
         }).get()
       });
-      instanceInfo->setPEnabledExtensionNames(this->filterExtensions(this->cInfo->extensionList));
-      instanceInfo->setPEnabledLayerNames(this->filterLayers(this->cInfo->layerList));
+
+      //
+      instanceInfo->setPEnabledExtensionNames(this->filterExtensions(this->cInfo->extensionList.ref()));
+      instanceInfo->setPEnabledLayerNames(this->filterLayers(this->cInfo->layerList.ref()));
 
       //
       this->handle = vk::createInstance(instanceInfo.ref());

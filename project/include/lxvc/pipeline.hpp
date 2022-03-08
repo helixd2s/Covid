@@ -43,7 +43,7 @@ namespace lxvc {
     };
 
     // 
-    PipelineObj(Handle const& handle, cpp21::const_wrap_arg<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) : cInfo(cInfo) {
+    PipelineObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) : cInfo(cInfo) {
       this->construct(lxvc::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
@@ -59,7 +59,7 @@ namespace lxvc {
     };
 
     //
-    inline static tType make(Handle const& handle, cpp21::const_wrap_arg<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) {
+    inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) {
       auto shared = std::make_shared<PipelineObj>(handle, cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
@@ -351,7 +351,7 @@ namespace lxvc {
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
 
       // 
-      submission.commandInits.push_back([=,this](vk::CommandBuffer const& cmdBuf) {
+      submission.commandInits.push_back([=,this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
         if (exec->graphics) { this->writeGraphicsCommand(exec->graphics->with(cmdBuf)); };
         if (exec->compute) { this->writeComputeCommand(exec->compute->with(cmdBuf)); };
         return cmdBuf;

@@ -38,7 +38,7 @@ namespace lxvc {
     };
 
     // 
-    AccelerationStructureObj(Handle const& handle, cpp21::const_wrap_arg<AccelerationStructureCreateInfo> cInfo = AccelerationStructureCreateInfo{}) : cInfo(cInfo) {
+    AccelerationStructureObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<AccelerationStructureCreateInfo> cInfo = AccelerationStructureCreateInfo{}) : cInfo(cInfo) {
       this->construct(lxvc::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
@@ -54,7 +54,7 @@ namespace lxvc {
     };
 
     //
-    inline static tType make(Handle const& handle, cpp21::const_wrap_arg<AccelerationStructureCreateInfo> cInfo = AccelerationStructureCreateInfo{}) {
+    inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<AccelerationStructureCreateInfo> cInfo = AccelerationStructureCreateInfo{}) {
       auto shared = std::make_shared<AccelerationStructureObj>(handle, cInfo);
       auto wrap = shared->registerSelf();
       return wrap;

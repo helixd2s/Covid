@@ -54,8 +54,8 @@ namespace lxvc {
     std::vector<vk::SemaphoreSubmitInfo> presentSemaphoreInfos = {};
 
     //
-    std::vector<std::function<void(vk::CommandBuffer const&, SwapchainState const&)>> switchToPresentFn = {};
-    std::vector<std::function<void(vk::CommandBuffer const&, SwapchainState const&)>> switchToReadyFn = {};
+    std::vector<std::function<void(cpp21::const_wrap_arg<vk::CommandBuffer>, cpp21::const_wrap_arg<SwapchainState>)>> switchToPresentFn = {};
+    std::vector<std::function<void(cpp21::const_wrap_arg<vk::CommandBuffer>, cpp21::const_wrap_arg<SwapchainState>)>> switchToReadyFn = {};
 
     //
     SwapchainState state = SwapchainState::eReady;
@@ -72,7 +72,7 @@ namespace lxvc {
     };
 
     // 
-    SwapchainObj(Handle const& handle, cpp21::const_wrap_arg<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) : cInfo(cInfo) {
+    SwapchainObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) : cInfo(cInfo) {
       this->construct(lxvc::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
@@ -91,19 +91,19 @@ namespace lxvc {
     };
 
     //
-    inline static tType make(Handle const& handle, cpp21::const_wrap_arg<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) {
+    inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) {
       auto shared = std::make_shared<SwapchainObj>(handle, cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
     };
 
     //
-    virtual FenceType switchToPresent(uint32_t const& imageIndex, cpp21::const_wrap_arg<QueueGetInfo> const& info = QueueGetInfo{}) {
+    virtual FenceType switchToPresent(cpp21::const_wrap_arg<uint32_t> imageIndex, cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}) {
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = info ? info.value() : this->cInfo->info } };
 
       // 
-      submission.commandInits.push_back([=, this](vk::CommandBuffer const& cmdBuf) {
-        switchToPresentFn[imageIndex](cmdBuf, this->state);
+      submission.commandInits.push_back([=, this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+        switchToPresentFn[*imageIndex](cmdBuf, this->state);
         return cmdBuf;
       });
 
@@ -112,12 +112,12 @@ namespace lxvc {
     };
 
     //
-    virtual FenceType switchToReady(uint32_t const& imageIndex, cpp21::const_wrap_arg<QueueGetInfo> const& info = QueueGetInfo{}) {
+    virtual FenceType switchToReady(cpp21::const_wrap_arg<uint32_t> imageIndex, cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}) {
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = info ? info.value() : this->cInfo->info } };
 
       // 
-      submission.commandInits.push_back([=, this](vk::CommandBuffer const& cmdBuf) {
-        switchToReadyFn[imageIndex](cmdBuf, this->state);
+      submission.commandInits.push_back([=, this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+        switchToReadyFn[*imageIndex](cmdBuf, this->state);
         return cmdBuf;
       });
 
@@ -128,14 +128,14 @@ namespace lxvc {
   protected:
 
     //
-    virtual void createImage(vk::Image const& image, ImageType const& imageType = ImageType::eSwapchain, vk::SurfaceFormat2KHR const& surfaceFormat2 = {}, ImageSwapchainInfo const& swapchainInfo = {}) {
+    virtual void createImage(cpp21::const_wrap_arg<vk::Image> image, cpp21::const_wrap_arg<ImageType> imageType = ImageType::eSwapchain, cpp21::const_wrap_arg<vk::SurfaceFormat2KHR> surfaceFormat2 = {}, cpp21::const_wrap_arg<ImageSwapchainInfo> swapchainInfo = {}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
       decltype(auto) aspectMask = vk::ImageAspectFlagBits::eColor;
       decltype(auto) components = vk::ComponentMapping{ .r = vk::ComponentSwizzle::eR, .g = vk::ComponentSwizzle::eG, .b = vk::ComponentSwizzle::eB, .a = vk::ComponentSwizzle::eA };
       decltype(auto) imageLayout = vk::ImageLayout::eGeneral;
-      decltype(auto) format = surfaceFormat2.surfaceFormat.format;
+      decltype(auto) format = surfaceFormat2->surfaceFormat.format;
       decltype(auto) subresourceRange =
         vk::ImageSubresourceRange{
           .aspectMask = aspectMask,
@@ -169,7 +169,7 @@ namespace lxvc {
       this->imageViewIndices.push_back(descriptorsObj->images.add(vk::DescriptorImageInfo{ .imageView = this->imageViews.back(), .imageLayout = vk::ImageLayout::eGeneral }));
 
       // TODO: use pre-built command buffer
-      this->switchToReadyFn.push_back([=](vk::CommandBuffer const& cmdBuf, SwapchainState const& previousState = {}) {
+      this->switchToReadyFn.push_back([=](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf, cpp21::const_wrap_arg<SwapchainState> previousState = {}) {
         imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
           .cmdBuf = cmdBuf,
           .newImageLayout = imageLayout,
@@ -178,7 +178,7 @@ namespace lxvc {
       });
 
       //
-      this->switchToPresentFn.push_back([=](vk::CommandBuffer const& cmdBuf, SwapchainState const& previousState = {}) {
+      this->switchToPresentFn.push_back([=](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf, cpp21::const_wrap_arg<SwapchainState> previousState = {}) {
         imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
           .cmdBuf = cmdBuf,
           .newImageLayout = vk::ImageLayout::ePresentSrcKHR,

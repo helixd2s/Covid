@@ -80,7 +80,7 @@ namespace lxvc {
     
 
     //
-    virtual std::tuple<uint32_t, uint32_t> findMemoryTypeAndHeapIndex(cpp21::const_wrap_arg<MemoryRequirements> req = MemoryRequirements{}, cpp21::const_wrap_arg<uintptr_t> const& physicalDeviceIndex = {}) {
+    virtual std::tuple<uint32_t, uint32_t> findMemoryTypeAndHeapIndex(cpp21::const_wrap_arg<MemoryRequirements> req = MemoryRequirements{}, cpp21::const_wrap_arg<uintptr_t> physicalDeviceIndex = {}) {
       auto& physicalDevice = this->getPhysicalDevice(physicalDeviceIndex);
       decltype(auto) PDInfoMap = this->getPhysicalDeviceInfoMap(physicalDeviceIndex);
       auto memoryProperties2 = PDInfoMap->set(vk::StructureType::ePhysicalDeviceMemoryProperties2, vk::PhysicalDeviceMemoryProperties2{
@@ -153,13 +153,13 @@ namespace lxvc {
     };
 
     //
-    virtual std::vector<cType>& filterLayers(vk::PhysicalDevice const& physicalDevice, std::vector<std::string> const& names) {
-      decltype(auto) props = physicalDevice.enumerateDeviceLayerProperties();
+    virtual std::vector<cType>& filterLayers(cpp21::const_wrap_arg<vk::PhysicalDevice> physicalDevice, cpp21::const_wrap_arg<std::vector<std::string>> names) {
+      decltype(auto) props = physicalDevice->enumerateDeviceLayerProperties();
       auto& selected = this->layerNames;
 
       // 
       uintptr_t nameIndex = 0ull;
-      for (auto& name : names) {
+      for (auto& name : (*names)) {
         uintptr_t propIndex = 0ull;
         for (auto& prop : props) {
           std::string_view propName = { prop.layerName };
@@ -177,13 +177,13 @@ namespace lxvc {
     };
 
     //
-    virtual std::vector<cType>& filterExtensions(vk::PhysicalDevice const& physicalDevice, std::vector<std::string> const& names) {
-      decltype(auto) props = physicalDevice.enumerateDeviceExtensionProperties(std::string(""));
+    virtual std::vector<cType>& filterExtensions(cpp21::const_wrap_arg<vk::PhysicalDevice> physicalDevice, cpp21::const_wrap_arg<std::vector<std::string>> names) {
+      decltype(auto) props = physicalDevice->enumerateDeviceExtensionProperties(std::string(""));
       auto& selected = (this->extensionNames);
 
       // 
       uintptr_t nameIndex = 0ull;
-      for (auto& name : names) {
+      for (auto& name : (*names)) {
         uintptr_t propIndex = 0ull;
         for (auto& prop : props) {
           std::string_view propName = { prop.extensionName };
@@ -201,13 +201,13 @@ namespace lxvc {
     };
 
     //
-    virtual std::vector<vk::PhysicalDevice>& filterPhysicalDevices(uint32_t const& groupIndex = 0u) {
+    virtual std::vector<vk::PhysicalDevice>& filterPhysicalDevices(cpp21::const_wrap_arg<uint32_t> groupIndex = 0u) {
       //this->physicalDevices = {};
       decltype(auto) instanceObj = lxvc::context->get<InstanceObj>(this->base);
       decltype(auto) deviceGroups = instanceObj->enumeratePhysicalDeviceGroups();
       auto& physicalDevices = this->physicalDevices;
       if (deviceGroups.size() > 0) {
-        decltype(auto) deviceGroup = deviceGroups[groupIndex];
+        decltype(auto) deviceGroup = deviceGroups[*groupIndex];
         vk::PhysicalDevice* PDP = deviceGroup.physicalDevices;
         physicalDevices = std::vector<vk::PhysicalDevice>(PDP, PDP + deviceGroup.physicalDeviceCount);
       } else {
@@ -220,7 +220,7 @@ namespace lxvc {
     };
 
     // 
-    virtual std::vector<vk::DeviceQueueCreateInfo>& filterQueueFamilies(std::vector<QueueFamilyCreateInfo> const& qfInfosIn = {}) {
+    virtual std::vector<vk::DeviceQueueCreateInfo>& filterQueueFamilies(cpp21::const_wrap_arg<std::vector<QueueFamilyCreateInfo>> qfInfosIn = {}) {
 
       // TODO: customize queue priorities
       auto& qfInfosVk = (this->queueFamilies.infos = {});
@@ -228,7 +228,7 @@ namespace lxvc {
       auto& qfInfoMaps = (this->queueFamilies.infoMaps = {});
       auto& qfCommandPools = (this->queueFamilies.commandPools = {});
       auto& qfQueuesStack = (this->queueFamilies.queues = {});
-      for (auto& qfInfoIn : qfInfosIn) {
+      for (auto& qfInfoIn : (*qfInfosIn)) {
         qfInfoMaps.push_back(std::make_shared<MSS>(MSS()));
         qfQueuesStack.push_back(std::vector<vk::Queue>{});
         auto& qfInfoMap = qfInfoMaps->back();
@@ -244,7 +244,7 @@ namespace lxvc {
     };
 
     //
-    virtual std::vector<vk::CommandPool>& createCommandPools(std::vector<QueueFamilyCreateInfo> const& qfInfosIn = {}) {
+    virtual std::vector<vk::CommandPool>& createCommandPools(cpp21::const_wrap_arg<std::vector<QueueFamilyCreateInfo>> qfInfosIn = {}) {
       //uintptr_t index = 0u;
       auto& device = this->handle.as<vk::Device>(); // finally found issue
       if (!!device && this->queueFamilies.commandPools.size() <= 0u) {
@@ -253,7 +253,7 @@ namespace lxvc {
         auto& qfInfoMaps = (this->queueFamilies.infoMaps);
         auto& qfCommandPools = (this->queueFamilies.commandPools);
         auto& qfQueuesStack = (this->queueFamilies.queues);
-        for (auto& qfInfoIn : qfInfosIn) {
+        for (auto& qfInfoIn : (*qfInfosIn)) {
           uintptr_t indexOfQF = std::distance(qfIndices.begin(), std::find(qfIndices.begin(), qfIndices.end(), qfInfoIn.queueFamilyIndex));
           auto& qfIndex = qfIndices[indexOfQF];
           auto qfInfoMap = qfInfoMaps[indexOfQF];
@@ -336,12 +336,12 @@ namespace lxvc {
     };
 
     //
-    vk::PhysicalDevice& getPhysicalDevice(cpp21::const_wrap_arg<uintptr_t> const& physicalDeviceIndex = {}) { return this->physicalDevices[std::min(physicalDeviceIndex ? physicalDeviceIndex.value() : this->cInfo->physicalDeviceIndex, this->physicalDevices.size() - 1)]; };
-    vk::PhysicalDevice const& getPhysicalDevice(cpp21::const_wrap_arg<uintptr_t> const& physicalDeviceIndex = {}) const { return this->physicalDevices[std::min(physicalDeviceIndex ? physicalDeviceIndex.value() : this->cInfo->physicalDeviceIndex, this->physicalDevices.size() - 1)]; };
+    vk::PhysicalDevice& getPhysicalDevice(cpp21::const_wrap_arg<uintptr_t> physicalDeviceIndex = {}) { return this->physicalDevices[std::min(physicalDeviceIndex ? physicalDeviceIndex.value() : this->cInfo->physicalDeviceIndex, this->physicalDevices.size() - 1)]; };
+    vk::PhysicalDevice const& getPhysicalDevice(cpp21::const_wrap_arg<uintptr_t> physicalDeviceIndex = {}) const { return this->physicalDevices[std::min(physicalDeviceIndex ? physicalDeviceIndex.value() : this->cInfo->physicalDeviceIndex, this->physicalDevices.size() - 1)]; };
 
     //
-    std::shared_ptr<MSS> getPhysicalDeviceInfoMap(cpp21::const_wrap_arg<uintptr_t> const& physicalDeviceIndex = {}) { return this->PDInfoMaps[std::min(physicalDeviceIndex ? physicalDeviceIndex.value() : this->cInfo->physicalDeviceIndex, this->PDInfoMaps.size() - 1)]; };
-    std::shared_ptr<MSS> getPhysicalDeviceInfoMap(cpp21::const_wrap_arg<uintptr_t> const& physicalDeviceIndex = {}) const { return this->PDInfoMaps[std::min(physicalDeviceIndex ? physicalDeviceIndex.value() : this->cInfo->physicalDeviceIndex, this->PDInfoMaps.size() - 1)]; };
+    std::shared_ptr<MSS> getPhysicalDeviceInfoMap(cpp21::const_wrap_arg<uintptr_t> physicalDeviceIndex = {}) { return this->PDInfoMaps[std::min(physicalDeviceIndex ? physicalDeviceIndex.value() : this->cInfo->physicalDeviceIndex, this->PDInfoMaps.size() - 1)]; };
+    std::shared_ptr<MSS> getPhysicalDeviceInfoMap(cpp21::const_wrap_arg<uintptr_t> physicalDeviceIndex = {}) const { return this->PDInfoMaps[std::min(physicalDeviceIndex ? physicalDeviceIndex.value() : this->cInfo->physicalDeviceIndex, this->PDInfoMaps.size() - 1)]; };
 
     // 
     virtual void construct(std::shared_ptr<InstanceObj> instanceObj = {}, cpp21::const_wrap_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
@@ -409,9 +409,9 @@ namespace lxvc {
         std::cout << "" << std::endl;
 
         // 
-        deviceInfo->setQueueCreateInfos(this->filterQueueFamilies(this->cInfo->queueFamilyInfos));
-        deviceInfo->setPEnabledExtensionNames(this->filterExtensions(physicalDevice, this->cInfo->extensionList));
-        deviceInfo->setPEnabledLayerNames(this->filterLayers(physicalDevice, this->cInfo->layerList));
+        deviceInfo->setQueueCreateInfos(this->filterQueueFamilies(this->cInfo->queueFamilyInfos.ref()));
+        deviceInfo->setPEnabledExtensionNames(this->filterExtensions(physicalDevice, this->cInfo->extensionList.ref()));
+        deviceInfo->setPEnabledLayerNames(this->filterLayers(physicalDevice, this->cInfo->layerList.ref()));
 
         // 
         if (deviceInfo) {
@@ -426,7 +426,7 @@ namespace lxvc {
         if (this->handle) {
           //VULKAN_HPP_DEFAULT_DISPATCHER.init(this->handle.as<vk::Device>());
           this->dispatch = vk::DispatchLoaderDynamic(this->base.as<vk::Instance>(), vkGetInstanceProcAddr, this->handle.as<vk::Device>(), vkGetDeviceProcAddr);
-          this->createCommandPools(this->cInfo->queueFamilyInfos);
+          this->createCommandPools(this->cInfo->queueFamilyInfos.ref());
         };
       };
 
@@ -456,7 +456,7 @@ namespace lxvc {
     };
 
     // TODO: caching...
-    virtual vk::Queue const& getQueue(cpp21::const_wrap_arg<QueueGetInfo> const& info = {}) const {
+    virtual vk::Queue const& getQueue(cpp21::const_wrap_arg<QueueGetInfo> info = {}) const {
       //return this->device.getQueue(info->queueFamilyIndex, info->queueIndex);
       decltype(auto) qfIndices = (this->queueFamilies.indices);
       decltype(auto) qfQueuesStack = (this->queueFamilies.queues);
@@ -465,17 +465,17 @@ namespace lxvc {
     };
 
     //
-    virtual tType writeCopyBuffersCommand(CopyBufferWriteInfo const& copyInfoRaw);
+    virtual tType writeCopyBuffersCommand(cpp21::const_wrap_arg<CopyBufferWriteInfo> copyInfoRaw);
 
     //
-    virtual FenceType copyBuffersOnce(CopyBuffersExecutionOnce const& copyInfo) {
-      decltype(auto) submission = CommandOnceSubmission{ .submission = copyInfo.submission };
+    virtual FenceType copyBuffersOnce(cpp21::const_wrap_arg<CopyBuffersExecutionOnce> copyInfo) {
+      decltype(auto) submission = CommandOnceSubmission{ .submission = copyInfo->submission };
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       
       // 
-      submission.commandInits.push_back([=, this](vk::CommandBuffer const& cmdBuf) {
-        this->writeCopyBuffersCommand(copyInfo.writeInfo.with(cmdBuf));
+      submission.commandInits.push_back([=, this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+        this->writeCopyBuffersCommand(copyInfo->writeInfo.with(cmdBuf));
         return cmdBuf;
       });
 
@@ -495,7 +495,7 @@ namespace lxvc {
     };
 
     // 
-    DeviceObj(Handle const& handle, cpp21::const_wrap_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) : cInfo(cInfo) {
+    DeviceObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) : cInfo(cInfo) {
       this->construct(lxvc::context->get<InstanceObj>(this->base = handle), cInfo);
     };
 
@@ -511,7 +511,7 @@ namespace lxvc {
     };
     
     //
-    inline static tType make(Handle const& handle, cpp21::const_wrap_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
+    inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
       auto shared = std::make_shared<DeviceObj>(handle, cInfo);
       auto wrap = shared->registerSelf();
       return wrap;

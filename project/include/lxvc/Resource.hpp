@@ -53,12 +53,12 @@ namespace lxvc {
     };
 
     // 
-    ResourceObj(Handle const& handle, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : cInfo(cInfo) {
+    ResourceObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : cInfo(cInfo) {
       this->construct(lxvc::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
     //
-    vk::ImageView createImageView(ImageViewCreateInfo const& info = {}) {
+    vk::ImageView createImageView(cpp21::const_wrap_arg<ImageViewCreateInfo> info = {}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       
@@ -81,10 +81,10 @@ namespace lxvc {
       //
       this->imageViews.push_back(device.createImageView(vk::ImageViewCreateInfo{
         .image = this->handle.as<vk::Image>(),
-        .viewType = info.viewType,
+        .viewType = info->viewType,
         .format = imageInfo->format,
         .components = components,
-        .subresourceRange = vk::ImageSubresourceRange(info.subresourceRange).setAspectMask(aspectMask)
+        .subresourceRange = vk::ImageSubresourceRange(info->subresourceRange).setAspectMask(aspectMask)
       }));
       return this->imageViews.back(); // don't return reference, may broke vector
     };
@@ -101,7 +101,7 @@ namespace lxvc {
     };
 
     //
-    inline static tType make(Handle const& handle, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
+    inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
       auto shared = std::make_shared<ResourceObj>(handle, cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
@@ -314,20 +314,20 @@ namespace lxvc {
 
 
     //
-    virtual FenceType executeSwitchLayoutOnce(ImageLayoutSwitchInfo const& execInfo = {}) {
+    virtual FenceType executeSwitchLayoutOnce(cpp21::const_wrap_arg<ImageLayoutSwitchInfo> execInfo = {}) {
       // 
-      decltype(auto) switchInfo = execInfo.switchInfo.value();
-      decltype(auto) info = execInfo.info ? execInfo.info : this->cInfo->imageInfo->info;
+      decltype(auto) switchInfo = execInfo->switchInfo.value();
+      decltype(auto) info = execInfo->info ? execInfo->info : this->cInfo->imageInfo->info;
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
       decltype(auto) oldImageLayout = switchInfo.oldImageLayout ? switchInfo.oldImageLayout.value() : this->cInfo->imageInfo->layout;
-      decltype(auto) submission = CommandOnceSubmission{ .submission = execInfo.submission };
+      decltype(auto) submission = CommandOnceSubmission{ .submission = execInfo->submission };
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
       decltype(auto) correctAccessMask = vku::getCorrectAccessMaskByImageLayout<vk::AccessFlagBits2>(switchInfo.newImageLayout);
 
       //
       if (this->cInfo->imageInfo && this->handle.type == HandleType::eImage) {
-        submission.commandInits.push_back([=, this](vk::CommandBuffer const& cmdBuf) {
+        submission.commandInits.push_back([=, this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
           this->writeSwitchLayoutCommand(switchInfo.with(cmdBuf));
           return cmdBuf;
         });
@@ -442,13 +442,13 @@ namespace lxvc {
   };
 
   // 
-  inline WrapShared<DeviceObj> DeviceObj::writeCopyBuffersCommand(CopyBufferWriteInfo const& copyInfoRaw) {
+  inline WrapShared<DeviceObj> DeviceObj::writeCopyBuffersCommand(cpp21::const_wrap_arg<CopyBufferWriteInfo> copyInfoRaw) {
     //decltype(auto) submission = CommandOnceSubmission{ .info = QueueGetInfo {.queueFamilyIndex = copyInfoRaw.dst->queueFamilyIndex } };
     decltype(auto) device = this->base.as<vk::Device>();
-    decltype(auto) size = std::min(copyInfoRaw.src->region.size, copyInfoRaw.dst->region.size);
-    decltype(auto) copyInfo = vk::CopyBufferInfo2{ .srcBuffer = copyInfoRaw.src->buffer, .dstBuffer = copyInfoRaw.dst->buffer };
+    decltype(auto) size = std::min(copyInfoRaw->src->region.size, copyInfoRaw->dst->region.size);
+    decltype(auto) copyInfo = vk::CopyBufferInfo2{ .srcBuffer = copyInfoRaw->src->buffer, .dstBuffer = copyInfoRaw->dst->buffer };
     decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
-    decltype(auto) regions = std::vector<vk::BufferCopy2>{ vk::BufferCopy2{.srcOffset = copyInfoRaw.src->region.offset, .dstOffset = copyInfoRaw.dst->region.offset, .size = size} };
+    decltype(auto) regions = std::vector<vk::BufferCopy2>{ vk::BufferCopy2{.srcOffset = copyInfoRaw->src->region.offset, .dstOffset = copyInfoRaw->dst->region.offset, .size = size} };
 
     //
     decltype(auto) bufferBarriersBegin = std::vector<vk::BufferMemoryBarrier2>{
@@ -457,10 +457,10 @@ namespace lxvc {
         .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite),
         .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferRead),
         .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferRead),
-        .srcQueueFamilyIndex = copyInfoRaw.src->queueFamilyIndex,
-        .dstQueueFamilyIndex = copyInfoRaw.dst->queueFamilyIndex,
-        .buffer = copyInfoRaw.src->buffer,
-        .offset = copyInfoRaw.src->region.offset,
+        .srcQueueFamilyIndex = copyInfoRaw->src->queueFamilyIndex,
+        .dstQueueFamilyIndex = copyInfoRaw->dst->queueFamilyIndex,
+        .buffer = copyInfoRaw->src->buffer,
+        .offset = copyInfoRaw->src->region.offset,
         .size = size
       },
       vk::BufferMemoryBarrier2{
@@ -468,10 +468,10 @@ namespace lxvc {
         .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralRead),
         .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferWrite),
         .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
-        .srcQueueFamilyIndex = copyInfoRaw.src->queueFamilyIndex,
-        .dstQueueFamilyIndex = copyInfoRaw.dst->queueFamilyIndex,
-        .buffer = copyInfoRaw.dst->buffer,
-        .offset = copyInfoRaw.dst->region.offset,
+        .srcQueueFamilyIndex = copyInfoRaw->src->queueFamilyIndex,
+        .dstQueueFamilyIndex = copyInfoRaw->dst->queueFamilyIndex,
+        .buffer = copyInfoRaw->dst->buffer,
+        .offset = copyInfoRaw->dst->region.offset,
         .size = size
       }
     };
@@ -483,10 +483,10 @@ namespace lxvc {
         .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferRead),
         .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
         .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite),
-        .srcQueueFamilyIndex = copyInfoRaw.dst->queueFamilyIndex,
-        .dstQueueFamilyIndex = copyInfoRaw.src->queueFamilyIndex,
-        .buffer = copyInfoRaw.src->buffer,
-        .offset = copyInfoRaw.src->region.offset,
+        .srcQueueFamilyIndex = copyInfoRaw->dst->queueFamilyIndex,
+        .dstQueueFamilyIndex = copyInfoRaw->src->queueFamilyIndex,
+        .buffer = copyInfoRaw->src->buffer,
+        .offset = copyInfoRaw->src->region.offset,
         .size = size
       },
       vk::BufferMemoryBarrier2{
@@ -494,21 +494,21 @@ namespace lxvc {
         .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
         .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralRead),
         .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralRead),
-        .srcQueueFamilyIndex = copyInfoRaw.dst->queueFamilyIndex,
-        .dstQueueFamilyIndex = copyInfoRaw.src->queueFamilyIndex,
-        .buffer = copyInfoRaw.dst->buffer,
-        .offset = copyInfoRaw.dst->region.offset,
+        .srcQueueFamilyIndex = copyInfoRaw->dst->queueFamilyIndex,
+        .dstQueueFamilyIndex = copyInfoRaw->src->queueFamilyIndex,
+        .buffer = copyInfoRaw->dst->buffer,
+        .offset = copyInfoRaw->dst->region.offset,
         .size = size
       }
     };
 
     // 
-    //submission.commandInits.push_back([=](vk::CommandBuffer const& cmdBuf) {
+    //submission.commandInits.push_back([=](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
       auto _copyInfo = copyInfo;
       auto _depInfo = depInfo;
-      copyInfoRaw.cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersBegin));
-      copyInfoRaw.cmdBuf.copyBuffer2(_copyInfo.setRegions(regions));
-      copyInfoRaw.cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersEnd));
+      copyInfoRaw->cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersBegin));
+      copyInfoRaw->cmdBuf.copyBuffer2(_copyInfo.setRegions(regions));
+      copyInfoRaw->cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersEnd));
     //});
 
     //

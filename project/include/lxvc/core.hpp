@@ -344,7 +344,7 @@ namespace lxvc {
   //
   struct ImageLayoutSwitchWriteInfo {
     vk::CommandBuffer cmdBuf = {};
-    vk::ImageLayout const& newImageLayout = vk::ImageLayout::eGeneral;
+    vk::ImageLayout newImageLayout = vk::ImageLayout::eGeneral;
     uint32_t queueFamilyIndex = 0u;
 
     // 
@@ -352,7 +352,7 @@ namespace lxvc {
     std::optional<vk::ImageSubresourceRange> subresourceRange = {};
     
     //
-    decltype(auto) with(vk::CommandBuffer const& cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
+    decltype(auto) with(cpp21::const_wrap_arg<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
   };
 
   //
@@ -382,7 +382,7 @@ namespace lxvc {
     std::span<char8_t> data = {};
 
     //
-    decltype(auto) with(vk::CommandBuffer const& cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
+    decltype(auto) with(cpp21::const_wrap_arg<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
   };
 
   // 
@@ -400,7 +400,7 @@ namespace lxvc {
     vk::PipelineLayout layout = {};
     
     //
-    decltype(auto) with(vk::CommandBuffer const& cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
+    decltype(auto) with(cpp21::const_wrap_arg<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
   };
 
   //
@@ -411,7 +411,7 @@ namespace lxvc {
     vk::PipelineLayout layout = {};
     
     //
-    decltype(auto) with(vk::CommandBuffer const& cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
+    decltype(auto) with(cpp21::const_wrap_arg<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
   };
 
 
@@ -426,8 +426,8 @@ namespace lxvc {
 
   //
   struct CommandOnceSubmission {
-    std::vector<std::function<vk::CommandBuffer const& (vk::CommandBuffer const&)>> commandInits = {};
-    std::vector<std::function<void(vk::Result const&)>> onDone = {};
+    std::vector<std::function<cpp21::const_wrap_arg<vk::CommandBuffer>(cpp21::const_wrap_arg<vk::CommandBuffer>)>> commandInits = {};
+    std::vector<std::function<void(cpp21::const_wrap_arg<vk::Result>)>> onDone = {};
     SubmissionInfo submission = {};
   };
 
@@ -446,7 +446,7 @@ namespace lxvc {
     std::optional<BufferRegion> dst = BufferRegion{};
 
     //
-    decltype(auto) with(vk::CommandBuffer const& cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
+    decltype(auto) with(cpp21::const_wrap_arg<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
   };
 
   //
@@ -458,7 +458,7 @@ namespace lxvc {
     std::optional<BufferRegion> dstBuffer = {};
 
     //
-    decltype(auto) with(vk::CommandBuffer const& cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
+    decltype(auto) with(cpp21::const_wrap_arg<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
   };
 
   //
@@ -469,7 +469,7 @@ namespace lxvc {
     std::optional<BufferRegion> srcBuffer = {};
 
     //
-    decltype(auto) with(vk::CommandBuffer const& cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
+    decltype(auto) with(cpp21::const_wrap_arg<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
   };
 
 
@@ -482,7 +482,7 @@ namespace lxvc {
 
   //
   struct DownloadExecutionOnce {
-    std::span<char8_t> const& host = {};
+    std::span<char8_t> host = {};
     DownloadCommandWriteInfo writeInfo = {};
     SubmissionInfo submission = {};
   };
@@ -551,8 +551,8 @@ namespace lxvc {
     operator vk::PipelineShaderStageRequiredSubgroupSizeCreateInfoEXT const& () const { return sgmp; };
 
     //
-    decltype(auto) operator =(vk::PipelineShaderStageCreateInfo const& spi) { (this->spi = spi); return *this; };
-    decltype(auto) operator =(vk::PipelineShaderStageRequiredSubgroupSizeCreateInfoEXT const& sgmp) { (this->sgmp = sgmp); return *this; };
+    decltype(auto) operator =(cpp21::const_wrap_arg<vk::PipelineShaderStageCreateInfo> spi) { (this->spi = spi); return *this; };
+    decltype(auto) operator =(cpp21::const_wrap_arg<vk::PipelineShaderStageRequiredSubgroupSizeCreateInfoEXT> sgmp) { (this->sgmp = sgmp); return *this; };
   };
 
   // 
@@ -570,41 +570,41 @@ namespace lxvc {
     operator vk::ShaderModuleValidationCacheCreateInfoEXT const& () const { return validInfo; };
 
     //
-    decltype(auto) operator =(vk::ShaderModuleCreateInfo const& info) { (this->info = info); return *this; };
-    decltype(auto) operator =(vk::ShaderModuleValidationCacheCreateInfoEXT const& validInfo) { (this->validInfo = validInfo); return *this; };
+    decltype(auto) operator =(cpp21::const_wrap_arg<vk::ShaderModuleCreateInfo> info) { (this->info = info); return *this; };
+    decltype(auto) operator =(cpp21::const_wrap_arg<vk::ShaderModuleValidationCacheCreateInfoEXT> validInfo) { (this->validInfo = validInfo); return *this; };
   };
 
   // 
   inline static std::vector<uint32_t> eTempCode = {};
 
   // 
-  static inline decltype(auto) makeShaderModuleInfo(std::vector<uint32_t> const& code) {
-    return ShaderModuleCreateInfo{ vk::ShaderModuleCreateInfo{.codeSize = code.size() * 4ull, .pCode = code.data() } };
+  static inline decltype(auto) makeShaderModuleInfo(cpp21::const_wrap_arg<std::vector<uint32_t>> code) {
+    return ShaderModuleCreateInfo{ vk::ShaderModuleCreateInfo{.codeSize = code->size() * 4ull, .pCode = code->data() } };
   };
 
   // 
-  static inline decltype(auto) createShaderModule(vk::Device const& device, ShaderModuleCreateInfo const& info = {}) {
-    return device.createShaderModule(info);
+  static inline decltype(auto) createShaderModule(cpp21::const_wrap_arg<vk::Device> device, cpp21::const_wrap_arg<ShaderModuleCreateInfo> info = {}) {
+    return device->createShaderModule(*info);
   };
 
   // 
-  static inline decltype(auto) createShaderModule(vk::Device const& device, std::vector<uint32_t> const& code = {}) {
+  static inline decltype(auto) createShaderModule(cpp21::const_wrap_arg<vk::Device> device, cpp21::const_wrap_arg<std::vector<uint32_t>> code = {}) {
     return createShaderModule(device, makeShaderModuleInfo(eTempCode = code));
   };
 
   // create shader module 
-  static inline decltype(auto) makePipelineStageInfo(vk::Device const& device, std::vector<uint32_t> const& code = {}, vk::ShaderStageFlagBits stage = vk::ShaderStageFlagBits::eCompute, cpp21::const_wrap_arg<char const*> entry = "main") {
+  static inline decltype(auto) makePipelineStageInfo(cpp21::const_wrap_arg<vk::Device> device, cpp21::const_wrap_arg<std::vector<uint32_t>> code = {}, vk::ShaderStageFlagBits stage = vk::ShaderStageFlagBits::eCompute, cpp21::const_wrap_arg<char const*> entry = "main") {
     vk::PipelineShaderStageCreateInfo spi = {
       .stage = stage,
       .pName = entry.value(),
       .pSpecializationInfo = nullptr
     };
-    if (code.size() > 0u && (!spi.module)) { spi.module = createShaderModule(device, code); };
+    if (code->size() > 0u && (!spi.module)) { spi.module = createShaderModule(device, code); };
     return spi;
   };
 
   // create compute
-  static inline decltype(auto) makeComputePipelineStageInfo(vk::Device const& device, std::vector<uint32_t> const& code = {}, cpp21::const_wrap_arg<const char*> entry = "main", cpp21::const_wrap_arg<uint32_t> subgroupSize = 0u) {
+  static inline decltype(auto) makeComputePipelineStageInfo(cpp21::const_wrap_arg<vk::Device> device, cpp21::const_wrap_arg<std::vector<uint32_t>> code = {}, cpp21::const_wrap_arg<const char*> entry = "main", cpp21::const_wrap_arg<uint32_t> subgroupSize = 0u) {
     decltype(auto) f = ComputeStageCreateInfo{};
     f.spi = makePipelineStageInfo(device, code, vk::ShaderStageFlagBits::eCompute, entry);
     f.spi.flags = vk::PipelineShaderStageCreateFlags{ vk::PipelineShaderStageCreateFlagBits::eRequireFullSubgroups };
@@ -671,16 +671,16 @@ namespace lxvc {
 
   public:
     Handle() {};
-    Handle(auto const& _handle, HandleType const& type, uint32_t const& family = 0u) : value(reinterpret_cast<uintptr_t const&>(_handle)), type(type), family(family) {};
-    Handle(auto const& _handle, uint32_t const& family = 0u) : value(reinterpret_cast<uintptr_t const&>(_handle)), type(getHandleType(_handle)), family(family) {};
-    Handle(Handle const& _handle) : value(_handle.value), type(_handle.type), family(_handle.family) {};
+    Handle(auto const& _handle, cpp21::const_wrap_arg<HandleType> type, cpp21::const_wrap_arg<uint32_t> family = 0u) : value(reinterpret_cast<uintptr_t const&>(_handle)), type(type), family(family) {};
+    Handle(auto const& _handle, cpp21::const_wrap_arg<uint32_t> family = 0u) : value(reinterpret_cast<uintptr_t const&>(_handle)), type(getHandleType(_handle)), family(family) {};
+    Handle(cpp21::const_wrap_arg<Handle> _handle) : value(_handle->value), type(_handle->type), family(_handle->family) {};
 
     // 
     template<class T = uintptr_t> inline decltype(auto) as() { return reinterpret_cast<T&>(this->value); };
     template<class T = uintptr_t> inline decltype(auto) as() const { return reinterpret_cast<T const&>(this->value); };
 
     // 
-    inline decltype(auto) with(uint32_t const& family = 0u) const { return Handle(this->value, this->type, family); };
+    inline decltype(auto) with(cpp21::const_wrap_arg<uint32_t> family = 0u) const { return Handle(this->value, this->type, family); };
 
     // 
     template<class T = uintptr_t> inline operator T& () { return this->as<T>(); };
@@ -694,8 +694,8 @@ namespace lxvc {
     };
 
     //
-    inline decltype(auto) operator =(Handle const& handle) {
-      this->value = handle.value, this->type = handle.type, this->family = handle.family;
+    inline decltype(auto) operator =(cpp21::const_wrap_arg<Handle> handle) {
+      this->value = handle->value, this->type = handle->type, this->family = handle->family;
       return *this;
     };
   };
@@ -710,6 +710,13 @@ namespace lxvc {
     operator Handle& () { return this->ptr->handle; };
     operator Handle const& () const { return this->ptr->handle; };
 
+    //
+    operator cpp21::const_wrap_arg<Handle>() const { return this->ptr->handle; };
+
+    // 
+    inline decltype(auto) handle() { return this->ptr->handle; };
+    inline decltype(auto) handle() const { return this->ptr->handle; };
+
     // 
     inline decltype(auto) type() { return this->ptr->handle.type; };
     inline decltype(auto) type() const { return this->ptr->handle.type; };
@@ -723,7 +730,7 @@ namespace lxvc {
     template<class T = uintptr_t> inline decltype(auto) as() const { return this->ptr->handle.as<T>(); };
 
     // 
-    inline decltype(auto) with(uint32_t const& family = 0u) const { return this->ptr->handle.with(family); };
+    inline decltype(auto) with(cpp21::const_wrap_arg<uint32_t> family = 0u) const { return this->ptr->handle.with(family); };
 
     // we forbid to change handle directly
 
@@ -751,9 +758,13 @@ namespace lxvc {
 
     // 
     BaseObj() : infoMap(std::make_shared<MSS>(MSS())) {};
-    BaseObj(Handle const& base, Handle const& handle = {}) : base(base), handle(handle), infoMap(std::make_shared<MSS>()) {
+    BaseObj(cpp21::const_wrap_arg<Handle> base, cpp21::const_wrap_arg<Handle> handle = {}) : base(base), handle(handle), infoMap(std::make_shared<MSS>()) {
 
     };
+
+    //
+    virtual Handle getHandle() const { return handle; };
+    virtual Handle getBase() const { return base; };
 
     // 
     virtual std::type_info const& type_info() const {
@@ -762,48 +773,52 @@ namespace lxvc {
 
     //
     template<class T = BaseObj>
-    inline decltype(auto) registerObj(Handle const& handle, std::shared_ptr<T> const& obj = {}) {
-      if (handleObjectMap.find(handle.type) == handleObjectMap.end()) { handleObjectMap[handle.type] = {}; };
-      decltype(auto) map = handleObjectMap.at(handle.type);
-      map.set(handle.value, (obj ? obj : std::make_shared<T>(this->handle, handle)));
+    inline std::shared_ptr<T> registerObj(cpp21::const_wrap_arg<Handle> handle, std::shared_ptr<T> obj = {}) {
+      if (handleObjectMap.find(handle->type) == handleObjectMap.end()) { handleObjectMap[handle->type] = {}; };
+      decltype(auto) map = handleObjectMap.at(handle->type);
+      map.set(handle->value, (obj ? obj : std::make_shared<T>(this->handle, handle)));
       return shared_from_this();
     };
 
     //
     template<class T = BaseObj>
-    inline decltype(auto) registerObj(auto const& handle, std::shared_ptr<T> const& obj = {}) {
-      return this->registerObj(Handle(handle), obj);
+    inline std::shared_ptr<T> registerObj(auto const& handle, std::shared_ptr<T> obj = {}) {
+      return this->registerObj(cpp21::const_wrap_arg(Handle(handle)), obj);
     };
 
     //
     template<class T = BaseObj>
-    inline decltype(auto) registerObj(std::shared_ptr<T> const& obj = {}) {
+    inline std::shared_ptr<T> registerObj(std::shared_ptr<T> obj = {}) {
       return this->registerObj(obj->handle, obj);
     };
 
     //
     template<class T = BaseObj>
-    inline decltype(auto) get(Handle const& handle) {
-      if (handleObjectMap.find(handle.type) == handleObjectMap.end()) {
-        handleObjectMap[handle.type] = {};
+    inline decltype(auto) get(cpp21::const_wrap_arg<Handle> handle) {
+      if (handleObjectMap.find(handle->type) == handleObjectMap.end()) {
+        handleObjectMap[handle->type] = {};
       };
 
       // 
-      decltype(auto) objMap = handleObjectMap.at(handle.type);
-      if (objMap->find(handle.value) == objMap->end()) { 
+      decltype(auto) objMap = handleObjectMap.at(handle->type);
+      if (objMap->find(handle->value) == objMap->end()) { 
         auto obj = std::make_shared<T>(this->handle, handle); 
-        objMap.set(handle.value, obj); 
+        objMap.set(handle->value, obj);
         return WrapShared<T>(obj); 
       };
-      return WrapShared<T>(std::dynamic_pointer_cast<T>(objMap.at(handle.value).shared()));
+      return WrapShared<T>(std::dynamic_pointer_cast<T>(objMap.at(handle->value).shared()));
     };
 
     //
     template<class T = BaseObj>
-    inline decltype(auto) get(Handle const& handle) const {
-      decltype(auto) objMap = handleObjectMap.at(handle.type);
-      return WrapShared<T>(std::dynamic_pointer_cast<T>(objMap.at(handle.value).shared()));
+    inline decltype(auto) get(cpp21::const_wrap_arg<Handle> handle) const {
+      decltype(auto) objMap = handleObjectMap.at(handle->type);
+      return WrapShared<T>(std::dynamic_pointer_cast<T>(objMap.at(handle->value).shared()));
     };
+
+    //
+    template<class T = BaseObj> inline WrapShared<T> get(auto const& handle) { return this->get<T>(cpp21::const_wrap_arg(Handle(handle))); };
+    template<class T = BaseObj> inline WrapShared<T> get(auto const& handle) const { return this->get<T>(cpp21::const_wrap_arg(Handle(handle))); };
   };
 
 

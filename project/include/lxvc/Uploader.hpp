@@ -46,7 +46,7 @@ namespace lxvc {
     };
 
     // 
-    UploaderObj(Handle const& handle, cpp21::const_wrap_arg<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) : cInfo(cInfo) {
+    UploaderObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) : cInfo(cInfo) {
       this->construct(lxvc::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
@@ -62,20 +62,20 @@ namespace lxvc {
     };
 
     //
-    inline static tType make(Handle const& handle, cpp21::const_wrap_arg<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) {
+    inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) {
       auto shared = std::make_shared<UploaderObj>(handle, cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
     };
 
     // you can copy from host to device Buffer and Image together!
-    virtual tType writeUploadToResourceCmd(UploadCommandWriteInfo const& copyRegionInfo) {
+    virtual tType writeUploadToResourceCmd(cpp21::const_wrap_arg<UploadCommandWriteInfo> copyRegionInfo) {
       //decltype(auto) submission = CommandOnceSubmission{ .info = this->cInfo->info };
       decltype(auto) uploadBuffer = this->uploadBuffer;
       decltype(auto) downloadBuffer = this->downloadBuffer;
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
-      decltype(auto) size = copyRegionInfo.dstBuffer ? copyRegionInfo.dstBuffer->region.size : VK_WHOLE_SIZE;
+      decltype(auto) size = copyRegionInfo->dstBuffer ? copyRegionInfo->dstBuffer->region.size : VK_WHOLE_SIZE;
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
 
       //
@@ -123,8 +123,8 @@ namespace lxvc {
       };
 
       // 
-      if (copyRegionInfo.dstImage) {
-        auto& imageRegion = copyRegionInfo.dstImage.value();
+      if (copyRegionInfo->dstImage) {
+        auto& imageRegion = copyRegionInfo->dstImage.value();
 
         decltype(auto) imageObj = deviceObj->get<ResourceObj>(imageRegion.image);
         decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
@@ -180,8 +180,8 @@ namespace lxvc {
       };
 
       // 
-      if (copyRegionInfo.dstBuffer) {
-        auto& bufferRegion = copyRegionInfo.dstBuffer.value();
+      if (copyRegionInfo->dstBuffer) {
+        auto& bufferRegion = copyRegionInfo->dstBuffer.value();
 
         BtBRegions.push_back(vk::BufferCopy2{ .srcOffset = 0ull, .dstOffset = bufferRegion.region.offset, .size = size });
         BtB = vk::CopyBufferInfo2{ .srcBuffer = uploadBuffer, .dstBuffer = bufferRegion.buffer };
@@ -211,17 +211,17 @@ namespace lxvc {
         });
       };
 
-      copyRegionInfo.cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersBegin).setImageMemoryBarriers(imageBarriersBegin));
-      if (copyRegionInfo.dstImage) copyRegionInfo.cmdBuf.copyBufferToImage2(BtI.setRegions(BtIRegions));
-      if (copyRegionInfo.dstBuffer) copyRegionInfo.cmdBuf.copyBuffer2(BtB.setRegions(BtBRegions));
-      copyRegionInfo.cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersEnd).setImageMemoryBarriers(imageBarriersEnd));
+      copyRegionInfo->cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersBegin).setImageMemoryBarriers(imageBarriersBegin));
+      if (copyRegionInfo->dstImage) copyRegionInfo->cmdBuf.copyBufferToImage2(BtI.setRegions(BtIRegions));
+      if (copyRegionInfo->dstBuffer) copyRegionInfo->cmdBuf.copyBuffer2(BtB.setRegions(BtBRegions));
+      copyRegionInfo->cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersEnd).setImageMemoryBarriers(imageBarriersEnd));
 
       //
       return SFT();
     };
 
     //
-    virtual tType writeDownloadToResourceCmd(DownloadCommandWriteInfo const& info) {
+    virtual tType writeDownloadToResourceCmd(cpp21::const_wrap_arg<DownloadCommandWriteInfo> info) {
       //decltype(auto) submission = CommandOnceSubmission{ .info = SubmissionInfo {.info = this->cInfo->info } };
       decltype(auto) uploadBuffer = this->uploadBuffer;
       decltype(auto) downloadBuffer = this->downloadBuffer;
@@ -229,7 +229,7 @@ namespace lxvc {
       decltype(auto) regions = std::vector<vk::BufferCopy2>{  };
       decltype(auto) copyInfo = vk::CopyBufferInfo2{};
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
-      decltype(auto) size = info.srcBuffer ? info.srcBuffer->region.size : VK_WHOLE_SIZE;
+      decltype(auto) size = info->srcBuffer ? info->srcBuffer->region.size : VK_WHOLE_SIZE;
 
       //
       decltype(auto) bufferBarriersBegin = std::vector<vk::BufferMemoryBarrier2>{
@@ -261,19 +261,19 @@ namespace lxvc {
         }
       };
 
-      if (info.srcBuffer) {
-        copyInfo = vk::CopyBufferInfo2{ .srcBuffer = info.srcBuffer->buffer, .dstBuffer = downloadBuffer };
-        regions.push_back(vk::BufferCopy2{ .srcOffset = info.srcBuffer->region.offset, .dstOffset = 0ull, .size = size });
+      if (info->srcBuffer) {
+        copyInfo = vk::CopyBufferInfo2{ .srcBuffer = info->srcBuffer->buffer, .dstBuffer = downloadBuffer };
+        regions.push_back(vk::BufferCopy2{ .srcOffset = info->srcBuffer->region.offset, .dstOffset = 0ull, .size = size });
 
         bufferBarriersBegin.push_back(vk::BufferMemoryBarrier2{
           .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
           .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite),
           .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferRead),
           .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferRead),
-          .srcQueueFamilyIndex = info.srcBuffer->queueFamilyIndex,
+          .srcQueueFamilyIndex = info->srcBuffer->queueFamilyIndex,
           .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
-          .buffer = info.srcBuffer->buffer,
-          .offset = info.srcBuffer->region.offset,
+          .buffer = info->srcBuffer->buffer,
+          .offset = info->srcBuffer->region.offset,
           .size = size
         });
 
@@ -283,17 +283,17 @@ namespace lxvc {
           .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
           .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite),
           .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
-          .dstQueueFamilyIndex = info.srcBuffer->queueFamilyIndex,
-          .buffer = info.srcBuffer->buffer,
-          .offset = info.srcBuffer->region.offset,
+          .dstQueueFamilyIndex = info->srcBuffer->queueFamilyIndex,
+          .buffer = info->srcBuffer->buffer,
+          .offset = info->srcBuffer->region.offset,
           .size = size
         });
       };
 
-      if (info.srcBuffer) {
-        info.cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersBegin));
-        info.cmdBuf.copyBuffer2(copyInfo.setRegions(regions));
-        info.cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersEnd));
+      if (info->srcBuffer) {
+        info->cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersBegin));
+        info->cmdBuf.copyBuffer2(copyInfo.setRegions(regions));
+        info->cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersEnd));
       };
 
       return SFT();
@@ -301,22 +301,22 @@ namespace lxvc {
 
 
     //
-    virtual FenceType executeUploadToResourceOnce(UploadExecutionOnce const& exec) {
+    virtual FenceType executeUploadToResourceOnce(cpp21::const_wrap_arg<UploadExecutionOnce> exec) {
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo {.info = this->cInfo->info } };
       decltype(auto) uploadBuffer = this->uploadBuffer;
       decltype(auto) downloadBuffer = this->downloadBuffer;
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
-      decltype(auto) size = exec.host.size();
+      decltype(auto) size = exec->host.size();
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
       decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
 
       //
-      memcpy(lxvc::context->get<DeviceObj>(this->base)->get<ResourceObj>(uploadBuffer)->mappedMemory, exec.host.data(), size);
+      memcpy(lxvc::context->get<DeviceObj>(this->base)->get<ResourceObj>(uploadBuffer)->mappedMemory, exec->host.data(), size);
 
       // 
-      submission.commandInits.push_back([=,this](vk::CommandBuffer const& cmdBuf) {
-        this->writeUploadToResourceCmd(exec.writeInfo.with(cmdBuf));
+      submission.commandInits.push_back([=,this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+        this->writeUploadToResourceCmd(exec->writeInfo.with(cmdBuf));
         return cmdBuf;
       });
 
@@ -325,25 +325,25 @@ namespace lxvc {
     };
 
     //
-    virtual FenceType executeDownloadToResourceOnce(DownloadExecutionOnce const& exec) {
+    virtual FenceType executeDownloadToResourceOnce(cpp21::const_wrap_arg<DownloadExecutionOnce> exec) {
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = this->cInfo->info } };
       decltype(auto) uploadBuffer = this->uploadBuffer;
       decltype(auto) downloadBuffer = this->downloadBuffer;
       decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) size = std::min(exec.host.size(), exec.writeInfo.srcBuffer->region.size);
+      decltype(auto) size = std::min(exec->host.size(), exec->writeInfo.srcBuffer->region.size);
       decltype(auto) regions = std::vector<vk::BufferCopy2>{  };
       decltype(auto) copyInfo = vk::CopyBufferInfo2{};
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
 
       // 
-      submission.commandInits.push_back([=,this](vk::CommandBuffer const& cmdBuf) {
-        this->writeDownloadToResourceCmd(exec.writeInfo.with(cmdBuf));
+      submission.commandInits.push_back([=,this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+        this->writeDownloadToResourceCmd(exec->writeInfo.with(cmdBuf));
         return cmdBuf;
       });
 
       //
-      submission.onDone.push_back([=](vk::Result const& result) {
-        auto _host = exec.host;
+      submission.onDone.push_back([=](cpp21::const_wrap_arg<vk::Result> result) {
+        auto _host = exec->host;
         memcpy(_host.data(), lxvc::context->get<DeviceObj>(this->base)->get<ResourceObj>(downloadBuffer)->mappedMemory, size);
       });
 

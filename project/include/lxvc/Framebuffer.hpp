@@ -44,8 +44,8 @@ namespace lxvc {
     vk::RenderingAttachmentInfo stencilAttachment = {};
 
     //
-    std::vector<std::function<void(vk::CommandBuffer const&, FramebufferState const&)>> switchToShaderReadFn = {};
-    std::vector<std::function<void(vk::CommandBuffer const&, FramebufferState const&)>> switchToAttachmentFn = {};
+    std::vector<std::function<void(cpp21::const_wrap_arg<vk::CommandBuffer>, cpp21::const_wrap_arg<FramebufferState>)>> switchToShaderReadFn = {};
+    std::vector<std::function<void(cpp21::const_wrap_arg<vk::CommandBuffer>, cpp21::const_wrap_arg<FramebufferState>)>> switchToAttachmentFn = {};
 
     //
     FramebufferState state = FramebufferState::eShaderRead;
@@ -62,7 +62,7 @@ namespace lxvc {
     };
 
     // 
-    FramebufferObj(Handle const& handle, cpp21::const_wrap_arg<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{}) : cInfo(cInfo) {
+    FramebufferObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{}) : cInfo(cInfo) {
       this->construct(lxvc::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
@@ -94,14 +94,14 @@ namespace lxvc {
     };
 
     //
-    inline static tType make(Handle const& handle, cpp21::const_wrap_arg<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{}) {
+    inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{}) {
       auto shared = std::make_shared<FramebufferObj>(handle, cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
     };
 
     //
-    virtual tType writeSwitchToShaderRead(vk::CommandBuffer const& cmdBuf) {
+    virtual tType writeSwitchToShaderRead(cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
       if (this->state != FramebufferState::eShaderRead) {
         for (decltype(auto) fn : switchToShaderReadFn) { fn(cmdBuf, this->state); };
         this->state = FramebufferState::eShaderRead;
@@ -110,7 +110,7 @@ namespace lxvc {
     };
 
     //
-    virtual tType writeSwitchToAttachment(vk::CommandBuffer const& cmdBuf) {
+    virtual tType writeSwitchToAttachment(cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
       if (this->state != FramebufferState::eAttachment) {
         for (decltype(auto) fn : switchToAttachmentFn) { fn(cmdBuf, this->state); };
         this->state = FramebufferState::eAttachment;
@@ -120,11 +120,11 @@ namespace lxvc {
 
 
     //
-    virtual FenceType switchToShaderRead(cpp21::const_wrap_arg<QueueGetInfo> const& info = QueueGetInfo{}) {
+    virtual FenceType switchToShaderRead(cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}) {
       // 
       if (this->state != FramebufferState::eShaderRead) {
         decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo{.info = info } };
-        submission.commandInits.push_back([=, this](vk::CommandBuffer const& cmdBuf) {
+        submission.commandInits.push_back([=, this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
           this->writeSwitchToShaderRead(cmdBuf);
           return cmdBuf;
         });
@@ -137,11 +137,11 @@ namespace lxvc {
     };
 
     //
-    virtual FenceType switchToAttachment(cpp21::const_wrap_arg<QueueGetInfo> const& info = QueueGetInfo{}) {
+    virtual FenceType switchToAttachment(cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}) {
       // 
       if (this->state != FramebufferState::eAttachment) {
         decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo{.info = info } };
-        submission.commandInits.push_back([=, this](vk::CommandBuffer const& cmdBuf) {
+        submission.commandInits.push_back([=, this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
           this->writeSwitchToAttachment(cmdBuf);
           return cmdBuf;
         });
@@ -156,7 +156,7 @@ namespace lxvc {
   protected:
 
     //
-    virtual void createImage(ImageType const& imageType = ImageType::eColorAttachment) {
+    virtual void createImage(cpp21::const_wrap_arg<ImageType> imageType = ImageType::eColorAttachment) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
@@ -164,18 +164,18 @@ namespace lxvc {
       decltype(auto) lastDepthFormat = descriptorsObj->cInfo->attachments.depthAttachmentFormat;
       decltype(auto) lastStencilFormat = descriptorsObj->cInfo->attachments.stencilAttachmentFormat;
 
-      decltype(auto) format = imageType == ImageType::eDepthStencilAttachment ? lastDepthFormat : (imageType == ImageType::eDepthAttachment ? lastDepthFormat : (imageType == ImageType::eStencilAttachment ? lastStencilFormat : descriptorsObj->cInfo->attachments.colorAttachmentFormats[colorAttachments.size()]));
+      decltype(auto) format = (*imageType) == ImageType::eDepthStencilAttachment ? lastDepthFormat : ((*imageType) == ImageType::eDepthAttachment ? lastDepthFormat : ((*imageType) == ImageType::eStencilAttachment ? lastStencilFormat : descriptorsObj->cInfo->attachments.colorAttachmentFormats[colorAttachments.size()]));
       decltype(auto) aspectMask =
-           imageType == ImageType::eDepthStencilAttachment ? (vk::ImageAspectFlagBits::eDepth) :
-          (imageType == ImageType::eDepthAttachment ? vk::ImageAspectFlagBits::eDepth :
-          (imageType == ImageType::eStencilAttachment ? vk::ImageAspectFlagBits::eStencil : vk::ImageAspectFlagBits::eColor));
-      decltype(auto) components = imageType == ImageType::eDepthStencilAttachment || imageType == ImageType::eDepthAttachment || imageType == ImageType::eStencilAttachment
+        (*imageType) == ImageType::eDepthStencilAttachment ? (vk::ImageAspectFlagBits::eDepth) :
+        ((*imageType) == ImageType::eDepthAttachment ? vk::ImageAspectFlagBits::eDepth :
+        ((*imageType) == ImageType::eStencilAttachment ? vk::ImageAspectFlagBits::eStencil : vk::ImageAspectFlagBits::eColor));
+      decltype(auto) components = (*imageType) == ImageType::eDepthStencilAttachment || (*imageType) == ImageType::eDepthAttachment || (*imageType) == ImageType::eStencilAttachment
         ? vk::ComponentMapping{ .r = vk::ComponentSwizzle::eZero, .g = vk::ComponentSwizzle::eZero, .b = vk::ComponentSwizzle::eZero, .a = vk::ComponentSwizzle::eZero }
         : vk::ComponentMapping{ .r = vk::ComponentSwizzle::eR, .g = vk::ComponentSwizzle::eG, .b = vk::ComponentSwizzle::eB, .a = vk::ComponentSwizzle::eA };
       decltype(auto) imageLayout = 
-         imageType == ImageType::eDepthStencilAttachment ? vk::ImageLayout::eDepthStencilAttachmentOptimal :
-        (imageType == ImageType::eDepthAttachment ? vk::ImageLayout::eDepthAttachmentOptimal :
-        (imageType == ImageType::eStencilAttachment ? vk::ImageLayout::eStencilAttachmentOptimal : vk::ImageLayout::eColorAttachmentOptimal));
+        (*imageType) == ImageType::eDepthStencilAttachment ? vk::ImageLayout::eDepthStencilAttachmentOptimal :
+        ((*imageType) == ImageType::eDepthAttachment ? vk::ImageLayout::eDepthAttachmentOptimal :
+        ((*imageType) == ImageType::eStencilAttachment ? vk::ImageLayout::eStencilAttachmentOptimal : vk::ImageLayout::eColorAttachmentOptimal));
       decltype(auto) subresourceRange =
         vk::ImageSubresourceRange{
           .aspectMask = aspectMask,
@@ -209,7 +209,7 @@ namespace lxvc {
       this->imageViewIndices.push_back(descriptorsObj->textures.add(vk::DescriptorImageInfo{ .imageView = imageView,.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal }));
 
       // TODO: use pre-built command buffer
-      this->switchToAttachmentFn.push_back([=](vk::CommandBuffer const& cmdBuf, FramebufferState const& previousState = {}) {
+      this->switchToAttachmentFn.push_back([=](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf, cpp21::const_wrap_arg<FramebufferState> previousState = {}) {
         imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
           .cmdBuf = cmdBuf,
           .newImageLayout = imageLayout,
@@ -218,7 +218,7 @@ namespace lxvc {
       });
 
       //
-      this->switchToShaderReadFn.push_back([=](vk::CommandBuffer const& cmdBuf, FramebufferState const& previousState = {}) {
+      this->switchToShaderReadFn.push_back([=](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf, cpp21::const_wrap_arg<FramebufferState> previousState = {}) {
         imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
           .cmdBuf = cmdBuf,
           .newImageLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
@@ -230,15 +230,15 @@ namespace lxvc {
       glm::vec4 color = glm::vec4(0.f, 0.f, 0.f, 0.f);
 
       //
-      if (imageType == ImageType::eDepthStencilAttachment) {
+      if ((*imageType) == ImageType::eDepthStencilAttachment) {
         stencilAttachment = depthAttachment = vk::RenderingAttachmentInfo{ .imageView = imageView, .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eClear, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = vk::ClearValue{.depthStencil = vk::ClearDepthStencilValue{.depth = 1.f, .stencil = 0u} } };
       }
       else
-      if (imageType == ImageType::eDepthAttachment) {
+      if ((*imageType) == ImageType::eDepthAttachment) {
         depthAttachment = vk::RenderingAttachmentInfo{ .imageView = imageView, .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eClear, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = vk::ClearValue{ .depthStencil = vk::ClearDepthStencilValue{.depth = 1.f} } };
       }
       else 
-      if (imageType == ImageType::eStencilAttachment) {
+      if ((*imageType) == ImageType::eStencilAttachment) {
         stencilAttachment = vk::RenderingAttachmentInfo{ .imageView = imageView, .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eClear, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = vk::ClearValue{.depthStencil = vk::ClearDepthStencilValue{.stencil = 0u} } };
       }
       else {

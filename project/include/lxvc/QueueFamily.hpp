@@ -36,7 +36,7 @@ namespace lxvc {
     };
 
     // 
-    QueueFamilyObj(Handle const& handle, cpp21::const_wrap_arg<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{}) : cInfo(cInfo) {
+    QueueFamilyObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{}) : cInfo(cInfo) {
       this->construct(lxvc::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
@@ -52,7 +52,7 @@ namespace lxvc {
     };
 
     //
-    inline static tType make(Handle const& handle, cpp21::const_wrap_arg<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{}) {
+    inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{}) {
       auto shared = std::make_shared<QueueFamilyObj>(handle, cInfo);
       auto wrap = shared->registerSelf();
       return wrap;

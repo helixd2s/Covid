@@ -86,7 +86,7 @@ namespace lxvc {
     };
     
     // 
-    DescriptorsObj(Handle const& handle, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) : cInfo(cInfo) {
+    DescriptorsObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) : cInfo(cInfo) {
       this->construct(lxvc::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
@@ -102,7 +102,7 @@ namespace lxvc {
     };
 
     //
-    inline static tType make(Handle const& handle, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) {
+    inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) {
       auto shared = std::make_shared<DescriptorsObj>(handle, cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
@@ -110,7 +110,7 @@ namespace lxvc {
 
   protected:
     //
-    virtual void createDescriptorLayout(vk::DescriptorType const& type, uint32_t const& count = 1u) {
+    virtual void createDescriptorLayout(cpp21::const_wrap_arg<vk::DescriptorType> type, cpp21::const_wrap_arg<uint32_t> count = 1u) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) last = this->layouts.size();
       this->layoutInfoMaps->push_back(std::make_shared<MSS>(MSS()));
@@ -213,8 +213,8 @@ namespace lxvc {
     };
 
     //
-    virtual tType writeUniformUpdateCommand(UniformDataWriteSet const& cInfo) {
-      size_t size = std::min(cInfo.data.size(), cInfo.region->size);
+    virtual tType writeUniformUpdateCommand(cpp21::const_wrap_arg<UniformDataWriteSet> cInfo) {
+      size_t size = std::min(cInfo->data.size(), cInfo->region->size);
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
 
@@ -225,10 +225,10 @@ namespace lxvc {
           .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralRead) | vk::AccessFlagBits2::eUniformRead,
           .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferWrite),
           .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
-          .srcQueueFamilyIndex = cInfo.info->queueFamilyIndex,
-          .dstQueueFamilyIndex = cInfo.info->queueFamilyIndex,
+          .srcQueueFamilyIndex = cInfo->info->queueFamilyIndex,
+          .dstQueueFamilyIndex = cInfo->info->queueFamilyIndex,
           .buffer = this->uniformBuffer,
-          .offset = cInfo.region->offset,
+          .offset = cInfo->region->offset,
           .size = size
         }
       };
@@ -240,30 +240,30 @@ namespace lxvc {
           .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
           .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralRead),
           .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralRead) | vk::AccessFlagBits2::eUniformRead,
-          .srcQueueFamilyIndex = cInfo.info->queueFamilyIndex,
-          .dstQueueFamilyIndex = cInfo.info->queueFamilyIndex,
+          .srcQueueFamilyIndex = cInfo->info->queueFamilyIndex,
+          .dstQueueFamilyIndex = cInfo->info->queueFamilyIndex,
           .buffer = this->uniformBuffer,
-          .offset = cInfo.region->offset,
+          .offset = cInfo->region->offset,
           .size = size
         }
       };
 
       // 
-      cInfo.cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersBegin));
-      cInfo.cmdBuf.updateBuffer(this->uniformBuffer, cInfo.region->offset, size, cInfo.data.data());
-      cInfo.cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersEnd));
+      cInfo->cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersBegin));
+      cInfo->cmdBuf.updateBuffer(this->uniformBuffer, cInfo->region->offset, size, cInfo->data.data());
+      cInfo->cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersEnd));
 
       // 
       return SFT();
     };
 
     //
-    virtual FenceType executeUniformUpdateOnce(UniformDataSet const& cInfo) {
-      decltype(auto) submission = CommandOnceSubmission{ .submission = cInfo.submission };
+    virtual FenceType executeUniformUpdateOnce(cpp21::const_wrap_arg<UniformDataSet> cInfo) {
+      decltype(auto) submission = CommandOnceSubmission{ .submission = cInfo->submission };
 
       // 
-      submission.commandInits.push_back([=](vk::CommandBuffer const& cmdBuf) {
-        this->writeUniformUpdateCommand(cInfo.writeInfo->with(cmdBuf));
+      submission.commandInits.push_back([=](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+        this->writeUniformUpdateCommand(cInfo->writeInfo->with(cmdBuf));
         return cmdBuf;
       });
 
