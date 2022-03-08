@@ -113,7 +113,7 @@ int main() {
       .size = 1024ull,
       .type = lxvc::BufferType::eStorage,
     }
-  }).as<vk::Buffer>();
+  });
 
   //
   decltype(auto) uploader = lxvc::UploaderObj::make(device, lxvc::UploaderCreateInfo{
@@ -142,9 +142,7 @@ int main() {
   });
 
   //
-  uint64_t address = device.as<vk::Device>().getBufferAddress(vk::BufferDeviceAddressInfo{
-    .buffer = buffer
-  });
+  uint64_t address = buffer->getDeviceAddress();
 
   //
   decltype(auto) qfAndQueue = lxvc::QueueGetInfo{ 0u, 0u };

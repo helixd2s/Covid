@@ -18,6 +18,7 @@
 #endif
 
 // 
+#define VKU_ENABLE_INTERVAL
 #include <vk-utils/cpp21.hpp>
 #include <vk-utils/chain.hpp>
 

@@ -26,6 +26,7 @@ namespace lxvc {
     //vk::Image image = {};
     //vk::ImageLayout imageLayout = vk::ImageLayout::eUndefined;
     void* mappedMemory = nullptr;
+    uintptr_t deviceAddress = 0ull;
 
     // 
     std::optional<AllocatedMemory> allocated = AllocatedMemory{};
@@ -106,6 +107,10 @@ namespace lxvc {
       auto wrap = shared->registerSelf();
       return wrap;
     };
+
+    //
+    virtual uintptr_t& getDeviceAddress() { return this->deviceAddress; };
+    virtual uintptr_t const& getDeviceAddress() const { return this->deviceAddress; };
 
   protected:
 
@@ -433,6 +438,14 @@ namespace lxvc {
       //
       if (cInfo->type == BufferType::eHostMap) {
         this->mappedMemory = device.mapMemory(this->allocated->memory, this->allocated->offset, memReqInfo.size);
+      };
+
+      // 
+      if (bufferUsage & vk::BufferUsageFlagBits::eShaderDeviceAddress) {
+        this->deviceAddress = device.getBufferAddress(vk::BufferDeviceAddressInfo{
+          .buffer = this->handle.as<vk::Buffer>()
+        });
+        deviceObj->addressSpace.insert({ this->deviceAddress, this->deviceAddress + cInfo->size }, this->handle.as<vk::Buffer>());
       };
 
       // 
