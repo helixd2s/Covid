@@ -37,13 +37,13 @@ namespace lxvc {
 
   public:
     // 
-    PipelineObj(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) : cInfo(cInfo) {
+    PipelineObj(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) : cInfo(cInfo) {
       this->base = deviceObj->handle;
       this->construct(deviceObj, cInfo);
     };
 
     // 
-    PipelineObj(Handle const& handle, std::optional<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) : cInfo(cInfo) {
+    PipelineObj(Handle const& handle, cpp21::const_wrap_arg<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) : cInfo(cInfo) {
       this->construct(lxvc::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
@@ -59,7 +59,7 @@ namespace lxvc {
     };
 
     //
-    inline static tType make(Handle const& handle, std::optional<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) {
+    inline static tType make(Handle const& handle, cpp21::const_wrap_arg<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) {
       auto shared = std::make_shared<PipelineObj>(handle, cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
@@ -67,7 +67,7 @@ namespace lxvc {
 
   protected:
     //
-    virtual void createCompute(cpp21::optional_ref<ComputePipelineCreateInfo> compute = {}) {
+    virtual void createCompute(cpp21::const_wrap_arg<ComputePipelineCreateInfo> compute = {}) {
       decltype(auto) descriptors = lxvc::context->get<DeviceObj>(this->base)->get<DescriptorsObj>(this->cInfo->layout);
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) crInfo = makeComputePipelineStageInfo(device, *compute->code); this->pipelineStages.push_back(crInfo);
@@ -85,7 +85,7 @@ namespace lxvc {
     };
 
     //
-    virtual void createGraphics(cpp21::optional_ref<GraphicsPipelineCreateInfo> graphics = {}) {
+    virtual void createGraphics(cpp21::const_wrap_arg<GraphicsPipelineCreateInfo> graphics = {}) {
       //this->pipeline = makeComputePipelineStageInfo(this->deviceObj->device, compute->code);
       //
       //lxvc::context->get(this->base)->registerObj(this->handle, shared_from_this());
@@ -206,7 +206,7 @@ namespace lxvc {
     };
 
     // 
-    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) {
+    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) {
       this->base = deviceObj->handle;
       //this->deviceObj = deviceObj;
       if (cInfo) { this->cInfo = cInfo; };
@@ -219,7 +219,7 @@ namespace lxvc {
   public:
 
     // TODO: using multiple-command
-    virtual tType writeComputeCommand(std::optional<WriteComputeInfo> exec = WriteComputeInfo{}) {
+    virtual tType writeComputeCommand(cpp21::const_wrap_arg<WriteComputeInfo> exec = WriteComputeInfo{}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(exec->layout ? exec->layout : this->cInfo->layout);
@@ -259,7 +259,7 @@ namespace lxvc {
     };
 
     // TODO: using multiple-command
-    virtual tType writeGraphicsCommand(std::optional<WriteGraphicsInfo> exec = WriteGraphicsInfo{}) {
+    virtual tType writeGraphicsCommand(cpp21::const_wrap_arg<WriteGraphicsInfo> exec = WriteGraphicsInfo{}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(exec->layout ? exec->layout : this->cInfo->layout);
@@ -307,7 +307,7 @@ namespace lxvc {
         exec->cmdBuf.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, descriptorsObj->handle.as<vk::PipelineLayout>(), 0u, descriptorsObj->sets, offsets);
         exec->cmdBuf.setViewportWithCount(viewports);
         exec->cmdBuf.setScissorWithCount(scissors);
-        decltype(auto) catchFn = [&, this](std::optional<std::exception> e = {}) {
+        decltype(auto) catchFn = [&, this](cpp21::const_wrap_arg<std::exception> e = {}) {
           //std::cerr << "Failed to MultiDraw or not supported, trying to reform command..." << std::endl;
           if (e) {
             std::cerr << e->what() << std::endl;
@@ -344,7 +344,7 @@ namespace lxvc {
     };
 
     // TODO: using multiple-command
-    virtual FenceType executePipelineOnce(std::optional<ExecutePipelineInfo> exec = ExecutePipelineInfo{}) {
+    virtual FenceType executePipelineOnce(cpp21::const_wrap_arg<ExecutePipelineInfo> exec = ExecutePipelineInfo{}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       decltype(auto) submission = CommandOnceSubmission{ .submission = exec->submission };

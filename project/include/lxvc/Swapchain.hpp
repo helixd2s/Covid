@@ -16,7 +16,7 @@ namespace lxvc {
     std::vector<vk::SurfaceFormat2KHR> formats2 = {};
     std::vector<vk::PresentModeKHR> presentModes = {};
     //vk::PhysicalDeviceSurfaceInfo2KHR info2 = {};
-    cpp21::optional_ref<vk::SurfaceCapabilitiesKHR> capabilities = {};
+    cpp21::const_wrap_arg<vk::SurfaceCapabilitiesKHR> capabilities = {};
     //cpp21::optional_ref<vk::SurfaceFormatKHR> formats = {};
   };
 
@@ -66,13 +66,13 @@ namespace lxvc {
 
   public:
     // 
-    SwapchainObj(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) : cInfo(cInfo) {
+    SwapchainObj(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) : cInfo(cInfo) {
       this->base = deviceObj->handle;
       this->construct(deviceObj, cInfo);
     };
 
     // 
-    SwapchainObj(Handle const& handle, std::optional<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) : cInfo(cInfo) {
+    SwapchainObj(Handle const& handle, cpp21::const_wrap_arg<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) : cInfo(cInfo) {
       this->construct(lxvc::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
@@ -91,14 +91,14 @@ namespace lxvc {
     };
 
     //
-    inline static tType make(Handle const& handle, std::optional<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) {
+    inline static tType make(Handle const& handle, cpp21::const_wrap_arg<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) {
       auto shared = std::make_shared<SwapchainObj>(handle, cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
     };
 
     //
-    virtual FenceType switchToPresent(uint32_t const& imageIndex, std::optional<QueueGetInfo> const& info = QueueGetInfo{}) {
+    virtual FenceType switchToPresent(uint32_t const& imageIndex, cpp21::const_wrap_arg<QueueGetInfo> const& info = QueueGetInfo{}) {
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = info ? info.value() : this->cInfo->info } };
 
       // 
@@ -112,7 +112,7 @@ namespace lxvc {
     };
 
     //
-    virtual FenceType switchToReady(uint32_t const& imageIndex, std::optional<QueueGetInfo> const& info = QueueGetInfo{}) {
+    virtual FenceType switchToReady(uint32_t const& imageIndex, cpp21::const_wrap_arg<QueueGetInfo> const& info = QueueGetInfo{}) {
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = info ? info.value() : this->cInfo->info } };
 
       // 
@@ -202,7 +202,7 @@ namespace lxvc {
     };
 
     // 
-    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) {
+    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) {
       if (cInfo) { this->cInfo = cInfo; };
       //decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
@@ -212,7 +212,7 @@ namespace lxvc {
       auto& physicalDevice = deviceObj->getPhysicalDevice();
       auto PDInfoMap = deviceObj->getPhysicalDeviceInfoMap();
       capInfo.capabilities2 = physicalDevice.getSurfaceCapabilities2KHR(vk::PhysicalDeviceSurfaceInfo2KHR{ .surface = cInfo->surface });
-      capInfo.capabilities = opt_ref(capInfo.capabilities2.surfaceCapabilities);
+      capInfo.capabilities = capInfo.capabilities2.surfaceCapabilities;
       capInfo.formats2 = physicalDevice.getSurfaceFormats2KHR(vk::PhysicalDeviceSurfaceInfo2KHR{ .surface = cInfo->surface });
       capInfo.presentModes = physicalDevice.getSurfacePresentModesKHR(cInfo->surface);
 

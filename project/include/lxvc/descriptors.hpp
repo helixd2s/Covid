@@ -80,13 +80,13 @@ namespace lxvc {
     virtual cpp21::bucket<vk::DescriptorImageInfo> const& getImageDescriptors() const { return images; };
 
     // 
-    DescriptorsObj(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) : cInfo(cInfo) {
+    DescriptorsObj(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) : cInfo(cInfo) {
       this->base = deviceObj->handle;
       this->construct(deviceObj, cInfo);
     };
     
     // 
-    DescriptorsObj(Handle const& handle, std::optional<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) : cInfo(cInfo) {
+    DescriptorsObj(Handle const& handle, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) : cInfo(cInfo) {
       this->construct(lxvc::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
@@ -102,7 +102,7 @@ namespace lxvc {
     };
 
     //
-    inline static tType make(Handle const& handle, std::optional<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) {
+    inline static tType make(Handle const& handle, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) {
       auto shared = std::make_shared<DescriptorsObj>(handle, cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
@@ -130,7 +130,7 @@ namespace lxvc {
     };
 
     // 
-    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) {
+    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) {
       this->base = deviceObj->handle;
       //this->deviceObj = deviceObj;
       if (cInfo) { this->cInfo = cInfo; };

@@ -47,13 +47,13 @@ namespace lxvc {
 
   public:
     // 
-    ResourceObj(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : cInfo(cInfo) {
+    ResourceObj(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : cInfo(cInfo) {
       this->base = deviceObj->handle;
       this->construct(deviceObj, cInfo);
     };
 
     // 
-    ResourceObj(Handle const& handle, std::optional<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : cInfo(cInfo) {
+    ResourceObj(Handle const& handle, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : cInfo(cInfo) {
       this->construct(lxvc::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
@@ -101,7 +101,7 @@ namespace lxvc {
     };
 
     //
-    inline static tType make(Handle const& handle, std::optional<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
+    inline static tType make(Handle const& handle, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
       auto shared = std::make_shared<ResourceObj>(handle, cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
@@ -110,7 +110,7 @@ namespace lxvc {
   protected:
 
     //
-    virtual AllocatedMemory& allocateMemory(cpp21::optional_ref<MemoryRequirements> requirements) {
+    virtual AllocatedMemory& allocateMemory(cpp21::const_wrap_arg<MemoryRequirements> requirements) {
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       auto& device = this->base.as<vk::Device>();
       auto& physicalDevice = deviceObj->getPhysicalDevice();
@@ -144,7 +144,7 @@ namespace lxvc {
     };
 
     // 
-    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
+    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
       //try {
         this->base = deviceObj->handle;
         //this->deviceObj = deviceObj;
@@ -163,7 +163,7 @@ namespace lxvc {
     };
 
     // 
-    virtual FenceType createImage(cpp21::optional_ref<ImageCreateInfo> cInfo = {}) {
+    virtual FenceType createImage(cpp21::const_wrap_arg<ImageCreateInfo> cInfo = {}) {
       // 
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
@@ -342,7 +342,7 @@ namespace lxvc {
     };
 
     // 
-    virtual void createBuffer(cpp21::optional_ref<BufferCreateInfo> cInfo = {}) {
+    virtual void createBuffer(cpp21::const_wrap_arg<BufferCreateInfo> cInfo = {}) {
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) bufferUsage = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;

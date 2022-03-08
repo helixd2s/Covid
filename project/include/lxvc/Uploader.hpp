@@ -40,13 +40,13 @@ namespace lxvc {
   public:
 
     // 
-    UploaderObj(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) : cInfo(cInfo) {
+    UploaderObj(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) : cInfo(cInfo) {
       this->base = deviceObj->handle;
       this->construct(deviceObj, cInfo);
     };
 
     // 
-    UploaderObj(Handle const& handle, std::optional<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) : cInfo(cInfo) {
+    UploaderObj(Handle const& handle, cpp21::const_wrap_arg<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) : cInfo(cInfo) {
       this->construct(lxvc::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
@@ -62,7 +62,7 @@ namespace lxvc {
     };
 
     //
-    inline static tType make(Handle const& handle, std::optional<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) {
+    inline static tType make(Handle const& handle, cpp21::const_wrap_arg<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) {
       auto shared = std::make_shared<UploaderObj>(handle, cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
@@ -355,7 +355,7 @@ namespace lxvc {
   protected:
 
     // 
-    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) {
+    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) {
       if (cInfo) { this->cInfo = cInfo; };
       this->base = deviceObj->handle;
       //this->deviceObj = deviceObj;

@@ -32,13 +32,13 @@ namespace lxvc {
 
   public:
     // 
-    AccelerationStructureObj(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<AccelerationStructureCreateInfo> cInfo = AccelerationStructureCreateInfo{}) : cInfo(cInfo) {
+    AccelerationStructureObj(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<AccelerationStructureCreateInfo> cInfo = AccelerationStructureCreateInfo{}) : cInfo(cInfo) {
       this->base = deviceObj->handle;
       this->construct(deviceObj, cInfo);
     };
 
     // 
-    AccelerationStructureObj(Handle const& handle, std::optional<AccelerationStructureCreateInfo> cInfo = AccelerationStructureCreateInfo{}) : cInfo(cInfo) {
+    AccelerationStructureObj(Handle const& handle, cpp21::const_wrap_arg<AccelerationStructureCreateInfo> cInfo = AccelerationStructureCreateInfo{}) : cInfo(cInfo) {
       this->construct(lxvc::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
@@ -54,7 +54,7 @@ namespace lxvc {
     };
 
     //
-    inline static tType make(Handle const& handle, std::optional<AccelerationStructureCreateInfo> cInfo = AccelerationStructureCreateInfo{}) {
+    inline static tType make(Handle const& handle, cpp21::const_wrap_arg<AccelerationStructureCreateInfo> cInfo = AccelerationStructureCreateInfo{}) {
       auto shared = std::make_shared<AccelerationStructureObj>(handle, cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
@@ -62,7 +62,7 @@ namespace lxvc {
 
   protected:
     // 
-    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<AccelerationStructureCreateInfo> cInfo = AccelerationStructureCreateInfo{}) {
+    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<AccelerationStructureCreateInfo> cInfo = AccelerationStructureCreateInfo{}) {
       this->base = deviceObj->handle;
       //this->deviceObj = deviceObj;
       if (cInfo) { this->cInfo = cInfo; };

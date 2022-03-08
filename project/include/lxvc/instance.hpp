@@ -36,13 +36,13 @@ namespace lxvc {
 
   public: 
     // 
-    InstanceObj(std::shared_ptr<ContextObj> contextObj = {}, std::optional<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : cInfo(cInfo) {
+    InstanceObj(std::shared_ptr<ContextObj> contextObj = {}, cpp21::const_wrap_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : cInfo(cInfo) {
       this->base = contextObj->handle;
       this->construct(contextObj, cInfo);
     };
 
     // 
-    InstanceObj(Handle const& handle, std::optional<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : cInfo(cInfo) {
+    InstanceObj(Handle const& handle, cpp21::const_wrap_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : cInfo(cInfo) {
       this->base = handle;
       this->construct(lxvc::context, cInfo);
     };
@@ -59,7 +59,7 @@ namespace lxvc {
     };
 
     //
-    inline static tType make(Handle const& handle, std::optional<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
+    inline static tType make(Handle const& handle, cpp21::const_wrap_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
       auto shared = std::make_shared<InstanceObj>(handle, cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
@@ -166,7 +166,7 @@ namespace lxvc {
     };
 
     // 
-    virtual void construct(std::shared_ptr<ContextObj> contextObj, std::optional<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
+    virtual void construct(std::shared_ptr<ContextObj> contextObj, cpp21::const_wrap_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
       this->base = contextObj->handle;
       //this->deviceObj = deviceObj;
       if (cInfo) { this->cInfo = cInfo; };

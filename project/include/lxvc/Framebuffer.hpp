@@ -56,13 +56,13 @@ namespace lxvc {
 
   public:
     // 
-    FramebufferObj(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{}) : cInfo(cInfo) {
+    FramebufferObj(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{}) : cInfo(cInfo) {
       this->base = deviceObj->handle;
       this->construct(deviceObj, cInfo);
     };
 
     // 
-    FramebufferObj(Handle const& handle, std::optional<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{}) : cInfo(cInfo) {
+    FramebufferObj(Handle const& handle, cpp21::const_wrap_arg<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{}) : cInfo(cInfo) {
       this->construct(lxvc::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
@@ -94,7 +94,7 @@ namespace lxvc {
     };
 
     //
-    inline static tType make(Handle const& handle, std::optional<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{}) {
+    inline static tType make(Handle const& handle, cpp21::const_wrap_arg<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{}) {
       auto shared = std::make_shared<FramebufferObj>(handle, cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
@@ -120,7 +120,7 @@ namespace lxvc {
 
 
     //
-    virtual FenceType switchToShaderRead(std::optional<QueueGetInfo> const& info = QueueGetInfo{}) {
+    virtual FenceType switchToShaderRead(cpp21::const_wrap_arg<QueueGetInfo> const& info = QueueGetInfo{}) {
       // 
       if (this->state != FramebufferState::eShaderRead) {
         decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo{.info = info } };
@@ -137,7 +137,7 @@ namespace lxvc {
     };
 
     //
-    virtual FenceType switchToAttachment(std::optional<QueueGetInfo> const& info = QueueGetInfo{}) {
+    virtual FenceType switchToAttachment(cpp21::const_wrap_arg<QueueGetInfo> const& info = QueueGetInfo{}) {
       // 
       if (this->state != FramebufferState::eAttachment) {
         decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo{.info = info } };
@@ -252,7 +252,7 @@ namespace lxvc {
     };
 
     // 
-    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{}) {
+    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{}) {
       if (cInfo) { this->cInfo = cInfo; };
       //decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);

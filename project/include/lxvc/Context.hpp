@@ -23,7 +23,7 @@ namespace lxvc {
 
   public: 
     // 
-    ContextObj(std::optional<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
+    ContextObj(cpp21::const_wrap_arg<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
       this->construct(cInfo);
     };
 
@@ -33,7 +33,7 @@ namespace lxvc {
     };
 
     //
-    inline static tType make(Handle const& handle, std::optional<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
+    inline static tType make(Handle const& handle, cpp21::const_wrap_arg<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
       auto shared = std::make_shared<ContextObj>(handle, cInfo);
       auto wrap = shared->SFT();//->registerSelf();
       return wrap;
@@ -41,7 +41,7 @@ namespace lxvc {
 
   protected: 
     // 
-    virtual void construct(std::optional<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
+    virtual void construct(cpp21::const_wrap_arg<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
       this->base = 0ull;
       if (cInfo) { this->cInfo = cInfo; };
       //return SFT();
@@ -52,7 +52,7 @@ namespace lxvc {
   inline extern WrapShared<ContextObj> context = { {} };
 
   // 
-  inline static decltype(auto) initialize(std::optional<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
+  inline static decltype(auto) initialize(cpp21::const_wrap_arg<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
     lxvc::registerTypes();
     lxvc::context = ContextObj::make(Handle(0ull), cInfo);
     return lxvc::context;

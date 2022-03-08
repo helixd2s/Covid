@@ -593,7 +593,7 @@ namespace lxvc {
   };
 
   // create shader module 
-  static inline decltype(auto) makePipelineStageInfo(vk::Device const& device, std::vector<uint32_t> const& code = {}, vk::ShaderStageFlagBits stage = vk::ShaderStageFlagBits::eCompute, std::optional<char const*> entry = "main") {
+  static inline decltype(auto) makePipelineStageInfo(vk::Device const& device, std::vector<uint32_t> const& code = {}, vk::ShaderStageFlagBits stage = vk::ShaderStageFlagBits::eCompute, cpp21::const_wrap_arg<char const*> entry = "main") {
     vk::PipelineShaderStageCreateInfo spi = {
       .stage = stage,
       .pName = entry.value(),
@@ -604,7 +604,7 @@ namespace lxvc {
   };
 
   // create compute
-  static inline decltype(auto) makeComputePipelineStageInfo(vk::Device const& device, std::vector<uint32_t> const& code = {}, std::optional<const char*> entry = "main", std::optional<uint32_t> subgroupSize = 0u) {
+  static inline decltype(auto) makeComputePipelineStageInfo(vk::Device const& device, std::vector<uint32_t> const& code = {}, cpp21::const_wrap_arg<const char*> entry = "main", cpp21::const_wrap_arg<uint32_t> subgroupSize = 0u) {
     decltype(auto) f = ComputeStageCreateInfo{};
     f.spi = makePipelineStageInfo(device, code, vk::ShaderStageFlagBits::eCompute, entry);
     f.spi.flags = vk::PipelineShaderStageCreateFlags{ vk::PipelineShaderStageCreateFlagBits::eRequireFullSubgroups };

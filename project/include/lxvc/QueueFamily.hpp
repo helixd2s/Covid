@@ -31,12 +31,12 @@ namespace lxvc {
 
     // 
   public:
-    QueueFamilyObj(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{}) : cInfo(cInfo) {
+    QueueFamilyObj(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{}) : cInfo(cInfo) {
       this->construct(deviceObj, cInfo);
     };
 
     // 
-    QueueFamilyObj(Handle const& handle, std::optional<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{}) : cInfo(cInfo) {
+    QueueFamilyObj(Handle const& handle, cpp21::const_wrap_arg<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{}) : cInfo(cInfo) {
       this->construct(lxvc::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
@@ -52,7 +52,7 @@ namespace lxvc {
     };
 
     //
-    inline static tType make(Handle const& handle, std::optional<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{}) {
+    inline static tType make(Handle const& handle, cpp21::const_wrap_arg<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{}) {
       auto shared = std::make_shared<QueueFamilyObj>(handle, cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
@@ -60,7 +60,7 @@ namespace lxvc {
 
     // 
   protected:
-    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, std::optional<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{}) {
+    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{}) {
       this->base = deviceObj->handle;
       //this->deviceObj = deviceObj;
       if (cInfo) { this->cInfo = cInfo; };
