@@ -32,7 +32,8 @@ namespace lxvc {
     std::vector<vk::MultiDrawInfoEXT> multiDraw = {};
 
     //
-    uintptr_t deviceAddress = 0ull;
+    //uintptr_t deviceAddress = 0ull;
+    vk::AccelerationStructureKHR accelStruct = {};
 
     // 
     friend PipelineObj;
@@ -92,11 +93,12 @@ namespace lxvc {
     virtual std::vector<vk::MultiDrawInfoEXT> const& getMultiDraw() const { return this->multiDraw; };
 
     //
-    virtual uintptr_t getGeometryDeviceAddress() const { return this->getGeometryResource()->getDeviceAddress(); };
+    virtual uintptr_t const& getGeometryDeviceAddress() const { return this->getGeometryResource()->getDeviceAddress(); };
+    virtual uintptr_t& getGeometryDeviceAddress() { return this->getGeometryResource()->getDeviceAddress(); };
 
     //
-    virtual uintptr_t& getDeviceAddress() { return this->deviceAddress; };
-    virtual uintptr_t const& getDeviceAddress() const { return this->deviceAddress; };
+    virtual uintptr_t& getDeviceAddress() { return this->handle.as<uintptr_t>(); };
+    virtual uintptr_t const& getDeviceAddress() const { return this->handle.as<uintptr_t>(); };
 
 
   protected:
@@ -197,8 +199,8 @@ namespace lxvc {
 
       //
       accelGeomInfo->scratchData = vk::DeviceOrHostAddressKHR(lxvc::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->geometryScratch)->getDeviceAddress());
-      this->handle = (accelGeomInfo->dstAccelerationStructure = device.createAccelerationStructureKHR(accelInfo.ref()));
-      this->deviceAddress = device.getAccelerationStructureAddressKHR(vk::AccelerationStructureDeviceAddressInfoKHR{ .accelerationStructure = this->handle.as<vk::AccelerationStructureKHR>() });
+      this->accelStruct = (accelGeomInfo->dstAccelerationStructure = device.createAccelerationStructureKHR(accelInfo.ref()));
+      this->handle = device.getAccelerationStructureAddressKHR(vk::AccelerationStructureDeviceAddressInfoKHR{ .accelerationStructure = this->accelStruct });
 
       //
       return this->buildStructure();
