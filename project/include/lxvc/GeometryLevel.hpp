@@ -128,7 +128,7 @@ namespace lxvc {
       // 
       memcpy(deviceObj->get<ResourceObj>(uploaderObj->uploadBuffer)->mappedMemory, this->cInfo->geometryData.data(), this->cInfo->geometryData.size()*sizeof(GeometryInfo));
 
-      // 
+      // TODO: Acceleration Structure Build Barriers per Buffers
       submission.commandInits.push_back([=, this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
         uploaderObj->writeUploadToResourceCmd(UploadCommandWriteInfo{
           .cmdBuf = cmdBuf,
@@ -143,7 +143,7 @@ namespace lxvc {
     };
 
     //
-    virtual void createStructure() {
+    virtual FenceType createStructure() {
       this->updateGeometries();
 
       // 
@@ -176,6 +176,9 @@ namespace lxvc {
       //
       accelGeomInfo->scratchData = vk::DeviceOrHostAddressKHR(lxvc::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->geometryScratch)->getDeviceAddress());
       accelGeomInfo->dstAccelerationStructure = this->accelStruct = device.createAccelerationStructureKHR(accelInfo.ref());
+
+      //
+      return this->buildStructure();
     };
 
     // 
