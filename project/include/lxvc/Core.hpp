@@ -109,6 +109,63 @@ namespace lxvc {
   };
 
   //
+  enum class BufferViewFormat : uint32_t {
+    eFloat = 0x0u,
+    eFloat2 = 0x1u,
+    eFloat3 = 0x2u,
+    eFloat4 = 0x3u,
+    eHalf = 0x4u,
+    eHalf2 = 0x5u,
+    eHalf3 = 0x6u,
+    eHalf4 = 0x7u,
+    eUint = 0x8u,
+    eUint2 = 0x9u,
+    eUint3 = 0xAu,
+    eUint4 = 0xBu,
+    eShort = 0xCu,
+    eShort2 = 0xDu,
+    eShort3 = 0xEu,
+    eShort4 = 0xFu,
+    eMat3x4 = 0x1Fu,
+    eNone = 0x100u
+  };
+
+  //
+  struct BufferViewFormatBitSet {
+    uint32_t countMinusOne : 2;
+    uint32_t is16bit : 1;
+    uint32_t isUint : 1;
+
+    // 
+    BufferViewFormatBitSet(BufferViewFormat const& bvFormat = BufferViewFormat::eUint) {
+      memcpy(this, &bvFormat, sizeof(uint32_t));
+    };
+
+    // 
+    BufferViewFormatBitSet(BufferViewFormatBitSet const& bvFormat) {
+      memcpy(this, &bvFormat, sizeof(uint32_t));
+    };
+
+    // 
+    inline decltype(auto) operator=(BufferViewFormat const& bvFormat) {
+      memcpy(this, &bvFormat, sizeof(uint32_t));
+    };
+
+    // 
+    inline decltype(auto) operator=(BufferViewFormatBitSet const& bvFormat) {
+      memcpy(this, &bvFormat, sizeof(uint32_t));
+    };
+
+    //
+    operator BufferViewFormat& () { return reinterpret_cast<BufferViewFormat&>(*this); };
+    operator BufferViewFormat const& () const { return reinterpret_cast<BufferViewFormat const&>(*this); };
+
+    //
+    operator BufferViewFormatBitSet& () { return reinterpret_cast<BufferViewFormatBitSet&>(*this); };
+    operator BufferViewFormatBitSet const& () const { return reinterpret_cast<BufferViewFormatBitSet const&>(*this); };
+  };
+
+  //
   enum class AccessFlagBitsSet : VkAccessFlagBits2 {
     eHostMapRead = VkAccessFlagBits2(vk::AccessFlagBits2::eHostRead | vk::AccessFlagBits2::eTransferRead),
     eHostMapWrite = VkAccessFlagBits2(vk::AccessFlagBits2::eHostWrite | vk::AccessFlagBits2::eTransferWrite),
@@ -137,7 +194,8 @@ namespace lxvc {
 
 
   //
-  class AccelerationStructureObj;
+  class GeometryLevelObj;
+  class InstanceLevelObj;
   class ContextObj;
   class InstanceObj;
   class DeviceObj;
@@ -149,6 +207,7 @@ namespace lxvc {
   class FramebufferObj;
   class SwapchainObj;
   class SemaphoreObj;
+  
 
   //
   struct ContextCreateInfo {
@@ -225,14 +284,85 @@ namespace lxvc {
   };
 
   //
-  struct AccelerationStructureCreateInfo {
+  struct BufferViewInfo {
+    uintptr_t deviceAddress = 0ull;
+    uint32_t stride = 4ull;
+    BufferViewFormat format = BufferViewFormat::eUint;
+  };
 
+  //
+  struct GeometryInfo {
+    BufferViewInfo texcoord = {};
+    BufferViewInfo vertices = {};
+    BufferViewInfo normals = {};
+    BufferViewInfo indices = {};
+    BufferViewInfo transform = {};
+
+    //
+    uint32_t materialId = 0u;
+    uint32_t primitiveCount = 0u;
+    uint32_t opaque = 1u;
+    uint32_t reserved = 0u;
+  };
+
+  //
+  inline decltype(auto) cvtFormat(BufferViewFormat const& format) {
+    switch (format) {
+      case BufferViewFormat::eFloat: return vk::Format::eR32Sfloat; break;
+      case BufferViewFormat::eFloat2: return vk::Format::eR32G32Sfloat; break;
+      case BufferViewFormat::eFloat3: return vk::Format::eR32G32B32Sfloat; break;
+      case BufferViewFormat::eFloat4: return vk::Format::eR32G32B32A32Sfloat; break;
+      case BufferViewFormat::eHalf: return vk::Format::eR16Sfloat; break;
+      case BufferViewFormat::eHalf2: return vk::Format::eR16G16Sfloat; break;
+      case BufferViewFormat::eHalf3: return vk::Format::eR16G16B16Sfloat; break;
+      case BufferViewFormat::eHalf4: return vk::Format::eR16G16B16A16Sfloat; break;
+      case BufferViewFormat::eUint: return vk::Format::eR32Uint; break;
+      case BufferViewFormat::eUint2: return vk::Format::eR32G32Uint; break;
+      case BufferViewFormat::eUint3: return vk::Format::eR32G32B32Uint; break;
+      case BufferViewFormat::eUint4: return vk::Format::eR32G32B32A32Uint; break;
+      case BufferViewFormat::eShort: return vk::Format::eR16Uint; break;
+      case BufferViewFormat::eShort2: return vk::Format::eR16G16Uint; break;
+      case BufferViewFormat::eShort3: return vk::Format::eR16G16B16Uint; break;
+      case BufferViewFormat::eShort4: return vk::Format::eR16G16B16A16Uint; break;
+      default: return vk::Format::eUndefined; break;
+    };
+    return vk::Format::eUndefined;
+  };
+
+  //
+  inline decltype(auto) cvtIndex(BufferViewFormat const& format) {
+    switch (format) {
+      case BufferViewFormat::eUint: return vk::IndexType::eUint32; break;
+      case BufferViewFormat::eShort: return vk::IndexType::eUint16; break;
+      default: return vk::IndexType::eNoneKHR; break;
+    };
+    return vk::IndexType::eNoneKHR;
   };
 
   //
   struct QueueGetInfo {
     uint32_t queueFamilyIndex = 0u;
     uint32_t queueIndex = 0u;
+  };
+
+  //
+  struct GeometryLevelCreateInfo {
+    std::vector<GeometryInfo> geometryData = {};
+    std::vector<uint32_t> maxPrimitiveCounts = {};
+    size_t geometryCount = 1u;
+
+    // 
+    std::optional<QueueGetInfo> info = QueueGetInfo{};
+  };
+
+  //
+  struct InstanceLevelCreateInfo {
+    std::vector<GeometryInfo> instanceData = {};
+    std::vector<uint32_t> maxPrimitiveCounts = {};
+    size_t instanceCount = 1u;
+
+    // 
+    std::optional<QueueGetInfo> info = QueueGetInfo{};
   };
 
   //

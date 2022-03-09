@@ -12,6 +12,8 @@
 #include "./Uploader.hpp"
 #include "./Semaphore.hpp"
 #include "./Swapchain.hpp"
+#include "./GeometryLevel.hpp"
+#include "./InstanceLevel.hpp"
 
 // 
 namespace lxvc {

@@ -47,6 +47,8 @@ namespace lxvc {
     friend UploaderObj;
     friend FramebufferObj;
     friend SwapchainObj;
+    friend GeometryLevelObj;
+    friend InstanceLevelObj;
 
     // 
     inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };

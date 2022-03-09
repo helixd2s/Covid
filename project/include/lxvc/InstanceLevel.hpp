@@ -8,19 +8,19 @@
 namespace lxvc {
   
   // 
-  class AccelerationStructureObj : public BaseObj {
+  class InstanceLevelObj : public BaseObj {
   public:
     //using BaseObj;
-    using tType = WrapShared<AccelerationStructureObj>;
+    using tType = WrapShared<InstanceLevelObj>;
     using BaseObj::BaseObj;
     
   protected: 
     friend DeviceObj;
 
     // 
-    //vk::AccelerationStructureKHR acceleration = {};
+    //vk::InstanceLevelKHR acceleration = {};
     std::optional<AllocatedMemory> allocated = AllocatedMemory{};
-    std::optional<AccelerationStructureCreateInfo> cInfo = AccelerationStructureCreateInfo{};
+    std::optional<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{};
     std::optional<MemoryRequirements> mReqs = {};
 
     //
@@ -32,13 +32,13 @@ namespace lxvc {
 
   public:
     // 
-    AccelerationStructureObj(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<AccelerationStructureCreateInfo> cInfo = AccelerationStructureCreateInfo{}) : cInfo(cInfo) {
+    InstanceLevelObj(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) : cInfo(cInfo) {
       this->base = deviceObj->handle;
       this->construct(deviceObj, cInfo);
     };
 
     // 
-    AccelerationStructureObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<AccelerationStructureCreateInfo> cInfo = AccelerationStructureCreateInfo{}) : cInfo(cInfo) {
+    InstanceLevelObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) : cInfo(cInfo) {
       this->construct(lxvc::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
@@ -54,15 +54,15 @@ namespace lxvc {
     };
 
     //
-    inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<AccelerationStructureCreateInfo> cInfo = AccelerationStructureCreateInfo{}) {
-      auto shared = std::make_shared<AccelerationStructureObj>(handle, cInfo);
+    inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) {
+      auto shared = std::make_shared<InstanceLevelObj>(handle, cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
     };
 
   protected:
     // 
-    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<AccelerationStructureCreateInfo> cInfo = AccelerationStructureCreateInfo{}) {
+    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) {
       this->base = deviceObj->handle;
       //this->deviceObj = deviceObj;
       if (cInfo) { this->cInfo = cInfo; };
