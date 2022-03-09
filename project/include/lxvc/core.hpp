@@ -834,6 +834,9 @@ namespace lxvc {
     template<class T = uintptr_t> inline operator T const& () const { return this->as<T>(); };
 
     //
+    operator bool() const { return !!value; };
+
+    //
     inline decltype(auto) operator =(auto const& handle) {
       this->value = reinterpret_cast<uintptr_t const&>(handle);
       this->type = getHandleType(handle);
