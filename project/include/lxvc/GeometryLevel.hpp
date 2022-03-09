@@ -105,7 +105,7 @@ namespace lxvc {
           .flags = geometry.opaque ? vk::GeometryFlagBitsKHR::eOpaque : vk::GeometryFlagBitsKHR{}
         });
         geometryRanges.push_back(vk::AccelerationStructureBuildRangeInfoKHR{
-          .primitiveCount = geometry.primitiveCount * 3u,
+          .primitiveCount = geometry.primitiveCount,
           .primitiveOffset = 0u,
           .firstVertex = 0u,
           .transformOffset = 0u
