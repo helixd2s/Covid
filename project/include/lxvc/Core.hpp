@@ -546,10 +546,12 @@ namespace lxvc {
   //
   struct WriteGraphicsInfo {
     vk::CommandBuffer cmdBuf = {};
-    uintptr_t framebuffer = {};
-    std::vector<vk::MultiDrawInfoEXT> multiDrawInfo = {};
     vk::PipelineLayout layout = {};
-    
+    uintptr_t framebuffer = {};
+
+    // needs multiple-levels support
+    std::vector<vk::MultiDrawInfoEXT> multiDrawInfo = {}; // currently, problematic for dynamic rendering... 
+
     //
     decltype(auto) with(cpp21::const_wrap_arg<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
   };

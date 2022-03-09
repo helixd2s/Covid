@@ -241,9 +241,9 @@ int main() {
     //
     decltype(auto) graphicsFence = graphics->executePipelineOnce(lxvc::ExecutePipelineInfo{
       .graphics = lxvc::WriteGraphicsInfo{
+        .layout = descriptions.as<vk::PipelineLayout>(),
         .framebuffer = framebuffer.as<uintptr_t>(),
         .multiDrawInfo = std::vector<vk::MultiDrawInfoEXT>{ vk::MultiDrawInfoEXT{.firstVertex = 0u, .vertexCount = 6u } },
-        .layout = descriptions.as<vk::PipelineLayout>(),
       },
       .submission = lxvc::SubmissionInfo{
         .info = qfAndQueue,
