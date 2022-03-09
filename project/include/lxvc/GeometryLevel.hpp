@@ -158,7 +158,7 @@ namespace lxvc {
           .cmdBuf = cmdBuf,
           .dstBuffer = BufferRegion{this->geometryBuffer, DataRegion{ 0ull, this->cInfo->geometryData.size() * sizeof(GeometryInfo) }}
         });
-        cmdBuf->buildAccelerationStructuresKHR(1u, &infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR)->setGeometries(this->geometries), cpp21::rvalue_to_ptr(geometryRanges.data()));
+        cmdBuf->buildAccelerationStructuresKHR(1u, &infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR)->setGeometries(this->geometries), cpp21::rvalue_to_ptr(geometryRanges.data()), deviceObj->dispatch);
         return cmdBuf;
       });
 
@@ -172,9 +172,11 @@ namespace lxvc {
 
       // 
       decltype(auto) device = this->base.as<vk::Device>();
+      decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       decltype(auto) accelGeomInfo = infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR);
-      decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelGeomInfo->setGeometries(this->geometries), this->cInfo->maxPrimitiveCounts));
+      decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelGeomInfo->setGeometries(this->geometries), this->cInfo->maxPrimitiveCounts, deviceObj->dispatch));
       decltype(auto) accelInfo = infoMap->get<vk::AccelerationStructureCreateInfoKHR>(vk::StructureType::eAccelerationStructureCreateInfoKHR);
+      
 
       //
       this->geometryScratch = ResourceObj::make(this->base, ResourceCreateInfo{
@@ -193,14 +195,16 @@ namespace lxvc {
       }).as<vk::Buffer>();
 
       //
+      accelInfo->type = vk::AccelerationStructureTypeKHR::eBottomLevel;
       accelInfo->buffer = this->geometryBuild;
       accelInfo->offset = 0ull;
       accelInfo->size = accelSizes->accelerationStructureSize;
 
       //
+      accelGeomInfo->type = accelInfo->type;
       accelGeomInfo->scratchData = vk::DeviceOrHostAddressKHR(lxvc::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->geometryScratch)->getDeviceAddress());
-      this->accelStruct = (accelGeomInfo->dstAccelerationStructure = device.createAccelerationStructureKHR(accelInfo.ref()));
-      this->handle = device.getAccelerationStructureAddressKHR(vk::AccelerationStructureDeviceAddressInfoKHR{ .accelerationStructure = this->accelStruct });
+      this->accelStruct = (accelGeomInfo->dstAccelerationStructure = device.createAccelerationStructureKHR(accelInfo.ref(), nullptr, deviceObj->dispatch));
+      this->handle = device.getAccelerationStructureAddressKHR(vk::AccelerationStructureDeviceAddressInfoKHR{ .accelerationStructure = this->accelStruct }, deviceObj->dispatch);
 
       //
       return this->buildStructure();
@@ -213,11 +217,12 @@ namespace lxvc {
       if (cInfo) { this->cInfo = cInfo; };
       this->infoMap = std::make_shared<MSS>(MSS());
       decltype(auto) device = this->base.as<vk::Device>();
+      //decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
 
       // 
       this->geometryBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
         .bufferInfo = BufferCreateInfo{
-          .size = cInfo->geometryCount,
+          .size = std::max(cInfo->geometryData.size(), cInfo->maxPrimitiveCounts.size()) * sizeof(GeometryInfo),
           .type = BufferType::eStorage
         }
       }).as<vk::Buffer>();
@@ -230,6 +235,7 @@ namespace lxvc {
 
       //
       decltype(auto) accelGeomInfo = infoMap->set(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR, vk::AccelerationStructureBuildGeometryInfoKHR{
+        .type = accelInfo->type,
         .mode = vk::BuildAccelerationStructureModeKHR::eBuild
       });
 
@@ -241,7 +247,7 @@ namespace lxvc {
       };
 
       //
-      decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelGeomInfo->setGeometries(this->geometries), this->cInfo->maxPrimitiveCounts));
+      //decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelGeomInfo->setGeometries(this->geometries), this->cInfo->maxPrimitiveCounts, deviceObj->dispatch));
 
       //
       if (this->cInfo->geometryData.size() > 0 && !this->handle) {

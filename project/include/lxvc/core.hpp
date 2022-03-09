@@ -72,7 +72,8 @@ namespace lxvc {
     eHostMap = 1u,
     eUniform = 2u,
     eVertex = 3u,
-    eIndex = 4u
+    eIndex = 4u,
+    eUniversal = 5u
   };
 
   //
@@ -349,7 +350,7 @@ namespace lxvc {
   struct GeometryLevelCreateInfo {
     std::vector<GeometryInfo> geometryData = {};
     std::vector<uint32_t> maxPrimitiveCounts = {};
-    size_t geometryCount = 1u;
+    //size_t geometryCount = 1u;
     uintptr_t uploader = 0ull;
 
     // 

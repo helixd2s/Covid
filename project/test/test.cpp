@@ -111,7 +111,7 @@ int main() {
   decltype(auto) buffer = lxvc::ResourceObj::make(device, lxvc::ResourceCreateInfo{
     .bufferInfo = lxvc::BufferCreateInfo{
       .size = 1024ull,
-      .type = lxvc::BufferType::eStorage,
+      .type = lxvc::BufferType::eUniversal,
     }
   });
 
@@ -119,6 +119,51 @@ int main() {
   decltype(auto) uploader = lxvc::UploaderObj::make(device, lxvc::UploaderCreateInfo{
 
   });
+
+  //
+  std::vector<glm::vec4> vertices{ 
+    glm::vec4{0.f, 0.f, 0.1f, 1.0}, glm::vec4{1.f, 0.f, 0.1f, 1.0}, glm::vec4{0.f, 1.f, 0.1f, 1.0},
+    glm::vec4{1.f, 1.f, 0.1f, 1.0}, glm::vec4{0.f, 1.f, 0.1f, 1.0}, glm::vec4{1.f, 0.f, 0.1f, 1.0},
+  };
+
+  //
+  std::vector<uint16_t> indices{0u,1u,2u,3u,4u,5u};
+
+  //
+  uploader->executeUploadToResourceOnce(lxvc::UploadExecutionOnce{
+    .host = std::span<char8_t>{(char8_t*)vertices.data(), vertices.size() * sizeof(glm::vec4)},
+    .writeInfo = lxvc::UploadCommandWriteInfo{
+      .dstBuffer = lxvc::BufferRegion{buffer.as<vk::Buffer>(), lxvc::DataRegion{0ull, sizeof(glm::vec4) * vertices.size()}},
+      
+    }
+  });
+
+  //
+  uploader->executeUploadToResourceOnce(lxvc::UploadExecutionOnce{
+    .host = std::span<char8_t>{(char8_t*)indices.data(), indices.size() * sizeof(uint16_t)},
+    .writeInfo = lxvc::UploadCommandWriteInfo{
+      .dstBuffer = lxvc::BufferRegion{buffer.as<vk::Buffer>(), lxvc::DataRegion{sizeof(glm::vec4) * vertices.size(), sizeof(uint16_t) * indices.size()}},
+    }
+  });
+
+  //
+  uint64_t verticesAddress = buffer->getDeviceAddress();
+  uint64_t indicesAddress = verticesAddress + (sizeof(glm::vec4) * vertices.size());
+
+
+  //
+  decltype(auto) geometryLevel = lxvc::GeometryLevelObj::make(device, lxvc::GeometryLevelCreateInfo{
+    .geometryData = std::vector<lxvc::GeometryInfo>{lxvc::GeometryInfo{
+      .vertices = lxvc::BufferViewInfo{.deviceAddress = verticesAddress, .stride = sizeof(glm::vec4), .format = lxvc::BufferViewFormat::eFloat3},
+      .indices = lxvc::BufferViewInfo{.deviceAddress = indicesAddress, .stride = sizeof(uint16_t), .format = lxvc::BufferViewFormat::eShort},
+      .primitiveCount = 2u,
+    }},
+    .uploader = uploader.as<uintptr_t>(),
+  });
+
+  //
+  decltype(auto) accelDevAddress = geometryLevel.as<uintptr_t>();
+
 
   //
   decltype(auto) compute = lxvc::PipelineObj::make(device.with(0u), lxvc::PipelineCreateInfo{
@@ -141,8 +186,7 @@ int main() {
     }
   });
 
-  //
-  uint64_t address = buffer->getDeviceAddress();
+  
 
   //
   decltype(auto) qfAndQueue = lxvc::QueueGetInfo{ 0u, 0u };
@@ -206,9 +250,8 @@ int main() {
   decltype(auto) renderArea = swapchain->getRenderArea();
   uniformData.currentImage = uint32_t(imageIndices.size()) - 1u;
 
-  //
-  std::cout << "" << std::endl;
-  //system("PAUSE");
+  
+
 
   // 
   while (!glfwWindowShouldClose(window)) { // 

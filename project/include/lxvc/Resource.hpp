@@ -43,6 +43,8 @@ namespace lxvc {
     std::vector<vk::ImageView> imageViews = {};
     std::vector<vk::BufferView> bufferViews = {};
 
+    //
+    bool hasDeviceAddress = false;
 
     // 
     inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
@@ -137,7 +139,7 @@ namespace lxvc {
               .image = requirements->dedicated && this->handle.type == HandleType::eImage && imageCondition ? this->handle.as<vk::Image>() : vk::Image{},
               .buffer = requirements->dedicated && this->handle.type == HandleType::eBuffer && bufferCondition ? this->handle.as<vk::Buffer>() : vk::Buffer{}
             }).get(),
-            .flags = (this->cInfo->bufferInfo && this->cInfo->bufferInfo->type == BufferType::eStorage) ? vk::MemoryAllocateFlagBits::eDeviceAddress : vk::MemoryAllocateFlagBits{},
+            .flags = this->hasDeviceAddress ? vk::MemoryAllocateFlagBits::eDeviceAddress : vk::MemoryAllocateFlagBits{},
           }).get(),
           .allocationSize = requirements->size,
           .memoryTypeIndex = std::get<0>(memTypeHeap)
@@ -400,6 +402,22 @@ namespace lxvc {
         bufferUsage |= vk::BufferUsageFlagBits::eUniformBuffer | vk::BufferUsageFlagBits::eUniformTexelBuffer;
         break;
 
+      case BufferType::eUniversal:
+        memoryUsage = MemoryUsage::eGpuOnly;
+        bufferUsage |=
+          vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR |
+          vk::BufferUsageFlagBits::eVertexBuffer |
+          vk::BufferUsageFlagBits::eIndexBuffer |
+          vk::BufferUsageFlagBits::eShaderDeviceAddress |
+          vk::BufferUsageFlagBits::eStorageBuffer |
+          vk::BufferUsageFlagBits::eTransformFeedbackCounterBufferEXT |
+          vk::BufferUsageFlagBits::eTransformFeedbackBufferEXT |
+          vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR |
+          vk::BufferUsageFlagBits::eShaderBindingTableKHR |
+          vk::BufferUsageFlagBits::eStorageTexelBuffer
+        ;
+        break;
+
       default:;
       };
 
@@ -424,6 +442,11 @@ namespace lxvc {
       //lxvc::context->get(this->base)->registerObj(this->handle, shared_from_this());
 
       // 
+      if (bufferUsage & vk::BufferUsageFlagBits::eShaderDeviceAddress) {
+        this->hasDeviceAddress = true;
+      };
+
+      //
       decltype(auto) memReqInfo = memReqInfo2->memoryRequirements;
       this->allocated = this->allocateMemory(this->mReqs = MemoryRequirements{
         .memoryUsage = memoryUsage,

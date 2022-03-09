@@ -377,7 +377,11 @@ namespace lxvc {
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceVulkan12Features, vk::PhysicalDeviceVulkan12Features{
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceVulkan13Features, vk::PhysicalDeviceVulkan13Features{
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceMultiDrawFeaturesEXT, vk::PhysicalDeviceMultiDrawFeaturesEXT{
+        .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceAccelerationStructureFeaturesKHR, vk::PhysicalDeviceAccelerationStructureFeaturesKHR{
+        .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceRayQueryFeaturesKHR, vk::PhysicalDeviceRayQueryFeaturesKHR{
         .pNext = nullptr
+        })
+        })
         })
         })
         })
