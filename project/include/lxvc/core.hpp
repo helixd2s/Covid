@@ -350,6 +350,7 @@ namespace lxvc {
     std::vector<GeometryInfo> geometryData = {};
     std::vector<uint32_t> maxPrimitiveCounts = {};
     size_t geometryCount = 1u;
+    uintptr_t uploader = 0ull;
 
     // 
     std::optional<QueueGetInfo> info = QueueGetInfo{};
@@ -360,6 +361,7 @@ namespace lxvc {
     std::vector<GeometryInfo> instanceData = {};
     std::vector<uint32_t> maxPrimitiveCounts = {};
     size_t instanceCount = 1u;
+    uintptr_t uploader = 0ull;
 
     // 
     std::optional<QueueGetInfo> info = QueueGetInfo{};

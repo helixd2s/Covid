@@ -19,7 +19,7 @@ namespace lxvc {
   protected: 
     //
     std::optional<GeometryLevelCreateInfo> cInfo = {};
-    vk::Buffer geometryBuffers = {};
+    vk::Buffer geometryBuffer = {};
     vk::Buffer geometryScratch = {};
     vk::Buffer geometryBuild = {};
 
@@ -72,12 +72,12 @@ namespace lxvc {
 
     //
     virtual WrapShared<ResourceObj> getGeometryResource() const {
-      return lxvc::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->geometryBuffers);
+      return lxvc::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->geometryBuffer);
     };
 
     //
-    virtual vk::Buffer& getGeometryBuffer() { return this->geometryBuffers; };
-    virtual vk::Buffer const& getGeometryBuffer() const { return this->geometryBuffers; };
+    virtual vk::Buffer& getGeometryBuffer() { return this->geometryBuffer; };
+    virtual vk::Buffer const& getGeometryBuffer() const { return this->geometryBuffer; };
 
     //
     virtual std::vector<GeometryInfo>& getGeometryData() { return this->cInfo->geometryData; };
@@ -122,9 +122,18 @@ namespace lxvc {
 
       //
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo {.info = info ? info.value() : this->cInfo->info } };
+      decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
+      decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(this->cInfo->uploader);
+
+      // 
+      memcpy(deviceObj->get<ResourceObj>(uploaderObj->uploadBuffer)->mappedMemory, this->cInfo->geometryData.data(), this->cInfo->geometryData.size()*sizeof(GeometryInfo));
 
       // 
       submission.commandInits.push_back([=, this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+        uploaderObj->writeUploadToResourceCmd(UploadCommandWriteInfo{
+          .cmdBuf = cmdBuf,
+          .dstBuffer = BufferRegion{this->geometryBuffer, DataRegion{ 0ull, this->cInfo->geometryData.size() * sizeof(GeometryInfo) }}
+        });
         cmdBuf->buildAccelerationStructuresKHR(1u, infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR).get(), cpp21::rvalue_to_ptr(geometryRanges.data()));
         return cmdBuf;
       });
@@ -178,7 +187,7 @@ namespace lxvc {
       decltype(auto) device = this->base.as<vk::Device>();
 
       // 
-      this->geometryBuffers = ResourceObj::make(this->base, ResourceCreateInfo{
+      this->geometryBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
         .bufferInfo = BufferCreateInfo{
           .size = cInfo->geometryCount,
           .type = BufferType::eStorage

@@ -20,6 +20,8 @@ namespace lxvc {
     friend UploaderObj;
     friend FramebufferObj;
     friend SwapchainObj;
+    friend GeometryLevelObj;
+    friend InstanceLevelObj;
 
     // 
     //vk::Buffer buffer = {};

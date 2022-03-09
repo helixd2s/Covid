@@ -20,6 +20,8 @@ namespace lxvc {
     friend DeviceObj;
     friend PipelineObj;
     friend ResourceObj;
+    friend GeometryLevelObj;
+    friend InstanceLevelObj;
 
     // 
     cpp21::vector_of_shared<MSS> layoutInfoMaps = {};
