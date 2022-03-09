@@ -24,6 +24,9 @@ namespace lxvc {
     vk::Buffer geometryBuild = {};
 
     //
+    vk::AccelerationStructureKHR accelStruct = {};
+
+    //
     std::vector<vk::AccelerationStructureGeometryKHR> geometries = {};
     std::vector<vk::AccelerationStructureBuildRangeInfoKHR> geometryRanges = {};
 
@@ -114,7 +117,7 @@ namespace lxvc {
     };
 
     //
-    virtual FenceType updateStructure(cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}) {
+    virtual FenceType buildStructure(cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}) {
       this->updateGeometries();
 
       //
@@ -160,6 +163,10 @@ namespace lxvc {
       accelInfo->buffer = this->geometryBuild;
       accelInfo->offset = 0ull;
       accelInfo->size = accelSizes->accelerationStructureSize;
+
+      //
+      accelGeomInfo->scratchData = vk::DeviceOrHostAddressKHR(lxvc::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->geometryScratch)->getDeviceAddress());
+      accelGeomInfo->dstAccelerationStructure = this->accelStruct = device.createAccelerationStructureKHR(accelInfo.ref());
     };
 
     // 
@@ -186,7 +193,7 @@ namespace lxvc {
 
       //
       decltype(auto) accelGeomInfo = infoMap->set(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR, vk::AccelerationStructureBuildGeometryInfoKHR{
-
+        .mode = vk::BuildAccelerationStructureModeKHR::eBuild
       });
 
       //
