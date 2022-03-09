@@ -134,7 +134,7 @@ namespace lxvc {
           .cmdBuf = cmdBuf,
           .dstBuffer = BufferRegion{this->geometryBuffer, DataRegion{ 0ull, this->cInfo->geometryData.size() * sizeof(GeometryInfo) }}
         });
-        cmdBuf->buildAccelerationStructuresKHR(1u, infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR).get(), cpp21::rvalue_to_ptr(geometryRanges.data()));
+        cmdBuf->buildAccelerationStructuresKHR(1u, &infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR)->setGeometries(this->geometries), cpp21::rvalue_to_ptr(geometryRanges.data()));
         return cmdBuf;
       });
 
