@@ -151,31 +151,7 @@ int main() {
   uint64_t indicesAddress = verticesAddress + (sizeof(glm::vec4) * vertices.size());
 
 
-  //
-  decltype(auto) geometryLevel = lxvc::GeometryLevelObj::make(device, lxvc::GeometryLevelCreateInfo{
-    .geometryData = std::vector<lxvc::GeometryInfo>{lxvc::GeometryInfo{
-      .vertices = lxvc::BufferViewInfo{.deviceAddress = verticesAddress, .stride = sizeof(glm::vec4), .format = lxvc::BufferViewFormat::eFloat3},
-      .indices = lxvc::BufferViewInfo{.deviceAddress = indicesAddress, .stride = sizeof(uint16_t), .format = lxvc::BufferViewFormat::eShort},
-      .primitiveCount = 2u,
-    }},
-    .uploader = uploader.as<uintptr_t>(),
-  });
 
-  //
-  decltype(auto) accelDevAddress = geometryLevel.as<uintptr_t>();
-
-  //
-  decltype(auto) instanceLevel = lxvc::InstanceLevelObj::make(device, lxvc::InstanceLevelCreateInfo{
-    .instanceData = std::vector<lxvc::InstanceInfo>{lxvc::InstanceInfo{
-      .transform = reinterpret_cast<vk::TransformMatrixKHR&&>(glm::mat3x4(1.f)),
-      .instanceCustomIndex = 0u,
-      .mask = 0xFFu,
-      .instanceShaderBindingTableRecordOffset = 0u,
-      .flags = 0u,
-      .accelerationStructureReference = accelDevAddress
-    }},
-    .uploader = uploader.as<uintptr_t>(),
-  });
 
   
 
@@ -266,6 +242,32 @@ int main() {
   uniformData.currentImage = uint32_t(imageIndices.size()) - 1u;
 
   
+
+  //
+  decltype(auto) geometryLevel = lxvc::GeometryLevelObj::make(device, lxvc::GeometryLevelCreateInfo{
+    .geometryData = std::vector<lxvc::GeometryInfo>{lxvc::GeometryInfo{
+      .vertices = lxvc::BufferViewInfo{.deviceAddress = verticesAddress, .stride = sizeof(glm::vec4), .format = lxvc::BufferViewFormat::eFloat3},
+      .indices = lxvc::BufferViewInfo{.deviceAddress = indicesAddress, .stride = sizeof(uint16_t), .format = lxvc::BufferViewFormat::eShort},
+      .primitiveCount = 2u,
+    }},
+    .uploader = uploader.as<uintptr_t>(),
+    });
+
+  //
+  decltype(auto) accelDevAddress = geometryLevel.as<uintptr_t>();
+
+  //
+  decltype(auto) instanceLevel = lxvc::InstanceLevelObj::make(device, lxvc::InstanceLevelCreateInfo{
+    .instanceData = std::vector<lxvc::InstanceInfo>{lxvc::InstanceInfo{
+      .transform = reinterpret_cast<vk::TransformMatrixKHR&&>(glm::mat3x4(1.f)),
+      .instanceCustomIndex = 0u,
+      .mask = 0xFFu,
+      .instanceShaderBindingTableRecordOffset = 0u,
+      .flags = 0u,
+      .accelerationStructureReference = accelDevAddress
+    }},
+    .uploader = uploader.as<uintptr_t>(),
+    });
 
 
   // 
