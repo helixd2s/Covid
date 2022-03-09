@@ -24,11 +24,15 @@ namespace lxvc {
     vk::Buffer geometryBuild = {};
 
     //
-    vk::AccelerationStructureKHR accelStruct = {};
+    //vk::AccelerationStructureKHR accelStruct = {};
 
     //
     std::vector<vk::AccelerationStructureGeometryKHR> geometries = {};
     std::vector<vk::AccelerationStructureBuildRangeInfoKHR> geometryRanges = {};
+    std::vector<vk::MultiDrawInfoEXT> multiDraw = {};
+
+    //
+    uintptr_t deviceAddress = 0ull;
 
     // 
     friend PipelineObj;
@@ -84,7 +88,15 @@ namespace lxvc {
     virtual std::vector<GeometryInfo> const& getGeometryData() const { return this->cInfo->geometryData; };
 
     //
+    virtual std::vector<vk::MultiDrawInfoEXT>& getMultiDraw() { return this->multiDraw; };
+    virtual std::vector<vk::MultiDrawInfoEXT> const& getMultiDraw() const { return this->multiDraw; };
+
+    //
     virtual uintptr_t getGeometryDeviceAddress() const { return this->getGeometryResource()->getDeviceAddress(); };
+
+    //
+    virtual uintptr_t& getDeviceAddress() { return this->deviceAddress; };
+    virtual uintptr_t const& getDeviceAddress() const { return this->deviceAddress; };
 
 
   protected:
@@ -93,6 +105,7 @@ namespace lxvc {
     virtual void updateGeometries() {
       this->geometries = {};
       this->geometryRanges = {};
+      this->multiDraw = {};
       for (decltype(auto) geometry : this->cInfo->geometryData) {
         geometries.push_back(vk::AccelerationStructureGeometryKHR{
           .geometryType = vk::GeometryTypeKHR::eTriangles,
@@ -113,6 +126,15 @@ namespace lxvc {
           .firstVertex = 0u,
           .transformOffset = 0u
         });
+        multiDraw.push_back(vk::MultiDrawInfoEXT{
+          .firstVertex = 0u,
+          .vertexCount = geometry.primitiveCount * 3u
+        });
+      };
+      if (this->cInfo->maxPrimitiveCounts.size() <= 0) {
+        for (decltype(auto) geometry : this->cInfo->geometryData) {
+          this->cInfo->maxPrimitiveCounts.push_back(geometry.primitiveCount);
+        };
       };
     };
 
@@ -175,7 +197,8 @@ namespace lxvc {
 
       //
       accelGeomInfo->scratchData = vk::DeviceOrHostAddressKHR(lxvc::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->geometryScratch)->getDeviceAddress());
-      accelGeomInfo->dstAccelerationStructure = this->accelStruct = device.createAccelerationStructureKHR(accelInfo.ref());
+      this->handle = (accelGeomInfo->dstAccelerationStructure = device.createAccelerationStructureKHR(accelInfo.ref()));
+      this->deviceAddress = device.getAccelerationStructureAddressKHR(vk::AccelerationStructureDeviceAddressInfoKHR{ .accelerationStructure = this->handle.as<vk::AccelerationStructureKHR>() });
 
       //
       return this->buildStructure();
@@ -219,8 +242,15 @@ namespace lxvc {
       decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelGeomInfo->setGeometries(this->geometries), this->cInfo->maxPrimitiveCounts));
 
       //
-      this->handle = uintptr_t(this);
+      if (this->cInfo->geometryData.size() > 0 && !this->handle) {
+        this->createStructure();
+        this->buildStructure();
+      };
 
+      //
+      if (!this->handle) {
+        this->handle = uintptr_t(this);
+      };
     };
     
   };
