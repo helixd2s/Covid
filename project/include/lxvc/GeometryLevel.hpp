@@ -167,7 +167,7 @@ namespace lxvc {
     };
 
     //
-    virtual FenceType createStructure() {
+    virtual vk::Result createStructure() {
       this->updateGeometries();
 
       // 
@@ -195,7 +195,7 @@ namespace lxvc {
       }).as<vk::Buffer>();
 
       //
-      accelInfo->type = vk::AccelerationStructureTypeKHR::eBottomLevel;
+      //accelInfo->type = vk::AccelerationStructureTypeKHR::eBottomLevel;
       accelInfo->buffer = this->geometryBuild;
       accelInfo->offset = 0ull;
       accelInfo->size = accelSizes->accelerationStructureSize;
@@ -207,7 +207,7 @@ namespace lxvc {
       this->handle = device.getAccelerationStructureAddressKHR(vk::AccelerationStructureDeviceAddressInfoKHR{ .accelerationStructure = this->accelStruct }, deviceObj->dispatch);
 
       //
-      return this->buildStructure();
+      return std::get<0>(*this->buildStructure()).get();
     };
 
     // 
@@ -252,7 +252,6 @@ namespace lxvc {
       //
       if (this->cInfo->geometryData.size() > 0 && !this->handle) {
         this->createStructure();
-        this->buildStructure();
       };
 
       //

@@ -364,6 +364,7 @@ namespace lxvc {
         bufferUsage |=
           vk::BufferUsageFlagBits::eShaderDeviceAddress |
           vk::BufferUsageFlagBits::eStorageBuffer |
+          vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR |
           vk::BufferUsageFlagBits::eTransformFeedbackCounterBufferEXT |
           vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR |
           vk::BufferUsageFlagBits::eShaderBindingTableKHR |

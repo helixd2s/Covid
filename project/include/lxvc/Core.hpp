@@ -358,10 +358,13 @@ namespace lxvc {
   };
 
   //
+  using InstanceInfo = vk::AccelerationStructureInstanceKHR ;
+
+  //
   struct InstanceLevelCreateInfo {
-    std::vector<GeometryInfo> instanceData = {};
+    std::vector<InstanceInfo> instanceData = {};
     std::vector<uint32_t> maxPrimitiveCounts = {};
-    size_t instanceCount = 1u;
+    //size_t instanceCount = 1u;
     uintptr_t uploader = 0ull;
 
     // 

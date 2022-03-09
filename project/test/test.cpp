@@ -164,6 +164,21 @@ int main() {
   //
   decltype(auto) accelDevAddress = geometryLevel.as<uintptr_t>();
 
+  //
+  decltype(auto) instanceLevel = lxvc::InstanceLevelObj::make(device, lxvc::InstanceLevelCreateInfo{
+    .instanceData = std::vector<lxvc::InstanceInfo>{lxvc::InstanceInfo{
+      .transform = reinterpret_cast<vk::TransformMatrixKHR&&>(glm::mat3x4(1.f)),
+      .instanceCustomIndex = 0u,
+      .mask = 0xFFu,
+      .instanceShaderBindingTableRecordOffset = 0u,
+      .flags = 0u,
+      .accelerationStructureReference = accelDevAddress
+    }},
+    .uploader = uploader.as<uintptr_t>(),
+  });
+
+  
+
 
   //
   decltype(auto) compute = lxvc::PipelineObj::make(device.with(0u), lxvc::PipelineCreateInfo{
