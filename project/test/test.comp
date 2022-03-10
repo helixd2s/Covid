@@ -21,7 +21,7 @@ layout(set = 0, binding = 0, scalar) uniform MatrixBlock
   uint32_t textureIndices[4];
   uint32_t currentImage;
   uint32_t reserved;
-  uint64_t accStruct;
+  uint64_t accStructAddress;
 };
 
 //
@@ -29,29 +29,27 @@ layout(set = 1, binding = 0) uniform texture2D textures[];
 layout(set = 2, binding = 0) uniform sampler samplers[];
 layout(set = 3, binding = 0, rgba8) uniform image2D images[];
 
-
-
 // 
 void main() {
-/*
+
   const vec3 rayOrigin = vec3(vec2(gl_GlobalInvocationID.xy)/vec2(1280.f,720.f), 0.f);
   const vec3 rayDir = vec3(0.f,0.f,1.f);
   vec4 payload = vec4(0.3f, 0.3f, 0.3f, 1.f);
 
   rayQueryEXT rayQuery;
-  rayQueryInitializeEXT(rayQuery, accelerationStructureEXT(accStruct), gl_RayFlagsTerminateOnFirstHitEXT|gl_RayFlagsOpaqueEXT, 0xff, rayOrigin, 0.001, rayDir, 100.0);
+  rayQueryInitializeEXT(rayQuery, accelerationStructureEXT(accStructAddress), gl_RayFlagsTerminateOnFirstHitEXT|gl_RayFlagsOpaqueEXT, 0xff, rayOrigin, 0.001, rayDir, 100.0);
 
   while(rayQueryProceedEXT(rayQuery)) {
       rayQueryConfirmIntersectionEXT(rayQuery);
   };
 
-  vec4 finalPosition = vec4(0.f.xxx, 1.f);
+  vec4 finalPosition = texelFetch(textures[textureIndices[0]], ivec2(gl_GlobalInvocationID.xy), 0);
   if (rayQueryGetIntersectionTypeEXT(rayQuery, true) != gl_RayQueryCommittedIntersectionNoneEXT) {
       vec2 attribs = rayQueryGetIntersectionBarycentricsEXT(rayQuery, true);
       payload = vec4(1.f - attribs.x - attribs.y, attribs.x, attribs.y, 1.f);
       finalPosition.xyz = rayQueryGetIntersectionObjectRayOriginEXT(rayQuery, true);
   };
-*/
-  imageStore(images[imageIndices[currentImage]], ivec2(gl_GlobalInvocationID.xy), texelFetch(textures[textureIndices[0]], ivec2(gl_GlobalInvocationID.xy), 0));
+
+  imageStore(images[imageIndices[currentImage]], ivec2(gl_GlobalInvocationID.xy), finalPosition);
   //imageStore(images[imageIndices[currentImage]], ivec2(gl_GlobalInvocationID.xy), vec4(vec2(gl_GlobalInvocationID.xy)/vec2(1280.f,720.f), 0.f, 1.f));
 };
