@@ -4,6 +4,9 @@ set(PROJECT_NAME LXVC)
 
 # 
 IF (WIN32)
+  set(ENV{ASAN_OPTIONS} [windows_hook_legacy_allocators=true])
+
+  #
   IF(NOT DEFINED VCPKG_PATH OR NOT DEFINED ${VCPKG_PATH})
     set (VCPKG_PATH "C:/vcpkg/")
   ENDIF()
