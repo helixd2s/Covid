@@ -910,8 +910,8 @@ namespace lxvc {
     friend DeviceObj;
 
     // 
-    inline decltype(auto) SFT() { return std::dynamic_pointer_cast<std::decay_t<decltype(*this)>>(shared_from_this()); };
-    inline decltype(auto) SFT() const { return std::dynamic_pointer_cast<const std::decay_t<decltype(*this)>>(shared_from_this()); };
+    inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
+    inline decltype(auto) SFT() const { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::const_pointer_cast<T>(std::dynamic_pointer_cast<T const>(shared_from_this()))); };
 
     // 
     Handle handle = {}, base = {};
@@ -945,7 +945,7 @@ namespace lxvc {
     //
     template<class T = BaseObj>
     inline std::shared_ptr<T> registerObj(auto const& handle, std::shared_ptr<T> obj = {}) {
-      return this->registerObj(cpp21::const_wrap_arg(Handle(handle)), obj);
+      return this->registerObj(cpp21::const_wrap_arg<Handle>(Handle(handle)), obj);
     };
 
     //

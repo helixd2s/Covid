@@ -33,7 +33,7 @@ namespace lxvc {
 
     // 
     inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
-    inline decltype(auto) SFT() const { using T = const std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
+    inline decltype(auto) SFT() const { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::const_pointer_cast<T>(std::dynamic_pointer_cast<T const>(shared_from_this()))); };
 
   public:
     // 
@@ -67,7 +67,7 @@ namespace lxvc {
 
   protected:
     //
-    virtual void createCompute(cpp21::const_wrap_arg<ComputePipelineCreateInfo> compute = {}) {
+    virtual void createCompute(std::optional<ComputePipelineCreateInfo> compute = {}) {
       decltype(auto) descriptors = lxvc::context->get<DeviceObj>(this->base)->get<DescriptorsObj>(this->cInfo->layout);
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) crInfo = makeComputePipelineStageInfo(device, *compute->code); this->pipelineStages.push_back(crInfo);
@@ -85,7 +85,7 @@ namespace lxvc {
     };
 
     //
-    virtual void createGraphics(cpp21::const_wrap_arg<GraphicsPipelineCreateInfo> graphics = {}) {
+    virtual void createGraphics(std::optional<GraphicsPipelineCreateInfo> graphics = {}) {
       //this->pipeline = makeComputePipelineStageInfo(this->deviceObj->device, compute->code);
       //
       //lxvc::context->get(this->base)->registerObj(this->handle, shared_from_this());

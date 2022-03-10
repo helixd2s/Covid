@@ -30,6 +30,7 @@ struct UniformData {
   uint32_t textureIndices[4] = { 0u,0u,0u,0u };
   uint32_t currentImage = 0u;
   uint32_t reserved = 0u;
+  uint64_t accStruct = 0ull;
 };
 
 // 
@@ -251,10 +252,7 @@ int main() {
       .primitiveCount = 2u,
     }},
     .uploader = uploader.as<uintptr_t>(),
-    });
-
-  //
-  decltype(auto) accelDevAddress = geometryLevel.as<uintptr_t>();
+  });
 
   //
   decltype(auto) instanceLevel = lxvc::InstanceLevelObj::make(device, lxvc::InstanceLevelCreateInfo{
@@ -264,10 +262,13 @@ int main() {
       .mask = 0xFFu,
       .instanceShaderBindingTableRecordOffset = 0u,
       .flags = 0u,
-      .accelerationStructureReference = accelDevAddress
+      .accelerationStructureReference = geometryLevel.as<uintptr_t>()
     }},
     .uploader = uploader.as<uintptr_t>(),
-    });
+  });
+
+  // 
+  uniformData.accStruct = instanceLevel.as<uintptr_t>();
 
 
   // 
