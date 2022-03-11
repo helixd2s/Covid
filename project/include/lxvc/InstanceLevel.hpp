@@ -100,9 +100,6 @@ namespace lxvc {
     virtual uintptr_t& getDeviceAddress() { return this->handle.as<uintptr_t>(); };
     virtual uintptr_t const& getDeviceAddress() const { return this->handle.as<uintptr_t>(); };
 
-
-  protected:
-
     //
     virtual void updateInstances() {
       this->instances = {};
@@ -202,6 +199,8 @@ namespace lxvc {
       //
       return std::get<0>(*this->buildStructure()).get();
     };
+
+  protected:
 
     // 
     virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) {

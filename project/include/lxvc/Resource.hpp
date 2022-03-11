@@ -280,6 +280,8 @@ namespace lxvc {
       return FenceType{};
     };
 
+  public:
+
     //
     virtual void writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo const switchInfo) {
       if (this->cInfo->imageInfo && this->handle.type == HandleType::eImage) {
@@ -321,7 +323,6 @@ namespace lxvc {
       //return SFT();
     };
 
-
     //
     virtual FenceType executeSwitchLayoutOnce(cpp21::const_wrap_arg<ImageLayoutSwitchInfo> execInfo = {}) {
       // 
@@ -349,6 +350,8 @@ namespace lxvc {
       // 
       return FenceType{};
     };
+
+  protected: 
 
     // 
     virtual void createBuffer(cpp21::const_wrap_arg<BufferCreateInfo> cInfo = {}) {

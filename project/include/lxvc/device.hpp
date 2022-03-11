@@ -80,6 +80,8 @@ namespace lxvc {
     //
     cpp21::interval_map<uintptr_t, vk::Buffer> addressSpace = {};
 
+  public:
+
     //
     virtual std::tuple<uint32_t, uint32_t> findMemoryTypeAndHeapIndex(cpp21::const_wrap_arg<MemoryRequirements> req = MemoryRequirements{}, cpp21::const_wrap_arg<uintptr_t> physicalDeviceIndex = {}) {
       auto& physicalDevice = this->getPhysicalDevice(physicalDeviceIndex);
@@ -152,6 +154,8 @@ namespace lxvc {
 
       return memoryTypeAndHeapIndex;
     };
+
+  protected: 
 
     //
     virtual std::vector<cType>& filterLayers(cpp21::const_wrap_arg<vk::PhysicalDevice> physicalDevice, cpp21::const_wrap_arg<std::vector<std::string>> names) {
@@ -274,6 +278,8 @@ namespace lxvc {
       return this->queueFamilies.commandPools;
     };
 
+  public:
+
     //
     virtual FenceType executeCommandOnce(cpp21::const_wrap_arg<CommandOnceSubmission> submissionRef_ = {}) {
       decltype(auto) submissionRef = submissionRef_.optional();
@@ -347,6 +353,8 @@ namespace lxvc {
     //
     virtual std::shared_ptr<MSS> getPhysicalDeviceInfoMap(cpp21::const_wrap_arg<uintptr_t> physicalDeviceIndex = {}) { return this->PDInfoMaps[std::min(physicalDeviceIndex ? physicalDeviceIndex.value() : this->cInfo->physicalDeviceIndex, this->PDInfoMaps.size() - 1)]; };
     virtual std::shared_ptr<MSS> getPhysicalDeviceInfoMap(cpp21::const_wrap_arg<uintptr_t> physicalDeviceIndex = {}) const { return this->PDInfoMaps[std::min(physicalDeviceIndex ? physicalDeviceIndex.value() : this->cInfo->physicalDeviceIndex, this->PDInfoMaps.size() - 1)]; };
+
+  protected:
 
     // 
     virtual void construct(std::shared_ptr<InstanceObj> instanceObj = {}, cpp21::const_wrap_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
