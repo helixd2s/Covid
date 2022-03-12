@@ -65,6 +65,11 @@ namespace lxvc {
       return wrap;
     };
 
+    //
+    virtual vk::DispatchLoaderDynamic& getDispatch() { return this->dispatch; };
+    virtual vk::DispatchLoaderDynamic const& getDispatch() const { return this->dispatch; };
+
+  // 
   protected:
     //
     //std::shared_ptr<ContextObj> contextObj = {};
