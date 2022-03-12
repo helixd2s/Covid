@@ -4,7 +4,7 @@
 #include "./Core.hpp"
 #include "./Instance.hpp"
 #include "./Device.hpp"
-#include "./Resource.hpp"
+//#include "./Resource.hpp"
 
 //
 struct DescriptorBindings {
@@ -61,6 +61,9 @@ namespace lxvc {
 
     //
     std::vector<char8_t> initialData = {};
+
+    //
+    size_t uniformSize = 65536ull;
 
     // 
     inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
@@ -194,15 +197,7 @@ namespace lxvc {
       //lxvc::context->get(this->base)->registerObj(this->handle, shared_from_this());
 
       //
-      decltype(auto) uniformSize = 65536ull;
-      this->uniformBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
-        .bufferInfo = BufferCreateInfo{
-          .size = uniformSize,
-          .type = BufferType::eUniform
-        }
-      }).as<vk::Buffer>();
-
-      //
+      this->createUniformBuffer();
       this->uniformBufferDesc = vk::DescriptorBufferInfo{ this->uniformBuffer, 0ull, uniformSize};
       this->updateDescriptors();
 
@@ -210,6 +205,10 @@ namespace lxvc {
       //return this->SFT();
     };
 
+    //
+    virtual void createUniformBuffer();
+
+  // 
   public:
 
     //

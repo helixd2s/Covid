@@ -110,6 +110,7 @@ int main() {
 
   //
   decltype(auto) buffer = lxvc::ResourceObj::make(device, lxvc::ResourceCreateInfo{
+    .descriptors = descriptions.as<vk::PipelineLayout>(),
     .bufferInfo = lxvc::BufferCreateInfo{
       .size = 1024ull,
       .type = lxvc::BufferType::eUniversal,

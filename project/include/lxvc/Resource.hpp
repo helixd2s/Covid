@@ -3,6 +3,7 @@
 // 
 #include "./Core.hpp"
 #include "./Device.hpp"
+#include "./Descriptors.hpp"
 
 // 
 namespace lxvc {
@@ -63,10 +64,11 @@ namespace lxvc {
     };
 
     //
-    vk::ImageView createImageView(cpp21::const_wrap_arg<ImageViewCreateInfo> info = {}) {
+    std::tuple<vk::ImageView, uint32_t> createImageView(cpp21::const_wrap_arg<ImageViewCreateInfo> info = {}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
-      
+      decltype(auto) descriptors = this->cInfo->descriptors ? deviceObj->get<DescriptorsObj>(this->cInfo->descriptors) : WrapShared<DescriptorsObj>{};
+
       // 
       auto& imageInfo = this->cInfo->imageInfo;
 
@@ -91,7 +93,23 @@ namespace lxvc {
         .components = components,
         .subresourceRange = vk::ImageSubresourceRange(info->subresourceRange).setAspectMask(aspectMask)
       }));
-      return this->imageViews.back(); // don't return reference, may broke vector
+
+      // 
+      decltype(auto) imageView = this->imageViews.back();
+      uint32_t descriptorId = 0xFFFFFFFFu;
+
+      // 
+      if (descriptors) {
+        if (this->cInfo->imageInfo->type == ImageType::eStorage) {
+          //descriptorId = 
+        } else
+        if (this->cInfo->imageInfo->type == ImageType::eTexture || this->cInfo->imageInfo->type == ImageType::eColorAttachment) {
+          //descriptorId = 
+        };
+      };
+
+      // 
+      return std::tuple{ imageView, descriptorId }; // don't return reference, may broke vector
     };
 
     // 
@@ -481,6 +499,16 @@ namespace lxvc {
       //return this->SFT();
     };
 
+  };
+
+  //
+  inline void DescriptorsObj::createUniformBuffer() {
+    this->uniformBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
+      .bufferInfo = BufferCreateInfo{
+        .size = uniformSize,
+        .type = BufferType::eUniform
+      }
+    }).as<vk::Buffer>();
   };
 
   // 

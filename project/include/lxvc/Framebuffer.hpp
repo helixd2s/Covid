@@ -197,10 +197,10 @@ namespace lxvc {
 
       //
       this->images.push_back(imageObj.as<vk::Image>());
-      this->imageViews.push_back(imageObj->createImageView(ImageViewCreateInfo{
+      this->imageViews.push_back(std::get<0>(imageObj->createImageView(ImageViewCreateInfo{
         .viewType = vk::ImageViewType::e2D,
         .subresourceRange = subresourceRange
-      }));
+      })));
 
       //
       decltype(auto) imageView = this->imageViews.back();

@@ -161,10 +161,10 @@ namespace lxvc {
 
       // 
       this->renderArea = vk::Rect2D{ vk::Offset2D{0u, 0u}, capInfo.capabilities->currentExtent };
-      this->imageViews.push_back(imageObj->createImageView(ImageViewCreateInfo{
+      this->imageViews.push_back(std::get<0>(imageObj->createImageView(ImageViewCreateInfo{
         .viewType = vk::ImageViewType::e2D,
         .subresourceRange = subresourceRange
-      }));
+      })));
 
       // 
       this->imageViewIndices.push_back(descriptorsObj->images.add(vk::DescriptorImageInfo{ .imageView = this->imageViews.back(), .imageLayout = vk::ImageLayout::eGeneral }));

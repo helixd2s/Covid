@@ -439,6 +439,7 @@ namespace lxvc {
 
   //
   struct ResourceCreateInfo {
+    vk::PipelineLayout descriptors = {};
     std::optional<vk::Buffer> buffer = {};
     std::optional<vk::Image> image = {};
     std::optional<BufferCreateInfo> bufferInfo = {};
