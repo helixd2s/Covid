@@ -205,7 +205,10 @@ namespace lxvc {
       //
       accelGeomInfo->type = accelInfo->type;
       accelGeomInfo->scratchData = vk::DeviceOrHostAddressKHR(lxvc::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->geometryScratch)->getDeviceAddress());
-      this->accelStruct = (accelGeomInfo->dstAccelerationStructure = device.createAccelerationStructureKHR(accelInfo.ref(), nullptr, deviceObj->dispatch));
+      accelGeomInfo->srcAccelerationStructure = accelGeomInfo->dstAccelerationStructure;
+      accelGeomInfo->dstAccelerationStructure = (this->accelStruct = device.createAccelerationStructureKHR(accelInfo.ref(), nullptr, deviceObj->dispatch));
+
+      // 
       this->handle = device.getAccelerationStructureAddressKHR(vk::AccelerationStructureDeviceAddressInfoKHR{ .accelerationStructure = this->accelStruct }, deviceObj->dispatch);
 
       //

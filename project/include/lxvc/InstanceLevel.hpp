@@ -194,7 +194,10 @@ namespace lxvc {
       //
       accelInstInfo->type = accelInfo->type;
       accelInstInfo->scratchData = vk::DeviceOrHostAddressKHR(lxvc::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->instanceScratch)->getDeviceAddress());
-      accelInstInfo->dstAccelerationStructure = this->accelStruct = device.createAccelerationStructureKHR(accelInfo.ref(), nullptr, deviceObj->dispatch);
+      accelInstInfo->srcAccelerationStructure = accelInstInfo->dstAccelerationStructure;
+      accelInstInfo->dstAccelerationStructure = (this->accelStruct = device.createAccelerationStructureKHR(accelInfo.ref(), nullptr, deviceObj->dispatch));
+
+      //
       this->handle = device.getAccelerationStructureAddressKHR(vk::AccelerationStructureDeviceAddressInfoKHR{ .accelerationStructure = this->accelStruct }, deviceObj->dispatch);
 
       //
