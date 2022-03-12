@@ -67,7 +67,7 @@ namespace lxvc {
     std::tuple<vk::ImageView, uint32_t> createImageView(cpp21::const_wrap_arg<ImageViewCreateInfo> info = {}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
-      decltype(auto) descriptors = this->cInfo->descriptors ? deviceObj->get<DescriptorsObj>(this->cInfo->descriptors) : WrapShared<DescriptorsObj>{};
+      decltype(auto) descriptorsObj = this->cInfo->descriptors ? deviceObj->get<DescriptorsObj>(this->cInfo->descriptors) : WrapShared<DescriptorsObj>{};
 
       // 
       auto& imageInfo = this->cInfo->imageInfo;
@@ -99,12 +99,12 @@ namespace lxvc {
       uint32_t descriptorId = 0xFFFFFFFFu;
 
       // 
-      if (descriptors) {
+      if (descriptorsObj) {
         if (this->cInfo->imageInfo->type == ImageType::eStorage) {
-          //descriptorId = 
+          descriptorId = descriptorsObj->images.add(vk::DescriptorImageInfo{ .imageView = imageView, .imageLayout = this->cInfo->imageInfo->layout });
         } else
         if (this->cInfo->imageInfo->type == ImageType::eTexture || this->cInfo->imageInfo->type == ImageType::eColorAttachment) {
-          //descriptorId = 
+          descriptorId = descriptorsObj->textures.add(vk::DescriptorImageInfo{ .imageView = imageView, .imageLayout = this->cInfo->imageInfo->layout });
         };
       };
 
