@@ -133,11 +133,6 @@ namespace lxvc {
           .vertexCount = geometry.primitiveCount * 3u
         });
       };
-      if (this->cInfo->maxPrimitiveCounts.size() <= 0) {
-        for (decltype(auto) geometry : this->cInfo->geometryData) {
-          this->cInfo->maxPrimitiveCounts.push_back(geometry.primitiveCount);
-        };
-      };
     };
 
     //
@@ -169,6 +164,13 @@ namespace lxvc {
     //
     virtual vk::Result createStructure() {
       this->updateGeometries();
+
+      //
+      if (this->cInfo->maxPrimitiveCounts.size() <= 0) {
+        for (decltype(auto) geometry : this->cInfo->geometryData) {
+          this->cInfo->maxPrimitiveCounts.push_back(geometry.primitiveCount);
+        };
+      };
 
       // 
       decltype(auto) device = this->base.as<vk::Device>();

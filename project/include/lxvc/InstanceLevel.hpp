@@ -125,9 +125,6 @@ namespace lxvc {
           .vertexCount = uint32_t(this->cInfo->instanceData.size())
         });
       };
-      if (this->cInfo->maxPrimitiveCounts.size() <= 0) {
-         this->cInfo->maxPrimitiveCounts.push_back(this->cInfo->instanceData.size());
-      };
     };
 
     //
@@ -160,6 +157,11 @@ namespace lxvc {
     virtual vk::Result createStructure() {
       this->updateInstances();
 
+      //
+      if (this->cInfo->maxPrimitiveCounts.size() <= 0) {
+        this->cInfo->maxPrimitiveCounts.push_back(this->cInfo->instanceData.size());
+      };
+
       // 
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
@@ -167,7 +169,6 @@ namespace lxvc {
       decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelInstInfo->setGeometries(this->instances), this->cInfo->maxPrimitiveCounts, deviceObj->dispatch));
       decltype(auto) accelInfo = infoMap->get<vk::AccelerationStructureCreateInfoKHR>(vk::StructureType::eAccelerationStructureCreateInfoKHR);
       
-
       //
       this->instanceScratch = ResourceObj::make(this->base, ResourceCreateInfo{
         .bufferInfo = BufferCreateInfo{
