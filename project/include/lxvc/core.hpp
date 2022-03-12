@@ -238,12 +238,12 @@ namespace lxvc {
 #endif
     };
     cpp21::shared_vector<std::string> layerList = std::vector<std::string>{ 
-      //"VK_LAYER_KHRONOS_synchronization2",
-      //"VK_LAYER_KHRONOS_validation",
-      //"VK_LAYER_KHRONOS_profiles",
-      //"VK_LAYER_LUNARG_parameter_validation",
-      //"VK_LAYER_LUNARG_core_validation",
-      //"VK_LAYER_LUNARG_object_tracker",
+      "VK_LAYER_KHRONOS_synchronization2",
+      "VK_LAYER_KHRONOS_validation",
+      "VK_LAYER_KHRONOS_profiles",
+      "VK_LAYER_LUNARG_parameter_validation",
+      "VK_LAYER_LUNARG_core_validation",
+      "VK_LAYER_LUNARG_object_tracker",
       //"VK_LAYER_LUNARG_api_dump"
     };
   };

@@ -101,7 +101,7 @@ int main() {
   });
 
   // final cherep for today
-  decltype(auto) descriptions = lxvc::DescriptorsObj::make(device.with(0u), lxvc::DescriptorsCreateInfo{
+  decltype(auto) descriptors = lxvc::DescriptorsObj::make(device.with(0u), lxvc::DescriptorsCreateInfo{
 
   });
 
@@ -110,7 +110,7 @@ int main() {
 
   //
   decltype(auto) buffer = lxvc::ResourceObj::make(device, lxvc::ResourceCreateInfo{
-    .descriptors = descriptions.as<vk::PipelineLayout>(),
+    .descriptors = descriptors.as<vk::PipelineLayout>(),
     .bufferInfo = lxvc::BufferCreateInfo{
       .size = 1024ull,
       .type = lxvc::BufferType::eUniversal,
@@ -121,6 +121,9 @@ int main() {
   decltype(auto) uploader = lxvc::UploaderObj::make(device, lxvc::UploaderCreateInfo{
 
   });
+
+  //
+  decltype(auto) samplers = descriptors->getSamplerDescriptors();
 
   //
   std::vector<glm::vec4> vertices{ 
@@ -160,7 +163,7 @@ int main() {
 
   //
   decltype(auto) compute = lxvc::PipelineObj::make(device.with(0u), lxvc::PipelineCreateInfo{
-    .layout = descriptions.as<vk::PipelineLayout>(),
+    .layout = descriptors.as<vk::PipelineLayout>(),
     .compute = lxvc::ComputePipelineCreateInfo{
       .code = cpp21::readBinaryU32("./test.comp.spv")
     }
@@ -173,7 +176,7 @@ int main() {
 
   //
   decltype(auto) graphics = lxvc::PipelineObj::make(device.with(0u), lxvc::PipelineCreateInfo{
-    .layout = descriptions.as<vk::PipelineLayout>(),
+    .layout = descriptors.as<vk::PipelineLayout>(),
     .graphics = lxvc::GraphicsPipelineCreateInfo{
       .stageCodes = stageMaps
     }
@@ -215,14 +218,14 @@ int main() {
 
   //
   decltype(auto) swapchain = lxvc::SwapchainObj::make(device, lxvc::SwapchainCreateInfo{
-    .layout = descriptions.as<vk::PipelineLayout>(),
+    .layout = descriptors.as<vk::PipelineLayout>(),
     .surface = surface,
     .info = qfAndQueue
   });
 
   //
   decltype(auto) framebuffer = lxvc::FramebufferObj::make(device.with(0u), lxvc::FramebufferCreateInfo{
-    .layout = descriptions.as<vk::PipelineLayout>(),
+    .layout = descriptors.as<vk::PipelineLayout>(),
     .extent = swapchain->getRenderArea().extent,
     .info = qfAndQueue
   });
@@ -287,7 +290,7 @@ int main() {
     swapchain->switchToReady(semIndex = uniformData.currentImage = acquired, qfAndQueue);
 
     // 
-    decltype(auto) uniformFence = descriptions->executeUniformUpdateOnce(lxvc::UniformDataSet{
+    decltype(auto) uniformFence = descriptors->executeUniformUpdateOnce(lxvc::UniformDataSet{
       .writeInfo = lxvc::UniformDataWriteSet{
         .region = lxvc::DataRegion{0ull, sizeof(UniformData)},
         .data = cpp21::data_view<char8_t>((char8_t*)&uniformData, sizeof(UniformData)),
@@ -303,7 +306,7 @@ int main() {
     //
     decltype(auto) graphicsFence = graphics->executePipelineOnce(lxvc::ExecutePipelineInfo{
       .graphics = lxvc::WriteGraphicsInfo{
-        .layout = descriptions.as<vk::PipelineLayout>(),
+        .layout = descriptors.as<vk::PipelineLayout>(),
         .framebuffer = framebuffer.as<uintptr_t>(),
         .multiDrawInfo = std::vector<vk::MultiDrawInfoEXT>{ vk::MultiDrawInfoEXT{.firstVertex = 0u, .vertexCount = 6u } },
       },
@@ -319,7 +322,7 @@ int main() {
     decltype(auto) computeFence = compute->executePipelineOnce(lxvc::ExecutePipelineInfo{
       .compute = lxvc::WriteComputeInfo{
         .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 256u), renderArea.extent.height, 1u},
-        .layout = descriptions.as<vk::PipelineLayout>(),
+        .layout = descriptors.as<vk::PipelineLayout>(),
       },
       
       .submission = lxvc::SubmissionInfo{
