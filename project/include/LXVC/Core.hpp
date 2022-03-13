@@ -996,12 +996,11 @@ namespace lxvc {
     friend ContextObj;
     friend InstanceObj;
     friend DeviceObj;
-    
-
-  public: //
     friend WrapShared<BaseObj>;
     friend cpp21::wrap_shared_ptr<BaseObj>;
 
+  public: //
+    
     // 
     inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
     inline decltype(auto) SFT() const { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::const_pointer_cast<T>(std::dynamic_pointer_cast<T const>(shared_from_this()))); };
