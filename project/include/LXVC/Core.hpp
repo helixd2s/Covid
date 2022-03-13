@@ -358,7 +358,7 @@ namespace lxvc {
   };
 
   //
-  using InstanceInfo = vk::AccelerationStructureInstanceKHR ;
+  using InstanceInfo = vk::AccelerationStructureInstanceKHR;
 
   //
   struct InstanceLevelCreateInfo {

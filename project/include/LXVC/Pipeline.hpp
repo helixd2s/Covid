@@ -292,8 +292,8 @@ namespace lxvc {
       decltype(auto) colorAttachments = framebuffer->getColorAttachments();
       decltype(auto) renderArea = framebuffer->getRenderArea();
 
-      //
-      bool supportMultiDraw = false;
+      // 
+      const bool supportMultiDraw = deviceObj->getPhysicalDeviceInfoMap()->get<vk::PhysicalDeviceMultiDrawFeaturesEXT>(vk::StructureType::ePhysicalDeviceMultiDrawFeaturesEXT)->multiDraw;
 
       //
       viewports = { vk::Viewport{.x = 0.f, .y = 0.f, .width = float(renderArea.extent.width), .height = float(renderArea.extent.height), .minDepth = 0.f, .maxDepth = 1.f} };
