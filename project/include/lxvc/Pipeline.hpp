@@ -67,7 +67,7 @@ namespace lxvc {
 
   protected:
     //
-    virtual void createCompute(std::optional<ComputePipelineCreateInfo> compute = {}) {
+    virtual void createCompute(cpp21::const_wrap_arg<ComputePipelineCreateInfo> compute = {}) {
       decltype(auto) descriptors = lxvc::context->get<DeviceObj>(this->base)->get<DescriptorsObj>(this->cInfo->layout);
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) crInfo = makeComputePipelineStageInfo(device, *compute->code); this->pipelineStages.push_back(crInfo);
@@ -85,7 +85,7 @@ namespace lxvc {
     };
 
     //
-    virtual void createGraphics(std::optional<GraphicsPipelineCreateInfo> graphics = {}) {
+    virtual void createGraphics(cpp21::const_wrap_arg<GraphicsPipelineCreateInfo> graphics = {}) {
       //this->pipeline = makeComputePipelineStageInfo(this->deviceObj->device, compute->code);
       //
       //lxvc::context->get(this->base)->registerObj(this->handle, shared_from_this());
@@ -293,54 +293,57 @@ namespace lxvc {
       decltype(auto) renderArea = framebuffer->getRenderArea();
 
       //
+      bool supportMultiDraw = false;
+
+      //
       viewports = { vk::Viewport{.x = 0.f, .y = 0.f, .width = float(renderArea.extent.width), .height = float(renderArea.extent.height), .minDepth = 0.f, .maxDepth = 1.f} };
       scissors = { renderArea };
 
       // 
       std::vector<uint32_t> offsets = {};
-      //submission.commandInits.push_back([=](vk::CommandBuffer const& cmdBuf) {
-        auto _depInfo = depInfo;
-        if (framebuffer) { framebuffer->writeSwitchToAttachment(exec->cmdBuf); };
-        exec->cmdBuf.pipelineBarrier2(_depInfo.setMemoryBarriers(memoryBarriersBegin));
-        exec->cmdBuf.beginRendering(vk::RenderingInfoKHR{ .renderArea = renderArea, .layerCount = 1u, .viewMask = 0x0u, .colorAttachmentCount = uint32_t(colorAttachments.size()), .pColorAttachments = colorAttachments.data(), .pDepthAttachment = &depthAttachment, .pStencilAttachment = &stencilAttachment });
-        exec->cmdBuf.bindPipeline(vk::PipelineBindPoint::eGraphics, this->handle.as<vk::Pipeline>());
-        exec->cmdBuf.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, descriptorsObj->handle.as<vk::PipelineLayout>(), 0u, descriptorsObj->sets, offsets);
-        exec->cmdBuf.setViewportWithCount(viewports);
-        exec->cmdBuf.setScissorWithCount(scissors);
-        decltype(auto) catchFn = [&, this](cpp21::const_wrap_arg<std::exception> e = {}) {
-          //std::cerr << "Failed to MultiDraw or not supported, trying to reform command..." << std::endl;
-          if (e) {
-            std::cerr << e->what() << std::endl;
-          };
-          for (auto drawInfo : exec->multiDrawInfo) {
-            exec->cmdBuf.draw(drawInfo.vertexCount, 1u, drawInfo.firstVertex, 0u);
-          };
+
+      // 
+      auto _depInfo = depInfo;
+      if (framebuffer) { framebuffer->writeSwitchToAttachment(exec->cmdBuf); };
+      exec->cmdBuf.pipelineBarrier2(_depInfo.setMemoryBarriers(memoryBarriersBegin));
+      exec->cmdBuf.beginRendering(vk::RenderingInfoKHR{ .renderArea = renderArea, .layerCount = 1u, .viewMask = 0x0u, .colorAttachmentCount = uint32_t(colorAttachments.size()), .pColorAttachments = colorAttachments.data(), .pDepthAttachment = &depthAttachment, .pStencilAttachment = &stencilAttachment });
+      exec->cmdBuf.bindPipeline(vk::PipelineBindPoint::eGraphics, this->handle.as<vk::Pipeline>());
+      exec->cmdBuf.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, descriptorsObj->handle.as<vk::PipelineLayout>(), 0u, descriptorsObj->sets, offsets);
+      exec->cmdBuf.setViewportWithCount(viewports);
+      exec->cmdBuf.setScissorWithCount(scissors);
+
+      //
+      using fnT = void(std::vector<vk::MultiDrawInfoEXT> const&);
+      using fnTp = std::function<fnT>;
+
+      //
+      if (exec->instanceInfos.size() > 0) {
+        for (decltype(auto) instInfo : exec->instanceInfos) {
+          //if (instInfo) {
+            decltype(auto) multiDrawDirect = supportMultiDraw ?
+              fnTp([=](std::vector<vk::MultiDrawInfoEXT> const& multiDraw) {
+              exec->cmdBuf.drawMultiEXT(multiDraw, 1u, 0u, sizeof(vk::MultiDrawInfoEXT), deviceObj->dispatch);
+                }) :
+              fnTp([=](std::vector<vk::MultiDrawInfoEXT> const& multiDraw) {
+                  for (decltype(auto) drawInfo : multiDraw) {
+                    exec->cmdBuf.draw(drawInfo.vertexCount, 1u, drawInfo.firstVertex, 0u);
+                  };
+                });
+
+                // 
+                exec->cmdBuf.pushConstants(descriptorsObj->handle.as<vk::PipelineLayout>(), vk::ShaderStageFlagBits::eAll, 0ull, sizeof(PushConstantData), &instInfo.drawData);
+                multiDrawDirect(instInfo.drawInfos);
+          //};
         };
+      };
 
-        if (deviceObj->dispatch.vkCmdDrawMultiEXT) {
-          try {
-            exec->cmdBuf.drawMultiEXT(exec->multiDrawInfo, 1u, 0u, sizeof(vk::MultiDrawInfoEXT), deviceObj->dispatch);
-          }
-          catch (std::exception e) {
-            catchFn(e);
-          };
-        }
-        else { catchFn(); };
+      // 
+      exec->cmdBuf.endRendering();
+      exec->cmdBuf.pipelineBarrier2(_depInfo.setMemoryBarriers(memoryBarriersEnd));
+      if (framebuffer) { framebuffer->writeSwitchToShaderRead(exec->cmdBuf); };
 
-        
-        exec->cmdBuf.endRendering();
-        exec->cmdBuf.pipelineBarrier2(_depInfo.setMemoryBarriers(memoryBarriersEnd));
-        if (framebuffer) { framebuffer->writeSwitchToShaderRead(exec->cmdBuf); };
-        //return cmdBuf;
-      //});
-
-      //
-      //decltype(auto) switchToAttachmentFence = framebuffers->switchToAttachment();
-      //decltype(auto) graphicsFence = deviceObj->executeCommandOnce(submission);
-      //decltype(auto) switchToShaderReadFence = framebuffers->switchToShaderRead();
-
-      //
-        return SFT();
+      // 
+      return SFT();
     };
 
     // TODO: using multiple-command

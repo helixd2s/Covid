@@ -308,7 +308,7 @@ int main() {
       .graphics = lxvc::WriteGraphicsInfo{
         .layout = descriptors.as<vk::PipelineLayout>(),
         .framebuffer = framebuffer.as<uintptr_t>(),
-        .multiDrawInfo = std::vector<vk::MultiDrawInfoEXT>{ vk::MultiDrawInfoEXT{.firstVertex = 0u, .vertexCount = 6u } },
+        .instanceInfos = instanceLevel->getDrawInfo(),
       },
       .submission = lxvc::SubmissionInfo{
         .info = qfAndQueue,

@@ -104,7 +104,7 @@ namespace lxvc {
           .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
           .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
           .buffer = uploadBuffer,
-          .offset = 0ull,
+          .offset = copyRegionInfo->hostMapOffset,
           .size = size
         }
       };
@@ -119,7 +119,7 @@ namespace lxvc {
           .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
           .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
           .buffer = uploadBuffer,
-          .offset = 0ull,
+          .offset = copyRegionInfo->hostMapOffset,
           .size = size
         }
       };
@@ -132,7 +132,7 @@ namespace lxvc {
         decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
 
         BtIRegions.push_back(vk::BufferImageCopy2{
-          .bufferOffset = 0ull, .imageSubresource = subresourceLayers, .imageOffset = imageRegion.region.offset, .imageExtent = imageRegion.region.extent
+          .bufferOffset = copyRegionInfo->hostMapOffset, .imageSubresource = subresourceLayers, .imageOffset = imageRegion.region.offset, .imageExtent = imageRegion.region.extent
         });
         BtI = vk::CopyBufferToImageInfo2{ .srcBuffer = uploadBuffer, .dstImage = imageRegion.image, .dstImageLayout = vk::ImageLayout::eTransferDstOptimal };
 
@@ -185,7 +185,7 @@ namespace lxvc {
       if (copyRegionInfo->dstBuffer) {
         auto& bufferRegion = copyRegionInfo->dstBuffer.value();
 
-        BtBRegions.push_back(vk::BufferCopy2{ .srcOffset = 0ull, .dstOffset = bufferRegion.region.offset, .size = size });
+        BtBRegions.push_back(vk::BufferCopy2{ .srcOffset = copyRegionInfo->hostMapOffset, .dstOffset = bufferRegion.region.offset, .size = size });
         BtB = vk::CopyBufferInfo2{ .srcBuffer = uploadBuffer, .dstBuffer = bufferRegion.buffer };
 
         bufferBarriersBegin.push_back(vk::BufferMemoryBarrier2{
@@ -313,8 +313,8 @@ namespace lxvc {
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
       decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
 
-      //
-      memcpy(lxvc::context->get<DeviceObj>(this->base)->get<ResourceObj>(uploadBuffer)->mappedMemory, exec->host.data(), size);
+      // 
+      memcpy(cpp21::shift(lxvc::context->get<DeviceObj>(this->base)->get<ResourceObj>(uploadBuffer)->mappedMemory, exec->hostMapOffset), exec->host.data(), size);
 
       // 
       submission.commandInits.push_back([=,this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {

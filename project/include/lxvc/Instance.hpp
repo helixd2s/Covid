@@ -127,7 +127,7 @@ namespace lxvc {
 
       // 
       uintptr_t nameIndex = 0ull;
-      for (auto& name : (*names)) {
+      for (auto const& name : (*names)) {
         uintptr_t propIndex = 0ull;
         for (auto& prop : props) {
           std::string_view propName = { prop.extensionName };
@@ -153,7 +153,7 @@ namespace lxvc {
 
       // 
       uintptr_t nameIndex = 0ull;
-      for (auto& name : (*names)) {
+      for (auto const& name : (*names)) {
         uintptr_t propIndex = 0ull;
         for (auto& prop : props) {
           std::string_view propName = { prop.layerName };

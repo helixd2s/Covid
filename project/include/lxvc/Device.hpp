@@ -164,7 +164,7 @@ namespace lxvc {
 
       // 
       uintptr_t nameIndex = 0ull;
-      for (auto& name : (*names)) {
+      for (auto const& name : (*names)) {
         uintptr_t propIndex = 0ull;
         for (auto& prop : props) {
           std::string_view propName = { prop.layerName };
@@ -188,7 +188,7 @@ namespace lxvc {
 
       // 
       uintptr_t nameIndex = 0ull;
-      for (auto& name : (*names)) {
+      for (auto const& name : (*names)) {
         uintptr_t propIndex = 0ull;
         for (auto& prop : props) {
           std::string_view propName = { prop.extensionName };
@@ -282,7 +282,7 @@ namespace lxvc {
 
     //
     virtual FenceType executeCommandOnce(cpp21::const_wrap_arg<CommandOnceSubmission> submissionRef_ = {}) {
-      decltype(auto) submissionRef = submissionRef_.optional();
+      decltype(auto) submissionRef = std::make_shared<CommandOnceSubmission>(submissionRef_);
       auto& submission = submissionRef->submission;
       auto& device = this->handle.as<vk::Device>();
       auto& qfIndices = (this->queueFamilies.indices);

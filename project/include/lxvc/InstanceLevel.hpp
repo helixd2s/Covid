@@ -5,6 +5,7 @@
 #include "./Instance.hpp"
 #include "./Device.hpp"
 #include "./Resource.hpp"
+#include "./GeometryLevel.hpp"
 
 // 
 namespace lxvc {
@@ -22,14 +23,22 @@ namespace lxvc {
     vk::Buffer instanceBuffer = {};
     vk::Buffer instanceScratch = {};
     vk::Buffer instanceBuild = {};
+    vk::Buffer instanceExtBuffer = {};
 
+    //
+    //InstanceDrawData
     //
     //vk::AccelerationStructureKHR accelStruct = {};
 
     //
     std::vector<vk::AccelerationStructureGeometryKHR> instances = {};
     std::vector<vk::AccelerationStructureBuildRangeInfoKHR> instanceRanges = {};
-    std::vector<vk::MultiDrawInfoEXT> multiDraw = {};
+    //std::vector<vk::MultiDrawInfoEXT> multiDraw = {};
+
+    //
+    //cpp21::bucket<std::shared_ptr<InstanceDrawInfo>> instanceDrawInfo = {};
+    cpp21::shared_vector<InstanceDrawInfo> instanceDrawInfo = std::vector<InstanceDrawInfo>{};
+    cpp21::shared_vector<InstanceDrawData> instanceDrawData = std::vector<InstanceDrawData>{};
 
     //
     //uintptr_t deviceAddress = 0ull;
@@ -47,13 +56,13 @@ namespace lxvc {
   public:
 
     // 
-    InstanceLevelObj(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) : cInfo(cInfo) {
+    InstanceLevelObj(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) : cInfo(cInfo), instanceDrawInfo(std::vector<InstanceDrawInfo>{}), instanceDrawData(std::vector<InstanceDrawData>{}) {
       this->base = deviceObj->handle;
       this->construct(deviceObj, cInfo);
     };
 
     // 
-    InstanceLevelObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) : cInfo(cInfo) {
+    InstanceLevelObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) : cInfo(cInfo), instanceDrawInfo(std::vector<InstanceDrawInfo>{}), instanceDrawData(std::vector<InstanceDrawData>{}) {
       this->construct(lxvc::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
@@ -81,6 +90,11 @@ namespace lxvc {
     };
 
     //
+    virtual WrapShared<ResourceObj> getDrawDataResource() const {
+      return lxvc::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->instanceExtBuffer);
+    };
+
+    //
     virtual vk::Buffer& getInstancedBuffer() { return this->instanceBuffer; };
     virtual vk::Buffer const& getInstancedBuffer() const { return this->instanceBuffer; };
 
@@ -89,8 +103,12 @@ namespace lxvc {
     virtual std::vector<InstanceInfo> const& getInstancedData() const { return this->cInfo->instanceData; };
 
     //
-    virtual std::vector<vk::MultiDrawInfoEXT>& getMultiDraw() { return this->multiDraw; };
-    virtual std::vector<vk::MultiDrawInfoEXT> const& getMultiDraw() const { return this->multiDraw; };
+    virtual cpp21::shared_vector<InstanceDrawInfo>& getDrawInfo() { return this->instanceDrawInfo; };
+    virtual cpp21::shared_vector<InstanceDrawInfo> const& getDrawInfo() const { return this->instanceDrawInfo; };
+
+    //
+    virtual uintptr_t const& getDrawDataDeviceAddress() const { return this->getDrawDataResource()->getDeviceAddress(); };
+    virtual uintptr_t& getDrawDataDeviceAddress() { return this->getDrawDataResource()->getDeviceAddress(); };
 
     //
     virtual uintptr_t const& getInstancedDeviceAddress() const { return this->getInstancedResource()->getDeviceAddress(); };
@@ -102,9 +120,36 @@ namespace lxvc {
 
     //
     virtual void updateInstances() {
+      decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
+
+      // 
       this->instances = {};
       this->instanceRanges = {};
-      this->multiDraw = {};
+
+      //
+      if (this->instanceDrawInfo->size() < this->cInfo->instanceData.size()) {
+        for (uintptr_t idx = this->instanceDrawInfo->size(); idx < this->cInfo->instanceData.size(); idx++) {
+          this->instanceDrawInfo->push_back(InstanceDrawInfo{});
+          this->instanceDrawData->push_back(InstanceDrawData{});
+        };
+      };
+
+      // 
+      for (uintptr_t idx = 0ull; idx < this->cInfo->instanceData.size(); idx++) {
+        auto& instanceData = this->cInfo->instanceData[idx];
+        auto& instanceDraw = this->instanceDrawInfo[idx];
+        auto& instanceDrawData = this->instanceDrawData[idx];
+
+        // 
+        decltype(auto) geometryLevel = deviceObj->get<GeometryLevelObj>(instanceData.accelerationStructureReference);
+
+        // 
+        instanceDraw.drawInfos = geometryLevel->getDrawInfo();
+        instanceDraw.drawData = PushConstantData{ .instanceData = this->getDrawDataDeviceAddress(), .drawIndex = uint32_t(idx)};
+
+        // 
+        instanceDrawData = InstanceDrawData{ .transform = reinterpret_cast<glm::mat3x4&>(instanceData.transform), .reference = geometryLevel->getGeometryDeviceAddress() };
+      };
       {
         instances.push_back(vk::AccelerationStructureGeometryKHR{
           .geometryType = vk::GeometryTypeKHR::eInstances,
@@ -120,10 +165,6 @@ namespace lxvc {
           .firstVertex = 0u,
           .transformOffset = 0u
         });
-        multiDraw.push_back(vk::MultiDrawInfoEXT{
-          .firstVertex = 0u,
-          .vertexCount = uint32_t(this->cInfo->instanceData.size())
-        });
       };
     };
 
@@ -138,13 +179,26 @@ namespace lxvc {
 
       // 
       memcpy(deviceObj->get<ResourceObj>(uploaderObj->uploadBuffer)->mappedMemory, this->cInfo->instanceData.data(), this->cInfo->instanceData.size()*sizeof(InstanceInfo));
+      memcpy(cpp21::shift(deviceObj->get<ResourceObj>(uploaderObj->uploadBuffer)->mappedMemory, this->cInfo->instanceData.size() * sizeof(InstanceInfo)), this->instanceDrawData->data(), this->cInfo->instanceData.size() * sizeof(InstanceDrawData));
 
       // TODO: Acceleration Structure Build Barriers per Buffers
       submission.commandInits.push_back([=, this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+
+        // 
         uploaderObj->writeUploadToResourceCmd(UploadCommandWriteInfo{
           .cmdBuf = cmdBuf,
+          .hostMapOffset = 0ull,
           .dstBuffer = BufferRegion{this->instanceBuffer, DataRegion{ 0ull, this->cInfo->instanceData.size() * sizeof(InstanceInfo) }}
         });
+
+        // parallelize by offset
+        uploaderObj->writeUploadToResourceCmd(UploadCommandWriteInfo{
+          .cmdBuf = cmdBuf,
+          .hostMapOffset = this->cInfo->instanceData.size() * sizeof(InstanceInfo),
+          .dstBuffer = BufferRegion{this->instanceExtBuffer, DataRegion{ 0ull, this->cInfo->instanceData.size() * sizeof(InstanceDrawData) }}
+        });
+
+        // 
         cmdBuf->buildAccelerationStructuresKHR(1u, &infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR)->setGeometries(this->instances), cpp21::rvalue_to_ptr(instanceRanges.data()), deviceObj->dispatch);
         return cmdBuf;
       });
@@ -168,7 +222,7 @@ namespace lxvc {
       decltype(auto) accelInstInfo = infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR);
       decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelInstInfo->setGeometries(this->instances), this->cInfo->maxPrimitiveCounts, deviceObj->dispatch));
       decltype(auto) accelInfo = infoMap->get<vk::AccelerationStructureCreateInfoKHR>(vk::StructureType::eAccelerationStructureCreateInfoKHR);
-      
+
       //
       this->instanceScratch = ResourceObj::make(this->base, ResourceCreateInfo{
         .bufferInfo = BufferCreateInfo{
@@ -181,6 +235,14 @@ namespace lxvc {
       this->instanceBuild = ResourceObj::make(this->base, ResourceCreateInfo{
         .bufferInfo = BufferCreateInfo{
           .size = accelSizes->accelerationStructureSize,
+          .type = BufferType::eStorage
+        }
+      }).as<vk::Buffer>();
+
+      // 
+      this->instanceExtBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
+        .bufferInfo = BufferCreateInfo{
+          .size = cInfo->instanceData.size() * sizeof(InstanceDrawData),
           .type = BufferType::eStorage
         }
       }).as<vk::Buffer>();
@@ -235,11 +297,6 @@ namespace lxvc {
         .flags = vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate | vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace,
         .mode = vk::BuildAccelerationStructureModeKHR::eBuild
       });
-
-      //
-      if (this->cInfo->maxPrimitiveCounts.size() <= 0) {
-        this->cInfo->maxPrimitiveCounts.push_back(this->cInfo->instanceData.size());
-      };
 
       //
       //decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelInstInfo->setInstances(this->instances), this->cInfo->maxPrimitiveCounts, deviceObj->dispatch));

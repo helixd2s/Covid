@@ -176,6 +176,9 @@ namespace lxvc {
       this->createDescriptorLayout(vk::DescriptorType::eStorageImage, 64u);
 
       //
+      this->pushConstantRanges.push_back(vk::PushConstantRange{ vk::ShaderStageFlagBits::eAll, 0ull, sizeof(PushConstantData) });
+
+      //
       this->sets = device.allocateDescriptorSets(this->infoMap->set(vk::StructureType::eDescriptorSetAllocateInfo, vk::DescriptorSetAllocateInfo{
         .pNext = &this->infoMap->set(vk::StructureType::eDescriptorSetVariableDescriptorCountAllocateInfo, vk::DescriptorSetVariableDescriptorCountAllocateInfo{
 

@@ -549,13 +549,33 @@ namespace lxvc {
   };
 
   //
+  struct InstanceDrawData {
+    glm::mat3x4 transform = glm::mat3x4(1.f);
+    uint64_t reference = 0ull;
+  };
+
+  //
+  struct PushConstantData {
+    uint64_t instanceData = 0ull;
+    uint32_t drawIndex = 0u;
+  };
+
+  //
+  struct InstanceDrawInfo {
+    //InstanceDrawData drawData = {};
+    PushConstantData drawData = {};
+    cpp21::shared_vector<vk::MultiDrawInfoEXT> drawInfos = std::vector<vk::MultiDrawInfoEXT>{};
+  };
+  
+
+  //
   struct WriteGraphicsInfo {
     vk::CommandBuffer cmdBuf = {};
     vk::PipelineLayout layout = {};
     uintptr_t framebuffer = {};
 
     // needs multiple-levels support
-    std::vector<vk::MultiDrawInfoEXT> multiDrawInfo = {}; // currently, problematic for dynamic rendering... 
+    std::vector<InstanceDrawInfo> instanceInfos = {}; // currently, problematic for dynamic rendering... 
 
     //
     decltype(auto) with(cpp21::const_wrap_arg<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
@@ -599,6 +619,7 @@ namespace lxvc {
   //
   struct UploadCommandWriteInfo {
     vk::CommandBuffer cmdBuf = {};
+    uintptr_t hostMapOffset = 0ull;
 
     // 
     std::optional<ImageRegion> dstImage = {};
@@ -623,6 +644,7 @@ namespace lxvc {
   //
   struct UploadExecutionOnce {
     cpp21::data_view<char8_t> host = {};
+    uintptr_t hostMapOffset = 0ull;
     UploadCommandWriteInfo writeInfo = {};
     SubmissionInfo submission = {};
   };
@@ -630,6 +652,7 @@ namespace lxvc {
   //
   struct DownloadExecutionOnce {
     cpp21::data_view<char8_t> host = {};
+    uintptr_t hostMapOffset = 0ull;
     DownloadCommandWriteInfo writeInfo = {};
     SubmissionInfo submission = {};
   };
@@ -731,7 +754,7 @@ namespace lxvc {
 
   // 
   static inline decltype(auto) createShaderModule(cpp21::const_wrap_arg<vk::Device> device, cpp21::const_wrap_arg<ShaderModuleCreateInfo> info = {}) {
-    return device->createShaderModule(*info);
+    return device->createShaderModule(info->info);
   };
 
   // 
