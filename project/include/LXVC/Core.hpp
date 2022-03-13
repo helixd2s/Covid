@@ -1027,6 +1027,9 @@ namespace lxvc {
           map = handleObjectMap.erase(map);
         };
 
+        //
+        this->tickProcessing();
+
         // 
         for (decltype(auto) fn : this->destructors) { fn(this); };
         this->destructors = {};
@@ -1042,7 +1045,7 @@ namespace lxvc {
 
     //
     ~BaseObj() {
-      this->tickProcessing();
+      //this->tickProcessing();
       this->destroy(this->base);
     };
 
