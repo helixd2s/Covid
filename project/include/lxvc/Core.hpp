@@ -1020,30 +1020,31 @@ namespace lxvc {
 
     //
     virtual void destroy(Handle const& parent) {
-
-      // 
-      std::decay_t<decltype(handleObjectMap)>::iterator map = handleObjectMap.begin();
-      while (map != this->handleObjectMap.end()) {
-        std::unordered_map<uintptr_t, std::shared_ptr<BaseObj>>& mapc = *map->second;
-        std::decay_t<decltype(mapc)>::iterator pair = mapc.begin();
-        while (pair != mapc.end()) {
-          pair->second->destroy(this->handle);
-          pair = mapc.erase(pair);
+      if (parent.value == this->base.value) {
+        // 
+        std::decay_t<decltype(handleObjectMap)>::iterator map = handleObjectMap.begin();
+        while (map != this->handleObjectMap.end()) {
+          std::unordered_map<uintptr_t, std::shared_ptr<BaseObj>>& mapc = *map->second;
+          std::decay_t<decltype(mapc)>::iterator pair = mapc.begin();
+          while (pair != mapc.end()) {
+            pair->second->destroy(this->handle);
+            pair = mapc.erase(pair);
+          };
+          map = handleObjectMap.erase(map);
         };
-        map = handleObjectMap.erase(map);
-      };
 
-      // 
-      for (decltype(auto) map : this->handleObjectMap) {
-        for (decltype(auto) pair : (*map.second)) {
-          
+        // 
+        for (decltype(auto) map : this->handleObjectMap) {
+          for (decltype(auto) pair : (*map.second)) {
+
+          };
+          this->handleObjectMap.erase(map.first);
         };
-        this->handleObjectMap.erase(map.first);
-      };
 
-      // 
-      for (decltype(auto) fn : this->destructors) { fn(this); };
-      this->destructors = {};
+        // 
+        for (decltype(auto) fn : this->destructors) { fn(this); };
+        this->destructors = {};
+      };
     };
 
     // 
