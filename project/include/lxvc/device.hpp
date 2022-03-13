@@ -55,10 +55,7 @@ namespace lxvc {
     inline decltype(auto) SFT() const { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::const_pointer_cast<T>(std::dynamic_pointer_cast<T const>(shared_from_this()))); };
 
     //
-    //std::unordered_map<uintptr_t, std::function<void()>> destMap = {};
-    std::array<std::atomic<std::shared_ptr<std::function<void()>>>, 1024> destIds = {};
-    std::array<std::atomic<std::shared_ptr<std::function<void()>>>, 1024> callIds = {};
-    std::shared_ptr<std::atomic_int32_t> destructorCount = {};
+    std::array<std::atomic<std::shared_ptr<std::function<void()>>>, 2048> callIds = {};
     std::shared_ptr<std::atomic_int32_t> callbackCount = {};
     std::shared_ptr<std::atomic_bool> threadLocked = {};
     std::shared_ptr<std::atomic_bool> actionLocked = {};
@@ -324,9 +321,13 @@ namespace lxvc {
       auto promise = std::async(std::launch::async | std::launch::deferred, [=,this]() {
         auto result = device.waitForFences(*fence, true, 1000 * 1000 * 1000);
         do { /* but nothing to do */ } while (this->threadLocked->load()); (*this->actionLocked) = true;
-        for (auto& fn : submissionRef->onDone) { if ((*callbackCount) < callIds.size()) { callIds[(*callbackCount)++] = std::make_shared<std::function<void()>>(std::bind(fn, result)); }; };
-        if ((*destructorCount) < destIds.size()) {
-          destIds[(*destructorCount)++] = std::make_shared<std::function<void()>>([=, this]() {
+        for (auto& fn : submissionRef->onDone) { 
+          if ((*callbackCount) < callIds.size()) { 
+            callIds[(*callbackCount)++] = std::make_shared<std::function<void()>>(std::bind(fn, result)); 
+          };
+        };
+        if ((*callbackCount) < callIds.size()) {
+          callIds[(*callbackCount)++] = std::make_shared<std::function<void()>>([=, this]() {
             if (fence && *fence) {
               device.destroyFence(*fence);
               device.freeCommandBuffers(commandPool, commandBuffers);
@@ -372,7 +373,7 @@ namespace lxvc {
       if (cInfo) { this->cInfo = cInfo; };
 
       // 
-      this->destructorCount = std::make_shared<std::atomic_int32_t>(std::move(0ull));
+      //this->destructorCount = std::make_shared<std::atomic_int32_t>(std::move(0ull));
       this->callbackCount = std::make_shared<std::atomic_int32_t>(std::move(0ull));
       this->threadLocked = std::make_shared<std::atomic_bool>(std::move(false));
       this->actionLocked = std::make_shared<std::atomic_bool>(std::move(false));
@@ -465,14 +466,6 @@ namespace lxvc {
         while ((*callbackCount) > 0) {
           auto callId = callIds[--(*callbackCount)].exchange({}); if (callId) { (*callId)(); };
         }; atomic_max(*callbackCount, 0);
-        *threadLocked = false;
-      };
-
-      if (!actionLocked->load()) {
-        *threadLocked = true;
-        while ((*destructorCount) > 0) {
-          auto destId = destIds[--(*destructorCount)].exchange({}); if (destId) { (*destId)(); };
-        }; atomic_max(*destructorCount, 0);
         *threadLocked = false;
       };
     };
