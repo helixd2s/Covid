@@ -136,6 +136,7 @@ namespace lxvc {
         });
         BtI = vk::CopyBufferToImageInfo2{ .srcBuffer = uploadBuffer, .dstImage = imageRegion.image, .dstImageLayout = vk::ImageLayout::eTransferDstOptimal };
 
+        // 
         subresourceRange = vk::ImageSubresourceRange{
           .aspectMask =
              imageObj->cInfo->imageInfo->type == ImageType::eDepthStencilAttachment ? vk::ImageAspectFlagBits::eDepth :
@@ -147,6 +148,7 @@ namespace lxvc {
           .layerCount = imageInfo->arrayLayers
         };
 
+        // 
         subresourceLayers = vk::ImageSubresourceLayers{
           .aspectMask = subresourceRange.aspectMask,
           .mipLevel = subresourceRange.baseMipLevel,
@@ -164,6 +166,7 @@ namespace lxvc {
             .newLayout = imageObj->cInfo->imageInfo->layout,
             .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
             .dstQueueFamilyIndex = imageRegion.queueFamilyIndex,
+            .image = imageRegion.image,
             .subresourceRange = subresourceRange
           });
 
@@ -177,6 +180,7 @@ namespace lxvc {
             .newLayout = vk::ImageLayout::eTransferDstOptimal,
             .srcQueueFamilyIndex = imageRegion.queueFamilyIndex,
             .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
+            .image = imageRegion.image,
             .subresourceRange = subresourceRange
           });
       };
