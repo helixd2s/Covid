@@ -1018,7 +1018,7 @@ namespace lxvc {
         // 
         std::decay_t<decltype(handleObjectMap)>::iterator map = handleObjectMap.begin();
         while (map != this->handleObjectMap.end()) {
-          std::unordered_map<uintptr_t, std::shared_ptr<BaseObj>>& mapc = *map->second;
+          std::decay_t<decltype(*(map->second))>& mapc = *(map->second);
           std::decay_t<decltype(mapc)>::iterator pair = mapc.begin();
           while (pair != mapc.end()) {
             pair->second->destroy(this->handle);
