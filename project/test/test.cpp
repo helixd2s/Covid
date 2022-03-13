@@ -1,5 +1,7 @@
 #pragma once
 
+
+
 //
 #ifdef _WIN32
 #ifndef VK_USE_PLATFORM_WIN32_KHR
@@ -15,8 +17,10 @@
 // 
 #include <LXVC/lxvc.hpp>
 #include <GLFW/glfw3.h>
+#ifdef ENABLE_RENDERDOC
 #include "renderdoc_app.h"
 #include <eh.h>
+#endif
 
 // 
 void error(int errnum, const char* errmsg)
@@ -51,6 +55,7 @@ int main() {
     throw std::exception(error.c_str());
   });
 
+#ifdef ENABLE_RENDERDOC
   //
   RENDERDOC_API_1_1_2* rdoc_api = NULL;
 
@@ -78,7 +83,7 @@ int main() {
 
   //
   if (rdoc_api) rdoc_api->SetCaptureOptionU32(eRENDERDOC_Option_DebugOutputMute, true);
-
+#endif
 
   //
   lxvc::initialize();
@@ -280,7 +285,9 @@ int main() {
     glfwPollEvents();
 
     //
+#ifdef ENABLE_RENDERDOC
     if (rdoc_api) rdoc_api->StartFrameCapture(NULL, NULL);
+#endif
 
     // 
     decltype(auto) semIndex = (uniformData.currentImage + 1u) % imageIndices.size();
@@ -347,7 +354,9 @@ int main() {
     });
 
     // stop the capture
+#ifdef ENABLE_RENDERDOC
     if (rdoc_api) rdoc_api->EndFrameCapture(NULL, NULL);
+#endif
   };
 
   // 

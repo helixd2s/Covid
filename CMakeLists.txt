@@ -65,7 +65,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   ${PROJECT_SOURCE_DIR}/prebuild/include 
   ${PROJECT_SOURCE_DIR}/external/include 
   ${PROJECT_SOURCE_DIR}/submodules/*/include 
-  ${PROJECT_SOURCE_DIR}/submodules/*/glm 
+  ${PROJECT_SOURCE_DIR}/submodules/glm
   ${PROJECT_SOURCE_DIR}/../external/include 
   ${Vulkan_INCLUDE_DIRS}
 )
