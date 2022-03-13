@@ -309,12 +309,13 @@ namespace lxvc {
       this->tickProcessing();
 
       // 
-      auto promise = std::async(std::launch::async | std::launch::deferred, [=,this]() {
+      auto promise = std::async(std::launch::async | std::launch::deferred, [callstack=std::weak_ptr<CallStack>(this->callstack), device, fence, commandPool, submissionRef, commandBuffers]() {
         auto result = device.waitForFences(*fence, true, 1000 * 1000 * 1000);
-        for (auto& fn : submissionRef->onDone) { 
-          this->callstack->add(std::bind(fn, result));
+        auto cl = callstack.lock();
+        for (auto& fn : submissionRef->onDone) {
+          cl->add(std::bind(fn, result));
         };
-        this->callstack->add([=, this]() {
+        cl->add([=]() {
           if (fence && *fence) {
             device.destroyFence(*fence);
             device.freeCommandBuffers(commandPool, commandBuffers);
