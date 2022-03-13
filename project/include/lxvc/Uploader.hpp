@@ -71,6 +71,7 @@ namespace lxvc {
     };
 
     // you can copy from host to device Buffer and Image together!
+    // TODO: per-type role based barriers...
     virtual tType writeUploadToResourceCmd(cpp21::const_wrap_arg<UploadCommandWriteInfo> copyRegionInfo) {
       //decltype(auto) submission = CommandOnceSubmission{ .info = this->cInfo->info };
       decltype(auto) uploadBuffer = this->uploadBuffer;
@@ -227,6 +228,8 @@ namespace lxvc {
     };
 
     //
+    // TODO: per-type role based barriers...
+    // TODO: image, imageType and imageLayout supports...
     virtual tType writeDownloadToResourceCmd(cpp21::const_wrap_arg<DownloadCommandWriteInfo> info) {
       //decltype(auto) submission = CommandOnceSubmission{ .info = SubmissionInfo {.info = this->cInfo->info } };
       decltype(auto) uploadBuffer = this->uploadBuffer;
