@@ -166,9 +166,16 @@ namespace lxvc {
       this->updateGeometries();
 
       //
-      if (this->cInfo->maxPrimitiveCounts.size() <= 0) {
+      if (this->cInfo->limits.size() <= 0) {
         for (decltype(auto) geometry : this->cInfo->geometryData) {
-          this->cInfo->maxPrimitiveCounts.push_back(geometry.primitiveCount);
+          this->cInfo->limits.push_back(geometry.primitiveCount);
+        };
+      };
+
+      //
+      if (this->cInfo->geometryData.size() < this->cInfo->limits.size()) {
+        for (uintptr_t i = this->cInfo->geometryData.size(); i < this->cInfo->limits.size(); i++) {
+          this->cInfo->geometryData.push_back(GeometryInfo{});
         };
       };
 
@@ -176,13 +183,13 @@ namespace lxvc {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       decltype(auto) accelGeomInfo = infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR);
-      decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelGeomInfo->setGeometries(this->geometries), this->cInfo->maxPrimitiveCounts, deviceObj->dispatch));
+      decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelGeomInfo->setGeometries(this->geometries), this->cInfo->limits, deviceObj->dispatch));
       decltype(auto) accelInfo = infoMap->get<vk::AccelerationStructureCreateInfoKHR>(vk::StructureType::eAccelerationStructureCreateInfoKHR);
       
       // 
       this->geometryBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
         .bufferInfo = BufferCreateInfo{
-          .size = std::max(cInfo->geometryData.size(), cInfo->maxPrimitiveCounts.size()) * sizeof(GeometryInfo),
+          .size = std::max(cInfo->geometryData.size(), cInfo->limits.size()) * sizeof(GeometryInfo),
           .type = BufferType::eStorage
         }
       }).as<vk::Buffer>();
@@ -243,9 +250,6 @@ namespace lxvc {
         .flags = vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate | vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace,
         .mode = vk::BuildAccelerationStructureModeKHR::eBuild
       });
-
-      //
-      //decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelGeomInfo->setGeometries(this->geometries), this->cInfo->maxPrimitiveCounts, deviceObj->dispatch));
 
       //
       if (this->cInfo->geometryData.size() > 0 && !this->handle) {

@@ -218,15 +218,29 @@ namespace lxvc {
       this->updateInstances();
 
       //
-      if (this->cInfo->maxPrimitiveCounts.size() <= 0) {
-        this->cInfo->maxPrimitiveCounts.push_back(this->cInfo->instanceData.size());
+      if (this->cInfo->limits.size() <= 0) {
+        this->cInfo->limits.push_back(this->cInfo->instanceData.size());
+      };
+
+      //
+      if (this->cInfo->instanceData.size() < this->cInfo->limits.size()) {
+        for (uintptr_t i = this->cInfo->instanceData.size(); i < this->cInfo->limits.size(); i++) {
+          this->cInfo->instanceData.push_back(InstanceInfo{
+            .transform = reinterpret_cast<vk::TransformMatrixKHR&&>(glm::mat3x4(1.f)),
+            .instanceCustomIndex = 0u,
+            .mask = 0u,
+            .instanceShaderBindingTableRecordOffset = 0u,
+            .flags = 0u,
+            .accelerationStructureReference = 0u
+          });
+        };
       };
 
       // 
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       decltype(auto) accelInstInfo = infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR);
-      decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelInstInfo->setGeometries(this->instances), this->cInfo->maxPrimitiveCounts, deviceObj->dispatch));
+      decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelInstInfo->setGeometries(this->instances), this->cInfo->limits, deviceObj->dispatch));
       decltype(auto) accelInfo = infoMap->get<vk::AccelerationStructureCreateInfoKHR>(vk::StructureType::eAccelerationStructureCreateInfoKHR);
 
       //
@@ -286,7 +300,7 @@ namespace lxvc {
       // 
       this->instanceBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
         .bufferInfo = BufferCreateInfo{
-          .size = std::max(cInfo->instanceData.size(), cInfo->maxPrimitiveCounts.size()) * sizeof(InstanceInfo),
+          .size = std::max(cInfo->instanceData.size(), cInfo->limits.size()) * sizeof(InstanceInfo),
           .type = BufferType::eStorage
         }
       }).as<vk::Buffer>();
@@ -303,9 +317,6 @@ namespace lxvc {
         .flags = vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate | vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace,
         .mode = vk::BuildAccelerationStructureModeKHR::eBuild
       });
-
-      //
-      //decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelInstInfo->setInstances(this->instances), this->cInfo->maxPrimitiveCounts, deviceObj->dispatch));
 
       //
       if (this->cInfo->instanceData.size() > 0 && !this->handle) {

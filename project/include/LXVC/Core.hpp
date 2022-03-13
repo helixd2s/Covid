@@ -287,8 +287,8 @@ namespace lxvc {
   //
   struct BufferViewInfo {
     uintptr_t deviceAddress = 0ull;
-    uint32_t stride = 4ull;
-    BufferViewFormat format = BufferViewFormat::eUint;
+    uint32_t stride = 0ull;
+    BufferViewFormat format = BufferViewFormat::eNone;
   };
 
   //
@@ -349,7 +349,7 @@ namespace lxvc {
   //
   struct GeometryLevelCreateInfo {
     std::vector<GeometryInfo> geometryData = {};
-    std::vector<uint32_t> maxPrimitiveCounts = {};
+    std::vector<uint32_t> limits = {};
     //size_t geometryCount = 1u;
     uintptr_t uploader = 0ull;
 
@@ -363,7 +363,7 @@ namespace lxvc {
   //
   struct InstanceLevelCreateInfo {
     std::vector<InstanceInfo> instanceData = {};
-    std::vector<uint32_t> maxPrimitiveCounts = {};
+    std::vector<uint32_t> limits = {};
     //size_t instanceCount = 1u;
     uintptr_t uploader = 0ull;
 
