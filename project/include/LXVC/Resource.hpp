@@ -154,11 +154,17 @@ namespace lxvc {
       bool imageCondition = this->cInfo->imageInfo && this->cInfo->imageInfo->type != ImageType::eSwapchain;
       bool bufferCondition = true;
 
+      //
+      decltype(auto) exportMemory = infoMap->set(vk::StructureType::eExportMemoryAllocateInfo, vk::ExportMemoryAllocateInfo{
+         .handleTypes = memoryUsage == MemoryUsage::eGpuOnly ? extMemFlags : vk::ExternalMemoryHandleTypeFlags{}
+      });
+
       // 
       allocated = AllocatedMemory{
         .memory = device.allocateMemory(infoMap->set(vk::StructureType::eMemoryAllocateInfo, vk::MemoryAllocateInfo{
           .pNext = infoMap->set(vk::StructureType::eMemoryAllocateFlagsInfo, vk::MemoryAllocateFlagsInfo{
             .pNext = infoMap->set(vk::StructureType::eMemoryDedicatedAllocateInfo, vk::MemoryDedicatedAllocateInfo{
+              .pNext = memoryUsage == MemoryUsage::eGpuOnly ? exportMemory.get() : nullptr,
               .image = requirements->dedicated && this->handle.type == HandleType::eImage && imageCondition ? this->handle.as<vk::Image>() : vk::Image{},
               .buffer = requirements->dedicated && this->handle.type == HandleType::eBuffer && bufferCondition ? this->handle.as<vk::Buffer>() : vk::Buffer{}
             }).get(),
@@ -169,6 +175,17 @@ namespace lxvc {
         }).ref()),
         .offset = 0ull,
         .size = requirements->size
+      };
+
+      //
+      if (memoryUsage == MemoryUsage::eGpuOnly) {
+#ifdef _WIN32
+        extHandle = device.getMemoryWin32HandleKHR(vk::MemoryGetWin32HandleInfoKHR{ .memory = allocated.memory, .handleType = extMemFlagBits }, deviceObj->getDispatch());
+#else
+#ifdef __linux__ 
+        extHandle = device.getMemoryFdKHR(vk::MemoryGetFdInfoKHR{ .memory = allocated.memory, .handleType = extMemFlagBits }, deviceObj->getDispatch());
+#endif
+#endif
       };
 
       // 
@@ -314,8 +331,15 @@ namespace lxvc {
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
 
+      //
+      decltype(auto) externalInfo = infoMap->set(vk::StructureType::eExternalMemoryImageCreateInfo, vk::ExternalMemoryImageCreateInfo{
+        .handleTypes = memoryUsage == MemoryUsage::eGpuOnly ? extMemFlags : vk::ExternalMemoryHandleTypeFlags{},
+      });
+
       // 
+      decltype(auto) imageUsage = this->handleImageUsage(cInfo->type);
       decltype(auto) imageInfo = infoMap->set(vk::StructureType::eImageCreateInfo, vk::ImageCreateInfo{
+        .pNext = memoryUsage == MemoryUsage::eGpuOnly ? externalInfo.get() : nullptr,
         .imageType = cInfo->imageType,
         .format = cInfo->format,
         .extent = cInfo->extent,
@@ -323,7 +347,7 @@ namespace lxvc {
         .arrayLayers = cInfo->layerCount, // TODO: correct array layers
         .samples = vk::SampleCountFlagBits::e1,
         .tiling = vk::ImageTiling::eOptimal,
-        .usage = this->handleImageUsage(cInfo->type),
+        .usage = imageUsage,
         .sharingMode = vk::SharingMode::eExclusive,
         .initialLayout = vk::ImageLayout::eUndefined
       });
@@ -380,10 +404,17 @@ namespace lxvc {
       decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
 
+      //
+      decltype(auto) externalInfo = infoMap->set(vk::StructureType::eExternalMemoryBufferCreateInfo, vk::ExternalMemoryBufferCreateInfo{
+        .handleTypes = memoryUsage == MemoryUsage::eGpuOnly ? extMemFlags : vk::ExternalMemoryHandleTypeFlags{},
+        });
+
       // 
+      decltype(auto) bufferUsage = this->handleBufferUsage(cInfo->type);
       decltype(auto) bufferInfo = infoMap->set(vk::StructureType::eBufferCreateInfo, vk::BufferCreateInfo{
+        .pNext = memoryUsage == MemoryUsage::eGpuOnly ? externalInfo.get() : nullptr,
         .size = cInfo->size,
-        .usage = this->handleBufferUsage(cInfo->type),
+        .usage = bufferUsage,
         .sharingMode = vk::SharingMode::eExclusive
         });
 

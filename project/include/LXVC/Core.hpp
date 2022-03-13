@@ -275,7 +275,13 @@ namespace lxvc {
       "VK_EXT_conservative_rasterization", 
       "VK_EXT_blend_operation_advanced", 
       "VK_EXT_validation_cache",
-      "VK_KHR_portability_subset"
+      "VK_KHR_portability_subset",
+      "VK_KHR_external_semaphore",
+      "VK_KHR_external_semaphore_win32",
+      "VK_KHR_external_semaphore_fd",
+      "VK_KHR_external_memory",
+      "VK_KHR_external_memory_win32",
+      "VK_KHR_external_memory_fd"
     };
     cpp21::shared_vector<std::string> layerList = std::vector<std::string>{
     };
@@ -411,7 +417,7 @@ namespace lxvc {
 
   //
   struct SemaphoreCreateInfo {
-
+    bool hasExport = true;
   };
 
   //
@@ -520,7 +526,50 @@ namespace lxvc {
     SubmissionInfo submission = {};
   };
 
-  
+  //
+  struct GLBuffer {
+    uint32_t glBuffer = 0u;
+    uint32_t glMemory = 0u;
+  };
+
+  //
+  struct ExtHandle {
+#ifdef _WIN32
+    HANDLE handle = 0ull;
+
+    // 
+    ExtHandle(HANDLE const& handle = 0ull) : handle(handle) {};
+    operator HANDLE& () { return handle; };
+    operator HANDLE const& () const { return handle; };
+    decltype(auto) operator=(HANDLE const& hnd) { handle = hnd; return *this; };
+#else
+#ifdef __linux__ 
+    uint32_t handle = 0u;
+    uint32_t gap = 0u;
+
+    // 
+    ExtHandle(uint32_t const& handle = 0ull) : handle(handle) {};
+    operator uint32_t& () { return handle; };
+    operator uint32_t const& () const { return handle; };
+    decltype(auto) operator=(uint32_t const& hnd) { handle = hnd; return *this; };
+#endif
+#endif
+  };
+
+  //
+#ifdef _WIN32
+  inline extern vk::ExternalMemoryHandleTypeFlags extMemFlags = vk::ExternalMemoryHandleTypeFlagBits::eOpaqueWin32;
+  inline extern vk::ExternalSemaphoreHandleTypeFlags extSemFlags = vk::ExternalSemaphoreHandleTypeFlagBits::eOpaqueWin32;
+  inline extern vk::ExternalMemoryHandleTypeFlagBits extMemFlagBits = vk::ExternalMemoryHandleTypeFlagBits::eOpaqueWin32;
+  inline extern vk::ExternalSemaphoreHandleTypeFlagBits extSemFlagBits = vk::ExternalSemaphoreHandleTypeFlagBits::eOpaqueWin32;
+#else
+#ifdef __linux__ 
+  inline extern vk::ExternalMemoryHandleTypeFlags extMemFlags = vk::ExternalMemoryHandleTypeFlagBits::eOpaqueFd;
+  inline extern vk::ExternalSemaphoreHandleTypeFlags extSemFlags = vk::ExternalSemaphoreHandleTypeFlagBits::eOpaqueFd;
+  inline extern vk::ExternalMemoryHandleTypeFlagBits extMemFlagBits = vk::ExternalMemoryHandleTypeFlagBits::eOpaqueFd;
+  inline extern vk::ExternalSemaphoreHandleTypeFlagBits extSemFlagBits = vk::ExternalSemaphoreHandleTypeFlagBits::eOpaqueFd;
+#endif
+#endif
 
   //
   struct UniformDataWriteSet {
@@ -971,9 +1020,14 @@ namespace lxvc {
     void process() {
       if (!this->actionLocked.load()) {
         this->threadLocked = true;
+        atomic_max(this->callbackCount, 0);
         while (this->callbackCount > 0) {
-          auto callId = this->callIds[--callbackCount].exchange({}); if (callId && *callId) { (*callId)(); };
-        }; atomic_max(this->callbackCount, 0);
+          auto cid = --this->callbackCount;
+          if (cid >= 0) { // avoid errors...
+            auto callId = this->callIds[cid].exchange({}); if (callId && *callId) { (*callId)(); };
+          };
+        };
+        atomic_max(this->callbackCount, 0);
         this->threadLocked = false;
       };
     }
@@ -992,6 +1046,7 @@ namespace lxvc {
 
     // 
     Handle handle = {}, base = {};
+    ExtHandle extHandle = {};
     std::unordered_map<HandleType, cpp21::map_of_shared<uintptr_t, BaseObj>> handleObjectMap = {};
     std::shared_ptr<MSS> infoMap = {};
 
@@ -1056,6 +1111,10 @@ namespace lxvc {
     BaseObj(cpp21::const_wrap_arg<Handle> base, cpp21::const_wrap_arg<Handle> handle = {}) : base(base), handle(handle), infoMap(std::make_shared<MSS>()), callstack(std::make_shared<CallStack>()) {
 
     };
+
+    //
+    virtual ExtHandle& getExtHandle() { return extHandle; };
+    virtual ExtHandle const& getExtHandle() const { return extHandle; };
 
     //
     template<class T = BaseObj>

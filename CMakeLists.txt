@@ -57,9 +57,17 @@ file(GLOB_RECURSE _source_list
   "${_src_root_path}/test/*"
 )
 
+#
+SET(PLATFORM_DEF )
+IF (WIN32)
+  SET (PLATFORM_DEF VK_USE_PLATFORM_WIN32_KHR)
+ELSE()
+  SET (PLATFORM_DEF )
+ENDIF()
+
 # 
 add_executable(${PROJECT_NAME} ${_source_list})
-target_compile_definitions(${PROJECT_NAME} PUBLIC VULKAN_HPP_NO_CONSTRUCTORS NOMINMAX)
+target_compile_definitions(${PROJECT_NAME} PUBLIC VULKAN_HPP_NO_CONSTRUCTORS NOMINMAX ${PLATFORM_DEF})
 target_include_directories(${PROJECT_NAME} PUBLIC 
   ${PROJECT_SOURCE_DIR}/project/include 
   ${PROJECT_SOURCE_DIR}/prebuild/include 

@@ -187,17 +187,14 @@ namespace lxvc {
         });
       });
 
-      // 
-      ;
-
       //
       vk::SemaphoreTypeCreateInfo timeline = {};
       timeline.semaphoreType = vk::SemaphoreType::eBinary;
       timeline.initialValue = 0ull;//this->readySemaphores.size();
 
-      //
-      decltype(auto) readySemaphore = SemaphoreObj::make(this->base, SemaphoreCreateInfo{  });
-      decltype(auto) presentSemaphore = SemaphoreObj::make(this->base, SemaphoreCreateInfo{  });
+      // incompatible with export
+      decltype(auto) readySemaphore = SemaphoreObj::make(this->base, SemaphoreCreateInfo{ .hasExport = false });
+      decltype(auto) presentSemaphore = SemaphoreObj::make(this->base, SemaphoreCreateInfo{ .hasExport = false });
 
       //
       this->readySemaphores.push_back(readySemaphore.as<vk::Semaphore>());
