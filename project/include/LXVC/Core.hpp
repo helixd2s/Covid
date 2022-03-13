@@ -1028,14 +1028,6 @@ namespace lxvc {
         };
 
         // 
-        for (decltype(auto) map : this->handleObjectMap) {
-          for (decltype(auto) pair : (*map.second)) {
-
-          };
-          this->handleObjectMap.erase(map.first);
-        };
-
-        // 
         for (decltype(auto) fn : this->destructors) { fn(this); };
         this->destructors = {};
       };
