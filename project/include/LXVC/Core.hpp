@@ -1042,6 +1042,13 @@ namespace lxvc {
     };
 
     //
+    virtual void tickProcessing() {
+      if (this->callstack) {
+        this->callstack->process();
+      };
+    };
+
+    //
     ~BaseObj() {
       this->tickProcessing();
       this->destroy(this->base);
@@ -1051,13 +1058,6 @@ namespace lxvc {
     BaseObj() : infoMap(std::make_shared<MSS>(MSS())), callstack(std::make_shared<CallStack>()) {};
     BaseObj(cpp21::const_wrap_arg<Handle> base, cpp21::const_wrap_arg<Handle> handle = {}) : base(base), handle(handle), infoMap(std::make_shared<MSS>()), callstack(std::make_shared<CallStack>()) {
 
-    };
-
-    //
-    virtual void tickProcessing() {
-      if (this->callstack) {
-        this->callstack->process();
-      };
     };
 
     //
