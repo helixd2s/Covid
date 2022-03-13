@@ -1007,12 +1007,6 @@ namespace lxvc {
     inline decltype(auto) SFT() const { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::const_pointer_cast<T>(std::dynamic_pointer_cast<T const>(shared_from_this()))); };
 
     //
-    ~BaseObj() {
-      this->tickProcessing();
-      this->destroy(this->base);
-    };
-
-    //
     virtual Handle& getHandle() { return this->handle; };
     virtual Handle const& getHandle() const { return this->handle; };
     virtual Handle& getBase() { return this->base; };
@@ -1045,6 +1039,12 @@ namespace lxvc {
         for (decltype(auto) fn : this->destructors) { fn(this); };
         this->destructors = {};
       };
+    };
+
+    //
+    ~BaseObj() {
+      this->tickProcessing();
+      this->destroy(this->base);
     };
 
     // 
