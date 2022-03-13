@@ -562,7 +562,7 @@ namespace lxvc {
 
   //
   struct PushConstantData {
-    InstanceAddressInfo instanceAddressInfo = {};
+    InstanceAddressInfo addressInfo = {};
     uint32_t drawIndex = 0u;
   };
 

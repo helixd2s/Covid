@@ -151,7 +151,7 @@ namespace lxvc {
 
         // 
         instanceDraw.drawInfos = geometryLevel->getDrawInfo();
-        instanceDraw.drawData = PushConstantData{ .instanceAddressInfo = this->addressInfo, .drawIndex = uint32_t(idx) };
+        instanceDraw.drawData = PushConstantData{ .addressInfo = this->addressInfo, .drawIndex = uint32_t(idx) };
 
         // 
         instanceDrawData = InstanceDrawData{ .transform = reinterpret_cast<glm::mat3x4&>(instanceData.transform), .reference = geometryLevel->getGeometryDeviceAddress() };
