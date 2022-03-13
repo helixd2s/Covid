@@ -1015,6 +1015,13 @@ namespace lxvc {
     //
     virtual void destroy(Handle const& parent) {
       if (parent.value == this->base.value) {
+        //
+        this->tickProcessing();
+
+        // 
+        for (decltype(auto) fn : this->destructors) { fn(this); };
+        this->destructors = {};
+
         // 
         std::decay_t<decltype(handleObjectMap)>::iterator map = handleObjectMap.begin();
         while (map != this->handleObjectMap.end()) {
@@ -1026,13 +1033,6 @@ namespace lxvc {
           };
           map = handleObjectMap.erase(map);
         };
-
-        //
-        this->tickProcessing();
-
-        // 
-        for (decltype(auto) fn : this->destructors) { fn(this); };
-        this->destructors = {};
       };
     };
 
