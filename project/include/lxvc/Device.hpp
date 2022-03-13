@@ -16,13 +16,7 @@ namespace lxvc {
     std::vector<std::vector<vk::Queue>> queues = {};
   };
 
-  // 
-  template<typename T>
-  inline void atomic_max(std::atomic<T>& maximum_value, T const& value) noexcept
-  {
-    T prev_value = maximum_value;
-    while (prev_value < value && !maximum_value.compare_exchange_weak(prev_value, value)) {}
-  };
+  
 
   // 
   class DeviceObj : public BaseObj {
@@ -55,10 +49,7 @@ namespace lxvc {
     inline decltype(auto) SFT() const { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::const_pointer_cast<T>(std::dynamic_pointer_cast<T const>(shared_from_this()))); };
 
     //
-    std::array<std::atomic<std::shared_ptr<std::function<void()>>>, 2048> callIds = {};
-    std::shared_ptr<std::atomic_int32_t> callbackCount = {};
-    std::shared_ptr<std::atomic_bool> threadLocked = {};
-    std::shared_ptr<std::atomic_bool> actionLocked = {};
+    
 
     //
     //std::shared_ptr<InstanceObj> instanceObj = {};
@@ -320,22 +311,16 @@ namespace lxvc {
       // 
       auto promise = std::async(std::launch::async | std::launch::deferred, [=,this]() {
         auto result = device.waitForFences(*fence, true, 1000 * 1000 * 1000);
-        do { /* but nothing to do */ } while (this->threadLocked->load()); (*this->actionLocked) = true;
         for (auto& fn : submissionRef->onDone) { 
-          if ((*callbackCount) < callIds.size()) { 
-            callIds[(*callbackCount)++] = std::make_shared<std::function<void()>>(std::bind(fn, result)); 
+          this->callstack->add(std::bind(fn, result));
+        };
+        this->callstack->add([=, this]() {
+          if (fence && *fence) {
+            device.destroyFence(*fence);
+            device.freeCommandBuffers(commandPool, commandBuffers);
+            *fence = vk::Fence{};
           };
-        };
-        if ((*callbackCount) < callIds.size()) {
-          callIds[(*callbackCount)++] = std::make_shared<std::function<void()>>([=, this]() {
-            if (fence && *fence) {
-              device.destroyFence(*fence);
-              device.freeCommandBuffers(commandPool, commandBuffers);
-              *fence = vk::Fence{};
-            };
-          });
-        };
-        (*this->actionLocked) = false;
+        });
         return result;
       });
 
@@ -370,13 +355,8 @@ namespace lxvc {
       this->extensionNames = {};
       this->layerNames = {};
       this->infoMap = std::make_shared<MSS>(MSS());
+      this->callstack = std::make_shared<CallStack>();
       if (cInfo) { this->cInfo = cInfo; };
-
-      // 
-      //this->destructorCount = std::make_shared<std::atomic_int32_t>(std::move(0ull));
-      this->callbackCount = std::make_shared<std::atomic_int32_t>(std::move(0ull));
-      this->threadLocked = std::make_shared<std::atomic_bool>(std::move(false));
-      this->actionLocked = std::make_shared<std::atomic_bool>(std::move(false));
 
       //memcpy(&this->cInfo, &cInfo, sizeof(DeviceCreateInfo));
 
@@ -458,17 +438,6 @@ namespace lxvc {
     };
 
   public:
-
-    //
-    virtual void tickProcessing() {
-      if (!actionLocked->load()) {
-        *threadLocked = true;
-        while ((*callbackCount) > 0) {
-          auto callId = callIds[--(*callbackCount)].exchange({}); if (callId) { (*callId)(); };
-        }; atomic_max(*callbackCount, 0);
-        *threadLocked = false;
-      };
-    };
 
     // TODO: caching...
     virtual vk::Queue const& getQueue(cpp21::const_wrap_arg<QueueGetInfo> info = {}) const {

@@ -930,11 +930,64 @@ namespace lxvc {
 
   };
 
+  // 
+  template<typename T>
+  inline void atomic_max(std::atomic<T>& maximum_value, T const& value) noexcept
+  {
+    T prev_value = maximum_value;
+    while (prev_value < value && !maximum_value.compare_exchange_weak(prev_value, value)) {}
+  };
+
+  //
+  class CallStack : public std::enable_shared_from_this<CallStack> {
+  protected:
+    std::array<std::atomic<std::shared_ptr<std::function<void()>>>, 2048> callIds = {};
+    std::atomic_int32_t callbackCount = 0;
+    std::atomic_bool threadLocked = false;
+    std::atomic_bool actionLocked = false;
+
+  public:
+    CallStack() {};
+    ~CallStack() { this->process(); };
+
+    // USE ONLY FOR OFF-THREADS...
+    void add(std::shared_ptr<std::function<void()>> fn = {}) {
+      do { /* but nothing to do */ } while (this->threadLocked.load()); this->actionLocked = true;
+      if (this->callbackCount < this->callIds.size()) {
+        this->callIds[this->callbackCount++] = fn; //std::bind(fn, result)
+      };
+      this->actionLocked = false;
+    };
+
+    // 
+    void add(std::function<void()> fn = {}) {
+      return this->add(std::make_shared<std::function<void()>>(fn));
+    };
+
+    //
+    void process() {
+      if (!this->actionLocked.load()) {
+        this->threadLocked = true;
+        while (this->callbackCount > 0) {
+          auto callId = this->callIds[--callbackCount].exchange({}); if (callId && *callId) { (*callId)(); };
+        }; atomic_max(this->callbackCount, 0);
+        this->threadLocked = false;
+      };
+    }
+  };
+
   //
   class BaseObj : public std::enable_shared_from_this<BaseObj> {
   protected:
     using SBP = std::shared_ptr<BaseObj>;
-  public:
+
+    // 
+    std::shared_ptr<CallStack> callstack = {};
+
+    //
+    std::vector<std::function<void(BaseObj const*)>> destructors = {};
+
+  public: //
     friend ContextObj;
     friend InstanceObj;
     friend DeviceObj;
@@ -948,10 +1001,65 @@ namespace lxvc {
     std::unordered_map<HandleType, cpp21::map_of_shared<uintptr_t, BaseObj>> handleObjectMap = {};
     std::shared_ptr<MSS> infoMap = {};
 
-    // 
-    BaseObj() : infoMap(std::make_shared<MSS>(MSS())) {};
-    BaseObj(cpp21::const_wrap_arg<Handle> base, cpp21::const_wrap_arg<Handle> handle = {}) : base(base), handle(handle), infoMap(std::make_shared<MSS>()) {
+    //
+    ~BaseObj() {
+      this->tickProcessing();
+      this->destroy(this->base);
+    };
 
+    //
+    void destroy(Handle const& parent) {
+
+      // 
+      std::decay_t<decltype(handleObjectMap)>::iterator map = handleObjectMap.begin();
+      while (map != this->handleObjectMap.end()) {
+        std::unordered_map<uintptr_t, std::shared_ptr<BaseObj>>& mapc = *map->second;
+        std::decay_t<decltype(mapc)>::iterator pair = mapc.begin();
+        while (pair != mapc.end()) {
+          pair->second->destroy(this->handle);
+          pair = mapc.erase(pair);
+        };
+        map = handleObjectMap.erase(map);
+      };
+
+      // 
+      for (decltype(auto) map : this->handleObjectMap) {
+        for (decltype(auto) pair : (*map.second)) {
+          
+        };
+        this->handleObjectMap.erase(map.first);
+      };
+
+      // 
+      for (decltype(auto) fn : this->destructors) { fn(this); };
+      this->destructors = {};
+    };
+
+    // 
+    BaseObj() : infoMap(std::make_shared<MSS>(MSS())), callstack(std::make_shared<CallStack>()) {};
+    BaseObj(cpp21::const_wrap_arg<Handle> base, cpp21::const_wrap_arg<Handle> handle = {}) : base(base), handle(handle), infoMap(std::make_shared<MSS>()), callstack(std::make_shared<CallStack>()) {
+
+    };
+
+    //
+    virtual void tickProcessing() {
+      if (this->callstack) {
+        this->callstack->process();
+      };
+    };
+
+    //
+    template<class T = BaseObj>
+    inline std::shared_ptr<T> emplace(cpp21::const_wrap_arg<Handle> handle) {
+      std::shared_ptr<T> sh_ptr = {};
+      if (handleObjectMap.find(handle->type) != handleObjectMap.end()) {
+        decltype(auto) objMap = handleObjectMap.at(handle->type);
+        if (objMap->find(handle->value) == objMap->end()) {
+          sh_ptr = objMap->at(handle->value);
+          objMap->erase(handle->value);
+        };
+      };
+      return sh_ptr;
     };
 
     //
