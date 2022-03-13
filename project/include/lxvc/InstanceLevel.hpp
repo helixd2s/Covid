@@ -44,6 +44,9 @@ namespace lxvc {
     //uintptr_t deviceAddress = 0ull;
     vk::AccelerationStructureKHR accelStruct = {};
 
+    //
+    InstanceAddressInfo addressInfo = { .data = 0ull, .accelStruct = 0ull };
+
     // 
     friend PipelineObj;
     friend SwapchainObj;
@@ -127,6 +130,9 @@ namespace lxvc {
       this->instanceRanges = {};
 
       //
+      this->addressInfo = InstanceAddressInfo{ .data = this->getDrawDataDeviceAddress(), .accelStruct = this->handle.as<uintptr_t>() };
+
+      //
       if (this->instanceDrawInfo->size() < this->cInfo->instanceData.size()) {
         for (uintptr_t idx = this->instanceDrawInfo->size(); idx < this->cInfo->instanceData.size(); idx++) {
           this->instanceDrawInfo->push_back(InstanceDrawInfo{});
@@ -145,7 +151,7 @@ namespace lxvc {
 
         // 
         instanceDraw.drawInfos = geometryLevel->getDrawInfo();
-        instanceDraw.drawData = PushConstantData{ .instanceData = this->getDrawDataDeviceAddress(), .drawIndex = uint32_t(idx)};
+        instanceDraw.drawData = PushConstantData{ .instanceAddressInfo = this->addressInfo, .drawIndex = uint32_t(idx) };
 
         // 
         instanceDrawData = InstanceDrawData{ .transform = reinterpret_cast<glm::mat3x4&>(instanceData.transform), .reference = geometryLevel->getGeometryDeviceAddress() };

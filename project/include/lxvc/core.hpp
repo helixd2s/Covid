@@ -555,8 +555,14 @@ namespace lxvc {
   };
 
   //
+  struct InstanceAddressInfo {
+    uint64_t data = 0ull;
+    uint64_t accelStruct = 0ull;
+  };
+
+  //
   struct PushConstantData {
-    uint64_t instanceData = 0ull;
+    InstanceAddressInfo instanceAddressInfo = {};
     uint32_t drawIndex = 0u;
   };
 
