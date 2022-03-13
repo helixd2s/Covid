@@ -313,7 +313,7 @@ namespace lxvc {
       exec->cmdBuf.setScissorWithCount(scissors);
 
       //
-      using fnT = void(std::vector<vk::MultiDrawInfoEXT> const&);
+      using fnT = void(cpp21::shared_vector<vk::MultiDrawInfoEXT> const&);
       using fnTp = std::function<fnT>;
 
       //
@@ -321,18 +321,18 @@ namespace lxvc {
         for (decltype(auto) instInfo : exec->instanceInfos) {
           //if (instInfo) {
             decltype(auto) multiDrawDirect = supportMultiDraw ?
-              fnTp([=](std::vector<vk::MultiDrawInfoEXT> const& multiDraw) {
-              exec->cmdBuf.drawMultiEXT(multiDraw, 1u, 0u, sizeof(vk::MultiDrawInfoEXT), deviceObj->dispatch);
-                }) :
-              fnTp([=](std::vector<vk::MultiDrawInfoEXT> const& multiDraw) {
-                  for (decltype(auto) drawInfo : multiDraw) {
-                    exec->cmdBuf.draw(drawInfo.vertexCount, 1u, drawInfo.firstVertex, 0u);
-                  };
-                });
+              fnTp([=](cpp21::shared_vector<vk::MultiDrawInfoEXT> const& multiDraw) {
+                exec->cmdBuf.drawMultiEXT(*multiDraw, 1u, 0u, sizeof(vk::MultiDrawInfoEXT), deviceObj->dispatch);
+              }) :
+              fnTp([=](cpp21::shared_vector<vk::MultiDrawInfoEXT> const& multiDraw) {
+                for (decltype(auto) drawInfo : (*multiDraw)) {
+                  exec->cmdBuf.draw(drawInfo.vertexCount, 1u, drawInfo.firstVertex, 0u);
+                };
+              });
 
-                // 
-                exec->cmdBuf.pushConstants(descriptorsObj->handle.as<vk::PipelineLayout>(), vk::ShaderStageFlagBits::eAll, 0ull, sizeof(PushConstantData), &instInfo.drawData);
-                multiDrawDirect(instInfo.drawInfos);
+              // 
+              exec->cmdBuf.pushConstants(descriptorsObj->handle.as<vk::PipelineLayout>(), vk::ShaderStageFlagBits::eAll, 0ull, sizeof(PushConstantData), &instInfo.drawData);
+              multiDrawDirect(instInfo.drawInfos);
           //};
         };
       };

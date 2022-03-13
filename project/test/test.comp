@@ -44,7 +44,7 @@ void main() {
       rayQueryConfirmIntersectionEXT(rayQuery);
   };
 
-  vec4 finalPosition = vec4(0.f.xxx, 1.f);//texelFetch(textures[textureIndices[0]], ivec2(gl_GlobalInvocationID.xy), 0);
+  vec4 finalPosition = vec4(0.f.xxx,1.f);//texelFetch(textures[textureIndices[0]], ivec2(gl_GlobalInvocationID.xy), 0);
   if (rayQueryGetIntersectionTypeEXT(rayQuery, true) != gl_RayQueryCommittedIntersectionNoneEXT) {
       vec2 attribs = rayQueryGetIntersectionBarycentricsEXT(rayQuery, true);
       payload = vec4(1.f - attribs.x - attribs.y, attribs.x, attribs.y, 1.f);
