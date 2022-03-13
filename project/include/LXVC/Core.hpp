@@ -293,11 +293,14 @@ namespace lxvc {
 
   //
   struct GeometryInfo {
-    BufferViewInfo texcoord = {};
     BufferViewInfo vertices = {};
-    BufferViewInfo normals = {};
     BufferViewInfo indices = {};
     BufferViewInfo transform = {};
+
+    //
+    BufferViewInfo texcoord = {};
+    BufferViewInfo normals = {};
+    BufferViewInfo tangets = {};
 
     //
     uint32_t materialId = 0u;
