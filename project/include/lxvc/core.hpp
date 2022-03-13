@@ -887,42 +887,42 @@ namespace lxvc {
     using Tw::Tw;
 
     // 
-    operator Handle& () { return this->ptr->handle; };
-    operator Handle const& () const { return this->ptr->handle; };
+    operator Handle& () { return this->ptr->getHandle(); };
+    operator Handle const& () const { return this->ptr->getHandle(); };
 
     //
-    operator cpp21::const_wrap_arg<Handle>() const { return this->ptr->handle; };
+    operator cpp21::const_wrap_arg<Handle>() const { return this->ptr->getHandle(); };
 
     // 
-    inline decltype(auto) getHandle() { return this->ptr->handle; };
-    inline decltype(auto) getHandle() const { return this->ptr->handle; };
+    inline decltype(auto) getHandle() { return this->ptr->getHandle(); };
+    inline decltype(auto) getHandle() const { return this->ptr->getHandle(); };
 
     // 
-    inline decltype(auto) getBase() { return this->ptr->handle.base; };
-    inline decltype(auto) getBase() const { return this->ptr->handle.base; };
+    inline decltype(auto) getBase() { return this->ptr->getBase(); };
+    inline decltype(auto) getBase() const { return this->ptr->getBase(); };
 
     // 
-    inline decltype(auto) handle() { return this->ptr->handle; };
-    inline decltype(auto) handle() const { return this->ptr->handle; };
+    inline decltype(auto) handle() { return this->ptr->getHandle(); };
+    inline decltype(auto) handle() const { return this->ptr->getHandle(); };
 
     // 
-    inline decltype(auto) base() { return this->ptr->handle.base; };
-    inline decltype(auto) base() const { return this->ptr->handle.base; };
+    inline decltype(auto) base() { return this->ptr->getBase(); };
+    inline decltype(auto) base() const { return this->ptr->getBase(); };
 
     // 
-    inline decltype(auto) type() { return this->ptr->handle.type; };
-    inline decltype(auto) type() const { return this->ptr->handle.type; };
+    inline decltype(auto) type() { return this->ptr->getHandle().type; };
+    inline decltype(auto) type() const { return this->ptr->getHandle().type; };
 
     // 
-    inline decltype(auto) family() { return this->ptr->handle.family; };
-    inline decltype(auto) family() const { return this->ptr->handle.family; };
+    inline decltype(auto) family() { return this->ptr->getHandle().family; };
+    inline decltype(auto) family() const { return this->ptr->getHandle().family; };
 
     // 
-    template<class T = uintptr_t> inline decltype(auto) as() { return this->ptr->handle.as<T>(); };
-    template<class T = uintptr_t> inline decltype(auto) as() const { return this->ptr->handle.as<T>(); };
+    template<class T = uintptr_t> inline decltype(auto) as() { return this->ptr->getHandle().as<T>(); };
+    template<class T = uintptr_t> inline decltype(auto) as() const { return this->ptr->getHandle().as<T>(); };
 
     // 
-    inline decltype(auto) with(cpp21::const_wrap_arg<uint32_t> family = 0u) const { return this->ptr->handle.with(family); };
+    inline decltype(auto) with(cpp21::const_wrap_arg<uint32_t> family = 0u) const { return this->ptr->getHandle().with(family); };
 
     // we forbid to change handle directly
 
@@ -987,19 +987,24 @@ namespace lxvc {
     //
     std::vector<std::function<void(BaseObj const*)>> destructors = {};
 
-  public: //
-    friend ContextObj;
-    friend InstanceObj;
-    friend DeviceObj;
-
-    // 
-    inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
-    inline decltype(auto) SFT() const { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::const_pointer_cast<T>(std::dynamic_pointer_cast<T const>(shared_from_this()))); };
-
     // 
     Handle handle = {}, base = {};
     std::unordered_map<HandleType, cpp21::map_of_shared<uintptr_t, BaseObj>> handleObjectMap = {};
     std::shared_ptr<MSS> infoMap = {};
+
+    //
+    friend ContextObj;
+    friend InstanceObj;
+    friend DeviceObj;
+    
+
+  public: //
+    friend WrapShared<BaseObj>;
+    friend cpp21::wrap_shared_ptr<BaseObj>;
+
+    // 
+    inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
+    inline decltype(auto) SFT() const { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::const_pointer_cast<T>(std::dynamic_pointer_cast<T const>(shared_from_this()))); };
 
     //
     ~BaseObj() {
@@ -1008,7 +1013,13 @@ namespace lxvc {
     };
 
     //
-    void destroy(Handle const& parent) {
+    virtual Handle& getHandle() { return this->handle; };
+    virtual Handle const& getHandle() const { return this->handle; };
+    virtual Handle& getBase() { return this->base; };
+    virtual Handle const& getBase() const { return this->base; };
+
+    //
+    virtual void destroy(Handle const& parent) {
 
       // 
       std::decay_t<decltype(handleObjectMap)>::iterator map = handleObjectMap.begin();
@@ -1061,10 +1072,6 @@ namespace lxvc {
       };
       return sh_ptr;
     };
-
-    //
-    virtual Handle getHandle() const { return handle; };
-    virtual Handle getBase() const { return base; };
 
     // 
     virtual std::type_info const& type_info() const {
