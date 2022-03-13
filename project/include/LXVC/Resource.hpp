@@ -45,6 +45,11 @@ namespace lxvc {
     std::vector<vk::BufferView> bufferViews = {};
 
     //
+    vk::BufferUsageFlags bufferUsage = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
+    vk::ImageUsageFlags imageUsage = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst;
+    MemoryUsage memoryUsage = MemoryUsage::eGpuOnly;
+
+    //
     bool hasDeviceAddress = false;
 
     // 
@@ -189,16 +194,10 @@ namespace lxvc {
       };
     };
 
-    // 
-    virtual FenceType createImage(cpp21::const_wrap_arg<ImageCreateInfo> cInfo = {}) {
+    //
+    virtual vk::ImageUsageFlags& handleImageUsage(ImageType const& imageType) {
       // 
-      decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
-      decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) imageUsage = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst;
-      decltype(auto) memoryUsage = MemoryUsage::eGpuOnly;
-
-      // 
-      switch (cInfo->type) {
+      switch (imageType) {
       case ImageType::eSwapchain:
         memoryUsage = MemoryUsage::eGpuOnly;
         imageUsage |= vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment;
@@ -236,6 +235,84 @@ namespace lxvc {
 
       default:;
       };
+      return imageUsage;
+    };
+
+    //
+    virtual vk::BufferUsageFlags& handleBufferUsage(BufferType const& bufferType) {
+      // 
+      switch (bufferType) {
+      case BufferType::eStorage:
+        memoryUsage = MemoryUsage::eGpuOnly;
+        bufferUsage |=
+          vk::BufferUsageFlagBits::eShaderDeviceAddress |
+          vk::BufferUsageFlagBits::eStorageBuffer |
+          vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR |
+          vk::BufferUsageFlagBits::eTransformFeedbackCounterBufferEXT |
+          vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR |
+          vk::BufferUsageFlagBits::eShaderBindingTableKHR |
+          vk::BufferUsageFlagBits::eStorageTexelBuffer;
+        break;
+
+      case BufferType::eVertex:
+        memoryUsage = MemoryUsage::eGpuOnly;
+        bufferUsage |=
+          vk::BufferUsageFlagBits::eShaderDeviceAddress |
+          vk::BufferUsageFlagBits::eStorageBuffer |
+          vk::BufferUsageFlagBits::eVertexBuffer |
+          vk::BufferUsageFlagBits::eTransformFeedbackBufferEXT |
+          vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR |
+          vk::BufferUsageFlagBits::eStorageTexelBuffer;
+        break;
+
+      case BufferType::eIndex:
+        memoryUsage = MemoryUsage::eGpuOnly;
+        bufferUsage |=
+          vk::BufferUsageFlagBits::eShaderDeviceAddress |
+          vk::BufferUsageFlagBits::eStorageBuffer |
+          vk::BufferUsageFlagBits::eIndexBuffer |
+          vk::BufferUsageFlagBits::eTransformFeedbackBufferEXT |
+          vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR |
+          vk::BufferUsageFlagBits::eStorageTexelBuffer;
+        break;
+
+      case BufferType::eHostMap:
+        memoryUsage = MemoryUsage::eCpuToGpu;
+        bufferUsage |= vk::BufferUsageFlagBits::eUniformBuffer | vk::BufferUsageFlagBits::eUniformTexelBuffer;
+        break;
+
+      case BufferType::eUniform:
+        memoryUsage = MemoryUsage::eGpuOnly;
+        bufferUsage |= vk::BufferUsageFlagBits::eUniformBuffer | vk::BufferUsageFlagBits::eUniformTexelBuffer;
+        break;
+
+      case BufferType::eUniversal:
+        memoryUsage = MemoryUsage::eGpuOnly;
+        bufferUsage |=
+          vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR |
+          vk::BufferUsageFlagBits::eVertexBuffer |
+          vk::BufferUsageFlagBits::eIndexBuffer |
+          vk::BufferUsageFlagBits::eShaderDeviceAddress |
+          vk::BufferUsageFlagBits::eStorageBuffer |
+          vk::BufferUsageFlagBits::eTransformFeedbackCounterBufferEXT |
+          vk::BufferUsageFlagBits::eTransformFeedbackBufferEXT |
+          vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR |
+          vk::BufferUsageFlagBits::eShaderBindingTableKHR |
+          vk::BufferUsageFlagBits::eStorageTexelBuffer
+          ;
+        break;
+
+      default:;
+      };
+
+      return bufferUsage;
+    };
+
+    // 
+    virtual FenceType createImage(cpp21::const_wrap_arg<ImageCreateInfo> cInfo = {}) {
+      // 
+      decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
+      decltype(auto) device = this->base.as<vk::Device>();
 
       // 
       decltype(auto) imageInfo = infoMap->set(vk::StructureType::eImageCreateInfo, vk::ImageCreateInfo{
@@ -246,7 +323,7 @@ namespace lxvc {
         .arrayLayers = cInfo->layerCount, // TODO: correct array layers
         .samples = vk::SampleCountFlagBits::e1,
         .tiling = vk::ImageTiling::eOptimal,
-        .usage = imageUsage,
+        .usage = this->handleImageUsage(cInfo->type),
         .sharingMode = vk::SharingMode::eExclusive,
         .initialLayout = vk::ImageLayout::eUndefined
       });
@@ -296,6 +373,67 @@ namespace lxvc {
       };
 
       return FenceType{};
+    };
+
+    // 
+    virtual void createBuffer(cpp21::const_wrap_arg<BufferCreateInfo> cInfo = {}) {
+      decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
+      decltype(auto) device = this->base.as<vk::Device>();
+
+      // 
+      decltype(auto) bufferInfo = infoMap->set(vk::StructureType::eBufferCreateInfo, vk::BufferCreateInfo{
+        .size = cInfo->size,
+        .usage = this->handleBufferUsage(cInfo->type),
+        .sharingMode = vk::SharingMode::eExclusive
+        });
+
+      // 
+      decltype(auto) memReqInfo2 = infoMap->set(vk::StructureType::eMemoryRequirements2, vk::MemoryRequirements2{
+        .pNext = infoMap->set(vk::StructureType::eMemoryDedicatedRequirements, vk::MemoryDedicatedRequirements{})
+        });
+
+      //
+      device.getBufferMemoryRequirements2(infoMap->set(vk::StructureType::eBufferMemoryRequirementsInfo2, vk::BufferMemoryRequirementsInfo2{
+        .buffer = (this->handle = this->cInfo->buffer ? this->cInfo->buffer.value() : device.createBuffer(bufferInfo->setQueueFamilyIndices(deviceObj->queueFamilies.indices)))
+        }).get(), memReqInfo2.get());
+
+      //
+      //lxvc::context->get(this->base)->registerObj(this->handle, shared_from_this());
+
+      // 
+      if (bufferUsage & vk::BufferUsageFlagBits::eShaderDeviceAddress) {
+        this->hasDeviceAddress = true;
+      };
+
+      //
+      decltype(auto) memReqInfo = memReqInfo2->memoryRequirements;
+      this->allocated = this->allocateMemory(this->mReqs = MemoryRequirements{
+        .memoryUsage = memoryUsage,
+        .memoryTypeBits = memReqInfo.memoryTypeBits,
+        .size = memReqInfo.size
+        });
+
+      //
+      std::vector<vk::BindBufferMemoryInfo> bindInfos = { *infoMap->set(vk::StructureType::eBindBufferMemoryInfo, vk::BindBufferMemoryInfo{
+        .buffer = this->handle, .memory = this->allocated->memory, .memoryOffset = this->allocated->offset
+      }) };
+      device.bindBufferMemory2(bindInfos);
+
+      //
+      if (cInfo->type == BufferType::eHostMap) {
+        this->mappedMemory = device.mapMemory(this->allocated->memory, this->allocated->offset, memReqInfo.size);
+      };
+
+      // 
+      if (bufferUsage & vk::BufferUsageFlagBits::eShaderDeviceAddress) {
+        this->deviceAddress = device.getBufferAddress(vk::BufferDeviceAddressInfo{
+          .buffer = this->handle.as<vk::Buffer>()
+          });
+        deviceObj->addressSpace.insert({ this->deviceAddress, this->deviceAddress + cInfo->size }, this->handle.as<vk::Buffer>());
+      };
+
+      // 
+      //return this->SFT();
     };
 
   public:
@@ -367,136 +505,6 @@ namespace lxvc {
 
       // 
       return FenceType{};
-    };
-
-  protected: 
-
-    // 
-    virtual void createBuffer(cpp21::const_wrap_arg<BufferCreateInfo> cInfo = {}) {
-      decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
-      decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) bufferUsage = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
-      decltype(auto) memoryUsage = MemoryUsage::eGpuOnly;
-
-      // 
-      switch (cInfo->type) {
-      case BufferType::eStorage:
-        memoryUsage = MemoryUsage::eGpuOnly;
-        bufferUsage |=
-          vk::BufferUsageFlagBits::eShaderDeviceAddress |
-          vk::BufferUsageFlagBits::eStorageBuffer |
-          vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR |
-          vk::BufferUsageFlagBits::eTransformFeedbackCounterBufferEXT |
-          vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR |
-          vk::BufferUsageFlagBits::eShaderBindingTableKHR |
-          vk::BufferUsageFlagBits::eStorageTexelBuffer;
-        break;
-
-      case BufferType::eVertex:
-        memoryUsage = MemoryUsage::eGpuOnly;
-        bufferUsage |=
-          vk::BufferUsageFlagBits::eShaderDeviceAddress |
-          vk::BufferUsageFlagBits::eStorageBuffer |
-          vk::BufferUsageFlagBits::eVertexBuffer |
-          vk::BufferUsageFlagBits::eTransformFeedbackBufferEXT |
-          vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR |
-          vk::BufferUsageFlagBits::eStorageTexelBuffer;
-        break;
-
-      case BufferType::eIndex:
-        memoryUsage = MemoryUsage::eGpuOnly;
-        bufferUsage |=
-          vk::BufferUsageFlagBits::eShaderDeviceAddress |
-          vk::BufferUsageFlagBits::eStorageBuffer |
-          vk::BufferUsageFlagBits::eIndexBuffer |
-          vk::BufferUsageFlagBits::eTransformFeedbackBufferEXT |
-          vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR |
-          vk::BufferUsageFlagBits::eStorageTexelBuffer;
-        break;
-
-      case BufferType::eHostMap:
-        memoryUsage = MemoryUsage::eCpuToGpu;
-        bufferUsage |= vk::BufferUsageFlagBits::eUniformBuffer | vk::BufferUsageFlagBits::eUniformTexelBuffer;
-        break;
-
-      case BufferType::eUniform:
-        memoryUsage = MemoryUsage::eGpuOnly;
-        bufferUsage |= vk::BufferUsageFlagBits::eUniformBuffer | vk::BufferUsageFlagBits::eUniformTexelBuffer;
-        break;
-
-      case BufferType::eUniversal:
-        memoryUsage = MemoryUsage::eGpuOnly;
-        bufferUsage |=
-          vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR |
-          vk::BufferUsageFlagBits::eVertexBuffer |
-          vk::BufferUsageFlagBits::eIndexBuffer |
-          vk::BufferUsageFlagBits::eShaderDeviceAddress |
-          vk::BufferUsageFlagBits::eStorageBuffer |
-          vk::BufferUsageFlagBits::eTransformFeedbackCounterBufferEXT |
-          vk::BufferUsageFlagBits::eTransformFeedbackBufferEXT |
-          vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR |
-          vk::BufferUsageFlagBits::eShaderBindingTableKHR |
-          vk::BufferUsageFlagBits::eStorageTexelBuffer
-        ;
-        break;
-
-      default:;
-      };
-
-      // 
-      decltype(auto) bufferInfo = infoMap->set(vk::StructureType::eBufferCreateInfo, vk::BufferCreateInfo{
-        .size = cInfo->size,
-        .usage = bufferUsage,
-        .sharingMode = vk::SharingMode::eExclusive
-      });
-
-      // 
-      decltype(auto) memReqInfo2 = infoMap->set(vk::StructureType::eMemoryRequirements2, vk::MemoryRequirements2{
-        .pNext = infoMap->set(vk::StructureType::eMemoryDedicatedRequirements, vk::MemoryDedicatedRequirements{})
-      });
-
-      //
-      device.getBufferMemoryRequirements2(infoMap->set(vk::StructureType::eBufferMemoryRequirementsInfo2, vk::BufferMemoryRequirementsInfo2{
-        .buffer = (this->handle = this->cInfo->buffer ? this->cInfo->buffer.value() : device.createBuffer(bufferInfo->setQueueFamilyIndices(deviceObj->queueFamilies.indices)))
-      }).get(), memReqInfo2.get());
-
-      //
-      //lxvc::context->get(this->base)->registerObj(this->handle, shared_from_this());
-
-      // 
-      if (bufferUsage & vk::BufferUsageFlagBits::eShaderDeviceAddress) {
-        this->hasDeviceAddress = true;
-      };
-
-      //
-      decltype(auto) memReqInfo = memReqInfo2->memoryRequirements;
-      this->allocated = this->allocateMemory(this->mReqs = MemoryRequirements{
-        .memoryUsage = memoryUsage,
-        .memoryTypeBits = memReqInfo.memoryTypeBits,
-        .size = memReqInfo.size
-      });
-
-      //
-      std::vector<vk::BindBufferMemoryInfo> bindInfos = { *infoMap->set(vk::StructureType::eBindBufferMemoryInfo, vk::BindBufferMemoryInfo{
-        .buffer = this->handle, .memory = this->allocated->memory, .memoryOffset = this->allocated->offset
-      }) };
-      device.bindBufferMemory2(bindInfos);
-
-      //
-      if (cInfo->type == BufferType::eHostMap) {
-        this->mappedMemory = device.mapMemory(this->allocated->memory, this->allocated->offset, memReqInfo.size);
-      };
-
-      // 
-      if (bufferUsage & vk::BufferUsageFlagBits::eShaderDeviceAddress) {
-        this->deviceAddress = device.getBufferAddress(vk::BufferDeviceAddressInfo{
-          .buffer = this->handle.as<vk::Buffer>()
-        });
-        deviceObj->addressSpace.insert({ this->deviceAddress, this->deviceAddress + cInfo->size }, this->handle.as<vk::Buffer>());
-      };
-
-      // 
-      //return this->SFT();
     };
 
   };
