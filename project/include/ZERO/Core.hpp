@@ -42,6 +42,9 @@
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_raii.hpp>
 
+//
+#include <robin_hood.h>
+
 // 
 namespace ZNAMED {
 
@@ -232,9 +235,10 @@ namespace ZNAMED {
   class SemaphoreObj;
 
   //
-  using MSS = cpp21::map_of_shared<vk::StructureType, vk::BaseInStructure>;
-  using EXM = cpp21::map_of_shared<ExtensionName, uintptr_t>;
-  using EXIF = cpp21::map_of_shared<ExtensionInfoName, std::shared_ptr<cpp21::void_t>>;
+  using MSS = cpp21::map_of_shared<vk::StructureType, vk::BaseInStructure, std::shared_ptr, robin_hood::unordered_map>;
+  using EXM = cpp21::map_of_shared<ExtensionName, uintptr_t, std::shared_ptr, robin_hood::unordered_map>;
+  using EXIF = cpp21::map_of_shared<ExtensionInfoName, std::shared_ptr<cpp21::void_t>, std::shared_ptr, robin_hood::unordered_map>;
+  using SMAP = cpp21::interval_map<uintptr_t, vk::Buffer, robin_hood::unordered_map>;
 
   //
   struct BaseCreateInfo {
@@ -776,7 +780,7 @@ namespace ZNAMED {
 
   //
   struct GraphicsPipelineCreateInfo : BaseCreateInfo {
-    std::unordered_map<vk::ShaderStageFlagBits, cpp21::shared_vector<uint32_t>> stageCodes = {};
+    robin_hood::unordered_map<vk::ShaderStageFlagBits, cpp21::shared_vector<uint32_t>> stageCodes = {};
   };
 
   //
@@ -892,7 +896,7 @@ namespace ZNAMED {
   };
 
   //
-  inline extern std::unordered_map<std::type_index, HandleType> handleTypeMap = {};
+  inline extern robin_hood::unordered_map<std::type_index, HandleType> handleTypeMap = {};
 
   //
   inline static decltype(auto) registerTypes() {
@@ -1093,7 +1097,7 @@ namespace ZNAMED {
     Handle handle = {}, base = {};
     ExtHandle extHandle = {};
     GLObject glObject = {};
-    std::unordered_map<HandleType, cpp21::map_of_shared<uintptr_t, BaseObj>> handleObjectMap = {};
+    robin_hood::unordered_map<HandleType, cpp21::map_of_shared<uintptr_t, BaseObj, std::shared_ptr, robin_hood::unordered_map>> handleObjectMap = {};
 
     // 
     std::shared_ptr<MSS> infoMap = {};

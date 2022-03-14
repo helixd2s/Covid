@@ -66,7 +66,7 @@ namespace ZNAMED {
     QueueFamilies queueFamilies = {};
 
     //
-    cpp21::interval_map<uintptr_t, vk::Buffer> addressSpace = {};
+    SMAP addressSpace = {};
 
   public:
 
@@ -330,8 +330,8 @@ namespace ZNAMED {
     };
 
     //
-    virtual cpp21::interval_map<uintptr_t, vk::Buffer>& getAddressSpace() { return this->addressSpace; };
-    virtual cpp21::interval_map<uintptr_t, vk::Buffer> const& getAddressSpace() const { return this->addressSpace; };
+    virtual SMAP& getAddressSpace() { return this->addressSpace; };
+    virtual SMAP const& getAddressSpace() const { return this->addressSpace; };
 
     //
     virtual vk::PhysicalDevice& getPhysicalDevice(cpp21::const_wrap_arg<uintptr_t> physicalDeviceIndex = {}) { return this->physicalDevices[std::min(physicalDeviceIndex ? physicalDeviceIndex.value() : this->cInfo->physicalDeviceIndex, this->physicalDevices.size() - 1)]; };
