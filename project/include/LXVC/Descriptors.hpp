@@ -149,6 +149,28 @@ namespace lxvc {
     };
 
     // 
+    virtual void createDescriptorLayoutUniformStorage() {
+      decltype(auto) device = this->base.as<vk::Device>();
+      decltype(auto) last = this->layouts.size();
+      this->layoutInfoMaps->push_back(std::make_shared<MSS>(MSS()));
+      this->layoutBindings->push_back(std::make_shared<DescriptorBindings>());
+      decltype(auto) layoutInfoMap = this->layoutInfoMaps[last];
+      decltype(auto) layoutBindingStack = this->layoutBindings[last];
+      layoutBindingStack->bindings.push_back(vk::DescriptorSetLayoutBinding{ .binding = 0u, .descriptorType = vk::DescriptorType::eUniformBuffer, .descriptorCount = 1u, .stageFlags = vk::ShaderStageFlagBits::eAll });
+      layoutBindingStack->bindings.push_back(vk::DescriptorSetLayoutBinding{ .binding = 1u, .descriptorType = vk::DescriptorType::eStorageBuffer, .descriptorCount = 1u, .stageFlags = vk::ShaderStageFlagBits::eAll });
+      layoutBindingStack->bindingFlags.push_back(vk::DescriptorBindingFlags{ vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind });
+      layoutBindingStack->bindingFlags.push_back(vk::DescriptorBindingFlags{ vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind });
+      decltype(auto) layoutInfo = layoutInfoMap->set(vk::StructureType::eDescriptorSetLayoutCreateInfo, vk::DescriptorSetLayoutCreateInfo{
+        .pNext = &(layoutInfoMap->set(vk::StructureType::eDescriptorSetLayoutBindingFlagsCreateInfo, vk::DescriptorSetLayoutBindingFlagsCreateInfo{
+
+        })->setBindingFlags(layoutBindingStack->bindingFlags)),
+        .flags = vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool
+        })->setBindings(layoutBindingStack->bindings);
+      this->layouts.push_back(device.createDescriptorSetLayout(layoutInfo));
+      this->descriptorCounts.push_back(0u);
+    };
+
+    // 
     virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) {
       this->base = deviceObj->handle;
       //this->deviceObj = deviceObj;
@@ -174,8 +196,9 @@ namespace lxvc {
       this->sets = std::vector<vk::DescriptorSet>{};
       this->layoutInfoMaps = cpp21::vector_of_shared<MSS>();
       this->descriptorCounts = std::vector<uint32_t>{};
-      this->createDescriptorLayout(vk::DescriptorType::eUniformBuffer, 1u);
-      this->createDescriptorLayout(vk::DescriptorType::eStorageBuffer, 1u);
+      //this->createDescriptorLayout(vk::DescriptorType::eUniformBuffer, 1u);
+      //this->createDescriptorLayout(vk::DescriptorType::eStorageBuffer, 1u);
+      this->createDescriptorLayoutUniformStorage();
       this->createDescriptorLayout(vk::DescriptorType::eSampledImage, 256u);
       this->createDescriptorLayout(vk::DescriptorType::eSampler, 64u);
       this->createDescriptorLayout(vk::DescriptorType::eStorageImage, 64u);
@@ -225,13 +248,12 @@ namespace lxvc {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) writes = std::vector<vk::WriteDescriptorSet>{};
       decltype(auto) temp = vk::WriteDescriptorSet{ .dstSet = this->sets[0u], .dstBinding = 0u, .dstArrayElement = 0u, .descriptorType = vk::DescriptorType::eUniformBuffer };
-      writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[0u]).setDescriptorType(vk::DescriptorType::eUniformBuffer).setPBufferInfo(&this->uniformBufferDesc.value()).setDescriptorCount(1u));
-      writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[1u]).setDescriptorType(vk::DescriptorType::eStorageBuffer).setPBufferInfo(&this->cacheBufferDesc.value()).setDescriptorCount(1u));
-      if (this->textures->size() > 0ull) { writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[2u]).setPImageInfo(this->textures.data()).setDescriptorCount(uint32_t(this->textures.size())).setDescriptorType(vk::DescriptorType::eSampledImage)); };
-      if (this->samplers->size() > 0ull) { writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[3u]).setPImageInfo(this->samplers.data()).setDescriptorCount(uint32_t(this->samplers.size())).setDescriptorType(vk::DescriptorType::eSampler)); };
-      if (this->images->size() > 0ull) { writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[4u]).setPImageInfo(this->images.data()).setDescriptorCount(uint32_t(this->images.size())).setDescriptorType(vk::DescriptorType::eStorageImage)); };
+      writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[0u]).setDstBinding(0u).setDescriptorType(vk::DescriptorType::eUniformBuffer).setPBufferInfo(&this->uniformBufferDesc.value()).setDescriptorCount(1u));
+      writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[0u]).setDstBinding(1u).setDescriptorType(vk::DescriptorType::eStorageBuffer).setPBufferInfo(&this->cacheBufferDesc.value()).setDescriptorCount(1u));
+      if (this->textures->size() > 0ull) { writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[1u]).setPImageInfo(this->textures.data()).setDescriptorCount(uint32_t(this->textures.size())).setDescriptorType(vk::DescriptorType::eSampledImage)); };
+      if (this->samplers->size() > 0ull) { writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[2u]).setPImageInfo(this->samplers.data()).setDescriptorCount(uint32_t(this->samplers.size())).setDescriptorType(vk::DescriptorType::eSampler)); };
+      if (this->images->size() > 0ull) { writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[3u]).setPImageInfo(this->images.data()).setDescriptorCount(uint32_t(this->images.size())).setDescriptorType(vk::DescriptorType::eStorageImage)); };
       device.updateDescriptorSets(writes, {});
-      //return this->SFT();
     };
 
     //
