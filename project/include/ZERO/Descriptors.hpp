@@ -14,7 +14,7 @@ struct DescriptorBindings {
 };
 
 // 
-namespace lxvc {
+namespace ZNAMED {
   
   // 
   class DescriptorsObj : public BaseObj {
@@ -82,7 +82,7 @@ namespace lxvc {
 
     // 
     DescriptorsObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) : cInfo(cInfo) {
-      this->construct(lxvc::context->get<DeviceObj>(this->base = handle), cInfo);
+      this->construct(ZNAMED::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
     // 
@@ -92,7 +92,7 @@ namespace lxvc {
 
     //
     virtual tType registerSelf() {
-      lxvc::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
+      ZNAMED::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
       return SFT();
     };
 
@@ -225,7 +225,7 @@ namespace lxvc {
       })->setInitialData<char8_t>(this->initialData));
 
       //
-      //lxvc::context->get(this->base)->registerObj(this->handle, shared_from_this());
+      //ZNAMED::context->get(this->base)->registerObj(this->handle, shared_from_this());
 
       //
       this->cacheBufferDesc = vk::DescriptorBufferInfo{ this->createCacheBuffer(), 0ull, this->cacheSize };
@@ -356,7 +356,7 @@ namespace lxvc {
       });
 
       //
-      return lxvc::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
+      return ZNAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
     };
 
     //
@@ -370,7 +370,7 @@ namespace lxvc {
         });
 
       //
-      return lxvc::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
+      return ZNAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
     };
     
   };

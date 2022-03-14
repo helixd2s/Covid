@@ -6,7 +6,7 @@
 #include "./Descriptors.hpp"
 
 // 
-namespace lxvc {
+namespace ZNAMED {
 
   // 
   class ResourceObj : public BaseObj {
@@ -65,13 +65,13 @@ namespace lxvc {
 
     // 
     ResourceObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : cInfo(cInfo) {
-      this->construct(lxvc::context->get<DeviceObj>(this->base = handle), cInfo);
+      this->construct(ZNAMED::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
     //
     std::tuple<vk::ImageView, uint32_t> createImageView(cpp21::const_wrap_arg<ImageViewCreateInfo> info = {}) {
       decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = this->cInfo->descriptors ? deviceObj->get<DescriptorsObj>(this->cInfo->descriptors) : WrapShared<DescriptorsObj>{};
 
       // 
@@ -124,7 +124,7 @@ namespace lxvc {
 
     //
     virtual tType registerSelf() {
-      lxvc::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
+      ZNAMED::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
       return SFT();
     };
 
@@ -143,7 +143,7 @@ namespace lxvc {
 
     //
     virtual AllocatedMemory& allocateMemory(cpp21::const_wrap_arg<MemoryRequirements> requirements) {
-      decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       auto& device = this->base.as<vk::Device>();
       auto& physicalDevice = deviceObj->getPhysicalDevice();
       auto PDInfoMap = deviceObj->getPhysicalDeviceInfoMap();
@@ -328,7 +328,7 @@ namespace lxvc {
     // 
     virtual FenceType createImage(cpp21::const_wrap_arg<ImageCreateInfo> cInfo = {}) {
       // 
-      decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
 
       //
@@ -365,7 +365,7 @@ namespace lxvc {
       }).get(), memReqInfo2.get());
 
       //
-      //lxvc::context->get(this->base)->registerObj(this->handle, shared_from_this());
+      //ZNAMED::context->get(this->base)->registerObj(this->handle, shared_from_this());
 
       // 
       decltype(auto) memReqInfo = memReqInfo2->memoryRequirements;
@@ -402,7 +402,7 @@ namespace lxvc {
 
     // 
     virtual void createBuffer(cpp21::const_wrap_arg<BufferCreateInfo> cInfo = {}) {
-      decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
 
       //
@@ -430,7 +430,7 @@ namespace lxvc {
         }).get(), memReqInfo2.get());
 
       //
-      //lxvc::context->get(this->base)->registerObj(this->handle, shared_from_this());
+      //ZNAMED::context->get(this->base)->registerObj(this->handle, shared_from_this());
 
       // 
       if (bufferUsage & vk::BufferUsageFlagBits::eShaderDeviceAddress) {
@@ -475,7 +475,7 @@ namespace lxvc {
     virtual void writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo const switchInfo) {
       if (this->cInfo->imageInfo && this->handle.type == HandleType::eImage) {
         //decltype(auto) info = switchInfo.info ? switchInfo.info : this->cInfo->imageInfo->info;
-        decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
+        decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
         decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
         decltype(auto) oldImageLayout = switchInfo.oldImageLayout ? switchInfo.oldImageLayout.value() : this->cInfo->imageInfo->layout;
         //decltype(auto) submission = CommandOnceSubmission{ .info = switchInfo.info };
@@ -517,7 +517,7 @@ namespace lxvc {
       // 
       decltype(auto) switchInfo = execInfo->switchInfo.value();
       decltype(auto) info = execInfo->info ? execInfo->info : this->cInfo->imageInfo->info;
-      decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
       decltype(auto) oldImageLayout = switchInfo.oldImageLayout ? switchInfo.oldImageLayout.value() : this->cInfo->imageInfo->layout;
       decltype(auto) submission = CommandOnceSubmission{ .submission = execInfo->submission };

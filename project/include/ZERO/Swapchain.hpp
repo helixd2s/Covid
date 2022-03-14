@@ -9,7 +9,7 @@
 #include "./Semaphore.hpp"
 
 // 
-namespace lxvc {
+namespace ZNAMED {
   
   //
   struct SurfaceCapabilitiesInfo {
@@ -74,7 +74,7 @@ namespace lxvc {
 
     // 
     SwapchainObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) : cInfo(cInfo) {
-      this->construct(lxvc::context->get<DeviceObj>(this->base = handle), cInfo);
+      this->construct(ZNAMED::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
     //
@@ -87,7 +87,7 @@ namespace lxvc {
 
     //
     virtual tType registerSelf() {
-      lxvc::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
+      ZNAMED::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
       return SFT();
     };
 
@@ -109,7 +109,7 @@ namespace lxvc {
       });
 
       //
-      return lxvc::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
+      return ZNAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
     };
 
     //
@@ -123,7 +123,7 @@ namespace lxvc {
       });
 
       //
-      return lxvc::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
+      return ZNAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
     };
 
   protected:
@@ -131,7 +131,7 @@ namespace lxvc {
     //
     virtual void createImage(cpp21::const_wrap_arg<vk::Image> image, cpp21::const_wrap_arg<ImageType> imageType = ImageType::eSwapchain, cpp21::const_wrap_arg<vk::SurfaceFormat2KHR> surfaceFormat2 = {}, cpp21::const_wrap_arg<ImageSwapchainInfo> swapchainInfo = {}) {
       decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
       decltype(auto) aspectMask = vk::ImageAspectFlagBits::eColor;
       decltype(auto) components = vk::ComponentMapping{ .r = vk::ComponentSwizzle::eR, .g = vk::ComponentSwizzle::eG, .b = vk::ComponentSwizzle::eB, .a = vk::ComponentSwizzle::eA };
@@ -203,13 +203,13 @@ namespace lxvc {
       //
       this->readySemaphoreInfos.push_back(readySemaphore->infoMap->get<vk::SemaphoreSubmitInfo>(vk::StructureType::eSemaphoreSubmitInfo));
       this->presentSemaphoreInfos.push_back(presentSemaphore->infoMap->get<vk::SemaphoreSubmitInfo>(vk::StructureType::eSemaphoreSubmitInfo));
-      //lxvc::context->get<DeviceObj>(this->base)
+      //ZNAMED::context->get<DeviceObj>(this->base)
     };
 
     // 
     virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) {
       if (cInfo) { this->cInfo = cInfo; };
-      //decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
+      //decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
       auto& device = this->base.as<vk::Device>();
 

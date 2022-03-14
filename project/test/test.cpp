@@ -1,7 +1,5 @@
 #pragma once
 
-
-
 //
 #ifdef _WIN32
 #ifndef VK_USE_PLATFORM_WIN32_KHR
@@ -15,7 +13,7 @@
 #endif
 
 // 
-#include <LXVC/lxvc.hpp>
+#include <ZERO/ZERO.hpp>
 #include <GLFW/glfw3.h>
 #ifdef ENABLE_RENDERDOC
 #include "renderdoc_app.h"
@@ -86,7 +84,7 @@ int main() {
 #endif
 
   //
-  lxvc::initialize();
+  ZNAMED::initialize();
 
 
   //
@@ -95,18 +93,18 @@ int main() {
 
 
   // first cherep
-  decltype(auto) instance = lxvc::InstanceObj::make(lxvc::context, lxvc::InstanceCreateInfo{
+  decltype(auto) instance = ZNAMED::InstanceObj::make(ZNAMED::context, ZNAMED::InstanceCreateInfo{
 
   });
 
   // second cherep
-  decltype(auto) device = lxvc::DeviceObj::make(instance, lxvc::DeviceCreateInfo{
+  decltype(auto) device = ZNAMED::DeviceObj::make(instance, ZNAMED::DeviceCreateInfo{
     .physicalDeviceGroupIndex = 0u,
     .physicalDeviceIndex = 0u
   });
 
   // final cherep for today
-  decltype(auto) descriptors = lxvc::DescriptorsObj::make(device.with(0u), lxvc::DescriptorsCreateInfo{
+  decltype(auto) descriptors = ZNAMED::DescriptorsObj::make(device.with(0u), ZNAMED::DescriptorsCreateInfo{
 
   });
 
@@ -114,16 +112,16 @@ int main() {
   decltype(auto) uniformData = UniformData{};
 
   //
-  decltype(auto) buffer = lxvc::ResourceObj::make(device, lxvc::ResourceCreateInfo{
+  decltype(auto) buffer = ZNAMED::ResourceObj::make(device, ZNAMED::ResourceCreateInfo{
     .descriptors = descriptors.as<vk::PipelineLayout>(),
-    .bufferInfo = lxvc::BufferCreateInfo{
+    .bufferInfo = ZNAMED::BufferCreateInfo{
       .size = 1024ull,
-      .type = lxvc::BufferType::eUniversal,
+      .type = ZNAMED::BufferType::eUniversal,
     }
   });
 
   //
-  decltype(auto) uploader = lxvc::UploaderObj::make(device, lxvc::UploaderCreateInfo{
+  decltype(auto) uploader = ZNAMED::UploaderObj::make(device, ZNAMED::UploaderCreateInfo{
 
   });
 
@@ -140,19 +138,19 @@ int main() {
   std::vector<uint16_t> indices{0u,1u,2u,3u,4u,5u};
 
   //
-  uploader->executeUploadToResourceOnce(lxvc::UploadExecutionOnce{
+  uploader->executeUploadToResourceOnce(ZNAMED::UploadExecutionOnce{
     .host = std::span<char8_t>{(char8_t*)vertices.data(), vertices.size() * sizeof(glm::vec4)},
-    .writeInfo = lxvc::UploadCommandWriteInfo{
-      .dstBuffer = lxvc::BufferRegion{buffer.as<vk::Buffer>(), lxvc::DataRegion{0ull, sizeof(glm::vec4) * vertices.size()}},
+    .writeInfo = ZNAMED::UploadCommandWriteInfo{
+      .dstBuffer = ZNAMED::BufferRegion{buffer.as<vk::Buffer>(), ZNAMED::DataRegion{0ull, sizeof(glm::vec4) * vertices.size()}},
       
     }
   });
 
   //
-  uploader->executeUploadToResourceOnce(lxvc::UploadExecutionOnce{
+  uploader->executeUploadToResourceOnce(ZNAMED::UploadExecutionOnce{
     .host = std::span<char8_t>{(char8_t*)indices.data(), indices.size() * sizeof(uint16_t)},
-    .writeInfo = lxvc::UploadCommandWriteInfo{
-      .dstBuffer = lxvc::BufferRegion{buffer.as<vk::Buffer>(), lxvc::DataRegion{sizeof(glm::vec4) * vertices.size(), sizeof(uint16_t) * indices.size()}},
+    .writeInfo = ZNAMED::UploadCommandWriteInfo{
+      .dstBuffer = ZNAMED::BufferRegion{buffer.as<vk::Buffer>(), ZNAMED::DataRegion{sizeof(glm::vec4) * vertices.size(), sizeof(uint16_t) * indices.size()}},
     }
   });
 
@@ -167,9 +165,9 @@ int main() {
 
 
   //
-  decltype(auto) compute = lxvc::PipelineObj::make(device.with(0u), lxvc::PipelineCreateInfo{
+  decltype(auto) compute = ZNAMED::PipelineObj::make(device.with(0u), ZNAMED::PipelineCreateInfo{
     .layout = descriptors.as<vk::PipelineLayout>(),
-    .compute = lxvc::ComputePipelineCreateInfo{
+    .compute = ZNAMED::ComputePipelineCreateInfo{
       .code = cpp21::readBinaryU32("./test.comp.spv")
     }
   });
@@ -180,9 +178,9 @@ int main() {
   stageMaps[vk::ShaderStageFlagBits::eFragment] = cpp21::readBinaryU32("./test.frag.spv");
 
   //
-  decltype(auto) graphics = lxvc::PipelineObj::make(device.with(0u), lxvc::PipelineCreateInfo{
+  decltype(auto) graphics = ZNAMED::PipelineObj::make(device.with(0u), ZNAMED::PipelineCreateInfo{
     .layout = descriptors.as<vk::PipelineLayout>(),
-    .graphics = lxvc::GraphicsPipelineCreateInfo{
+    .graphics = ZNAMED::GraphicsPipelineCreateInfo{
       .stageCodes = stageMaps
     }
   });
@@ -190,8 +188,8 @@ int main() {
   
 
   //
-  decltype(auto) qfAndQueue = lxvc::QueueGetInfo{ 0u, 0u };
-  std::array<lxvc::FenceType, 4> fences = {};
+  decltype(auto) qfAndQueue = ZNAMED::QueueGetInfo{ 0u, 0u };
+  std::array<ZNAMED::FenceType, 4> fences = {};
 
   //
   glfwSetErrorCallback(error);
@@ -217,19 +215,19 @@ int main() {
 
   //
   vk::SurfaceKHR surface = {};
-  std::string title = "LXVC.TEON.A";
+  std::string title = "ZERO.TEON.A";
   decltype(auto) window = glfwCreateWindow(SC_WIDTH, SC_HEIGHT, title.c_str(), nullptr, nullptr);
   glfwCreateWindowSurface(instance.as<VkInstance>(), window, nullptr, (VkSurfaceKHR*)&surface);
 
   //
-  decltype(auto) swapchain = lxvc::SwapchainObj::make(device, lxvc::SwapchainCreateInfo{
+  decltype(auto) swapchain = ZNAMED::SwapchainObj::make(device, ZNAMED::SwapchainCreateInfo{
     .layout = descriptors.as<vk::PipelineLayout>(),
     .surface = surface,
     .info = qfAndQueue
   });
 
   //
-  decltype(auto) framebuffer = lxvc::FramebufferObj::make(device.with(0u), lxvc::FramebufferCreateInfo{
+  decltype(auto) framebuffer = ZNAMED::FramebufferObj::make(device.with(0u), ZNAMED::FramebufferCreateInfo{
     .layout = descriptors.as<vk::PipelineLayout>(),
     .extent = swapchain->getRenderArea().extent,
     .info = qfAndQueue
@@ -254,18 +252,18 @@ int main() {
   
 
   //
-  decltype(auto) geometryLevel = lxvc::GeometryLevelObj::make(device, lxvc::GeometryLevelCreateInfo{
-    .geometryData = std::vector<lxvc::GeometryInfo>{lxvc::GeometryInfo{
-      .vertices = lxvc::BufferViewInfo{.deviceAddress = verticesAddress, .stride = sizeof(glm::vec4), .format = lxvc::BufferViewFormat::eFloat3},
-      .indices = lxvc::BufferViewInfo{.deviceAddress = indicesAddress, .stride = sizeof(uint16_t), .format = lxvc::BufferViewFormat::eShort},
+  decltype(auto) geometryLevel = ZNAMED::GeometryLevelObj::make(device, ZNAMED::GeometryLevelCreateInfo{
+    .geometryData = std::vector<ZNAMED::GeometryInfo>{ZNAMED::GeometryInfo{
+      .vertices = ZNAMED::BufferViewInfo{.deviceAddress = verticesAddress, .stride = sizeof(glm::vec4), .format = ZNAMED::BufferViewFormat::eFloat3},
+      .indices = ZNAMED::BufferViewInfo{.deviceAddress = indicesAddress, .stride = sizeof(uint16_t), .format = ZNAMED::BufferViewFormat::eShort},
       .primitiveCount = 2u,
     }},
     .uploader = uploader.as<uintptr_t>(),
   });
 
   //
-  decltype(auto) instanceLevel = lxvc::InstanceLevelObj::make(device, lxvc::InstanceLevelCreateInfo{
-    .instanceData = std::vector<lxvc::InstanceInfo>{lxvc::InstanceInfo{
+  decltype(auto) instanceLevel = ZNAMED::InstanceLevelObj::make(device, ZNAMED::InstanceLevelCreateInfo{
+    .instanceData = std::vector<ZNAMED::InstanceInfo>{ZNAMED::InstanceInfo{
       .transform = reinterpret_cast<vk::TransformMatrixKHR&&>(glm::mat3x4(1.f)),
       .instanceCustomIndex = 0u,
       .mask = 0xFFu,
@@ -297,12 +295,12 @@ int main() {
     swapchain->switchToReady(semIndex = uniformData.currentImage = acquired, qfAndQueue);
 
     // 
-    decltype(auto) uniformFence = descriptors->executeUniformUpdateOnce(lxvc::UniformDataSet{
-      .writeInfo = lxvc::UniformDataWriteSet{
-        .region = lxvc::DataRegion{0ull, sizeof(UniformData)},
+    decltype(auto) uniformFence = descriptors->executeUniformUpdateOnce(ZNAMED::UniformDataSet{
+      .writeInfo = ZNAMED::UniformDataWriteSet{
+        .region = ZNAMED::DataRegion{0ull, sizeof(UniformData)},
         .data = cpp21::data_view<char8_t>((char8_t*)&uniformData, sizeof(UniformData)),
       },
-      .submission = lxvc::SubmissionInfo{
+      .submission = ZNAMED::SubmissionInfo{
         .info = qfAndQueue,
       }
     });
@@ -311,13 +309,13 @@ int main() {
     //framebuffer->switchToAttachment(qfAndQueue);
 
     //
-    decltype(auto) graphicsFence = graphics->executePipelineOnce(lxvc::ExecutePipelineInfo{
-      .graphics = lxvc::WriteGraphicsInfo{
+    decltype(auto) graphicsFence = graphics->executePipelineOnce(ZNAMED::ExecutePipelineInfo{
+      .graphics = ZNAMED::WriteGraphicsInfo{
         .layout = descriptors.as<vk::PipelineLayout>(),
         .framebuffer = framebuffer.as<uintptr_t>(),
         .instanceInfos = instanceLevel->getDrawInfo(),
       },
-      .submission = lxvc::SubmissionInfo{
+      .submission = ZNAMED::SubmissionInfo{
         .info = qfAndQueue,
       }
     });
@@ -326,13 +324,13 @@ int main() {
     //framebuffer->switchToShaderRead(qfAndQueue);
 
     //
-    decltype(auto) computeFence = compute->executePipelineOnce(lxvc::ExecutePipelineInfo{
-      .compute = lxvc::WriteComputeInfo{
+    decltype(auto) computeFence = compute->executePipelineOnce(ZNAMED::ExecutePipelineInfo{
+      .compute = ZNAMED::WriteComputeInfo{
         .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 256u), renderArea.extent.height, 1u},
         .layout = descriptors.as<vk::PipelineLayout>(),
       },
       
-      .submission = lxvc::SubmissionInfo{
+      .submission = ZNAMED::SubmissionInfo{
         .info = qfAndQueue,
         .waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{presentSemaphoreInfos[semIndex]},
         .signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{readySemaphoreInfos[semIndex]},

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
-project(LXVC VERSION 0.1.0)
-set(PROJECT_NAME LXVC)
+project(ZERO VERSION 0.1.0)
+set(PROJECT_NAME ZERO)
 
 # 
 IF (WIN32)
@@ -47,12 +47,12 @@ file(GLOB_RECURSE _source_list
   "${_src_root_path}/../prebuild/include/vku/cpp21/*.hpp"
   "${_src_root_path}/../prebuild/include/vku/cpp21/*.h"
 
-  "${_src_root_path}/include/lxvc/*.inl"
-  "${_src_root_path}/include/lxvc/*.hpp"
-  "${_src_root_path}/include/lxvc/*.h"
-  "${_src_root_path}/src/lxvc/*.inl"
-  "${_src_root_path}/src/lxvc/*.cpp"
-  "${_src_root_path}/src/lxvc/*.c"
+  "${_src_root_path}/include/ZERO/*.inl"
+  "${_src_root_path}/include/ZERO/*.hpp"
+  "${_src_root_path}/include/ZERO/*.h"
+  "${_src_root_path}/src/ZERO/*.inl"
+  "${_src_root_path}/src/ZERO/*.cpp"
+  "${_src_root_path}/src/ZERO/*.c"
   "${_src_root_path}/test/test.cpp"
   "${_src_root_path}/test/*"
 )
@@ -67,7 +67,7 @@ ENDIF()
 
 # 
 add_executable(${PROJECT_NAME} ${_source_list})
-target_compile_definitions(${PROJECT_NAME} PUBLIC VULKAN_HPP_NO_CONSTRUCTORS NOMINMAX ${PLATFORM_DEF})
+target_compile_definitions(${PROJECT_NAME} PUBLIC VULKAN_HPP_NO_CONSTRUCTORS NOMINMAX ZNAMED=zero ${PLATFORM_DEF})
 target_include_directories(${PROJECT_NAME} PUBLIC 
   ${PROJECT_SOURCE_DIR}/project/include 
   ${PROJECT_SOURCE_DIR}/prebuild/include 

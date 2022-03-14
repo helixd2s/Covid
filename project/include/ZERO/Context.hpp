@@ -4,7 +4,7 @@
 #include "./Core.hpp"
 
 // 
-namespace lxvc {
+namespace ZNAMED {
   
   //
   class ContextObj : public BaseObj {
@@ -53,9 +53,9 @@ namespace lxvc {
 
   // 
   inline static decltype(auto) initialize(cpp21::const_wrap_arg<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
-    lxvc::registerTypes();
-    lxvc::context = ContextObj::make(Handle(0ull), cInfo);
-    return lxvc::context;
+    ZNAMED::registerTypes();
+    ZNAMED::context = ContextObj::make(Handle(0ull), cInfo);
+    return ZNAMED::context;
   };
 
 };

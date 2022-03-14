@@ -7,7 +7,7 @@
 #include "./Resource.hpp"
 
 // 
-namespace lxvc {
+namespace ZNAMED {
   
   // 
   class UploaderObj : public BaseObj {
@@ -49,7 +49,7 @@ namespace lxvc {
 
     // 
     UploaderObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) : cInfo(cInfo) {
-      this->construct(lxvc::context->get<DeviceObj>(this->base = handle), cInfo);
+      this->construct(ZNAMED::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
     // 
@@ -59,7 +59,7 @@ namespace lxvc {
 
     //
     virtual tType registerSelf() {
-      lxvc::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
+      ZNAMED::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
       return SFT();
     };
 
@@ -77,7 +77,7 @@ namespace lxvc {
       decltype(auto) uploadBuffer = this->uploadBuffer;
       decltype(auto) downloadBuffer = this->downloadBuffer;
       decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) size = copyRegionInfo->dstBuffer ? copyRegionInfo->dstBuffer->region.size : VK_WHOLE_SIZE;
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
 
@@ -315,13 +315,13 @@ namespace lxvc {
       decltype(auto) uploadBuffer = this->uploadBuffer;
       decltype(auto) downloadBuffer = this->downloadBuffer;
       decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) size = exec->host.size();
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
       decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
 
       // 
-      memcpy(cpp21::shift(lxvc::context->get<DeviceObj>(this->base)->get<ResourceObj>(uploadBuffer)->mappedMemory, exec->hostMapOffset), exec->host.data(), size);
+      memcpy(cpp21::shift(ZNAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(uploadBuffer)->mappedMemory, exec->hostMapOffset), exec->host.data(), size);
 
       // 
       submission.commandInits.push_back([=,this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
@@ -330,7 +330,7 @@ namespace lxvc {
       });
 
       //
-      return lxvc::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
+      return ZNAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
     };
 
     //
@@ -353,11 +353,11 @@ namespace lxvc {
       //
       submission.onDone.push_back([=](cpp21::const_wrap_arg<vk::Result> result) {
         auto _host = exec->host;
-        memcpy(_host.data(), lxvc::context->get<DeviceObj>(this->base)->get<ResourceObj>(downloadBuffer)->mappedMemory, size);
+        memcpy(_host.data(), ZNAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(downloadBuffer)->mappedMemory, size);
       });
 
       //
-      return lxvc::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
+      return ZNAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
     };
 
 

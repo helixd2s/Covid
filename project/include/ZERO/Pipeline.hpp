@@ -7,7 +7,7 @@
 #include "./Framebuffer.hpp"
 
 // 
-namespace lxvc {
+namespace ZNAMED {
 
   // 
   class PipelineObj : public BaseObj {
@@ -44,7 +44,7 @@ namespace lxvc {
 
     // 
     PipelineObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) : cInfo(cInfo) {
-      this->construct(lxvc::context->get<DeviceObj>(this->base = handle), cInfo);
+      this->construct(ZNAMED::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
     // 
@@ -54,7 +54,7 @@ namespace lxvc {
 
     //
     virtual tType registerSelf() {
-      lxvc::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
+      ZNAMED::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
       return SFT();
     };
 
@@ -68,7 +68,7 @@ namespace lxvc {
   protected:
     //
     virtual void createCompute(cpp21::const_wrap_arg<ComputePipelineCreateInfo> compute = {}) {
-      decltype(auto) descriptors = lxvc::context->get<DeviceObj>(this->base)->get<DescriptorsObj>(this->cInfo->layout);
+      decltype(auto) descriptors = ZNAMED::context->get<DeviceObj>(this->base)->get<DescriptorsObj>(this->cInfo->layout);
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) crInfo = makeComputePipelineStageInfo(device, *compute->code); this->pipelineStages.push_back(crInfo);
       decltype(auto) cmInfo = infoMap->set(vk::StructureType::eComputePipelineCreateInfo, vk::ComputePipelineCreateInfo{
@@ -80,7 +80,7 @@ namespace lxvc {
       
       this->handle = std::move<vk::Pipeline>(device.createComputePipeline(descriptors->cache, cmInfo.ref()));
       //
-      //lxvc::context->get(this->base)->registerObj(this->handle, shared_from_this());
+      //ZNAMED::context->get(this->base)->registerObj(this->handle, shared_from_this());
       //return this->SFT();
     };
 
@@ -88,9 +88,9 @@ namespace lxvc {
     virtual void createGraphics(cpp21::const_wrap_arg<GraphicsPipelineCreateInfo> graphics = {}) {
       //this->pipeline = makeComputePipelineStageInfo(this->deviceObj->device, compute->code);
       //
-      //lxvc::context->get(this->base)->registerObj(this->handle, shared_from_this());
+      //ZNAMED::context->get(this->base)->registerObj(this->handle, shared_from_this());
       //return this->SFT();
-      decltype(auto) descriptors = lxvc::context->get<DeviceObj>(this->base)->get<DescriptorsObj>(this->cInfo->layout);
+      decltype(auto) descriptors = ZNAMED::context->get<DeviceObj>(this->base)->get<DescriptorsObj>(this->cInfo->layout);
       decltype(auto) device = this->base.as<vk::Device>();
 
       //
@@ -221,7 +221,7 @@ namespace lxvc {
     // TODO: using multiple-command
     virtual tType writeComputeCommand(cpp21::const_wrap_arg<WriteComputeInfo> exec = WriteComputeInfo{}) {
       decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(exec->layout ? exec->layout : this->cInfo->layout);
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
 
@@ -261,7 +261,7 @@ namespace lxvc {
     // TODO: using multiple-command
     virtual tType writeGraphicsCommand(cpp21::const_wrap_arg<WriteGraphicsInfo> exec = WriteGraphicsInfo{}) {
       decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(exec->layout ? exec->layout : this->cInfo->layout);
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
       decltype(auto) framebuffer = deviceObj->get<FramebufferObj>(exec->framebuffer).shared();
@@ -349,7 +349,7 @@ namespace lxvc {
     // TODO: using multiple-command
     virtual FenceType executePipelineOnce(cpp21::const_wrap_arg<ExecutePipelineInfo> exec = ExecutePipelineInfo{}) {
       decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) submission = CommandOnceSubmission{ .submission = exec->submission };
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
 

@@ -1,6 +1,11 @@
 #pragma once
 
 //
+#ifndef ZNAMED
+#define ZNAMED zero
+#endif
+
+//
 #ifndef VULKAN_HPP_NO_CONSTRUCTORS
 #define VULKAN_HPP_NO_CONSTRUCTORS
 #endif
@@ -38,7 +43,7 @@
 #include <vulkan/vulkan_raii.hpp>
 
 // 
-namespace lxvc {
+namespace ZNAMED {
 
   // 
 #ifdef VKU_ENABLE_TYPE_SAFE
@@ -234,7 +239,7 @@ namespace lxvc {
 
   // 
   struct InstanceCreateInfo {
-    std::string appName = "LXVC_APP";
+    std::string appName = "ZERO_APP";
     uint32_t appVersion = VK_MAKE_VERSION(1, 0, 0);
     cpp21::shared_vector<std::string> extensionList = std::vector<std::string>{ 
       "VK_KHR_surface", 
@@ -868,28 +873,28 @@ namespace lxvc {
 
   //
   inline static decltype(auto) registerTypes() {
-    lxvc::handleTypeMap = {};
+    ZNAMED::handleTypeMap = {};
 
     //
-    lxvc::handleTypeMap[std::type_index(typeid(uintptr_t))] = HandleType::eUnknown;
+    ZNAMED::handleTypeMap[std::type_index(typeid(uintptr_t))] = HandleType::eUnknown;
 
     // 
-    lxvc::handleTypeMap[std::type_index(typeid(vk::Instance))] = HandleType::eInstance;
-    lxvc::handleTypeMap[std::type_index(typeid(vk::PhysicalDevice))] = HandleType::ePhysicalDevice;
-    lxvc::handleTypeMap[std::type_index(typeid(vk::Device))] = HandleType::eDevice;
-    lxvc::handleTypeMap[std::type_index(typeid(vk::Queue))] = HandleType::eQueue;
-    lxvc::handleTypeMap[std::type_index(typeid(vk::CommandBuffer))] = HandleType::eCommandBuffer;
+    ZNAMED::handleTypeMap[std::type_index(typeid(vk::Instance))] = HandleType::eInstance;
+    ZNAMED::handleTypeMap[std::type_index(typeid(vk::PhysicalDevice))] = HandleType::ePhysicalDevice;
+    ZNAMED::handleTypeMap[std::type_index(typeid(vk::Device))] = HandleType::eDevice;
+    ZNAMED::handleTypeMap[std::type_index(typeid(vk::Queue))] = HandleType::eQueue;
+    ZNAMED::handleTypeMap[std::type_index(typeid(vk::CommandBuffer))] = HandleType::eCommandBuffer;
 
     // 
-    lxvc::handleTypeMap[std::type_index(typeid(vk::SwapchainKHR))] = HandleType::eSwapchain;
-    lxvc::handleTypeMap[std::type_index(typeid(vk::SurfaceKHR))] = HandleType::eSurface;
-    lxvc::handleTypeMap[std::type_index(typeid(vk::Buffer))] = HandleType::eBuffer;
-    lxvc::handleTypeMap[std::type_index(typeid(vk::Image))] = HandleType::eImage;
-    lxvc::handleTypeMap[std::type_index(typeid(vk::Pipeline))] = HandleType::ePipeline;
-    lxvc::handleTypeMap[std::type_index(typeid(vk::PipelineLayout))] = HandleType::eDescriptors;
-    lxvc::handleTypeMap[std::type_index(typeid(vk::AccelerationStructureKHR))] = HandleType::eAccelerationStructure;
-    lxvc::handleTypeMap[std::type_index(typeid(vk::Framebuffer))] = HandleType::eFramebuffer;
-    lxvc::handleTypeMap[std::type_index(typeid(vk::Semaphore))] = HandleType::eSemaphore;
+    ZNAMED::handleTypeMap[std::type_index(typeid(vk::SwapchainKHR))] = HandleType::eSwapchain;
+    ZNAMED::handleTypeMap[std::type_index(typeid(vk::SurfaceKHR))] = HandleType::eSurface;
+    ZNAMED::handleTypeMap[std::type_index(typeid(vk::Buffer))] = HandleType::eBuffer;
+    ZNAMED::handleTypeMap[std::type_index(typeid(vk::Image))] = HandleType::eImage;
+    ZNAMED::handleTypeMap[std::type_index(typeid(vk::Pipeline))] = HandleType::ePipeline;
+    ZNAMED::handleTypeMap[std::type_index(typeid(vk::PipelineLayout))] = HandleType::eDescriptors;
+    ZNAMED::handleTypeMap[std::type_index(typeid(vk::AccelerationStructureKHR))] = HandleType::eAccelerationStructure;
+    ZNAMED::handleTypeMap[std::type_index(typeid(vk::Framebuffer))] = HandleType::eFramebuffer;
+    ZNAMED::handleTypeMap[std::type_index(typeid(vk::Semaphore))] = HandleType::eSemaphore;
 
     //
     return handleTypeMap;

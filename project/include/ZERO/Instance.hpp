@@ -5,7 +5,7 @@
 #include "./Context.hpp"
 
 // 
-namespace lxvc {
+namespace ZNAMED {
 
   // 
   inline VkBool32 callbackFn(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageTypes, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
@@ -44,7 +44,7 @@ namespace lxvc {
     // 
     InstanceObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : cInfo(cInfo) {
       this->base = handle;
-      this->construct(lxvc::context, cInfo);
+      this->construct(ZNAMED::context, cInfo);
     };
 
     // 
@@ -54,7 +54,7 @@ namespace lxvc {
 
     //
     virtual tType registerSelf() {
-      lxvc::context->registerObj(this->handle, shared_from_this());
+      ZNAMED::context->registerObj(this->handle, shared_from_this());
       return SFT();
     };
 
@@ -188,7 +188,7 @@ namespace lxvc {
           .applicationVersion = this->cInfo->appVersion,
 
           // TODO: updating this data before commit
-          .pEngineName = "LXVC",
+          .pEngineName = "ZERO",
           .engineVersion = VK_MAKE_VERSION(1,0,0),
 
           // 

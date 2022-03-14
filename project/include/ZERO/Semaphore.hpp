@@ -6,7 +6,7 @@
 #include "./Device.hpp"
 
 // 
-namespace lxvc {
+namespace ZNAMED {
   
   // 
   class SemaphoreObj : public BaseObj {
@@ -40,7 +40,7 @@ namespace lxvc {
 
     // 
     SemaphoreObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<SemaphoreCreateInfo> cInfo = SemaphoreCreateInfo{}) : cInfo(cInfo) {
-      this->construct(lxvc::context->get<DeviceObj>(this->base = handle), cInfo);
+      this->construct(ZNAMED::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
     // 
@@ -50,7 +50,7 @@ namespace lxvc {
 
     //
     virtual tType registerSelf() {
-      lxvc::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
+      ZNAMED::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
       return SFT();
     };
 
@@ -72,7 +72,7 @@ namespace lxvc {
 
       //
       decltype(auto) device = this->base.as<vk::Device>();
-      //decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
+      //decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
 
       // 
       decltype(auto) semExport = infoMap->set(vk::StructureType::eExportSemaphoreCreateInfoKHR, vk::ExportSemaphoreCreateInfoKHR{ .handleTypes = extSemFlags });

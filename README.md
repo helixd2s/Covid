@@ -1,4 +1,4 @@
-# LXVC render engine
+# ZERO render engine
 
 Some functionality still WIP, but almost ready to ***MVP***...
 

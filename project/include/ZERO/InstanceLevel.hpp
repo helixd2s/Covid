@@ -8,7 +8,7 @@
 #include "./GeometryLevel.hpp"
 
 // 
-namespace lxvc {
+namespace ZNAMED {
 
   // 
   class InstanceLevelObj : public BaseObj {
@@ -66,7 +66,7 @@ namespace lxvc {
 
     // 
     InstanceLevelObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) : cInfo(cInfo), instanceDrawInfo(std::vector<InstanceDrawInfo>{}), instanceDrawData(std::vector<InstanceDrawData>{}) {
-      this->construct(lxvc::context->get<DeviceObj>(this->base = handle), cInfo);
+      this->construct(ZNAMED::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
     // 
@@ -76,7 +76,7 @@ namespace lxvc {
 
     //
     virtual tType registerSelf() {
-      lxvc::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
+      ZNAMED::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
       return SFT();
     };
 
@@ -89,12 +89,12 @@ namespace lxvc {
 
     //
     virtual WrapShared<ResourceObj> getInstancedResource() const {
-      return lxvc::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->instanceBuffer);
+      return ZNAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->instanceBuffer);
     };
 
     //
     virtual WrapShared<ResourceObj> getDrawDataResource() const {
-      return lxvc::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->instanceExtBuffer);
+      return ZNAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->instanceExtBuffer);
     };
 
     //
@@ -123,7 +123,7 @@ namespace lxvc {
 
     //
     virtual void updateInstances() {
-      decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
 
       // 
       this->instances = {};
@@ -180,7 +180,7 @@ namespace lxvc {
 
       //
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo {.info = info ? info.value() : this->cInfo->info } };
-      decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(this->cInfo->uploader);
 
       // 
@@ -210,7 +210,7 @@ namespace lxvc {
       });
 
       //
-      return lxvc::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
+      return ZNAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
     };
 
     //
@@ -238,7 +238,7 @@ namespace lxvc {
 
       // 
       decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) accelInstInfo = infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR);
       decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelInstInfo->setGeometries(this->instances), this->cInfo->limits, deviceObj->dispatch));
       decltype(auto) accelInfo = infoMap->get<vk::AccelerationStructureCreateInfoKHR>(vk::StructureType::eAccelerationStructureCreateInfoKHR);
@@ -275,7 +275,7 @@ namespace lxvc {
 
       //
       accelInstInfo->type = accelInfo->type;
-      accelInstInfo->scratchData = vk::DeviceOrHostAddressKHR(lxvc::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->instanceScratch)->getDeviceAddress());
+      accelInstInfo->scratchData = vk::DeviceOrHostAddressKHR(ZNAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->instanceScratch)->getDeviceAddress());
       accelInstInfo->srcAccelerationStructure = accelInstInfo->dstAccelerationStructure;
       accelInstInfo->dstAccelerationStructure = (this->accelStruct = device.createAccelerationStructureKHR(accelInfo.ref(), nullptr, deviceObj->dispatch));
 
@@ -295,7 +295,7 @@ namespace lxvc {
       if (cInfo) { this->cInfo = cInfo; };
       this->infoMap = std::make_shared<MSS>(MSS());
       decltype(auto) device = this->base.as<vk::Device>();
-      //decltype(auto) deviceObj = lxvc::context->get<DeviceObj>(this->base);
+      //decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
 
       // 
       this->instanceBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
