@@ -147,6 +147,13 @@ namespace ZNAMED {
   };
 
   //
+  enum class ExtensionInfoName : uint32_t {
+    eUnknown = 0u,
+    eVmaMemoryAllocator = 1u,
+    eVmaMemoryAllocation = 2u
+  };
+
+  //
   struct BufferViewFormatBitSet {
     uint32_t countMinusOne : 2;
     uint32_t is16bit : 1;
@@ -223,21 +230,30 @@ namespace ZNAMED {
   class FramebufferObj;
   class SwapchainObj;
   class SemaphoreObj;
-  
 
   //
-  struct ContextCreateInfo {
+  using MSS = cpp21::map_of_shared<vk::StructureType, vk::BaseInStructure>;
+  using EXM = cpp21::map_of_shared<ExtensionName, uintptr_t>;
+  using EXIF = cpp21::map_of_shared<ExtensionInfoName, std::shared_ptr<cpp21::void_t>>;
+
+  //
+  struct BaseCreateInfo {
+    std::shared_ptr<EXIF> extensions = {};
+  };
+
+  //
+  struct ContextCreateInfo : BaseCreateInfo {
 
   };
 
   //
-  struct DedicatedMemory {
+  struct DedicatedMemory : BaseCreateInfo {
     vk::Buffer buffer = {};
     vk::Image image = {};
   };
 
   //
-  struct MemoryRequirements {
+  struct MemoryRequirements : BaseCreateInfo {
     //uint32_t physicalDeviceIndex = 0u;
     MemoryUsage memoryUsage = MemoryUsage::eGpuOnly;
     uint32_t memoryTypeBits = 0u;
@@ -247,7 +263,7 @@ namespace ZNAMED {
   };
 
   // 
-  struct InstanceCreateInfo {
+  struct InstanceCreateInfo : BaseCreateInfo {
     std::string appName = "ZERO_APP";
     uint32_t appVersion = VK_MAKE_VERSION(1, 0, 0);
     cpp21::shared_vector<std::string> extensionList = std::vector<std::string>{ 
@@ -269,19 +285,16 @@ namespace ZNAMED {
     };
   };
 
+  
   //
-  using MSS = cpp21::map_of_shared<vk::StructureType, vk::BaseInStructure>;
-  using EXM = cpp21::map_of_shared<ExtensionName, uintptr_t>;
-
-  //
-  struct QueueFamilyCreateInfo {
+  struct QueueFamilyCreateInfo : BaseCreateInfo {
     uint32_t queueFamilyIndex = 0u;
     cpp21::shared_vector<float> queuePriorities = std::vector<float>{ 1.f };
     //std::shared_ptr<MSS> infoMap = {};//std::make_shared<MSS>();
   };
 
   // 
-  struct DeviceCreateInfo {
+  struct DeviceCreateInfo : BaseCreateInfo {
     cpp21::shared_vector<std::string> extensionList = std::vector<std::string>{ 
       "VK_KHR_deferred_host_operations", 
       "VK_KHR_acceleration_structure", 
@@ -388,7 +401,7 @@ namespace ZNAMED {
   };
 
   //
-  struct GeometryLevelCreateInfo {
+  struct GeometryLevelCreateInfo : BaseCreateInfo {
     std::vector<GeometryInfo> geometryData = {};
     std::vector<uint32_t> limits = {};
     //size_t geometryCount = 1u;
@@ -402,7 +415,7 @@ namespace ZNAMED {
   using InstanceInfo = vk::AccelerationStructureInstanceKHR;
 
   //
-  struct InstanceLevelCreateInfo {
+  struct InstanceLevelCreateInfo : BaseCreateInfo {
     std::vector<InstanceInfo> instanceData = {};
     std::vector<uint32_t> limits = {};
     //size_t instanceCount = 1u;
@@ -442,24 +455,24 @@ namespace ZNAMED {
   };
 
   //
-  struct DescriptorsCreateInfo {
+  struct DescriptorsCreateInfo : BaseCreateInfo {
     std::optional<QueueGetInfo> info = QueueGetInfo{};
     AttachmentsInfo attachments = {};
   };
 
   //
-  struct SemaphoreCreateInfo {
+  struct SemaphoreCreateInfo : BaseCreateInfo {
     bool hasExport = true;
   };
 
   //
-  struct ImageSwapchainInfo {
+  struct ImageSwapchainInfo : BaseCreateInfo {
     vk::SwapchainKHR swapchain = {};
     uint32_t index = 0u;
   };
 
   //
-  struct ImageCreateInfo {
+  struct ImageCreateInfo : BaseCreateInfo {
     vk::ImageType imageType = vk::ImageType::e2D;
     vk::Format format = vk::Format::eUndefined;
     vk::Extent3D extent = {2u,2u,2u};
@@ -473,13 +486,13 @@ namespace ZNAMED {
   };
 
   //
-  struct BufferCreateInfo {
+  struct BufferCreateInfo : BaseCreateInfo {
     size_t size = 0ull;
     BufferType type = BufferType::eStorage;
   };
 
   //
-  struct ResourceCreateInfo {
+  struct ResourceCreateInfo : BaseCreateInfo {
     vk::PipelineLayout descriptors = {};
     std::optional<vk::Buffer> buffer = {};
     std::optional<vk::Image> image = {};
@@ -488,7 +501,7 @@ namespace ZNAMED {
   };
 
   //
-  struct ImageViewCreateInfo {
+  struct ImageViewCreateInfo : BaseCreateInfo {
     vk::ImageViewType viewType = vk::ImageViewType::e2D;
     vk::ImageSubresourceRange subresourceRange = { vk::ImageAspectFlagBits::eColor, 0u, 1u, 0u, 1u };
   };
@@ -528,7 +541,7 @@ namespace ZNAMED {
   };
 
   //
-  struct ImageLayoutSwitchWriteInfo {
+  struct ImageLayoutSwitchWriteInfo : BaseCreateInfo {
     vk::CommandBuffer cmdBuf = {};
     vk::ImageLayout newImageLayout = vk::ImageLayout::eGeneral;
     uint32_t queueFamilyIndex = 0u;
@@ -542,7 +555,7 @@ namespace ZNAMED {
   };
 
   //
-  struct SubmissionInfo {
+  struct SubmissionInfo : BaseCreateInfo {
     std::optional<QueueGetInfo> info = QueueGetInfo{};
     std::optional<vk::CommandBufferInheritanceInfo> inheritanceInfo = {};
     cpp21::shared_vector<vk::SemaphoreSubmitInfo> waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
@@ -550,7 +563,7 @@ namespace ZNAMED {
   };
 
   //
-  struct ImageLayoutSwitchInfo {
+  struct ImageLayoutSwitchInfo : BaseCreateInfo {
     std::optional<QueueGetInfo> info = QueueGetInfo{};
     std::optional<ImageLayoutSwitchWriteInfo> switchInfo = {};
 
@@ -604,7 +617,7 @@ namespace ZNAMED {
 #endif
 
   //
-  struct UniformDataWriteSet {
+  struct UniformDataWriteSet : BaseCreateInfo {
     vk::CommandBuffer cmdBuf = {};
     std::optional<QueueGetInfo> info = QueueGetInfo{};
     std::optional<DataRegion> region = DataRegion{};
@@ -615,7 +628,7 @@ namespace ZNAMED {
   };
 
   // 
-  struct UniformDataSet {
+  struct UniformDataSet : BaseCreateInfo {
     std::optional<UniformDataWriteSet> writeInfo = {};
     std::optional<QueueGetInfo> info = QueueGetInfo{};
     SubmissionInfo submission = {};
@@ -623,7 +636,7 @@ namespace ZNAMED {
 
 
   //
-  struct WriteComputeInfo {
+  struct WriteComputeInfo : BaseCreateInfo {
     vk::CommandBuffer cmdBuf = {};
     vk::Extent3D dispatch = { 1u, 1u, 1u };
     vk::PipelineLayout layout = {};
@@ -651,7 +664,7 @@ namespace ZNAMED {
   };
 
   //
-  struct InstanceDrawInfo {
+  struct InstanceDrawInfo : BaseCreateInfo {
     //InstanceDrawData drawData = {};
     PushConstantData drawData = {};
     cpp21::shared_vector<vk::MultiDrawInfoEXT> drawInfos = std::vector<vk::MultiDrawInfoEXT>{};
@@ -659,7 +672,7 @@ namespace ZNAMED {
   
 
   //
-  struct WriteGraphicsInfo {
+  struct WriteGraphicsInfo : BaseCreateInfo {
     vk::CommandBuffer cmdBuf = {};
     vk::PipelineLayout layout = {};
     uintptr_t framebuffer = {};
@@ -673,7 +686,7 @@ namespace ZNAMED {
 
 
   //
-  struct ExecutePipelineInfo {
+  struct ExecutePipelineInfo : BaseCreateInfo {
     std::optional<WriteGraphicsInfo> graphics = {};
     std::optional<WriteComputeInfo> compute = {};
     std::optional<QueueGetInfo> info = QueueGetInfo{};
@@ -682,7 +695,7 @@ namespace ZNAMED {
 
 
   //
-  struct CommandOnceSubmission {
+  struct CommandOnceSubmission : BaseCreateInfo {
     std::vector<std::function<cpp21::const_wrap_arg<vk::CommandBuffer>(cpp21::const_wrap_arg<vk::CommandBuffer>)>> commandInits = {};
     std::vector<std::function<void(cpp21::const_wrap_arg<vk::Result>)>> onDone = {};
     SubmissionInfo submission = {};
@@ -695,7 +708,7 @@ namespace ZNAMED {
   //};
 
   //
-  struct CopyBufferWriteInfo {
+  struct CopyBufferWriteInfo : BaseCreateInfo {
     vk::CommandBuffer cmdBuf = {};
 
     // 
@@ -707,7 +720,7 @@ namespace ZNAMED {
   };
 
   //
-  struct UploadCommandWriteInfo {
+  struct UploadCommandWriteInfo : BaseCreateInfo {
     vk::CommandBuffer cmdBuf = {};
     uintptr_t hostMapOffset = 0ull;
 
@@ -720,7 +733,7 @@ namespace ZNAMED {
   };
 
   //
-  struct DownloadCommandWriteInfo {
+  struct DownloadCommandWriteInfo : BaseCreateInfo {
     vk::CommandBuffer cmdBuf = {};
 
     // 
@@ -732,7 +745,7 @@ namespace ZNAMED {
 
 
   //
-  struct UploadExecutionOnce {
+  struct UploadExecutionOnce : BaseCreateInfo {
     cpp21::data_view<char8_t> host = {};
     uintptr_t hostMapOffset = 0ull;
     UploadCommandWriteInfo writeInfo = {};
@@ -740,7 +753,7 @@ namespace ZNAMED {
   };
 
   //
-  struct DownloadExecutionOnce {
+  struct DownloadExecutionOnce : BaseCreateInfo {
     cpp21::data_view<char8_t> host = {};
     uintptr_t hostMapOffset = 0ull;
     DownloadCommandWriteInfo writeInfo = {};
@@ -748,7 +761,7 @@ namespace ZNAMED {
   };
 
   //
-  struct CopyBuffersExecutionOnce {
+  struct CopyBuffersExecutionOnce : BaseCreateInfo {
     CopyBufferWriteInfo writeInfo = {};
     SubmissionInfo submission = {};
   };
@@ -756,37 +769,37 @@ namespace ZNAMED {
 
 
   //
-  struct UploaderCreateInfo {
+  struct UploaderCreateInfo : BaseCreateInfo {
     std::optional<QueueGetInfo> info = QueueGetInfo{};
     size_t cacheSize = 1024ull * 1024ull * 2ull;
   };
 
   //
-  struct GraphicsPipelineCreateInfo {
+  struct GraphicsPipelineCreateInfo : BaseCreateInfo {
     std::unordered_map<vk::ShaderStageFlagBits, cpp21::shared_vector<uint32_t>> stageCodes = {};
   };
 
   //
-  struct ComputePipelineCreateInfo {
+  struct ComputePipelineCreateInfo : BaseCreateInfo {
     cpp21::shared_vector<uint32_t> code = std::vector<uint32_t>{};
   };
 
   //
-  struct PipelineCreateInfo {
+  struct PipelineCreateInfo : BaseCreateInfo {
     vk::PipelineLayout layout = {};
     std::optional<ComputePipelineCreateInfo> compute = {};
     std::optional<GraphicsPipelineCreateInfo> graphics = {};
   };
 
   //
-  struct FramebufferCreateInfo {
+  struct FramebufferCreateInfo : BaseCreateInfo {
     vk::PipelineLayout layout = {};
     vk::Extent2D extent = {640u, 480u};
     std::optional<QueueGetInfo> info = {};
   };
 
   //
-  struct SwapchainCreateInfo {
+  struct SwapchainCreateInfo : BaseCreateInfo {
     vk::PipelineLayout layout = {};
     vk::SurfaceKHR surface = {};
     std::optional<QueueGetInfo> info = {};
@@ -797,7 +810,7 @@ namespace ZNAMED {
   using FenceType = std::shared_ptr<FenceTypeRaw>;
 
   // 
-  struct ComputeStageCreateInfo {
+  struct ComputeStageCreateInfo : BaseCreateInfo {
     //ComputeStageCreateInfo(vk::PipelineShaderStageCreateInfo spi = {}, vk::PipelineShaderStageRequiredSubgroupSizeCreateInfoEXT sgmp = {}) : spi(spi), sgmp(sgmp) {
     //};
 
@@ -816,7 +829,7 @@ namespace ZNAMED {
   };
 
   // 
-  struct ShaderModuleCreateInfo {
+  struct ShaderModuleCreateInfo : BaseCreateInfo {
     //ComputeStageCreateInfo(vk::PipelineShaderStageCreateInfo spi = {}, vk::PipelineShaderStageRequiredSubgroupSizeCreateInfoEXT sgmp = {}) : spi(spi), sgmp(sgmp) {
     //};
 
@@ -839,7 +852,7 @@ namespace ZNAMED {
 
   // 
   static inline decltype(auto) makeShaderModuleInfo(cpp21::const_wrap_arg<std::vector<uint32_t>> code) {
-    return ShaderModuleCreateInfo{ vk::ShaderModuleCreateInfo{.codeSize = code->size() * 4ull, .pCode = code->data() } };
+    return ShaderModuleCreateInfo{ .info = vk::ShaderModuleCreateInfo{.codeSize = code->size() * 4ull, .pCode = code->data() } };
   };
 
   // 
