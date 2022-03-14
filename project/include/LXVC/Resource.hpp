@@ -148,11 +148,10 @@ namespace lxvc {
       auto& physicalDevice = deviceObj->getPhysicalDevice();
       auto PDInfoMap = deviceObj->getPhysicalDeviceInfoMap();
       auto memTypeHeap = deviceObj->findMemoryTypeAndHeapIndex(*requirements);
-      auto& allocated = (this->allocated = AllocatedMemory{}).value();
 
       // 
-      bool imageCondition = this->cInfo->imageInfo && this->cInfo->imageInfo->type != ImageType::eSwapchain;
-      bool bufferCondition = true;
+      bool imageCondition = !!this->cInfo->imageInfo && this->cInfo->imageInfo->type != ImageType::eSwapchain;
+      bool bufferCondition = !!this->cInfo->bufferInfo;
 
       //
       decltype(auto) exportMemory = infoMap->set(vk::StructureType::eExportMemoryAllocateInfo, vk::ExportMemoryAllocateInfo{
@@ -160,13 +159,14 @@ namespace lxvc {
       });
 
       // 
+      auto& allocated = (this->allocated = AllocatedMemory{}).value();
       allocated = AllocatedMemory{
         .memory = device.allocateMemory(infoMap->set(vk::StructureType::eMemoryAllocateInfo, vk::MemoryAllocateInfo{
           .pNext = infoMap->set(vk::StructureType::eMemoryAllocateFlagsInfo, vk::MemoryAllocateFlagsInfo{
             .pNext = infoMap->set(vk::StructureType::eMemoryDedicatedAllocateInfo, vk::MemoryDedicatedAllocateInfo{
               .pNext = memoryUsage == MemoryUsage::eGpuOnly ? exportMemory.get() : nullptr,
-              .image = requirements->dedicated && this->handle.type == HandleType::eImage && imageCondition ? this->handle.as<vk::Image>() : vk::Image{},
-              .buffer = requirements->dedicated && this->handle.type == HandleType::eBuffer && bufferCondition ? this->handle.as<vk::Buffer>() : vk::Buffer{}
+              .image = requirements->dedicated && imageCondition ? requirements->dedicated->image : vk::Image{},
+              .buffer = requirements->dedicated && bufferCondition ? requirements->dedicated->buffer : vk::Buffer{}
             }).get(),
             .flags = this->hasDeviceAddress ? vk::MemoryAllocateFlagBits::eDeviceAddress : vk::MemoryAllocateFlagBits{},
           }).get(),
@@ -372,6 +372,7 @@ namespace lxvc {
       this->allocated = this->allocateMemory(this->mReqs = MemoryRequirements{
         .memoryUsage = memoryUsage,
         .memoryTypeBits = memReqInfo.memoryTypeBits,
+        .dedicated = DedicatedMemory{.image = this->handle.as<vk::Image>() },
         .size = memReqInfo.size
       });
 
@@ -441,6 +442,7 @@ namespace lxvc {
       this->allocated = this->allocateMemory(this->mReqs = MemoryRequirements{
         .memoryUsage = memoryUsage,
         .memoryTypeBits = memReqInfo.memoryTypeBits,
+        .dedicated = DedicatedMemory{.buffer = this->handle.as<vk::Buffer>() },
         .size = memReqInfo.size
         });
 

@@ -216,11 +216,17 @@ namespace lxvc {
   };
 
   //
+  struct DedicatedMemory {
+    vk::Buffer buffer = {};
+    vk::Image image = {};
+  };
+
+  //
   struct MemoryRequirements {
     //uint32_t physicalDeviceIndex = 0u;
     MemoryUsage memoryUsage = MemoryUsage::eGpuOnly;
     uint32_t memoryTypeBits = 0u;
-    cpp21::bool32_t dedicated = true;
+    std::optional<DedicatedMemory> dedicated = {};
     size_t size = 0ull;
     size_t alignment = 0ull;
   };
