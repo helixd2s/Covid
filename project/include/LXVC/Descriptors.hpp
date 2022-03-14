@@ -49,6 +49,7 @@ namespace lxvc {
     cpp21::bucket<vk::DescriptorImageInfo> samplers = std::vector<vk::DescriptorImageInfo>{};
     cpp21::bucket<vk::DescriptorImageInfo> images = std::vector<vk::DescriptorImageInfo>{};
     std::optional<vk::DescriptorBufferInfo> uniformBufferDesc = {};
+    std::optional<vk::DescriptorBufferInfo> cacheBufferDesc = {};
 
     // 
     std::vector<vk::DescriptorPoolSize> DPC = {};
@@ -58,11 +59,13 @@ namespace lxvc {
     //std::shared_ptr<DeviceObj> deviceObj = {};
     //std::shared_ptr<ResourceObj> uniformBuffer = {};
     vk::Buffer uniformBuffer = {};
+    vk::Buffer cacheBuffer = {};
 
     //
     std::vector<char8_t> initialData = {};
 
     //
+    size_t cacheSize = 65536ull;
     size_t uniformSize = 65536ull;
 
     // 
@@ -162,6 +165,7 @@ namespace lxvc {
         vk::DescriptorPoolSize{ vk::DescriptorType::eSampledImage, 256u },
         vk::DescriptorPoolSize{ vk::DescriptorType::eUniformBuffer, 2u },
         vk::DescriptorPoolSize{ vk::DescriptorType::eStorageImage, 64u },
+        vk::DescriptorPoolSize{ vk::DescriptorType::eStorageBuffer, 2u },
       });
 
       // 
@@ -171,6 +175,7 @@ namespace lxvc {
       this->layoutInfoMaps = cpp21::vector_of_shared<MSS>();
       this->descriptorCounts = std::vector<uint32_t>{};
       this->createDescriptorLayout(vk::DescriptorType::eUniformBuffer, 1u);
+      this->createDescriptorLayout(vk::DescriptorType::eStorageBuffer, 1u);
       this->createDescriptorLayout(vk::DescriptorType::eSampledImage, 256u);
       this->createDescriptorLayout(vk::DescriptorType::eSampler, 64u);
       this->createDescriptorLayout(vk::DescriptorType::eStorageImage, 64u);
@@ -200,8 +205,8 @@ namespace lxvc {
       //lxvc::context->get(this->base)->registerObj(this->handle, shared_from_this());
 
       //
-      this->createUniformBuffer();
-      this->uniformBufferDesc = vk::DescriptorBufferInfo{ this->uniformBuffer, 0ull, uniformSize};
+      this->cacheBufferDesc = vk::DescriptorBufferInfo{ this->createCacheBuffer(), 0ull, this->cacheSize };
+      this->uniformBufferDesc = vk::DescriptorBufferInfo{ this->createUniformBuffer(), 0ull, this->uniformSize};
       this->updateDescriptors();
 
       // 
@@ -209,7 +214,8 @@ namespace lxvc {
     };
 
     //
-    virtual void createUniformBuffer();
+    virtual vk::Buffer& createUniformBuffer();
+    virtual vk::Buffer& createCacheBuffer();
 
   // 
   public:
@@ -220,9 +226,10 @@ namespace lxvc {
       decltype(auto) writes = std::vector<vk::WriteDescriptorSet>{};
       decltype(auto) temp = vk::WriteDescriptorSet{ .dstSet = this->sets[0u], .dstBinding = 0u, .dstArrayElement = 0u, .descriptorType = vk::DescriptorType::eUniformBuffer };
       writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[0u]).setDescriptorType(vk::DescriptorType::eUniformBuffer).setPBufferInfo(&this->uniformBufferDesc.value()).setDescriptorCount(1u));
-      if (this->textures->size() > 0ull) { writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[1u]).setPImageInfo(this->textures.data()).setDescriptorCount(uint32_t(this->textures.size())).setDescriptorType(vk::DescriptorType::eSampledImage)); };
-      if (this->samplers->size() > 0ull) { writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[2u]).setPImageInfo(this->samplers.data()).setDescriptorCount(uint32_t(this->samplers.size())).setDescriptorType(vk::DescriptorType::eSampler)); };
-      if (this->images->size() > 0ull) { writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[3u]).setPImageInfo(this->images.data()).setDescriptorCount(uint32_t(this->images.size())).setDescriptorType(vk::DescriptorType::eStorageImage)); };
+      writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[1u]).setDescriptorType(vk::DescriptorType::eStorageBuffer).setPBufferInfo(&this->cacheBufferDesc.value()).setDescriptorCount(1u));
+      if (this->textures->size() > 0ull) { writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[2u]).setPImageInfo(this->textures.data()).setDescriptorCount(uint32_t(this->textures.size())).setDescriptorType(vk::DescriptorType::eSampledImage)); };
+      if (this->samplers->size() > 0ull) { writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[3u]).setPImageInfo(this->samplers.data()).setDescriptorCount(uint32_t(this->samplers.size())).setDescriptorType(vk::DescriptorType::eSampler)); };
+      if (this->images->size() > 0ull) { writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[4u]).setPImageInfo(this->images.data()).setDescriptorCount(uint32_t(this->images.size())).setDescriptorType(vk::DescriptorType::eStorageImage)); };
       device.updateDescriptorSets(writes, {});
       //return this->SFT();
     };
@@ -272,6 +279,50 @@ namespace lxvc {
       return SFT();
     };
 
+    virtual tType writeCacheUpdateCommand(cpp21::const_wrap_arg<UniformDataWriteSet> cInfo) {
+      size_t size = std::min(cInfo->data.size(), cInfo->region->size);
+      decltype(auto) device = this->base.as<vk::Device>();
+      decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
+
+      //
+      decltype(auto) bufferBarriersBegin = std::vector<vk::BufferMemoryBarrier2>{
+        vk::BufferMemoryBarrier2{
+          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
+          .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite) | vk::AccessFlagBits2::eShaderStorageWrite | vk::AccessFlagBits2::eShaderStorageRead | vk::AccessFlagBits2::eTransformFeedbackCounterReadEXT | vk::AccessFlagBits2::eTransformFeedbackCounterWriteEXT,
+          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferWrite),
+          .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
+          .srcQueueFamilyIndex = cInfo->info->queueFamilyIndex,
+          .dstQueueFamilyIndex = cInfo->info->queueFamilyIndex,
+          .buffer = this->cacheBuffer,
+          .offset = cInfo->region->offset,
+          .size = size
+        }
+      };
+
+      //
+      decltype(auto) bufferBarriersEnd = std::vector<vk::BufferMemoryBarrier2>{
+        vk::BufferMemoryBarrier2{
+          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferWrite),
+          .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite) | vk::AccessFlagBits2::eShaderStorageWrite | vk::AccessFlagBits2::eShaderStorageRead | vk::AccessFlagBits2::eTransformFeedbackCounterReadEXT | vk::AccessFlagBits2::eTransformFeedbackCounterWriteEXT,
+          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
+          .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite),
+          .srcQueueFamilyIndex = cInfo->info->queueFamilyIndex,
+          .dstQueueFamilyIndex = cInfo->info->queueFamilyIndex,
+          .buffer = this->cacheBuffer,
+          .offset = cInfo->region->offset,
+          .size = size
+        }
+      };
+
+      // 
+      cInfo->cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersBegin));
+      cInfo->cmdBuf.updateBuffer(this->cacheBuffer, cInfo->region->offset, size, cInfo->data.data());
+      cInfo->cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersEnd));
+
+      // 
+      return SFT();
+    };
+
     //
     virtual FenceType executeUniformUpdateOnce(cpp21::const_wrap_arg<UniformDataSet> cInfo) {
       decltype(auto) submission = CommandOnceSubmission{ .submission = cInfo->submission };
@@ -281,6 +332,20 @@ namespace lxvc {
         this->writeUniformUpdateCommand(cInfo->writeInfo->with(cmdBuf));
         return cmdBuf;
       });
+
+      //
+      return lxvc::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
+    };
+
+    //
+    virtual FenceType executeCacheUpdateOnce(cpp21::const_wrap_arg<UniformDataSet> cInfo) {
+      decltype(auto) submission = CommandOnceSubmission{ .submission = cInfo->submission };
+
+      // 
+      submission.commandInits.push_back([=](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+        this->writeCacheUpdateCommand(cInfo->writeInfo->with(cmdBuf));
+        return cmdBuf;
+        });
 
       //
       return lxvc::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);

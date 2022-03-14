@@ -543,13 +543,23 @@ namespace lxvc {
   };
 
   //
-  inline void DescriptorsObj::createUniformBuffer() {
-    this->uniformBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
+  inline vk::Buffer& DescriptorsObj::createUniformBuffer() {
+    return (this->uniformBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
       .bufferInfo = BufferCreateInfo{
         .size = uniformSize,
         .type = BufferType::eUniform
       }
-    }).as<vk::Buffer>();
+    }).as<vk::Buffer>());
+  };
+
+  //
+  inline vk::Buffer& DescriptorsObj::createCacheBuffer() {
+    return (this->uniformBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
+      .bufferInfo = BufferCreateInfo{
+        .size = cacheSize,
+        .type = BufferType::eStorage
+      }
+    }).as<vk::Buffer>());
   };
 
   // 

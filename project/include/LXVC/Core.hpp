@@ -73,7 +73,8 @@ namespace lxvc {
     eUniform = 2u,
     eVertex = 3u,
     eIndex = 4u,
-    eUniversal = 5u
+    eUniversal = 5u,
+    //eCounter = 6u
   };
 
   //
@@ -303,6 +304,13 @@ namespace lxvc {
     BufferViewFormat format = BufferViewFormat::eNone;
   };
 
+  // but may not to be...
+  struct GeometryExtension {
+    BufferViewInfo texcoord = {};
+    BufferViewInfo normals = {};
+    BufferViewInfo tangets = {};
+  };
+
   //
   struct GeometryInfo {
     BufferViewInfo vertices = {};
@@ -310,9 +318,12 @@ namespace lxvc {
     BufferViewInfo transform = {};
 
     //
-    BufferViewInfo texcoord = {};
-    BufferViewInfo normals = {};
-    BufferViewInfo tangets = {};
+    //BufferViewInfo texcoord = {};
+    //BufferViewInfo normals = {};
+    //BufferViewInfo tangets = {};
+
+    //
+    uint64_t extensionRef = 0ull;
 
     //
     uint32_t materialId = 0u;
