@@ -96,23 +96,25 @@ namespace ZNAMED {
   //
   enum class HandleType : uint32_t {
     eUnknown = 0u,
-    eInstance = 1u,
-    ePhysicalDevice = 2u,
-    eDevice = 3u,
-    eQueue = 4u,
-    eCommandBuffer = 5u,
+    eExtension = 1u,
 
-    eBuffer = 6u,
-    eImage = 7u,
-    ePipeline = 8u,
-    eUploader = 9u,
-    eDescriptors = 10u,
-    eQueueFamily = 11u,
-    eSurface = 12u,
-    eSwapchain = 13u,
-    eFramebuffer = 14u,
-    eSemaphore = 15u,
-    eAccelerationStructure = 16u
+    eInstance = 2u,
+    ePhysicalDevice = 3u,
+    eDevice = 4u,
+    eQueue = 5u,
+    eCommandBuffer = 6u,
+
+    eBuffer = 7u,
+    eImage = 8u,
+    ePipeline = 9u,
+    eUploader = 10u,
+    eDescriptors = 11u,
+    eQueueFamily = 12u,
+    eSurface = 13u,
+    eSwapchain = 14u,
+    eFramebuffer = 15u,
+    eSemaphore = 16u,
+    eAccelerationStructure = 17u
   };
 
   //
@@ -135,6 +137,13 @@ namespace ZNAMED {
     eShort4 = 0xFu,
     eMat3x4 = 0x1Fu,
     eNone = 0x100u
+  };
+
+  //
+  enum class ExtensionName : uint32_t {
+    eUnknown = 0u,
+    eVmaMemoryAllocator = 1u,
+    eVmaMemoryAllocation = 2u
   };
 
   //
@@ -262,6 +271,7 @@ namespace ZNAMED {
 
   //
   using MSS = cpp21::map_of_shared<vk::StructureType, vk::BaseInStructure>;
+  using EXM = cpp21::map_of_shared<ExtensionName, uintptr_t>;
 
   //
   struct QueueFamilyCreateInfo {
@@ -549,9 +559,9 @@ namespace ZNAMED {
   };
 
   //
-  struct GLBuffer {
-    uint32_t glBuffer = 0u;
-    uint32_t glMemory = 0u;
+  struct GLObject {
+    uint32_t handle = 0u;
+    uint32_t dependency = 0u;
   };
 
   //
@@ -1069,8 +1079,12 @@ namespace ZNAMED {
     // 
     Handle handle = {}, base = {};
     ExtHandle extHandle = {};
+    GLObject glObject = {};
     std::unordered_map<HandleType, cpp21::map_of_shared<uintptr_t, BaseObj>> handleObjectMap = {};
+
+    // 
     std::shared_ptr<MSS> infoMap = {};
+    std::shared_ptr<EXM> extensions = {};
 
     //
     friend ContextObj;
@@ -1129,8 +1143,8 @@ namespace ZNAMED {
     };
 
     // 
-    BaseObj() : infoMap(std::make_shared<MSS>(MSS())), callstack(std::make_shared<CallStack>()) {};
-    BaseObj(cpp21::const_wrap_arg<Handle> base, cpp21::const_wrap_arg<Handle> handle = {}) : base(base), handle(handle), infoMap(std::make_shared<MSS>()), callstack(std::make_shared<CallStack>()) {
+    BaseObj() : infoMap(std::make_shared<MSS>(MSS())), extensions(std::make_shared<EXM>(EXM())), callstack(std::make_shared<CallStack>()) {};
+    BaseObj(cpp21::const_wrap_arg<Handle> base, cpp21::const_wrap_arg<Handle> handle = {}) : base(base), handle(handle), infoMap(std::make_shared<MSS>()), extensions(std::make_shared<EXM>(EXM())), callstack(std::make_shared<CallStack>()) {
 
     };
 
