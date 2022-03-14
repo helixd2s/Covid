@@ -48,7 +48,7 @@ namespace ZNAMED {
 
     // 
     GeometryLevelObj(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<GeometryLevelCreateInfo> cInfo = GeometryLevelCreateInfo{}) : cInfo(cInfo) {
-      this->base = deviceObj->handle;
+      this->base = deviceObj->getHandle();
       this->construct(deviceObj, cInfo);
     };
 
@@ -153,7 +153,7 @@ namespace ZNAMED {
           .cmdBuf = cmdBuf,
           .dstBuffer = BufferRegion{this->geometryBuffer, DataRegion{ 0ull, this->cInfo->geometryData.size() * sizeof(GeometryInfo) }}
         });
-        cmdBuf->buildAccelerationStructuresKHR(1u, &infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR)->setGeometries(this->geometries), cpp21::rvalue_to_ptr(geometryRanges.data()), deviceObj->dispatch);
+        cmdBuf->buildAccelerationStructuresKHR(1u, &infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR)->setGeometries(this->geometries), cpp21::rvalue_to_ptr(geometryRanges.data()), deviceObj->getDispatch());
         return cmdBuf;
       });
 
@@ -183,7 +183,7 @@ namespace ZNAMED {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) accelGeomInfo = infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR);
-      decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelGeomInfo->setGeometries(this->geometries), this->cInfo->limits, deviceObj->dispatch));
+      decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelGeomInfo->setGeometries(this->geometries), this->cInfo->limits, deviceObj->getDispatch()));
       decltype(auto) accelInfo = infoMap->get<vk::AccelerationStructureCreateInfoKHR>(vk::StructureType::eAccelerationStructureCreateInfoKHR);
       
       // 
@@ -220,10 +220,10 @@ namespace ZNAMED {
       accelGeomInfo->type = accelInfo->type;
       accelGeomInfo->scratchData = vk::DeviceOrHostAddressKHR(ZNAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->geometryScratch)->getDeviceAddress());
       accelGeomInfo->srcAccelerationStructure = accelGeomInfo->dstAccelerationStructure;
-      accelGeomInfo->dstAccelerationStructure = (this->accelStruct = device.createAccelerationStructureKHR(accelInfo.ref(), nullptr, deviceObj->dispatch));
+      accelGeomInfo->dstAccelerationStructure = (this->accelStruct = device.createAccelerationStructureKHR(accelInfo.ref(), nullptr, deviceObj->getDispatch()));
 
       // 
-      this->handle = device.getAccelerationStructureAddressKHR(vk::AccelerationStructureDeviceAddressInfoKHR{ .accelerationStructure = this->accelStruct }, deviceObj->dispatch);
+      this->handle = device.getAccelerationStructureAddressKHR(vk::AccelerationStructureDeviceAddressInfoKHR{ .accelerationStructure = this->accelStruct }, deviceObj->getDispatch());
 
       //
       return std::get<0>(*this->buildStructure()).get();
@@ -231,7 +231,7 @@ namespace ZNAMED {
 
     // 
     virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<GeometryLevelCreateInfo> cInfo = GeometryLevelCreateInfo{}) {
-      this->base = deviceObj->handle;
+      this->base = deviceObj->getHandle();
       //this->deviceObj = deviceObj;
       if (cInfo) { this->cInfo = cInfo; };
       this->infoMap = std::make_shared<MSS>(MSS());

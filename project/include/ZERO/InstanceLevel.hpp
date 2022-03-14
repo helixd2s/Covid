@@ -60,7 +60,7 @@ namespace ZNAMED {
 
     // 
     InstanceLevelObj(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) : cInfo(cInfo), instanceDrawInfo(std::vector<InstanceDrawInfo>{}), instanceDrawData(std::vector<InstanceDrawData>{}) {
-      this->base = deviceObj->handle;
+      this->base = deviceObj->getHandle();
       this->construct(deviceObj, cInfo);
     };
 
@@ -205,7 +205,7 @@ namespace ZNAMED {
         });
 
         // 
-        cmdBuf->buildAccelerationStructuresKHR(1u, &infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR)->setGeometries(this->instances), cpp21::rvalue_to_ptr(instanceRanges.data()), deviceObj->dispatch);
+        cmdBuf->buildAccelerationStructuresKHR(1u, &infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR)->setGeometries(this->instances), cpp21::rvalue_to_ptr(instanceRanges.data()), deviceObj->getDispatch());
         return cmdBuf;
       });
 
@@ -240,7 +240,7 @@ namespace ZNAMED {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) accelInstInfo = infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR);
-      decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelInstInfo->setGeometries(this->instances), this->cInfo->limits, deviceObj->dispatch));
+      decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelInstInfo->setGeometries(this->instances), this->cInfo->limits, deviceObj->getDispatch()));
       decltype(auto) accelInfo = infoMap->get<vk::AccelerationStructureCreateInfoKHR>(vk::StructureType::eAccelerationStructureCreateInfoKHR);
 
       //
@@ -277,10 +277,10 @@ namespace ZNAMED {
       accelInstInfo->type = accelInfo->type;
       accelInstInfo->scratchData = vk::DeviceOrHostAddressKHR(ZNAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->instanceScratch)->getDeviceAddress());
       accelInstInfo->srcAccelerationStructure = accelInstInfo->dstAccelerationStructure;
-      accelInstInfo->dstAccelerationStructure = (this->accelStruct = device.createAccelerationStructureKHR(accelInfo.ref(), nullptr, deviceObj->dispatch));
+      accelInstInfo->dstAccelerationStructure = (this->accelStruct = device.createAccelerationStructureKHR(accelInfo.ref(), nullptr, deviceObj->getDispatch()));
 
       //
-      this->handle = device.getAccelerationStructureAddressKHR(vk::AccelerationStructureDeviceAddressInfoKHR{ .accelerationStructure = this->accelStruct }, deviceObj->dispatch);
+      this->handle = device.getAccelerationStructureAddressKHR(vk::AccelerationStructureDeviceAddressInfoKHR{ .accelerationStructure = this->accelStruct }, deviceObj->getDispatch());
 
       //
       return std::get<0>(*this->buildStructure()).get();
@@ -290,7 +290,7 @@ namespace ZNAMED {
 
     // 
     virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) {
-      this->base = deviceObj->handle;
+      this->base = deviceObj->getHandle();
       //this->deviceObj = deviceObj;
       if (cInfo) { this->cInfo = cInfo; };
       this->infoMap = std::make_shared<MSS>(MSS());

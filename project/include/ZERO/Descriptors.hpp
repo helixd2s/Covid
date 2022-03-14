@@ -76,7 +76,7 @@ namespace ZNAMED {
 
     // 
     DescriptorsObj(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) : cInfo(cInfo) {
-      this->base = deviceObj->handle;
+      this->base = deviceObj->getHandle();
       this->construct(deviceObj, cInfo);
     };
 
@@ -172,7 +172,7 @@ namespace ZNAMED {
 
     // 
     virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) {
-      this->base = deviceObj->handle;
+      this->base = deviceObj->getHandle();
       //this->deviceObj = deviceObj;
       if (cInfo) { this->cInfo = cInfo; };
       this->infoMap = std::make_shared<MSS>(MSS());

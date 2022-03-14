@@ -38,7 +38,7 @@ namespace ZNAMED {
   public:
     // 
     PipelineObj(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) : cInfo(cInfo) {
-      this->base = deviceObj->handle;
+      this->base = deviceObj->getHandle();
       this->construct(deviceObj, cInfo);
     };
 
@@ -207,7 +207,7 @@ namespace ZNAMED {
 
     // 
     virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) {
-      this->base = deviceObj->handle;
+      this->base = deviceObj->getHandle();
       //this->deviceObj = deviceObj;
       if (cInfo) { this->cInfo = cInfo; };
       this->infoMap = std::make_shared<MSS>(MSS());
@@ -322,7 +322,7 @@ namespace ZNAMED {
           //if (instInfo) {
             decltype(auto) multiDrawDirect = supportMultiDraw ?
               fnTp([=](cpp21::shared_vector<vk::MultiDrawInfoEXT> const& multiDraw) {
-                exec->cmdBuf.drawMultiEXT(*multiDraw, 1u, 0u, sizeof(vk::MultiDrawInfoEXT), deviceObj->dispatch);
+                exec->cmdBuf.drawMultiEXT(*multiDraw, 1u, 0u, sizeof(vk::MultiDrawInfoEXT), deviceObj->getDispatch());
               }) :
               fnTp([=](cpp21::shared_vector<vk::MultiDrawInfoEXT> const& multiDraw) {
                 for (decltype(auto) drawInfo : (*multiDraw)) {

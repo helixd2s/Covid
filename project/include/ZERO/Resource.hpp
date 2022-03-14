@@ -59,7 +59,7 @@ namespace ZNAMED {
   public:
     // 
     ResourceObj(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : cInfo(cInfo) {
-      this->base = deviceObj->handle;
+      this->base = deviceObj->getHandle();
       this->construct(deviceObj, cInfo);
     };
 
@@ -195,7 +195,7 @@ namespace ZNAMED {
     // 
     virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
       //try {
-        this->base = deviceObj->handle;
+        this->base = deviceObj->getHandle();
         //this->deviceObj = deviceObj;
         if (cInfo) { this->cInfo = cInfo; };
         this->infoMap = std::make_shared<MSS>(MSS());
@@ -361,7 +361,7 @@ namespace ZNAMED {
 
       //
       device.getImageMemoryRequirements2(infoMap->set(vk::StructureType::eImageMemoryRequirementsInfo2, vk::ImageMemoryRequirementsInfo2{
-        .image = (this->handle = this->cInfo->image ? this->cInfo->image.value() : device.createImage(imageInfo->setQueueFamilyIndices(deviceObj->queueFamilies.indices)))
+        .image = (this->handle = this->cInfo->image ? this->cInfo->image.value() : device.createImage(imageInfo->setQueueFamilyIndices(deviceObj->getQueueFamilies().indices)))
       }).get(), memReqInfo2.get());
 
       //
@@ -426,7 +426,7 @@ namespace ZNAMED {
 
       //
       device.getBufferMemoryRequirements2(infoMap->set(vk::StructureType::eBufferMemoryRequirementsInfo2, vk::BufferMemoryRequirementsInfo2{
-        .buffer = (this->handle = this->cInfo->buffer ? this->cInfo->buffer.value() : device.createBuffer(bufferInfo->setQueueFamilyIndices(deviceObj->queueFamilies.indices)))
+        .buffer = (this->handle = this->cInfo->buffer ? this->cInfo->buffer.value() : device.createBuffer(bufferInfo->setQueueFamilyIndices(deviceObj->getQueueFamilies().indices)))
         }).get(), memReqInfo2.get());
 
       //
@@ -462,7 +462,7 @@ namespace ZNAMED {
         this->deviceAddress = device.getBufferAddress(vk::BufferDeviceAddressInfo{
           .buffer = this->handle.as<vk::Buffer>()
           });
-        deviceObj->addressSpace.insert({ this->deviceAddress, this->deviceAddress + cInfo->size }, this->handle.as<vk::Buffer>());
+        deviceObj->getAddressSpace().insert({this->deviceAddress, this->deviceAddress + cInfo->size}, this->handle.as<vk::Buffer>());
       };
 
       // 

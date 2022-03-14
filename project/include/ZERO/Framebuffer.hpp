@@ -57,7 +57,7 @@ namespace ZNAMED {
   public:
     // 
     FramebufferObj(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{}) : cInfo(cInfo) {
-      this->base = deviceObj->handle;
+      this->base = deviceObj->getHandle();
       this->construct(deviceObj, cInfo);
     };
 

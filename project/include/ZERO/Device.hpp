@@ -33,16 +33,16 @@ namespace ZNAMED {
     std::optional<DeviceCreateInfo> cInfo = DeviceCreateInfo{};
 
     //
-    friend InstanceObj;
-    friend ResourceObj;
-    friend QueueFamilyObj;
-    friend DescriptorsObj;
-    friend PipelineObj;
-    friend UploaderObj;
-    friend FramebufferObj;
-    friend SwapchainObj;
-    friend GeometryLevelObj;
-    friend InstanceLevelObj;
+    //friend InstanceObj;
+    //friend ResourceObj;
+    //friend QueueFamilyObj;
+    //friend DescriptorsObj;
+    //friend PipelineObj;
+    //friend UploaderObj;
+    //friend FramebufferObj;
+    //friend SwapchainObj;
+    //friend GeometryLevelObj;
+    //friend InstanceLevelObj;
 
     // 
     inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
@@ -345,6 +345,9 @@ namespace ZNAMED {
     virtual vk::DispatchLoaderDynamic& getDispatch() { return this->dispatch; };
     virtual vk::DispatchLoaderDynamic const& getDispatch() const { return this->dispatch; };
 
+    //
+    virtual QueueFamilies& getQueueFamilies() { return queueFamilies; };
+    virtual QueueFamilies const& getQueueFamilies() const { return queueFamilies; };
 
   protected:
 

@@ -68,7 +68,7 @@ namespace ZNAMED {
   public:
     // 
     SwapchainObj(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) : cInfo(cInfo) {
-      this->base = deviceObj->handle;
+      this->base = deviceObj->getHandle();
       this->construct(deviceObj, cInfo);
     };
 
@@ -238,7 +238,7 @@ namespace ZNAMED {
         .compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque,
         .presentMode = presentMode,
         .clipped = true
-      })->setQueueFamilyIndices(deviceObj->queueFamilies.indices));
+      })->setQueueFamilyIndices(deviceObj->getQueueFamilies().indices));
 
       //
       images = device.getSwapchainImagesKHR(this->handle.as<vk::SwapchainKHR>());
