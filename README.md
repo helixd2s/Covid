@@ -18,9 +18,9 @@ Some functionality still WIP, but almost ready to ***MVP***...
 - Multi-Draw for instances (TLAS)
 - Pre-defined shader packages
 
-## Previous names
+## Previous names or main names
 
-- ♠`LXVC`♠
+- ♠`LXVC`♠ (**L**ightweight, e**X**tensible, **V**ulkan, **C**omplex or **C**compatible)
 
 ## Current code names and history
 
