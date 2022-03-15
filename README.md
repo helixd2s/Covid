@@ -20,10 +20,10 @@ Some functionality still WIP, but almost ready to ***MVP***...
 
 ## Code names and history
 
-- [x] ♠`LXVC` (**L**ightweight, e**X**tensible, **V**ulkan, **C**omplex or **C**ompatible)
-- [x] 💔`ZERO` (`ZNAMED`)
-- [ ] 🇷🇺 `ALPHA` or 🇺🇦 `AZOV` (`ANAMED`)
-- [ ] 🔥`BLAZE(R?)` (`BNAMED`)
+- [x] ♠`LXVC`♠ (**L**ightweight, e**X**tensible, **V**ulkan, **C**omplex or **C**ompatible)
+- [x] `ZNAMED` (💔`ZERO`)
+- [ ] `ANAMED` (🇷🇺 `ALPHA` or 🇺🇦 `AZOV`)
+- [ ] `BNAMED` (🔥`BLAZE(R?)`)
 - [ ] `CNAMED`
 - [ ] `DNAMED`
 - [ ] etc. by alpha-beta...
