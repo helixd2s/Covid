@@ -22,11 +22,11 @@ Some functionality still WIP, but almost ready to ***MVP***...
 
 - [x] ♠`LXVC`♠ (**L**ightweight, e**X**tensible, **V**ulkan, **C**omplex or **C**ompatible)
 - [x] 💔`ZERO`💔 (`ZNAMED`)
-- [] 🇷🇺`ALPHA`🇷🇺 or 🇺🇦`AZOV`🇺🇦 (`ANAMED`)
-- [] 🔥`BLAZE(R?)`🔥 (`BNAMED`)
-- [] `CNAMED`
-- [] `DNAMED`
-- [] etc. by alpha-beta...
+- [ ] 🇷🇺`ALPHA`🇷🇺 or 🇺🇦`AZOV`🇺🇦 (`ANAMED`)
+- [ ] 🔥`BLAZE(R?)`🔥 (`BNAMED`)
+- [ ] `CNAMED`
+- [ ] `DNAMED`
+- [ ] etc. by alpha-beta...
 
 ## If you have issues...
 
