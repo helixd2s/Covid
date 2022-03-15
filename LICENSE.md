@@ -57,4 +57,4 @@ Copyright (c) 2022 - HeliX-D2S Production
 
 Russians.., please, STOP the WAR!
 
-![](./doc/manual/frontpage3.png)
+![](./doc/manual/frontpage3.jpg)
