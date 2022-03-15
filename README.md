@@ -26,7 +26,7 @@ TODO...
 
 ## Future code names
 
-- AZOV or ALPHA (`ANAMED`)
+- ALPHA or AZOV (`ANAMED`)
 - BLAZE (`BNAMED`)
 - `CNAMED`
 - `DNAMED`
