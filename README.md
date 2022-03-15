@@ -18,6 +18,19 @@ Some functionality still WIP, but almost ready to ***MVP***...
 - Multi-Draw for instances (TLAS)
 - Pre-defined shader packages
 
+## Current code names and history
+
+### ZERO (`ZNAMED`)
+
+TODO...
+
+## Future code names
+
+- AZOV (`ANAMED`)
+- BLAZE (`BNAMED`)
+- `CNAMED`
+- `DNAMED`
+
 ## If you have issues...
 
 ### ASAN AddressSanitizer issues...
