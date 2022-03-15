@@ -27,7 +27,7 @@ TODO...
 ## Future code names
 
 - ALPHA or AZOV (`ANAMED`)
-- BLAZE (`BNAMED`)
+- BLAZE(R?) (`BNAMED`)
 - `CNAMED`
 - `DNAMED`
 
