@@ -1209,6 +1209,56 @@ namespace ZNAMED {
       return this->registerObj(obj->handle, obj);
     };
 
+
+
+
+    //
+    template<class T = BaseObj>
+    inline std::shared_ptr<T> registerExt(cpp21::const_wrap_arg<ExtensionName> extName, cpp21::const_wrap_arg<Handle> handle, std::shared_ptr<T> obj = {}) {
+      decltype(auto) newHandle = Handle(handle->value, HandleType::eExtension, handle->family);
+      this->registerObj(newHandle);
+      this->extensions[extName] = newHandle.value;
+    };
+
+    //
+    template<class T = BaseObj>
+    inline std::shared_ptr<T> registerExt(cpp21::const_wrap_arg<ExtensionName> extName, auto const& handle, std::shared_ptr<T> obj = {}) {
+      return this->registerExt(cpp21::const_wrap_arg<Handle>(Handle(handle)), obj);
+    };
+
+    //
+    template<class T = BaseObj>
+    inline std::shared_ptr<T> registerExt(cpp21::const_wrap_arg<ExtensionName> extName, std::shared_ptr<T> obj = {}) {
+      return this->registerExt(obj->handle, obj);
+    };
+
+    //
+    template<class T = BaseObj>
+    inline decltype(auto) getExt(cpp21::const_wrap_arg<ExtensionName> extName) {
+      if (handleObjectMap.find(HandleType::eExtension) == handleObjectMap.end()) {
+        handleObjectMap[HandleType::eExtension] = {};
+      };
+
+      decltype(auto) hValue = this->extensions[extName];
+      decltype(auto) objMap = handleObjectMap.at(HandleType::eExtension);
+      if (objMap->find(hValue) == objMap->end()) {
+        return WrapShared<T>();
+      };
+      return WrapShared<T>(std::dynamic_pointer_cast<T>(objMap.at(hValue).shared()));
+    };
+
+    //
+    template<class T = BaseObj>
+    inline decltype(auto) getExt(cpp21::const_wrap_arg<ExtensionName> extName) const {
+      decltype(auto) hValue = this->extensions[extName];
+      decltype(auto) objMap = handleObjectMap.at(HandleType::eExtension);
+      if (objMap->find(hValue) == objMap->end()) {
+        return WrapShared<T>();
+      };
+      return WrapShared<T>(std::dynamic_pointer_cast<T>(objMap.at(hValue).shared()));
+    };
+
+
     //
     template<class T = BaseObj>
     inline decltype(auto) get(cpp21::const_wrap_arg<Handle> handle) {
