@@ -20,7 +20,7 @@ Some functionality still WIP, but almost ready to ***MVP***...
 
 ## Previous names or main names
 
-- ♠`LXVC`♠ (**L**ightweight, e**X**tensible, **V**ulkan, **C**omplex or **C**compatible)
+- ♠`LXVC`♠ (**L**ightweight, e**X**tensible, **V**ulkan, **C**omplex or **C**ompatible)
 
 ## Current code names and history
 
