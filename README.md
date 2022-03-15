@@ -1,4 +1,4 @@
-# ZERO render engine
+# 💔 ZERO 💔
 
 Some functionality still WIP, but almost ready to ***MVP***...
 
@@ -18,18 +18,23 @@ Some functionality still WIP, but almost ready to ***MVP***...
 - Multi-Draw for instances (TLAS)
 - Pre-defined shader packages
 
+## Previous names
+
+- ♠ LXVC ♠
+
 ## Current code names and history
 
-### ZERO (`ZNAMED`)
+### 💔 ZERO 💔 (`ZNAMED`)
 
 TODO...
 
 ## Future code names
 
-- ALPHA or AZOV (`ANAMED`)
-- BLAZE(R?) (`BNAMED`)
+- 🇷🇺 ALPHA 🇷🇺 or 🇺🇦 AZOV 🇺🇦 (`ANAMED`)
+- 🔥 BLAZE(R?) 🔥 (`BNAMED`)
 - `CNAMED`
 - `DNAMED`
+- etc. by alpha-beta...
 
 ## If you have issues...
 
