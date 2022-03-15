@@ -23,7 +23,7 @@ Some functionality still WIP, but almost ready to ***MVP***...
 - [x] ♠`LXVC`♠ (**L**ightweight, e**X**tensible, **V**ulkan, **C**omplex or **C**ompatible)
 - [x] `ZNAMED` (💔`ZERO`💔)
 - [ ] `ANAMED` (🇷🇺 `ALPHA` 🇷🇺 or 🇺🇦 `AZOV` 🇺🇦)
-- [ ] `BNAMED` (🔥`BLAZE(R?)`)
+- [ ] `BNAMED` (🔥`BLAZE(R?)`🔥)
 - [ ] `CNAMED`
 - [ ] `DNAMED`
 - [ ] etc. by alpha-beta...
