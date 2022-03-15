@@ -18,23 +18,15 @@ Some functionality still WIP, but almost ready to ***MVP***...
 - Multi-Draw for instances (TLAS)
 - Pre-defined shader packages
 
-## Previous names or main names
+## Code names and history
 
-- ♠`LXVC`♠ (**L**ightweight, e**X**tensible, **V**ulkan, **C**omplex or **C**ompatible)
-
-## Current code names and history
-
-### 💔`ZERO`💔 (`ZNAMED`)
-
-TODO...
-
-## Future code names
-
-- 🇷🇺`ALPHA`🇷🇺 or 🇺🇦`AZOV`🇺🇦 (`ANAMED`)
-- 🔥`BLAZE(R?)`🔥 (`BNAMED`)
-- `CNAMED`
-- `DNAMED`
-- etc. by alpha-beta...
+- [x] ♠`LXVC`♠ (**L**ightweight, e**X**tensible, **V**ulkan, **C**omplex or **C**ompatible)
+- [x] 💔`ZERO`💔 (`ZNAMED`)
+- [] 🇷🇺`ALPHA`🇷🇺 or 🇺🇦`AZOV`🇺🇦 (`ANAMED`)
+- [] 🔥`BLAZE(R?)`🔥 (`BNAMED`)
+- [] `CNAMED`
+- [] `DNAMED`
+- [] etc. by alpha-beta...
 
 ## If you have issues...
 
