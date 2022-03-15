@@ -1,4 +1,4 @@
-# 💔 ZERO 💔
+# 💔`ZERO`💔
 
 Some functionality still WIP, but almost ready to ***MVP***...
 
@@ -20,18 +20,18 @@ Some functionality still WIP, but almost ready to ***MVP***...
 
 ## Previous names
 
-- ♠ LXVC ♠
+- ♠`LXVC`♠
 
 ## Current code names and history
 
-### 💔 ZERO 💔 (`ZNAMED`)
+### 💔`ZERO`💔 (`ZNAMED`)
 
 TODO...
 
 ## Future code names
 
-- 🇷🇺 ALPHA 🇷🇺 or 🇺🇦 AZOV 🇺🇦 (`ANAMED`)
-- 🔥 BLAZE(R?) 🔥 (`BNAMED`)
+- 🇷🇺`ALPHA`🇷🇺 or 🇺🇦`AZOV`🇺🇦 (`ANAMED`)
+- 🔥`BLAZE(R?)`🔥 (`BNAMED`)
 - `CNAMED`
 - `DNAMED`
 - etc. by alpha-beta...
