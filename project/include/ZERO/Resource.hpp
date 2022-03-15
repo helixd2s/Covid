@@ -3,6 +3,7 @@
 // 
 #include "./Core.hpp"
 #include "./Device.hpp"
+#include "./MemoryAllocator.hpp"
 #include "./Descriptors.hpp"
 
 // 
@@ -142,54 +143,10 @@ namespace ZNAMED {
   protected:
 
     //
-    virtual AllocatedMemory& allocateMemory(cpp21::const_wrap_arg<MemoryRequirements> requirements) {
+    virtual std::optional<AllocatedMemory>& allocateMemory(cpp21::const_wrap_arg<MemoryRequirements> requirements) {
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
-      auto& device = this->base.as<vk::Device>();
-      auto& physicalDevice = deviceObj->getPhysicalDevice();
-      auto PDInfoMap = deviceObj->getPhysicalDeviceInfoMap();
-      auto memTypeHeap = deviceObj->findMemoryTypeAndHeapIndex(*requirements);
-
-      // 
-      bool imageCondition = !!this->cInfo->imageInfo && this->cInfo->imageInfo->type != ImageType::eSwapchain;
-      bool bufferCondition = !!this->cInfo->bufferInfo;
-
-      //
-      decltype(auto) exportMemory = infoMap->set(vk::StructureType::eExportMemoryAllocateInfo, vk::ExportMemoryAllocateInfo{
-         .handleTypes = memoryUsage == MemoryUsage::eGpuOnly ? extMemFlags : vk::ExternalMemoryHandleTypeFlags{}
-      });
-
-      // 
-      auto& allocated = (this->allocated = AllocatedMemory{}).value();
-      allocated = AllocatedMemory{
-        .memory = device.allocateMemory(infoMap->set(vk::StructureType::eMemoryAllocateInfo, vk::MemoryAllocateInfo{
-          .pNext = infoMap->set(vk::StructureType::eMemoryAllocateFlagsInfo, vk::MemoryAllocateFlagsInfo{
-            .pNext = infoMap->set(vk::StructureType::eMemoryDedicatedAllocateInfo, vk::MemoryDedicatedAllocateInfo{
-              .pNext = memoryUsage == MemoryUsage::eGpuOnly ? exportMemory.get() : nullptr,
-              .image = requirements->dedicated && imageCondition ? requirements->dedicated->image : vk::Image{},
-              .buffer = requirements->dedicated && bufferCondition ? requirements->dedicated->buffer : vk::Buffer{}
-            }).get(),
-            .flags = this->hasDeviceAddress ? vk::MemoryAllocateFlagBits::eDeviceAddress : vk::MemoryAllocateFlagBits{},
-          }).get(),
-          .allocationSize = requirements->size,
-          .memoryTypeIndex = std::get<0>(memTypeHeap)
-        }).ref()),
-        .offset = 0ull,
-        .size = requirements->size
-      };
-
-      //
-      if (memoryUsage == MemoryUsage::eGpuOnly) {
-#ifdef _WIN32
-        extHandle = device.getMemoryWin32HandleKHR(vk::MemoryGetWin32HandleInfoKHR{ .memory = allocated.memory, .handleType = extMemFlagBits }, deviceObj->getDispatch());
-#else
-#ifdef __linux__ 
-        extHandle = device.getMemoryFdKHR(vk::MemoryGetFdInfoKHR{ .memory = allocated.memory, .handleType = extMemFlagBits }, deviceObj->getDispatch());
-#endif
-#endif
-      };
-
-      // 
-      return allocated;
+      decltype(auto) memoryAllocatorObj = deviceObj->getExt<MemoryAllocatorObj>(this->cInfo->extUsed && this->cInfo->extUsed->find(ExtensionInfoName::eMemoryAllocator) != this->cInfo->extUsed->end() ? this->cInfo->extUsed->at(ExtensionInfoName::eMemoryAllocator) : ExtensionName::eMemoryAllocator);
+      return memoryAllocatorObj->allocateMemory(requirements, this->allocated, this->extHandle);
     };
 
     // 
@@ -372,7 +329,7 @@ namespace ZNAMED {
       this->allocated = this->allocateMemory(this->mReqs = MemoryRequirements{
         .memoryUsage = memoryUsage,
         .memoryTypeBits = memReqInfo.memoryTypeBits,
-        .dedicated = DedicatedMemory{.image = this->handle.as<vk::Image>() },
+        .dedicated = DedicatedMemory{.image = cInfo->type != ImageType::eSwapchain ? this->handle.as<vk::Image>() : vk::Image{} },
         .size = memReqInfo.size
       });
 
@@ -442,6 +399,7 @@ namespace ZNAMED {
       this->allocated = this->allocateMemory(this->mReqs = MemoryRequirements{
         .memoryUsage = memoryUsage,
         .memoryTypeBits = memReqInfo.memoryTypeBits,
+        .hasDeviceAddress = this->hasDeviceAddress,
         .dedicated = DedicatedMemory{.buffer = this->handle.as<vk::Buffer>() },
         .size = memReqInfo.size
         });

@@ -31,28 +31,10 @@ namespace ZNAMED {
     //vk::Device device = {};
     vk::DispatchLoaderDynamic dispatch = {};
     std::optional<DeviceCreateInfo> cInfo = DeviceCreateInfo{};
-
-    //
-    //friend InstanceObj;
-    //friend ResourceObj;
-    //friend QueueFamilyObj;
-    //friend DescriptorsObj;
-    //friend PipelineObj;
-    //friend UploaderObj;
-    //friend FramebufferObj;
-    //friend SwapchainObj;
-    //friend GeometryLevelObj;
-    //friend InstanceLevelObj;
-
+    
     // 
     inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
     inline decltype(auto) SFT() const { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::const_pointer_cast<T>(std::dynamic_pointer_cast<T const>(shared_from_this()))); };
-
-    //
-    
-
-    //
-    //std::shared_ptr<InstanceObj> instanceObj = {};
 
     //
     std::vector<vk::PhysicalDevice> physicalDevices = {};
@@ -349,6 +331,9 @@ namespace ZNAMED {
     virtual QueueFamilies& getQueueFamilies() { return queueFamilies; };
     virtual QueueFamilies const& getQueueFamilies() const { return queueFamilies; };
 
+    //
+    virtual std::shared_ptr<MemoryAllocatorObj> createDefaultMemoryAllocator();
+
   protected:
 
     // 
@@ -435,8 +420,12 @@ namespace ZNAMED {
           this->dispatch = vk::DispatchLoaderDynamic(this->base.as<vk::Instance>(), vkGetInstanceProcAddr, this->handle.as<vk::Device>(), vkGetDeviceProcAddr);
           this->createCommandPools(this->cInfo->queueFamilyInfos.ref());
         };
+
+        // 
+        
       };
 
+      
       // 
       //return SFT();
     };
@@ -497,11 +486,12 @@ namespace ZNAMED {
     virtual std::type_info const& type_info() const override {
       return typeid(std::decay_t<decltype(this)>);
     };
-    
+
     //
     inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
       auto shared = std::make_shared<DeviceObj>(handle, cInfo);
       auto wrap = shared->registerSelf();
+      wrap->createDefaultMemoryAllocator();
       return wrap;
     };
 

@@ -117,7 +117,9 @@ namespace ZNAMED {
     eSwapchain = 14u,
     eFramebuffer = 15u,
     eSemaphore = 16u,
-    eAccelerationStructure = 17u
+    eAccelerationStructure = 17u,
+
+    eDeviceMemory = 18u,
   };
 
   //
@@ -145,15 +147,17 @@ namespace ZNAMED {
   //
   enum class ExtensionName : uint32_t {
     eUnknown = 0u,
-    eVmaMemoryAllocator = 1u,
-    eVmaMemoryAllocation = 2u
+    eMemoryAllocator = 1u,
+    eMemoryAllocation = 2u,
+    eVmaMemoryAllocator = 3u,
+    eVmaMemoryAllocation = 4u
   };
 
   //
   enum class ExtensionInfoName : uint32_t {
     eUnknown = 0u,
-    eVmaMemoryAllocator = 1u,
-    eVmaMemoryAllocation = 2u
+    eMemoryAllocator = 1u,
+    eMemoryAllocation = 2u
   };
 
   //
@@ -233,6 +237,7 @@ namespace ZNAMED {
   class FramebufferObj;
   class SwapchainObj;
   class SemaphoreObj;
+  class MemoryAllocatorObj;
 
   //
   using MSS = cpp21::map_of_shared<vk::StructureType, vk::BaseInStructure, std::shared_ptr, robin_hood::unordered_map>;
@@ -242,7 +247,8 @@ namespace ZNAMED {
 
   //
   struct BaseCreateInfo {
-    std::shared_ptr<EXIF> extensions = {};
+    std::shared_ptr<robin_hood::unordered_map<ExtensionInfoName, ExtensionName>> extUsed = {};
+    std::shared_ptr<EXIF> extInfoMap = {};
   };
 
   //
@@ -261,6 +267,7 @@ namespace ZNAMED {
     //uint32_t physicalDeviceIndex = 0u;
     MemoryUsage memoryUsage = MemoryUsage::eGpuOnly;
     uint32_t memoryTypeBits = 0u;
+    bool hasDeviceAddress = false;
     std::optional<DedicatedMemory> dedicated = {};
     size_t size = 0ull;
     size_t alignment = 0ull;
@@ -289,12 +296,17 @@ namespace ZNAMED {
     };
   };
 
-  
+
   //
   struct QueueFamilyCreateInfo : BaseCreateInfo {
     uint32_t queueFamilyIndex = 0u;
     cpp21::shared_vector<float> queuePriorities = std::vector<float>{ 1.f };
     //std::shared_ptr<MSS> infoMap = {};//std::make_shared<MSS>();
+  };
+
+  //
+  struct MemoryAllocatorCreateInfo : BaseCreateInfo {
+
   };
 
   // 
@@ -922,6 +934,7 @@ namespace ZNAMED {
     ZNAMED::handleTypeMap[std::type_index(typeid(vk::AccelerationStructureKHR))] = HandleType::eAccelerationStructure;
     ZNAMED::handleTypeMap[std::type_index(typeid(vk::Framebuffer))] = HandleType::eFramebuffer;
     ZNAMED::handleTypeMap[std::type_index(typeid(vk::Semaphore))] = HandleType::eSemaphore;
+    ZNAMED::handleTypeMap[std::type_index(typeid(vk::DeviceMemory))] = HandleType::eDeviceMemory;
 
     //
     return handleTypeMap;
@@ -1101,7 +1114,7 @@ namespace ZNAMED {
 
     // 
     std::shared_ptr<MSS> infoMap = {};
-    std::shared_ptr<EXM> extensions = {};
+    //std::shared_ptr<EXM> extensions = {};
 
     //
     friend ContextObj;
@@ -1160,8 +1173,8 @@ namespace ZNAMED {
     };
 
     // 
-    BaseObj() : infoMap(std::make_shared<MSS>(MSS())), extensions(std::make_shared<EXM>(EXM())), callstack(std::make_shared<CallStack>()) {};
-    BaseObj(cpp21::const_wrap_arg<Handle> base, cpp21::const_wrap_arg<Handle> handle = {}) : base(base), handle(handle), infoMap(std::make_shared<MSS>()), extensions(std::make_shared<EXM>(EXM())), callstack(std::make_shared<CallStack>()) {
+    BaseObj() : infoMap(std::make_shared<MSS>(MSS())), callstack(std::make_shared<CallStack>()) {};
+    BaseObj(cpp21::const_wrap_arg<Handle> base, cpp21::const_wrap_arg<Handle> handle = {}) : base(base), handle(handle), infoMap(std::make_shared<MSS>()), callstack(std::make_shared<CallStack>()) {
 
     };
 
@@ -1190,22 +1203,22 @@ namespace ZNAMED {
 
     //
     template<class T = BaseObj>
-    inline std::shared_ptr<T> registerObj(cpp21::const_wrap_arg<Handle> handle, std::shared_ptr<T> obj = {}) {
+    inline void registerObj(cpp21::const_wrap_arg<Handle> handle, std::shared_ptr<T> obj = {}) {
       if (handleObjectMap.find(handle->type) == handleObjectMap.end()) { handleObjectMap[handle->type] = {}; };
       decltype(auto) map = handleObjectMap.at(handle->type);
       map.set(handle->value, (obj ? obj : std::make_shared<T>(this->handle, handle)));
-      return shared_from_this();
+      //return shared_from_this();
     };
 
     //
     template<class T = BaseObj>
-    inline std::shared_ptr<T> registerObj(auto const& handle, std::shared_ptr<T> obj = {}) {
+    inline void registerObj(auto const& handle, std::shared_ptr<T> obj = {}) {
       return this->registerObj(cpp21::const_wrap_arg<Handle>(Handle(handle)), obj);
     };
 
     //
     template<class T = BaseObj>
-    inline std::shared_ptr<T> registerObj(std::shared_ptr<T> obj = {}) {
+    inline void registerObj(std::shared_ptr<T> obj = {}) {
       return this->registerObj(obj->handle, obj);
     };
 
@@ -1214,50 +1227,17 @@ namespace ZNAMED {
 
     //
     template<class T = BaseObj>
-    inline std::shared_ptr<T> registerExt(cpp21::const_wrap_arg<ExtensionName> extName, cpp21::const_wrap_arg<Handle> handle, std::shared_ptr<T> obj = {}) {
-      decltype(auto) newHandle = Handle(handle->value, HandleType::eExtension, handle->family);
-      this->registerObj(newHandle);
-      this->extensions[extName] = newHandle.value;
+    inline void registerExt(cpp21::const_wrap_arg<ExtensionName> extName, std::shared_ptr<T> obj = {}) {
+      this->registerObj(Handle(uintptr_t(*extName), HandleType::eExtension), obj);
+      //return shared_from_this();
     };
 
     //
     template<class T = BaseObj>
-    inline std::shared_ptr<T> registerExt(cpp21::const_wrap_arg<ExtensionName> extName, auto const& handle, std::shared_ptr<T> obj = {}) {
-      return this->registerExt(cpp21::const_wrap_arg<Handle>(Handle(handle)), obj);
+    inline void registerExt(ExtensionName const& extName, std::shared_ptr<T> obj = {}) {
+      this->registerObj(Handle(uintptr_t(extName), HandleType::eExtension), obj);
+      //return shared_from_this();
     };
-
-    //
-    template<class T = BaseObj>
-    inline std::shared_ptr<T> registerExt(cpp21::const_wrap_arg<ExtensionName> extName, std::shared_ptr<T> obj = {}) {
-      return this->registerExt(obj->handle, obj);
-    };
-
-    //
-    template<class T = BaseObj>
-    inline decltype(auto) getExt(cpp21::const_wrap_arg<ExtensionName> extName) {
-      if (handleObjectMap.find(HandleType::eExtension) == handleObjectMap.end()) {
-        handleObjectMap[HandleType::eExtension] = {};
-      };
-
-      decltype(auto) hValue = this->extensions[extName];
-      decltype(auto) objMap = handleObjectMap.at(HandleType::eExtension);
-      if (objMap->find(hValue) == objMap->end()) {
-        return WrapShared<T>();
-      };
-      return WrapShared<T>(std::dynamic_pointer_cast<T>(objMap.at(hValue).shared()));
-    };
-
-    //
-    template<class T = BaseObj>
-    inline decltype(auto) getExt(cpp21::const_wrap_arg<ExtensionName> extName) const {
-      decltype(auto) hValue = this->extensions[extName];
-      decltype(auto) objMap = handleObjectMap.at(HandleType::eExtension);
-      if (objMap->find(hValue) == objMap->end()) {
-        return WrapShared<T>();
-      };
-      return WrapShared<T>(std::dynamic_pointer_cast<T>(objMap.at(hValue).shared()));
-    };
-
 
     //
     template<class T = BaseObj>
@@ -1281,6 +1261,18 @@ namespace ZNAMED {
     inline decltype(auto) get(cpp21::const_wrap_arg<Handle> handle) const {
       decltype(auto) objMap = handleObjectMap.at(handle->type);
       return WrapShared<T>(std::dynamic_pointer_cast<T>(objMap.at(handle->value).shared()));
+    };
+
+    //
+    template<class T = BaseObj>
+    inline decltype(auto) getExt(cpp21::const_wrap_arg<ExtensionName> hValue) {
+      return this->get<T>(Handle(uintptr_t(*hValue), HandleType::eExtension));
+    };
+
+    //
+    template<class T = BaseObj>
+    inline decltype(auto) getExt(cpp21::const_wrap_arg<ExtensionName> hValue) const {
+      return this->get<T>(Handle(uintptr_t(*hValue), HandleType::eExtension));
     };
 
     //
