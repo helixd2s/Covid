@@ -356,8 +356,7 @@ namespace ZNAMED {
 
       //
       if (exec->host) {
-        submission.onDone.push_back([=](cpp21::const_wrap_arg<vk::Result> result) {
-          auto _host = exec->host;
+        submission.onDone.push_back([=, _host = exec->host](cpp21::const_wrap_arg<vk::Result> result) {
           memcpy(_host->data(), cpp21::shift(ZNAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(downloadBuffer)->mappedMemory, exec->writeInfo.hostMapOffset), size);
         });
       };
