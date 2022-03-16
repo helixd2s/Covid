@@ -774,16 +774,14 @@ namespace ZNAMED {
 
   //
   struct UploadExecutionOnce : BaseCreateInfo {
-    cpp21::data_view<char8_t> host = {};
-    //uintptr_t hostMapOffset = 0ull;
+    std::optional<cpp21::data_view<char8_t>> host = {};
     UploadCommandWriteInfo writeInfo = {};
     SubmissionInfo submission = {};
   };
 
   //
   struct DownloadExecutionOnce : BaseCreateInfo {
-    cpp21::data_view<char8_t> host = {};
-    //uintptr_t hostMapOffset = 0ull;
+    std::optional<cpp21::data_view<char8_t>> host = {};
     DownloadCommandWriteInfo writeInfo = {};
     SubmissionInfo submission = {};
   };

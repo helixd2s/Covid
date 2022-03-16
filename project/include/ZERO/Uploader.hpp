@@ -70,6 +70,10 @@ namespace ZNAMED {
       return wrap;
     };
 
+    //
+    virtual void* getUploadMapped() { return ZNAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(uploadBuffer)->mappedMemory; };
+    virtual void* getDownloadMapped() { return ZNAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(downloadBuffer)->mappedMemory; };
+
     // you can copy from host to device Buffer and Image together!
     // TODO: per-type role based barriers...
     virtual tType writeUploadToResourceCmd(cpp21::const_wrap_arg<UploadCommandWriteInfo> copyRegionInfo) {
@@ -218,6 +222,7 @@ namespace ZNAMED {
         });
       };
 
+      // 
       copyRegionInfo->cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersBegin).setImageMemoryBarriers(imageBarriersBegin));
       if (copyRegionInfo->dstImage) copyRegionInfo->cmdBuf.copyBufferToImage2(BtI.setRegions(BtIRegions));
       if (copyRegionInfo->dstBuffer) copyRegionInfo->cmdBuf.copyBuffer2(BtB.setRegions(BtBRegions));
@@ -250,7 +255,7 @@ namespace ZNAMED {
           .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
           .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
           .buffer = downloadBuffer,
-          .offset = 0ull,
+          .offset = info->hostMapOffset,
           .size = size
         },
       };
@@ -265,14 +270,14 @@ namespace ZNAMED {
           .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
           .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
           .buffer = downloadBuffer,
-          .offset = 0ull,
+          .offset = info->hostMapOffset,
           .size = size
         }
       };
 
       if (info->srcBuffer) {
         copyInfo = vk::CopyBufferInfo2{ .srcBuffer = info->srcBuffer->buffer, .dstBuffer = downloadBuffer };
-        regions.push_back(vk::BufferCopy2{ .srcOffset = info->srcBuffer->region.offset, .dstOffset = 0ull, .size = size });
+        regions.push_back(vk::BufferCopy2{ .srcOffset = info->srcBuffer->region.offset, .dstOffset = info->hostMapOffset, .size = size });
 
         bufferBarriersBegin.push_back(vk::BufferMemoryBarrier2{
           .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
@@ -316,12 +321,13 @@ namespace ZNAMED {
       decltype(auto) downloadBuffer = this->downloadBuffer;
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
-      decltype(auto) size = exec->host.size();
-      decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
+      decltype(auto) size = exec->host ? (exec->writeInfo.dstBuffer ? std::min(exec->host->size(), exec->writeInfo.dstBuffer->region.size) : exec->host->size()) : (exec->writeInfo.dstBuffer ? exec->writeInfo.dstBuffer->region.size : VK_WHOLE_SIZE);
       decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
 
       // 
-      memcpy(cpp21::shift(ZNAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(uploadBuffer)->mappedMemory, exec->writeInfo.hostMapOffset), exec->host.data(), size);
+      if (exec->host) {
+        memcpy(cpp21::shift(ZNAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(uploadBuffer)->mappedMemory, exec->writeInfo.hostMapOffset), exec->host->data(), size);
+      };
 
       // 
       submission.commandInits.push_back([=,this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
@@ -339,9 +345,7 @@ namespace ZNAMED {
       decltype(auto) uploadBuffer = this->uploadBuffer;
       decltype(auto) downloadBuffer = this->downloadBuffer;
       decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) size = std::min(exec->host.size(), exec->writeInfo.srcBuffer->region.size);
-      decltype(auto) regions = std::vector<vk::BufferCopy2>{  };
-      decltype(auto) copyInfo = vk::CopyBufferInfo2{};
+      decltype(auto) size = exec->host ? (exec->writeInfo.srcBuffer ? std::min(exec->host->size(), exec->writeInfo.srcBuffer->region.size) : exec->host->size()) : (exec->writeInfo.srcBuffer ? exec->writeInfo.srcBuffer->region.size : VK_WHOLE_SIZE);
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
 
       // 
@@ -351,10 +355,12 @@ namespace ZNAMED {
       });
 
       //
-      submission.onDone.push_back([=](cpp21::const_wrap_arg<vk::Result> result) {
-        auto _host = exec->host;
-        memcpy(_host.data(), ZNAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(downloadBuffer)->mappedMemory, size);
-      });
+      if (exec->host) {
+        submission.onDone.push_back([=](cpp21::const_wrap_arg<vk::Result> result) {
+          auto _host = exec->host;
+          memcpy(_host->data(), cpp21::shift(ZNAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(downloadBuffer)->mappedMemory, exec->writeInfo.hostMapOffset), size);
+        });
+      };
 
       //
       return ZNAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
