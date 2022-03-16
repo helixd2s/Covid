@@ -519,6 +519,12 @@ namespace ZNAMED {
     std::optional<vk::Image> image = {};
     std::optional<BufferCreateInfo> bufferInfo = {};
     std::optional<ImageCreateInfo> imageInfo = {};
+
+    // 
+    ResourceCreateInfo use(cpp21::const_wrap_arg<ExtensionName> extName = ExtensionName::eMemoryAllocator) {
+
+      decltype(auto) copy = *this; if (copy.extUsed) { (*copy.extUsed)[ExtensionInfoName::eMemoryAllocator] = extName; }; return copy;
+    };
   };
 
   //
