@@ -19,6 +19,9 @@
 [submodule "prebuild/include/interval-tree"]
 	path = prebuild/include/interval-tree
 	url = https://github.com/5cript/interval-tree.git
-[submodule "prebuild/include/robin-hood-hashing"]
-	path = prebuild/include/robin-hood-hashing
+[submodule "submodules/robin-hood-hashing"]
+	path = submodules/robin-hood-hashing
 	url = https://github.com/martinus/robin-hood-hashing.git
+[submodule "submodules/VulkanMemoryAllocator"]
+	path = submodules/VulkanMemoryAllocator
+	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git

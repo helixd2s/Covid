@@ -49,6 +49,22 @@ build/*
 */build/
 */build/*
 
+submodules
+submodules/
+submodules/*
+
+/submodules
+/submodules/
+/submodules/*
+
+./submodules
+./submodules/
+./submodules/*
+
+*/submodules
+*/submodules/
+*/submodules/*
+
 out
 out/
 out/*

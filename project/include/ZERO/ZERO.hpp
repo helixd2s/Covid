@@ -18,6 +18,12 @@
 #include "./InstanceLevel.hpp"
 
 // 
+#ifdef Z_ENABLE_VMA
+#include "./MemoryAllocatorVma.hpp"
+#include "./ResourceVma.hpp"
+#endif
+
+// 
 namespace ZNAMED {
   
 };

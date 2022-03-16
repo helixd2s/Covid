@@ -74,7 +74,7 @@ namespace ZNAMED {
   public:
 
     //
-    virtual std::optional<AllocatedMemory>& allocateMemory(cpp21::const_wrap_arg<MemoryRequirements> requirements, std::optional<AllocatedMemory>& allocated, ExtHandle& extHandle) {
+    virtual std::optional<AllocatedMemory>& allocateMemory(cpp21::const_wrap_arg<MemoryRequirements> requirements, std::optional<AllocatedMemory>& allocated, ExtHandle& extHandle, std::shared_ptr<EXIF> extInfoMap, void*& mapped) {
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       auto& device = this->base.as<vk::Device>();
       auto& physicalDevice = deviceObj->getPhysicalDevice();
@@ -98,11 +98,11 @@ namespace ZNAMED {
             }).get(),
             .flags = requirements->hasDeviceAddress ? vk::MemoryAllocateFlagBits::eDeviceAddress : vk::MemoryAllocateFlagBits{},
           }).get(),
-          .allocationSize = requirements->size,
+          .allocationSize = requirements->requirements.size,
           .memoryTypeIndex = std::get<0>(memTypeHeap)
         }).ref()),
         .offset = 0ull,
-        .size = requirements->size
+        .size = requirements->requirements.size
       };
 
       //
@@ -114,6 +114,11 @@ namespace ZNAMED {
         extHandle = device.getMemoryFdKHR(vk::MemoryGetFdInfoKHR{ .memory = allocated->memory, .handleType = extMemFlagBits }, deviceObj->getDispatch());
 #endif
 #endif
+      };
+
+      //
+      if (requirements->memoryUsage != MemoryUsage::eGpuOnly) {
+        mapped = device.mapMemory(allocated->memory, allocated->offset, requirements->requirements.size);
       };
 
       // 

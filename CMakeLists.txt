@@ -67,19 +67,19 @@ ENDIF()
 
 # 
 add_executable(${PROJECT_NAME} ${_source_list})
-target_compile_definitions(${PROJECT_NAME} PUBLIC VULKAN_HPP_NO_CONSTRUCTORS NOMINMAX ZNAMED=zero ${PLATFORM_DEF})
+target_compile_definitions(${PROJECT_NAME} PUBLIC VULKAN_HPP_NO_CONSTRUCTORS NOMINMAX Z_ENABLE_VMA ZNAMED=zero ${PLATFORM_DEF})
 target_include_directories(${PROJECT_NAME} PUBLIC 
   ${PROJECT_SOURCE_DIR}/project/include 
   ${PROJECT_SOURCE_DIR}/prebuild/include
   ${PROJECT_SOURCE_DIR}/prebuild/include/*/include
-  ${PROJECT_SOURCE_DIR}/prebuild/include/*/src/include
-  ${PROJECT_SOURCE_DIR}/prebuild/include/robin-hood-hashing/src/include
   ${PROJECT_SOURCE_DIR}/external/include 
   ${PROJECT_SOURCE_DIR}/external/include/*/include
   ${PROJECT_SOURCE_DIR}/external/include/*/src/include
   ${PROJECT_SOURCE_DIR}/submodules/include 
   ${PROJECT_SOURCE_DIR}/submodules/*/include 
-  ${PROJECT_SOURCE_DIR}/submodules/*/src/include 
+  ${PROJECT_SOURCE_DIR}/submodules/*/src/include
+  ${PROJECT_SOURCE_DIR}/submodules/robin-hood-hashing/src/include
+  ${PROJECT_SOURCE_DIR}/submodules/VulkanMemoryAllocator/include
   ${PROJECT_SOURCE_DIR}/submodules/glm
   ${PROJECT_SOURCE_DIR}/../external/include 
   ${Vulkan_INCLUDE_DIRS}

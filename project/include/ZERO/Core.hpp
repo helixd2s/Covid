@@ -149,15 +149,17 @@ namespace ZNAMED {
     eUnknown = 0u,
     eMemoryAllocator = 1u,
     eMemoryAllocation = 2u,
-    eVmaMemoryAllocator = 3u,
-    eVmaMemoryAllocation = 4u
+    eMemoryAllocatorVma = 3u,
+    eMemoryAllocationVma = 4u
   };
 
   //
   enum class ExtensionInfoName : uint32_t {
     eUnknown = 0u,
     eMemoryAllocator = 1u,
-    eMemoryAllocation = 2u
+    eMemoryAllocation = 2u,
+    eMemoryAllocatorVma = 3u,
+    eMemoryAllocationVma = 4u
   };
 
   //
@@ -266,11 +268,10 @@ namespace ZNAMED {
   struct MemoryRequirements : BaseCreateInfo {
     //uint32_t physicalDeviceIndex = 0u;
     MemoryUsage memoryUsage = MemoryUsage::eGpuOnly;
-    uint32_t memoryTypeBits = 0u;
+    vk::MemoryRequirements requirements = {};
+
     bool hasDeviceAddress = false;
     std::optional<DedicatedMemory> dedicated = {};
-    size_t size = 0ull;
-    size_t alignment = 0ull;
   };
 
   // 
@@ -506,6 +507,8 @@ namespace ZNAMED {
     size_t size = 0ull;
     BufferType type = BufferType::eStorage;
   };
+
+  
 
   //
   struct ResourceCreateInfo : BaseCreateInfo {

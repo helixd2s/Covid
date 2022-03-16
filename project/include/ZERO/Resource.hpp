@@ -24,6 +24,7 @@ namespace ZNAMED {
     friend SwapchainObj;
     friend GeometryLevelObj;
     friend InstanceLevelObj;
+    friend MemoryAllocatorObj;
 
     // 
     //vk::Buffer buffer = {};
@@ -146,7 +147,7 @@ namespace ZNAMED {
     virtual std::optional<AllocatedMemory>& allocateMemory(cpp21::const_wrap_arg<MemoryRequirements> requirements) {
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) memoryAllocatorObj = deviceObj->getExt<MemoryAllocatorObj>(this->cInfo->extUsed && this->cInfo->extUsed->find(ExtensionInfoName::eMemoryAllocator) != this->cInfo->extUsed->end() ? this->cInfo->extUsed->at(ExtensionInfoName::eMemoryAllocator) : ExtensionName::eMemoryAllocator);
-      return memoryAllocatorObj->allocateMemory(requirements, this->allocated, this->extHandle);
+      return memoryAllocatorObj->allocateMemory(requirements, this->allocated, this->extHandle, this->cInfo->extInfoMap, this->mappedMemory);
     };
 
     // 
@@ -156,6 +157,7 @@ namespace ZNAMED {
         //this->deviceObj = deviceObj;
         if (cInfo) { this->cInfo = cInfo; };
         this->infoMap = std::make_shared<MSS>(MSS());
+        this->cInfo->extInfoMap = std::make_shared<EXIF>();
       //}
       //catch (std::exception e) {
         //std::cerr << "Unable to initialize ResourceObj itself" << std::endl; std::cerr << e.what() << std::endl;
@@ -313,7 +315,7 @@ namespace ZNAMED {
       decltype(auto) memReqInfo2 = infoMap->set(vk::StructureType::eMemoryRequirements2, vk::MemoryRequirements2{
         .pNext = infoMap->set(vk::StructureType::eMemoryDedicatedRequirements, vk::MemoryDedicatedRequirements{
           
-        })
+        }).get()
       });
 
       //
@@ -328,9 +330,8 @@ namespace ZNAMED {
       decltype(auto) memReqInfo = memReqInfo2->memoryRequirements;
       this->allocated = this->allocateMemory(this->mReqs = MemoryRequirements{
         .memoryUsage = memoryUsage,
-        .memoryTypeBits = memReqInfo.memoryTypeBits,
+        .requirements = memReqInfo,
         .dedicated = DedicatedMemory{.image = cInfo->type != ImageType::eSwapchain ? this->handle.as<vk::Image>() : vk::Image{} },
-        .size = memReqInfo.size
       });
 
       //
@@ -378,7 +379,7 @@ namespace ZNAMED {
 
       // 
       decltype(auto) memReqInfo2 = infoMap->set(vk::StructureType::eMemoryRequirements2, vk::MemoryRequirements2{
-        .pNext = infoMap->set(vk::StructureType::eMemoryDedicatedRequirements, vk::MemoryDedicatedRequirements{})
+        .pNext = infoMap->set(vk::StructureType::eMemoryDedicatedRequirements, vk::MemoryDedicatedRequirements{}).get()
         });
 
       //
@@ -398,10 +399,9 @@ namespace ZNAMED {
       decltype(auto) memReqInfo = memReqInfo2->memoryRequirements;
       this->allocated = this->allocateMemory(this->mReqs = MemoryRequirements{
         .memoryUsage = memoryUsage,
-        .memoryTypeBits = memReqInfo.memoryTypeBits,
+        .requirements = memReqInfo,
         .hasDeviceAddress = this->hasDeviceAddress,
-        .dedicated = DedicatedMemory{.buffer = this->handle.as<vk::Buffer>() },
-        .size = memReqInfo.size
+        .dedicated = DedicatedMemory{.buffer = this->handle.as<vk::Buffer>() }
         });
 
       //
@@ -410,10 +410,7 @@ namespace ZNAMED {
       }) };
       device.bindBufferMemory2(bindInfos);
 
-      //
-      if (cInfo->type == BufferType::eHostMap) {
-        this->mappedMemory = device.mapMemory(this->allocated->memory, this->allocated->offset, memReqInfo.size);
-      };
+      
 
       // 
       if (bufferUsage & vk::BufferUsageFlagBits::eShaderDeviceAddress) {
