@@ -662,20 +662,18 @@ namespace ZNAMED {
   };
 
 
+
   //
-  struct WriteComputeInfo : BaseCreateInfo {
-    vk::CommandBuffer cmdBuf = {};
-    vk::Extent3D dispatch = { 1u, 1u, 1u };
-    vk::PipelineLayout layout = {};
-    
-    //
-    decltype(auto) with(cpp21::const_wrap_arg<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
+  struct PushConstantData {
+    uint64_t dataAddress = 0ull;
+    uint32_t drawIndex = 0u;
+    uint32_t reserved = 0u;
   };
 
   //
-  struct InstanceDrawData {
-    glm::mat3x4 transform = glm::mat3x4(1.f);
-    uint64_t reference = 0ull;
+  struct InstanceDrawInfo {
+    std::optional<PushConstantData> drawConst = {};
+    cpp21::shared_vector<vk::MultiDrawInfoEXT> drawInfos = std::vector<vk::MultiDrawInfoEXT>{};
   };
 
   //
@@ -685,24 +683,41 @@ namespace ZNAMED {
   };
 
   //
-  struct PushConstantData {
-    InstanceAddressInfo addressInfo = {};
-    uint32_t drawIndex = 0u;
+  struct InstanceAddressBlock {
+    InstanceAddressInfo opaqueAddressInfo = {};
+    InstanceAddressInfo transparentAddressInfo = {};
   };
 
   //
-  struct InstanceDrawInfo : BaseCreateInfo {
-    //InstanceDrawData drawData = {};
-    PushConstantData drawData = {};
-    cpp21::shared_vector<vk::MultiDrawInfoEXT> drawInfos = std::vector<vk::MultiDrawInfoEXT>{};
+  struct InstanceDrawData {
+    glm::mat3x4 transform = glm::mat3x4(1.f);
+    uint64_t reference = 0ull;
   };
+
   
+
+
+  //
+  struct WriteComputeInfo : BaseCreateInfo {
+    vk::CommandBuffer cmdBuf = {};
+    vk::Extent3D dispatch = { 1u, 1u, 1u };
+    vk::PipelineLayout layout = {};
+    
+    //
+    std::optional<InstanceAddressBlock> instanceAddressBlock = {};
+
+    //
+    decltype(auto) with(cpp21::const_wrap_arg<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
+  };
 
   //
   struct WriteGraphicsInfo : BaseCreateInfo {
     vk::CommandBuffer cmdBuf = {};
     vk::PipelineLayout layout = {};
     uintptr_t framebuffer = {};
+
+    // 
+    std::optional<InstanceAddressBlock> instanceAddressBlock = {};
 
     // needs multiple-levels support
     std::vector<InstanceDrawInfo> instanceInfos = {}; // currently, problematic for dynamic rendering... 

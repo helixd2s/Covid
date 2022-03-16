@@ -204,7 +204,8 @@ namespace ZNAMED {
       this->createDescriptorLayout(vk::DescriptorType::eStorageImage, 64u);
 
       //
-      this->pushConstantRanges.push_back(vk::PushConstantRange{ vk::ShaderStageFlagBits::eAll, 0ull, sizeof(PushConstantData) });
+      this->pushConstantRanges.push_back(vk::PushConstantRange{ vk::ShaderStageFlagBits::eAll, 0ull, sizeof(PushConstantData) + sizeof(InstanceAddressBlock) });
+      //this->pushConstantRanges.push_back(vk::PushConstantRange{ vk::ShaderStageFlagBits::eAll, sizeof(PushConstantData), sizeof(InstanceAddressBlock) });
 
       //
       this->sets = device.allocateDescriptorSets(this->infoMap->set(vk::StructureType::eDescriptorSetAllocateInfo, vk::DescriptorSetAllocateInfo{

@@ -26,22 +26,14 @@ namespace ZNAMED {
     vk::Buffer instanceExtBuffer = {};
 
     //
-    //InstanceDrawData
-    //
-    //vk::AccelerationStructureKHR accelStruct = {};
-
-    //
     std::vector<vk::AccelerationStructureGeometryKHR> instances = {};
     std::vector<vk::AccelerationStructureBuildRangeInfoKHR> instanceRanges = {};
-    //std::vector<vk::MultiDrawInfoEXT> multiDraw = {};
 
     //
-    //cpp21::bucket<std::shared_ptr<InstanceDrawInfo>> instanceDrawInfo = {};
     cpp21::shared_vector<InstanceDrawInfo> instanceDrawInfo = std::vector<InstanceDrawInfo>{};
     cpp21::shared_vector<InstanceDrawData> instanceDrawData = std::vector<InstanceDrawData>{};
 
     //
-    //uintptr_t deviceAddress = 0ull;
     vk::AccelerationStructureKHR accelStruct = {};
 
     //
@@ -150,12 +142,15 @@ namespace ZNAMED {
         decltype(auto) geometryLevel = deviceObj->get<GeometryLevelObj>(instanceData.accelerationStructureReference);
 
         // 
-        instanceDraw.drawInfos = geometryLevel->getDrawInfo();
-        instanceDraw.drawData = PushConstantData{ .addressInfo = this->addressInfo, .drawIndex = uint32_t(idx) };
+        if (this->getDrawDataResource()) {
+          instanceDraw.drawInfos = geometryLevel->getDrawInfo();
+          instanceDraw.drawConst = PushConstantData{ .dataAddress = this->getDrawDataDeviceAddress() + sizeof(InstanceDrawData) * idx, .drawIndex = uint32_t(idx) };
+        };
 
         // 
         instanceDrawData = InstanceDrawData{ .transform = reinterpret_cast<glm::mat3x4&>(instanceData.transform), .reference = geometryLevel->getGeometryDeviceAddress() };
       };
+
       {
         instances.push_back(vk::AccelerationStructureGeometryKHR{
           .geometryType = vk::GeometryTypeKHR::eInstances,
