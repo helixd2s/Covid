@@ -291,19 +291,22 @@ namespace ZNAMED {
       this->tickProcessing();
 
       // 
-      auto promise = std::async(std::launch::async | std::launch::deferred, [callstack=std::weak_ptr<CallStack>(this->callstack), device, fence, commandPool, submissionRef, commandBuffers]() {
+      decltype(auto) deAllocation = [device, fence, commandPool, commandBuffers]() {
+        if (fence && *fence) {
+          device.destroyFence(*fence);
+          device.freeCommandBuffers(commandPool, commandBuffers);
+          *fence = vk::Fence{};
+        };
+      };
+
+      // 
+      auto promise = std::async(std::launch::async | std::launch::deferred, [callstack=std::weak_ptr<CallStack>(this->callstack), device, fence, commandPool, submissionRef, commandBuffers, deAllocation]() {
         auto result = device.waitForFences(*fence, true, 1000 * 1000 * 1000);
         auto cl = callstack.lock();
         for (auto& fn : submissionRef->onDone) {
           cl->add(std::bind(fn, result));
         };
-        cl->add([=]() {
-          if (fence && *fence) {
-            device.destroyFence(*fence);
-            device.freeCommandBuffers(commandPool, commandBuffers);
-            *fence = vk::Fence{};
-          };
-        });
+        cl->add(deAllocation);
         return result;
       });
 
