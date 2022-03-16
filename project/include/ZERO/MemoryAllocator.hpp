@@ -74,7 +74,7 @@ namespace ZNAMED {
   public:
 
     //
-    virtual std::optional<AllocatedMemory>& allocateMemory(cpp21::const_wrap_arg<MemoryRequirements> requirements, std::optional<AllocatedMemory>& allocated, ExtHandle& extHandle, std::shared_ptr<EXIF> extInfoMap, void*& mapped) {
+    virtual std::optional<AllocatedMemory>& allocateMemory(cpp21::const_wrap_arg<MemoryRequirements> requirements, std::optional<AllocatedMemory>& allocated, ExtHandle& extHandle, std::shared_ptr<EXIF> extInfoMap, void*& mapped, std::vector<std::function<void(BaseObj const*)>>& destructors) {
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       auto& device = this->base.as<vk::Device>();
       auto& physicalDevice = deviceObj->getPhysicalDevice();
@@ -120,6 +120,15 @@ namespace ZNAMED {
       if (requirements->memoryUsage != MemoryUsage::eGpuOnly) {
         mapped = device.mapMemory(allocated->memory, allocated->offset, requirements->requirements.size);
       };
+
+      //
+      destructors.push_back([device, memory=allocated->memory, mapped](BaseObj const*) {
+        device.waitIdle();
+        if (mapped) {
+          device.unmapMemory(memory);
+        };
+        device.freeMemory(memory);
+      });
 
       // 
       return allocated;

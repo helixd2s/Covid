@@ -51,9 +51,6 @@ namespace ZNAMED {
     vk::ImageUsageFlags imageUsage = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst;
     MemoryUsage memoryUsage = MemoryUsage::eGpuOnly;
 
-    //
-    bool hasDeviceAddress = false;
-
     // 
     inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
     inline decltype(auto) SFT() const { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::const_pointer_cast<T>(std::dynamic_pointer_cast<T const>(shared_from_this()))); };
@@ -147,7 +144,7 @@ namespace ZNAMED {
     virtual std::optional<AllocatedMemory>& allocateMemory(cpp21::const_wrap_arg<MemoryRequirements> requirements) {
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) memoryAllocatorObj = deviceObj->getExt<MemoryAllocatorObj>(this->cInfo->extUsed && this->cInfo->extUsed->find(ExtensionInfoName::eMemoryAllocator) != this->cInfo->extUsed->end() ? this->cInfo->extUsed->at(ExtensionInfoName::eMemoryAllocator) : ExtensionName::eMemoryAllocator);
-      return memoryAllocatorObj->allocateMemory(requirements, this->allocated, this->extHandle, this->cInfo->extInfoMap, this->mappedMemory);
+      return memoryAllocatorObj->allocateMemory(requirements, this->allocated, this->extHandle, this->cInfo->extInfoMap, this->mappedMemory, this->destructors);
     };
 
     // 
@@ -324,13 +321,17 @@ namespace ZNAMED {
       }).get(), memReqInfo2.get());
 
       //
-      //ZNAMED::context->get(this->base)->registerObj(this->handle, shared_from_this());
+      destructors.push_back([device, image = this->handle.as<vk::Image>(), type=cInfo->type](BaseObj const*) {
+        if (type!=ImageType::eSwapchain) {
+          device.waitIdle();
+          device.destroyImage(image);
+        };
+      });
 
       // 
-      decltype(auto) memReqInfo = memReqInfo2->memoryRequirements;
       this->allocated = this->allocateMemory(this->mReqs = MemoryRequirements{
         .memoryUsage = memoryUsage,
-        .requirements = memReqInfo,
+        .requirements = memReqInfo2->memoryRequirements,
         .dedicated = DedicatedMemory{.image = cInfo->type != ImageType::eSwapchain ? this->handle.as<vk::Image>() : vk::Image{} },
       });
 
@@ -366,7 +367,7 @@ namespace ZNAMED {
       //
       decltype(auto) externalInfo = infoMap->set(vk::StructureType::eExternalMemoryBufferCreateInfo, vk::ExternalMemoryBufferCreateInfo{
         .handleTypes = memoryUsage == MemoryUsage::eGpuOnly ? extMemFlags : vk::ExternalMemoryHandleTypeFlags{},
-        });
+      });
 
       // 
       decltype(auto) bufferUsage = this->handleBufferUsage(cInfo->type);
@@ -375,42 +376,37 @@ namespace ZNAMED {
         .size = cInfo->size,
         .usage = bufferUsage,
         .sharingMode = vk::SharingMode::eExclusive
-        });
+      });
 
       // 
       decltype(auto) memReqInfo2 = infoMap->set(vk::StructureType::eMemoryRequirements2, vk::MemoryRequirements2{
         .pNext = infoMap->set(vk::StructureType::eMemoryDedicatedRequirements, vk::MemoryDedicatedRequirements{}).get()
-        });
+      });
 
       //
       device.getBufferMemoryRequirements2(infoMap->set(vk::StructureType::eBufferMemoryRequirementsInfo2, vk::BufferMemoryRequirementsInfo2{
         .buffer = (this->handle = this->cInfo->buffer ? this->cInfo->buffer.value() : device.createBuffer(bufferInfo->setQueueFamilyIndices(deviceObj->getQueueFamilies().indices)))
-        }).get(), memReqInfo2.get());
+      }).get(), memReqInfo2.get());
 
       //
-      //ZNAMED::context->get(this->base)->registerObj(this->handle, shared_from_this());
-
-      // 
-      if (bufferUsage & vk::BufferUsageFlagBits::eShaderDeviceAddress) {
-        this->hasDeviceAddress = true;
-      };
+      destructors.push_back([device, buffer = this->handle.as<vk::Buffer>()](BaseObj const*) {
+        device.waitIdle();
+        device.destroyBuffer(buffer);
+      });
 
       //
-      decltype(auto) memReqInfo = memReqInfo2->memoryRequirements;
       this->allocated = this->allocateMemory(this->mReqs = MemoryRequirements{
         .memoryUsage = memoryUsage,
-        .requirements = memReqInfo,
-        .hasDeviceAddress = this->hasDeviceAddress,
+        .requirements = memReqInfo2->memoryRequirements,
+        .hasDeviceAddress = !!(bufferUsage & vk::BufferUsageFlagBits::eShaderDeviceAddress),
         .dedicated = DedicatedMemory{.buffer = this->handle.as<vk::Buffer>() }
-        });
+      });
 
       //
       std::vector<vk::BindBufferMemoryInfo> bindInfos = { *infoMap->set(vk::StructureType::eBindBufferMemoryInfo, vk::BindBufferMemoryInfo{
         .buffer = this->handle, .memory = this->allocated->memory, .memoryOffset = this->allocated->offset
       }) };
       device.bindBufferMemory2(bindInfos);
-
-      
 
       // 
       if (bufferUsage & vk::BufferUsageFlagBits::eShaderDeviceAddress) {
@@ -419,9 +415,6 @@ namespace ZNAMED {
           });
         deviceObj->getAddressSpace().insert({this->deviceAddress, this->deviceAddress + cInfo->size}, this->handle.as<vk::Buffer>());
       };
-
-      // 
-      //return this->SFT();
     };
 
   public:

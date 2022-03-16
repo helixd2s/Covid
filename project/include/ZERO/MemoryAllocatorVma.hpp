@@ -116,7 +116,7 @@ namespace ZNAMED {
   public:
 
     //
-    virtual std::optional<AllocatedMemory>& allocateMemory(cpp21::const_wrap_arg<MemoryRequirements> requirements, std::optional<AllocatedMemory>& allocated, ExtHandle& extHandle, std::shared_ptr<EXIF> extInfoMap, void*& mapped) {
+    virtual std::optional<AllocatedMemory>& allocateMemory(cpp21::const_wrap_arg<MemoryRequirements> requirements, std::optional<AllocatedMemory>& allocated, ExtHandle& extHandle, std::shared_ptr<EXIF> extInfoMap, void*& mapped, std::vector<std::function<void(BaseObj const*)>>& destructors) override {
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       auto& device = this->base.as<vk::Device>();
       auto& physicalDevice = deviceObj->getPhysicalDevice();
@@ -152,6 +152,12 @@ namespace ZNAMED {
       } else {
         vmaAllocateMemory(this->handle.as<VmaAllocator>(), (VkMemoryRequirements*)&requirements->requirements, &vmaCreateInfo, &vmaAllocExt->allocation, &vmaAllocExt->allocationInfo);
       };
+
+      //
+      destructors.push_back([device, allocator=this->handle.as<VmaAllocator>(), allocation=vmaAllocExt->allocation](BaseObj const*) {
+        device.waitIdle();
+        vmaFreeMemory(allocator, allocation);
+      });
 
       // 
       mapped = vmaAllocExt->allocationInfo.pMappedData;
