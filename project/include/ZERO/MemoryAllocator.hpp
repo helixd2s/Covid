@@ -32,6 +32,7 @@ namespace ZNAMED {
       this->base = deviceObj->getHandle();
       this->infoMap = std::make_shared<MSS>(MSS());
       this->callstack = std::make_shared<CallStack>();
+      this->handle = uintptr_t(this);
     };
 
   public:

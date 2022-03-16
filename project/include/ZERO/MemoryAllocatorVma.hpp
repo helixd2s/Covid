@@ -46,7 +46,7 @@ namespace ZNAMED {
   protected:
 
     // 
-    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) {
+    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) override {
       //this->deviceObj = deviceObj;
       this->base = deviceObj->getHandle();
       this->infoMap = std::make_shared<MSS>(MSS());
@@ -97,7 +97,7 @@ namespace ZNAMED {
     //
     virtual WrapShared<MemoryAllocatorObj> registerSelf() override {
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
-      deviceObj->registerExt(ExtensionName::eMemoryAllocator, shared_from_this());
+      deviceObj->registerExt(ExtensionName::eMemoryAllocatorVma, shared_from_this());
       return std::dynamic_pointer_cast<MemoryAllocatorObj>(shared_from_this());
     };
 
@@ -105,7 +105,7 @@ namespace ZNAMED {
     virtual std::type_info const& type_info() const override {
       return typeid(std::decay_t<decltype(this)>);
     };
-    
+
     //
     inline static WrapShared<MemoryAllocatorObj> make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) {
       auto shared = std::make_shared<MemoryAllocatorVmaObj>(handle, cInfo);
