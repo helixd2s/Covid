@@ -148,16 +148,19 @@ int main() {
   //
   uploader->executeUploadToResourceOnce(ZNAMED::UploadExecutionOnce{
     .host = std::span<char8_t>{(char8_t*)vertices.data(), vertices.size() * sizeof(glm::vec4)},
+    
     .writeInfo = ZNAMED::UploadCommandWriteInfo{
+      .hostMapOffset = 0ull,
       .dstBuffer = ZNAMED::BufferRegion{buffer.as<vk::Buffer>(), ZNAMED::DataRegion{0ull, sizeof(glm::vec4) * vertices.size()}},
-      
     }
   });
 
   //
   uploader->executeUploadToResourceOnce(ZNAMED::UploadExecutionOnce{
     .host = std::span<char8_t>{(char8_t*)indices.data(), indices.size() * sizeof(uint16_t)},
+    
     .writeInfo = ZNAMED::UploadCommandWriteInfo{
+      .hostMapOffset = sizeof(glm::vec4) * vertices.size(),
       .dstBuffer = ZNAMED::BufferRegion{buffer.as<vk::Buffer>(), ZNAMED::DataRegion{sizeof(glm::vec4) * vertices.size(), sizeof(uint16_t) * indices.size()}},
     }
   });

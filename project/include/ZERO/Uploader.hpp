@@ -321,7 +321,7 @@ namespace ZNAMED {
       decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
 
       // 
-      memcpy(cpp21::shift(ZNAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(uploadBuffer)->mappedMemory, exec->hostMapOffset), exec->host.data(), size);
+      memcpy(cpp21::shift(ZNAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(uploadBuffer)->mappedMemory, exec->writeInfo.hostMapOffset), exec->host.data(), size);
 
       // 
       submission.commandInits.push_back([=,this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {

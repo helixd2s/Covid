@@ -762,6 +762,7 @@ namespace ZNAMED {
   //
   struct DownloadCommandWriteInfo : BaseCreateInfo {
     vk::CommandBuffer cmdBuf = {};
+    uintptr_t hostMapOffset = 0ull;
 
     // 
     std::optional<BufferRegion> srcBuffer = {};
@@ -774,7 +775,7 @@ namespace ZNAMED {
   //
   struct UploadExecutionOnce : BaseCreateInfo {
     cpp21::data_view<char8_t> host = {};
-    uintptr_t hostMapOffset = 0ull;
+    //uintptr_t hostMapOffset = 0ull;
     UploadCommandWriteInfo writeInfo = {};
     SubmissionInfo submission = {};
   };
@@ -782,7 +783,7 @@ namespace ZNAMED {
   //
   struct DownloadExecutionOnce : BaseCreateInfo {
     cpp21::data_view<char8_t> host = {};
-    uintptr_t hostMapOffset = 0ull;
+    //uintptr_t hostMapOffset = 0ull;
     DownloadCommandWriteInfo writeInfo = {};
     SubmissionInfo submission = {};
   };
