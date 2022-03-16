@@ -120,6 +120,7 @@ namespace ZNAMED {
     eAccelerationStructure = 17u,
 
     eDeviceMemory = 18u,
+    eMemoryAllocator = 19u
   };
 
   //
