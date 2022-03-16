@@ -247,10 +247,11 @@ namespace ZNAMED {
   using EXM = cpp21::map_of_shared<ExtensionName, uintptr_t, std::shared_ptr, robin_hood::unordered_map>;
   using EXIF = cpp21::map_of_shared<ExtensionInfoName, std::shared_ptr<cpp21::void_t>, std::shared_ptr, robin_hood::unordered_map>;
   using SMAP = cpp21::interval_map<uintptr_t, vk::Buffer, robin_hood::unordered_map>;
+  using EXIP = robin_hood::unordered_map<ExtensionInfoName, ExtensionName>;
 
   //
   struct BaseCreateInfo {
-    std::shared_ptr<robin_hood::unordered_map<ExtensionInfoName, ExtensionName>> extUsed = {};
+    std::shared_ptr<EXIP> extUsed = {};
     std::shared_ptr<EXIF> extInfoMap = {};
   };
 

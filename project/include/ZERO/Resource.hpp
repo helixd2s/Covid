@@ -154,7 +154,9 @@ namespace ZNAMED {
         //this->deviceObj = deviceObj;
         if (cInfo) { this->cInfo = cInfo; };
         this->infoMap = std::make_shared<MSS>(MSS());
-        this->cInfo->extInfoMap = std::make_shared<EXIF>();
+        if (!this->cInfo->extInfoMap) {
+          this->cInfo->extInfoMap = std::make_shared<EXIF>();
+        };
       //}
       //catch (std::exception e) {
         //std::cerr << "Unable to initialize ResourceObj itself" << std::endl; std::cerr << e.what() << std::endl;

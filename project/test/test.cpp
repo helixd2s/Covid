@@ -103,6 +103,11 @@ int main() {
     .physicalDeviceIndex = 0u
   });
 
+  //
+  decltype(auto) memoryAllocatorVma = ZNAMED::MemoryAllocatorVma::make(device, ZNAMED::MemoryAllocatorCreateInfo{
+
+  });
+
   // final cherep for today
   decltype(auto) descriptors = ZNAMED::DescriptorsObj::make(device.with(0u), ZNAMED::DescriptorsCreateInfo{
 
@@ -110,6 +115,9 @@ int main() {
 
   //
   decltype(auto) uniformData = UniformData{};
+
+  //
+  //rcCInfo.extUsed = std::make_shared<ZNAMED::EXIP>(ZNAMED::EXIP{ {ZNAMED::ExtensionInfoName::eMemoryAllocator, ZNAMED::ExtensionName::eMemoryAllocatorVma} });
 
   //
   decltype(auto) buffer = ZNAMED::ResourceObj::make(device, ZNAMED::ResourceCreateInfo{

@@ -109,7 +109,7 @@ namespace ZNAMED {
       };
 
       //
-      if ((*this->cInfo->extInfoMap)->find(ExtensionInfoName::eMemoryAllocationVma) != (*this->cInfo->extInfoMap)->end()) {
+      if ((*this->cInfo->extInfoMap)->find(ExtensionInfoName::eMemoryAllocationVma) == (*this->cInfo->extInfoMap)->end()) {
         this->cInfo->extInfoMap->set(ExtensionInfoName::eMemoryAllocationVma, VmaAllocationExtension{});
       };
 
@@ -150,12 +150,12 @@ namespace ZNAMED {
 
       // 
       VmaAllocationCreateInfo vmaCreateInfo = {
-        .flags = (this->memoryUsage != MemoryUsage::eGpuOnly ? VMA_ALLOCATION_CREATE_MAPPED_BIT : VmaAllocationCreateFlags{}) | VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
+        .flags = (memoryUsage != MemoryUsage::eGpuOnly ? VMA_ALLOCATION_CREATE_MAPPED_BIT : VmaAllocationCreateFlags{}) | VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
         .usage = memUsage,
       };
 
       //
-      if ((*this->cInfo->extInfoMap)->find(ExtensionInfoName::eMemoryAllocationVma) != (*this->cInfo->extInfoMap)->end()) {
+      if ((*this->cInfo->extInfoMap)->find(ExtensionInfoName::eMemoryAllocationVma) == (*this->cInfo->extInfoMap)->end()) {
         this->cInfo->extInfoMap->set(ExtensionInfoName::eMemoryAllocationVma, VmaAllocationExtension{});
       };
 

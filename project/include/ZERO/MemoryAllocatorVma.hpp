@@ -52,6 +52,11 @@ namespace ZNAMED {
       this->infoMap = std::make_shared<MSS>(MSS());
       this->callstack = std::make_shared<CallStack>();
 
+      // 
+      if (!this->cInfo->extInfoMap) {
+        this->cInfo->extInfoMap = std::make_shared<EXIF>();
+      };
+
       //
       if ((*this->cInfo->extInfoMap)->find(ExtensionInfoName::eMemoryAllocatorVma) != (*this->cInfo->extInfoMap)->end()) {
         this->cInfo->extInfoMap->set(ExtensionInfoName::eMemoryAllocatorVma, VmaAllocatorExtension{});
@@ -67,6 +72,7 @@ namespace ZNAMED {
 
       // 
       VmaAllocatorCreateInfo vmaCreateInfo = {};
+      vmaCreateInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
       vmaCreateInfo.vulkanApiVersion = VK_API_VERSION_1_3;
       vmaCreateInfo.physicalDevice = deviceObj->getPhysicalDevice();
       vmaCreateInfo.device = deviceObj->getHandle().as<VkDevice>();
@@ -124,22 +130,21 @@ namespace ZNAMED {
       auto memTypeHeap = deviceObj->findMemoryTypeAndHeapIndex(*requirements);
 
       //
-      VmaMemoryUsage memUsage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
-      if (requirements->memoryUsage == MemoryUsage::eGpuOnly) { memUsage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE; };
-      if (requirements->memoryUsage == MemoryUsage::eCpuOnly) { memUsage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST; };
-      if (requirements->memoryUsage == MemoryUsage::eCpuToGpu) { memUsage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE; };
-      if (requirements->memoryUsage == MemoryUsage::eGpuToCpu) { memUsage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE; };
+      VmaMemoryUsage memUsage = VMA_MEMORY_USAGE_GPU_ONLY;
+      if (requirements->memoryUsage == MemoryUsage::eGpuOnly) { memUsage = VMA_MEMORY_USAGE_GPU_ONLY; };
+      if (requirements->memoryUsage == MemoryUsage::eCpuOnly) { memUsage = VMA_MEMORY_USAGE_CPU_ONLY; };
+      if (requirements->memoryUsage == MemoryUsage::eCpuToGpu) { memUsage = VMA_MEMORY_USAGE_CPU_TO_GPU; };
+      if (requirements->memoryUsage == MemoryUsage::eGpuToCpu) { memUsage = VMA_MEMORY_USAGE_GPU_TO_CPU; };
 
       // 
       VmaAllocationCreateInfo vmaCreateInfo = {
         .flags = (requirements->memoryUsage != MemoryUsage::eGpuOnly ? VMA_ALLOCATION_CREATE_MAPPED_BIT : VmaAllocationCreateFlags{}) | VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
         .usage = memUsage,
-
       };
 
       //
-      if ((*extInfoMap)->find(ExtensionInfoName::eMemoryAllocationVma) != (*extInfoMap)->end()) {
-        extInfoMap->set(ExtensionInfoName::eMemoryAllocationVma, VmaAllocationExtension{});
+      if ((*this->cInfo->extInfoMap)->find(ExtensionInfoName::eMemoryAllocationVma) == (*this->cInfo->extInfoMap)->end()) {
+        this->cInfo->extInfoMap->set(ExtensionInfoName::eMemoryAllocationVma, VmaAllocationExtension{});
       };
 
       //
