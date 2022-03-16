@@ -27,11 +27,11 @@ namespace ZNAMED {
   };
 
   // 
-  class MemoryAllocatorVmaObj : public MemoryAllocatorObj {
+  class MemoryAllocatorVma : public MemoryAllocatorObj {
   public:
     //using BaseObj::BaseObj;
     using MemoryAllocatorObj::MemoryAllocatorObj;
-    using tType = WrapShared<MemoryAllocatorVmaObj>;
+    using tType = WrapShared<MemoryAllocatorVma>;
     using cType = const char const*;
     //using BaseObj;
 
@@ -79,18 +79,18 @@ namespace ZNAMED {
   public:
 
     //
-    ~MemoryAllocatorVmaObj() {
+    ~MemoryAllocatorVma() {
       this->tickProcessing();
     };
 
     // 
-    MemoryAllocatorVmaObj(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) : MemoryAllocatorObj(deviceObj, cInfo)  {
+    MemoryAllocatorVma(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) : MemoryAllocatorObj(deviceObj, cInfo)  {
       this->base = deviceObj->getHandle();
       this->construct(deviceObj, cInfo);
     };
 
     // 
-    MemoryAllocatorVmaObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) : MemoryAllocatorObj(handle, cInfo) {
+    MemoryAllocatorVma(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) : MemoryAllocatorObj(handle, cInfo) {
       this->construct(ZNAMED::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
@@ -108,7 +108,7 @@ namespace ZNAMED {
 
     //
     inline static WrapShared<MemoryAllocatorObj> make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) {
-      auto shared = std::make_shared<MemoryAllocatorVmaObj>(handle, cInfo);
+      auto shared = std::make_shared<MemoryAllocatorVma>(handle, cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
     };

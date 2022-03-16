@@ -13,20 +13,20 @@ namespace ZNAMED {
   
 
   // 
-  class ResourceVmaObj : public ResourceObj {
+  class ResourceVma : public ResourceObj {
   public: 
-    using tType = WrapShared<ResourceVmaObj>;
+    using tType = WrapShared<ResourceVma>;
     using ResourceObj::ResourceObj;
 
     // 
-    friend MemoryAllocatorVmaObj;
+    friend MemoryAllocatorVma;
 
   protected:
 
     //
     virtual std::optional<AllocatedMemory>& allocateMemory(cpp21::const_wrap_arg<MemoryRequirements> requirements) {
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
-      decltype(auto) memoryAllocatorObj = deviceObj->getExt<MemoryAllocatorVmaObj>(this->cInfo->extUsed && this->cInfo->extUsed->find(ExtensionInfoName::eMemoryAllocator) != this->cInfo->extUsed->end() ? this->cInfo->extUsed->at(ExtensionInfoName::eMemoryAllocator) : ExtensionName::eMemoryAllocatorVma);
+      decltype(auto) memoryAllocatorObj = deviceObj->getExt<MemoryAllocatorVma>(this->cInfo->extUsed && this->cInfo->extUsed->find(ExtensionInfoName::eMemoryAllocator) != this->cInfo->extUsed->end() ? this->cInfo->extUsed->at(ExtensionInfoName::eMemoryAllocator) : ExtensionName::eMemoryAllocatorVma);
       return memoryAllocatorObj->allocateMemory(requirements, this->allocated, this->extHandle, this->cInfo->extInfoMap, this->mappedMemory, this->destructors);
     };
 
@@ -36,13 +36,13 @@ namespace ZNAMED {
 
   public:
     // 
-    ResourceVmaObj(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : ResourceObj(deviceObj, cInfo) {
+    ResourceVma(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : ResourceObj(deviceObj, cInfo) {
       this->base = deviceObj->getHandle();
       this->construct(deviceObj, cInfo);
     };
 
     // 
-    ResourceVmaObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : ResourceObj(handle, cInfo) {
+    ResourceVma(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : ResourceObj(handle, cInfo) {
       this->construct(ZNAMED::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
@@ -59,7 +59,7 @@ namespace ZNAMED {
 
     //
     inline static WrapShared<ResourceObj> make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
-      auto shared = std::make_shared<ResourceVmaObj>(handle, cInfo);
+      auto shared = std::make_shared<ResourceVma>(handle, cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
     };
@@ -71,7 +71,7 @@ namespace ZNAMED {
       // 
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) memoryAllocatorObj = deviceObj->getExt<MemoryAllocatorVmaObj>(this->cInfo->extUsed && this->cInfo->extUsed->find(ExtensionInfoName::eMemoryAllocator) != this->cInfo->extUsed->end() ? this->cInfo->extUsed->at(ExtensionInfoName::eMemoryAllocator) : ExtensionName::eMemoryAllocatorVma);
+      decltype(auto) memoryAllocatorObj = deviceObj->getExt<MemoryAllocatorVma>(this->cInfo->extUsed && this->cInfo->extUsed->find(ExtensionInfoName::eMemoryAllocator) != this->cInfo->extUsed->end() ? this->cInfo->extUsed->at(ExtensionInfoName::eMemoryAllocator) : ExtensionName::eMemoryAllocatorVma);
 
       //
       decltype(auto) externalInfo = infoMap->set(vk::StructureType::eExternalMemoryImageCreateInfo, vk::ExternalMemoryImageCreateInfo{
@@ -125,7 +125,7 @@ namespace ZNAMED {
       //
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) memoryAllocatorObj = deviceObj->getExt<MemoryAllocatorVmaObj>(this->cInfo->extUsed && this->cInfo->extUsed->find(ExtensionInfoName::eMemoryAllocator) != this->cInfo->extUsed->end() ? this->cInfo->extUsed->at(ExtensionInfoName::eMemoryAllocator) : ExtensionName::eMemoryAllocatorVma);
+      decltype(auto) memoryAllocatorObj = deviceObj->getExt<MemoryAllocatorVma>(this->cInfo->extUsed && this->cInfo->extUsed->find(ExtensionInfoName::eMemoryAllocator) != this->cInfo->extUsed->end() ? this->cInfo->extUsed->at(ExtensionInfoName::eMemoryAllocator) : ExtensionName::eMemoryAllocatorVma);
 
       //
       decltype(auto) externalInfo = infoMap->set(vk::StructureType::eExternalMemoryBufferCreateInfo, vk::ExternalMemoryBufferCreateInfo{
