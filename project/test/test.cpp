@@ -120,7 +120,7 @@ int main() {
   //rcCInfo.extUsed = std::make_shared<ZNAMED::EXIP>(ZNAMED::EXIP{ {ZNAMED::ExtensionInfoName::eMemoryAllocator, ZNAMED::ExtensionName::eMemoryAllocatorVma} });
 
   //
-  decltype(auto) buffer = ZNAMED::ResourceObj::make(device, ZNAMED::ResourceCreateInfo{
+  decltype(auto) buffer = ZNAMED::ResourceVma::make(device, ZNAMED::ResourceCreateInfo{
     .descriptors = descriptors.as<vk::PipelineLayout>(),
     .bufferInfo = ZNAMED::BufferCreateInfo{
       .size = 1024ull,

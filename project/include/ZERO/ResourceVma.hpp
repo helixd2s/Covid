@@ -118,6 +118,20 @@ namespace ZNAMED {
 
       //
       vmaCreateImage(memoryAllocatorObj->getHandle().as<VmaAllocator>(), (VkImageCreateInfo*)imageInfo.get(), &vmaCreateInfo, &this->handle.as<VkImage>(), &alloc->allocation, &alloc->allocationInfo);
+
+      // 
+      if (cInfo->info) {
+        return this->executeSwitchLayoutOnce(ImageLayoutSwitchInfo{
+          .info = cInfo->info,
+          .switchInfo = ImageLayoutSwitchWriteInfo{
+            .newImageLayout = cInfo->layout,
+            .oldImageLayout = imageInfo->initialLayout,
+          },
+          });
+      };
+
+      //
+      return FenceType{};
     };
 
     // 
@@ -164,6 +178,14 @@ namespace ZNAMED {
 
       //
       vmaCreateBuffer(memoryAllocatorObj->getHandle().as<VmaAllocator>(), (VkBufferCreateInfo*)bufferInfo.get(), &vmaCreateInfo, &this->handle.as<VkBuffer>(), &alloc->allocation, &alloc->allocationInfo);
+
+      // 
+      if (bufferUsage & vk::BufferUsageFlagBits::eShaderDeviceAddress) {
+        this->deviceAddress = device.getBufferAddress(vk::BufferDeviceAddressInfo{
+          .buffer = this->handle.as<vk::Buffer>()
+          });
+        deviceObj->getAddressSpace().insert({ this->deviceAddress, this->deviceAddress + cInfo->size }, this->handle.as<vk::Buffer>());
+      };
     };
 
 
