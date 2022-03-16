@@ -454,7 +454,7 @@ namespace ZNAMED {
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       
       // 
-      submission.commandInits.push_back([=, this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+      submission.commandInits.push_back([copyInfo, this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
         this->writeCopyBuffersCommand(copyInfo->writeInfo.with(cmdBuf));
         return cmdBuf;
       });

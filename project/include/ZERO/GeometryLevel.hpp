@@ -148,12 +148,14 @@ namespace ZNAMED {
       memcpy(deviceObj->get<ResourceObj>(uploaderObj->uploadBuffer)->mappedMemory, this->cInfo->geometryData.data(), this->cInfo->geometryData.size()*sizeof(GeometryInfo));
 
       // TODO: Acceleration Structure Build Barriers per Buffers
-      submission.commandInits.push_back([=, this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+      submission.commandInits.push_back([dispatch=deviceObj->getDispatch(), this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+        decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+        decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(this->cInfo->uploader);
         uploaderObj->writeUploadToResourceCmd(UploadCommandWriteInfo{
           .cmdBuf = cmdBuf,
           .dstBuffer = BufferRegion{this->geometryBuffer, DataRegion{ 0ull, this->cInfo->geometryData.size() * sizeof(GeometryInfo) }}
         });
-        cmdBuf->buildAccelerationStructuresKHR(1u, &infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR)->setGeometries(this->geometries), cpp21::rvalue_to_ptr(geometryRanges.data()), deviceObj->getDispatch());
+        cmdBuf->buildAccelerationStructuresKHR(1u, &infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR)->setGeometries(this->geometries), cpp21::rvalue_to_ptr(geometryRanges.data()), dispatch);
         return cmdBuf;
       });
 

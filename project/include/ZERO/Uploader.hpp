@@ -330,7 +330,7 @@ namespace ZNAMED {
       };
 
       // 
-      submission.commandInits.push_back([=,this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+      submission.commandInits.push_back([exec,this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
         this->writeUploadToResourceCmd(exec->writeInfo.with(cmdBuf));
         return cmdBuf;
       });
@@ -349,15 +349,15 @@ namespace ZNAMED {
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
 
       // 
-      submission.commandInits.push_back([=,this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+      submission.commandInits.push_back([exec,this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
         this->writeDownloadToResourceCmd(exec->writeInfo.with(cmdBuf));
         return cmdBuf;
       });
 
       //
       if (exec->host) {
-        submission.onDone.push_back([=, _host = exec->host](cpp21::const_wrap_arg<vk::Result> result) {
-          memcpy(_host->data(), cpp21::shift(ZNAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(downloadBuffer)->mappedMemory, exec->writeInfo.hostMapOffset), size);
+        submission.onDone.push_back([hostMapOffset = exec->writeInfo.hostMapOffset, size, _host = exec->host, mapped = ZNAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(downloadBuffer)->mappedMemory](cpp21::const_wrap_arg<vk::Result> result) {
+          memcpy(_host->data(), cpp21::shift(mapped, hostMapOffset), size);
         });
       };
 

@@ -292,6 +292,7 @@ int main() {
   // 
   while (!glfwWindowShouldClose(window)) { // 
     glfwPollEvents();
+    _CrtDumpMemoryLeaks();
 
     //
 #ifdef ENABLE_RENDERDOC

@@ -124,7 +124,7 @@ namespace ZNAMED {
       // 
       if (this->state != FramebufferState::eShaderRead) {
         decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo{.info = info } };
-        submission.commandInits.push_back([=, this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+        submission.commandInits.push_back([this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
           this->writeSwitchToShaderRead(cmdBuf);
           return cmdBuf;
         });
@@ -141,7 +141,7 @@ namespace ZNAMED {
       // 
       if (this->state != FramebufferState::eAttachment) {
         decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo{.info = info } };
-        submission.commandInits.push_back([=, this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+        submission.commandInits.push_back([this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
           this->writeSwitchToAttachment(cmdBuf);
           return cmdBuf;
         });
@@ -209,7 +209,7 @@ namespace ZNAMED {
       this->imageViewIndices.push_back(descriptorsObj->textures.add(vk::DescriptorImageInfo{ .imageView = imageView,.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal }));
 
       // TODO: use pre-built command buffer
-      this->switchToAttachmentFn.push_back([=](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf, cpp21::const_wrap_arg<FramebufferState> previousState = {}) {
+      this->switchToAttachmentFn.push_back([imageLayout, subresourceRange, imageObj](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf, cpp21::const_wrap_arg<FramebufferState> previousState = {}) {
         imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
           .cmdBuf = cmdBuf,
           .newImageLayout = imageLayout,
@@ -218,7 +218,7 @@ namespace ZNAMED {
       });
 
       //
-      this->switchToShaderReadFn.push_back([=](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf, cpp21::const_wrap_arg<FramebufferState> previousState = {}) {
+      this->switchToShaderReadFn.push_back([subresourceRange, imageObj](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf, cpp21::const_wrap_arg<FramebufferState> previousState = {}) {
         imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
           .cmdBuf = cmdBuf,
           .newImageLayout = vk::ImageLayout::eShaderReadOnlyOptimal,

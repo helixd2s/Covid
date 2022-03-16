@@ -350,7 +350,7 @@ namespace ZNAMED {
       decltype(auto) submission = CommandOnceSubmission{ .submission = cInfo->submission };
 
       // 
-      submission.commandInits.push_back([=](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+      submission.commandInits.push_back([this, cInfo](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
         this->writeUniformUpdateCommand(cInfo->writeInfo->with(cmdBuf));
         return cmdBuf;
       });
@@ -364,10 +364,10 @@ namespace ZNAMED {
       decltype(auto) submission = CommandOnceSubmission{ .submission = cInfo->submission };
 
       // 
-      submission.commandInits.push_back([=](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+      submission.commandInits.push_back([this, cInfo](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
         this->writeCacheUpdateCommand(cInfo->writeInfo->with(cmdBuf));
         return cmdBuf;
-        });
+      });
 
       //
       return ZNAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);

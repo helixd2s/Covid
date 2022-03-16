@@ -476,7 +476,7 @@ namespace ZNAMED {
 
       //
       if (this->cInfo->imageInfo && this->handle.type == HandleType::eImage) {
-        submission.commandInits.push_back([=, this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+        submission.commandInits.push_back([this, switchInfo](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
           this->writeSwitchLayoutCommand(switchInfo.with(cmdBuf));
           return cmdBuf;
         });

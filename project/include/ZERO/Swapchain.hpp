@@ -103,8 +103,8 @@ namespace ZNAMED {
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = info ? info.value() : this->cInfo->info } };
 
       // 
-      submission.commandInits.push_back([=, this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
-        switchToPresentFn[*imageIndex](cmdBuf, this->state);
+      submission.commandInits.push_back([this, imageIndex](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+        this->switchToPresentFn[*imageIndex](cmdBuf, state);
         return cmdBuf;
       });
 
@@ -117,8 +117,8 @@ namespace ZNAMED {
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = info ? info.value() : this->cInfo->info } };
 
       // 
-      submission.commandInits.push_back([=, this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
-        switchToReadyFn[*imageIndex](cmdBuf, this->state);
+      submission.commandInits.push_back([this, imageIndex](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+        this->switchToReadyFn[*imageIndex](cmdBuf, state);
         return cmdBuf;
       });
 

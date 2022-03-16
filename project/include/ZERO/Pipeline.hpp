@@ -319,21 +319,19 @@ namespace ZNAMED {
       //
       if (exec->instanceInfos.size() > 0) {
         for (decltype(auto) instInfo : exec->instanceInfos) {
-          //if (instInfo) {
-            decltype(auto) multiDrawDirect = supportMultiDraw ?
-              fnTp([=](cpp21::shared_vector<vk::MultiDrawInfoEXT> const& multiDraw) {
-                exec->cmdBuf.drawMultiEXT(*multiDraw, 1u, 0u, sizeof(vk::MultiDrawInfoEXT), deviceObj->getDispatch());
-              }) :
-              fnTp([=](cpp21::shared_vector<vk::MultiDrawInfoEXT> const& multiDraw) {
-                for (decltype(auto) drawInfo : (*multiDraw)) {
-                  exec->cmdBuf.draw(drawInfo.vertexCount, 1u, drawInfo.firstVertex, 0u);
-                };
-              });
+          decltype(auto) multiDrawDirect = supportMultiDraw ?
+            fnTp([cmdBuf = exec->cmdBuf, dispatch = deviceObj->getDispatch()](cpp21::shared_vector<vk::MultiDrawInfoEXT> const& multiDraw) {
+              cmdBuf.drawMultiEXT(*multiDraw, 1u, 0u, sizeof(vk::MultiDrawInfoEXT), dispatch);
+            }) :
+            fnTp([cmdBuf = exec->cmdBuf](cpp21::shared_vector<vk::MultiDrawInfoEXT> const& multiDraw) {
+              for (decltype(auto) drawInfo : *multiDraw) {
+                cmdBuf.draw(drawInfo.vertexCount, 1u, drawInfo.firstVertex, 0u);
+              };
+            });
 
-              // 
-              exec->cmdBuf.pushConstants(descriptorsObj->handle.as<vk::PipelineLayout>(), vk::ShaderStageFlagBits::eAll, 0ull, sizeof(PushConstantData), &instInfo.drawData);
-              multiDrawDirect(instInfo.drawInfos);
-          //};
+            // 
+            exec->cmdBuf.pushConstants(descriptorsObj->handle.as<vk::PipelineLayout>(), vk::ShaderStageFlagBits::eAll, 0ull, sizeof(PushConstantData), &instInfo.drawData);
+            multiDrawDirect(instInfo.drawInfos);
         };
       };
 
@@ -354,7 +352,7 @@ namespace ZNAMED {
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
 
       // 
-      submission.commandInits.push_back([=,this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+      submission.commandInits.push_back([exec,this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
         if (exec->graphics) { this->writeGraphicsCommand(exec->graphics->with(cmdBuf)); };
         if (exec->compute) { this->writeComputeCommand(exec->compute->with(cmdBuf)); };
         return cmdBuf;
