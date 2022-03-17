@@ -90,6 +90,10 @@ namespace ZNAMED {
     };
 
     //
+    virtual InstanceAddressInfo& getAddressInfo() { return addressInfo; };
+    virtual InstanceAddressInfo const& getAddressInfo() const { return addressInfo; };
+
+    //
     virtual vk::Buffer& getInstancedBuffer() { return this->instanceBuffer; };
     virtual vk::Buffer const& getInstancedBuffer() const { return this->instanceBuffer; };
 
@@ -120,9 +124,6 @@ namespace ZNAMED {
       // 
       this->instances = {};
       this->instanceRanges = {};
-
-      //
-      this->addressInfo = InstanceAddressInfo{ .data = this->getDrawDataDeviceAddress(), .accelStruct = this->handle.as<uintptr_t>() };
 
       //
       if (this->instanceDrawInfo->size() < this->cInfo->instanceData.size()) {
@@ -278,6 +279,7 @@ namespace ZNAMED {
 
       //
       this->handle = device.getAccelerationStructureAddressKHR(vk::AccelerationStructureDeviceAddressInfoKHR{ .accelerationStructure = this->accelStruct }, deviceObj->getDispatch());
+      this->addressInfo = InstanceAddressInfo{ .data = this->getDrawDataDeviceAddress(), .accelStruct = this->handle.as<uintptr_t>() };
 
       //
       return std::get<0>(*this->buildStructure())->get();
