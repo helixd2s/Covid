@@ -148,8 +148,12 @@ int main() {
   uintptr_t ioffset = sizeof(glm::vec4) * vertices.size();
 
   //
+  memcpy(uploader->getUploadMapped(voffset), vertices.data(), vertices.size() * sizeof(glm::vec4));
+  memcpy(uploader->getUploadMapped(ioffset), indices.data(), indices.size() * sizeof(uint16_t));
+
+  //
   uploader->executeUploadToResourceOnce(ZNAMED::UploadExecutionOnce{
-    .host = std::span<char8_t>{(char8_t*)vertices.data(), vertices.size() * sizeof(glm::vec4)},
+    //.host = std::span<char8_t>{(char8_t*)vertices.data(), vertices.size() * sizeof(glm::vec4)},
     .writeInfo = ZNAMED::UploadCommandWriteInfo{
       .hostMapOffset = voffset,
       .dstBuffer = ZNAMED::BufferRegion{buffer.as<vk::Buffer>(), ZNAMED::DataRegion{voffset, sizeof(glm::vec4) * vertices.size()}},
@@ -158,7 +162,7 @@ int main() {
 
   //
   uploader->executeUploadToResourceOnce(ZNAMED::UploadExecutionOnce{
-    .host = std::span<char8_t>{(char8_t*)indices.data(), indices.size() * sizeof(uint16_t)},
+    //.host = std::span<char8_t>{(char8_t*)indices.data(), indices.size() * sizeof(uint16_t)},
     .writeInfo = ZNAMED::UploadCommandWriteInfo{
       .hostMapOffset = ioffset,
       .dstBuffer = ZNAMED::BufferRegion{buffer.as<vk::Buffer>(), ZNAMED::DataRegion{ioffset, sizeof(uint16_t) * indices.size()}},
