@@ -16,7 +16,10 @@ namespace ZNAMED {
     std::vector<std::vector<vk::Queue>> queues = {};
   };
 
-  
+  //
+  template<typename R>
+  inline bool is_ready(std::future<R> const& f)
+  { return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready; }
 
   // 
   class DeviceObj : public BaseObj {
@@ -49,6 +52,9 @@ namespace ZNAMED {
 
     //
     SMAP addressSpace = {};
+
+    //
+    std::vector<std::shared_ptr<std::future<vk::Result>>> futures = {};
 
   public:
 
@@ -251,6 +257,22 @@ namespace ZNAMED {
   public:
 
     //
+    virtual void tickProcessing() override {
+      std::decay_t<decltype(futures)>::iterator future = futures.begin();
+      while(future != futures.end()) {
+        bool ready = !(*future) || !(*future)->valid() || is_ready(**future);
+        if (ready) {
+          future = futures.erase(future);
+        } else {
+          future++;
+        }
+      };
+      if (this->callstack) {
+        this->callstack->process();
+      };
+    };
+
+    //
     virtual FenceType executeCommandOnce(cpp21::const_wrap_arg<CommandOnceSubmission> submissionRef_ = {}) {
       decltype(auto) submissionRef = std::make_shared<CommandOnceSubmission>(submissionRef_);
       auto& submission = submissionRef->submission;
@@ -300,7 +322,7 @@ namespace ZNAMED {
       };
 
       // 
-      auto promise = std::async(std::launch::async | std::launch::deferred, [callstack=std::weak_ptr<CallStack>(this->callstack), device, fence, commandPool, submissionRef, commandBuffers, deAllocation]() {
+      decltype(auto) promise = std::make_shared<std::future<vk::Result>>(std::async(std::launch::async | std::launch::deferred, [callstack = std::weak_ptr<CallStack>(this->callstack), device, fence, commandPool, submissionRef, commandBuffers, deAllocation]() {
         auto result = device.waitForFences(*fence, true, 1000 * 1000 * 1000);
         auto cl = callstack.lock();
         for (auto& fn : submissionRef->onDone) {
@@ -308,10 +330,13 @@ namespace ZNAMED {
         };
         cl->add(deAllocation);
         return result;
-      });
+      }));
+
+      //
+      this->futures.push_back(promise);
 
       // 
-      return std::make_shared<FenceTypeRaw>(std::move(std::make_tuple(std::forward<std::future<vk::Result>>(promise), std::forward<std::shared_ptr<vk::Fence>>(fence))));
+      return std::make_shared<FenceTypeRaw>(promise, fence);
     };
 
     //

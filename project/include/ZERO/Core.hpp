@@ -847,7 +847,7 @@ namespace ZNAMED {
   };
 
   //
-  using FenceTypeRaw = std::tuple<std::future<vk::Result>, std::shared_ptr<vk::Fence>>;
+  using FenceTypeRaw = std::tuple< std::shared_ptr<std::future<vk::Result>>, std::shared_ptr<vk::Fence>>;
   using FenceType = std::shared_ptr<FenceTypeRaw>;
 
   // 

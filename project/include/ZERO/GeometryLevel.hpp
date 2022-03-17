@@ -228,7 +228,7 @@ namespace ZNAMED {
       this->handle = device.getAccelerationStructureAddressKHR(vk::AccelerationStructureDeviceAddressInfoKHR{ .accelerationStructure = this->accelStruct }, deviceObj->getDispatch());
 
       //
-      return std::get<0>(*this->buildStructure()).get();
+      return std::get<0>(*this->buildStructure())->get();
     };
 
     // 
