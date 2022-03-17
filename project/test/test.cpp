@@ -269,8 +269,8 @@ int main() {
   //
   decltype(auto) geometryLevel = ZNAMED::GeometryLevelObj::make(device, ZNAMED::GeometryLevelCreateInfo{
     .geometryData = std::vector<ZNAMED::GeometryInfo>{ZNAMED::GeometryInfo{
-      .vertices = ZNAMED::BufferViewInfo{.deviceAddress = verticesAddress, .stride = sizeof(glm::vec4), .format = ZNAMED::BufferViewFormat::eFloat3},
-      .indices = ZNAMED::BufferViewInfo{.deviceAddress = indicesAddress, .stride = sizeof(uint16_t), .format = ZNAMED::BufferViewFormat::eShort},
+      .vertices = ZNAMED::BufferViewInfo{.region = vk::StridedDeviceAddressRegionKHR{.deviceAddress = verticesAddress, .stride = sizeof(glm::vec4), .size = sizeof(glm::vec4) * vertices.size()}, .format = ZNAMED::BufferViewFormat::eFloat3},
+      .indices = ZNAMED::BufferViewInfo{.region = vk::StridedDeviceAddressRegionKHR{.deviceAddress = indicesAddress, .stride = sizeof(uint16_t), .size = sizeof(uint16_t) * indices.size()}, .format = ZNAMED::BufferViewFormat::eShort},
       .primitiveCount = 2u,
     }},
     .uploader = uploader.as<uintptr_t>(),

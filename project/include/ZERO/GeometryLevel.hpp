@@ -113,12 +113,12 @@ namespace ZNAMED {
           .geometryType = vk::GeometryTypeKHR::eTriangles,
           .geometry = vk::AccelerationStructureGeometryDataKHR{.triangles = vk::AccelerationStructureGeometryTrianglesDataKHR{
             .vertexFormat = cvtFormat(geometry.vertices.format),
-            .vertexData = geometry.vertices.deviceAddress,
-            .vertexStride = geometry.vertices.stride,
-            .maxVertex = geometry.primitiveCount * 3u,
+            .vertexData = geometry.vertices.region.deviceAddress,
+            .vertexStride = geometry.vertices.region.stride,
+            .maxVertex = uint32_t(cpp21::tiled(geometry.vertices.region.size, geometry.vertices.region.stride)),
             .indexType = cvtIndex(geometry.indices.format),
-            .indexData = geometry.indices.deviceAddress,
-            .transformData = geometry.transform.deviceAddress
+            .indexData = geometry.indices.region.deviceAddress,
+            .transformData = geometry.transform.region.deviceAddress
           }},
           .flags = geometry.opaque ? vk::GeometryFlagBitsKHR::eOpaque : vk::GeometryFlagBitsKHR{}
         });
