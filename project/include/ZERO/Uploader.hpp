@@ -71,8 +71,8 @@ namespace ZNAMED {
     };
 
     //
-    virtual void* getUploadMapped() { return ZNAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(uploadBuffer)->mappedMemory; };
-    virtual void* getDownloadMapped() { return ZNAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(downloadBuffer)->mappedMemory; };
+    virtual void* getUploadMapped(uintptr_t const& offset = 0ull) { return cpp21::shift(ZNAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(uploadBuffer)->mappedMemory, offset); };
+    virtual void* getDownloadMapped(uintptr_t const& offset = 0ull) { return cpp21::shift(ZNAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(downloadBuffer)->mappedMemory, offset); };
 
     // you can copy from host to device Buffer and Image together!
     // TODO: per-type role based barriers...
