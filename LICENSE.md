@@ -24,7 +24,7 @@ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-![](./doc/manual/frontpage1.png)
+![](./images/img0.jpg)
 
 ### The MIT License
 
@@ -49,7 +49,7 @@ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-![](./doc/manual/frontpage2.png)
+![](./images/img1.jpg)
 
 ### 🇺🇦 SUPPORT THE UKRAINA! 🇺🇦
 
@@ -57,4 +57,4 @@ Copyright (c) 2022 - HeliX-D2S Production
 
 Russians.., please, STOP the WAR!
 
-![](./doc/manual/frontpage4.jpg)
+![](./images/img2.jpg)
