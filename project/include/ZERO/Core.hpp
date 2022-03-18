@@ -352,6 +352,19 @@ namespace ZNAMED {
     uint32_t physicalDeviceIndex = 0u;
   };
 
+  //
+  struct TexOrDef {
+    uint32_t textureIdPOne = 0u, samplerIdPOne = 0u;
+    glm::vec4 defValue = {0.f,0.f,0.f,0.f};
+  };
+
+  //
+  struct MaterialInfo {
+    TexOrDef albedo;
+    TexOrDef normal;
+    TexOrDef pbr;
+  };
+
   // 
   struct BufferViewRegion {
     uint64_t deviceAddress = 0ull;
@@ -381,12 +394,11 @@ namespace ZNAMED {
 
     //
     uint64_t extensionRef = 0ull;
+    uint64_t materialRef = 0ull;
 
     //
-    uint32_t materialId = 0u;
     uint32_t primitiveCount = 0u;
     uint32_t flags = 1u;
-    uint32_t reserved = 0u;
   };
 
   //

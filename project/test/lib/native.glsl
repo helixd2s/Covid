@@ -25,6 +25,20 @@ layout(set = 1, binding = 0) uniform texture2D textures[];
 layout(set = 2, binding = 0) uniform sampler samplers[];
 layout(set = 3, binding = 0, rgb10_a2) uniform image2D images[];
 
+//
+struct TexOrDef {
+  uint32_t textureIdPOne; // starts from 1u, count as Id-1u, zero are Null
+  uint32_t samplerIdPOne; // starts from 1u, count as Id-1u, zero are Null
+  vec4 defValue;
+};
+
+//
+struct MaterialInfo {
+  TexOrDef albedo;
+  TexOrDef normal;
+  TexOrDef pbr;
+};
+
 
 //
 struct BufferViewRegion {
@@ -55,12 +69,11 @@ struct GeometryInfo {
 
   //
   uint64_t extensionRef;
+  uint64_t materialRef;
 
   //
-  uint32_t materialId;
   uint32_t primitiveCount;
   uint32_t flags;
-  uint32_t reserved;
 };
 
 //
