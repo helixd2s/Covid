@@ -338,12 +338,12 @@ namespace ZNAMED {
       "VK_EXT_blend_operation_advanced", 
       "VK_EXT_validation_cache",
       "VK_KHR_portability_subset",
-      "VK_KHR_external_semaphore",
       "VK_KHR_external_semaphore_win32",
       "VK_KHR_external_semaphore_fd",
-      "VK_KHR_external_memory",
       "VK_KHR_external_memory_win32",
-      "VK_KHR_external_memory_fd"
+      "VK_KHR_external_memory_fd",
+      "VK_KHR_shader_subgroup_uniform_control_flow",
+      "VK_KHR_workgroup_memory_explicit_layout"
     };
     cpp21::shared_vector<std::string> layerList = std::vector<std::string>{
     };
