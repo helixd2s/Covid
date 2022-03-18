@@ -361,9 +361,6 @@ namespace ZNAMED {
 
   //
   struct BufferViewInfo {
-    //vk::DeviceAddress deviceAddress = 0ull;
-    //vk::DeviceSize stride = 0ull;
-    //vk::DeviceSize size = VK_WHOLE_SIZE;
     BufferViewRegion region = { .deviceAddress = 0ull, .stride = 0u, .size = uint32_t(VK_WHOLE_SIZE) };
     BufferViewFormat format = BufferViewFormat::eNone;
     uint32_t flags = 0u;
@@ -383,17 +380,12 @@ namespace ZNAMED {
     BufferViewInfo transform = {};
 
     //
-    //BufferViewInfo texcoord = {};
-    //BufferViewInfo normals = {};
-    //BufferViewInfo tangets = {};
-
-    //
     uint64_t extensionRef = 0ull;
 
     //
     uint32_t materialId = 0u;
     uint32_t primitiveCount = 0u;
-    uint32_t opaque = 1u;
+    uint32_t flags = 1u;
     uint32_t reserved = 0u;
   };
 

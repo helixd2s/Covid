@@ -13,13 +13,13 @@
 // 
 layout(set = 0, binding = 0, scalar) uniform MatrixBlock
 {
-  uint32_t textureIndices[4];
+  uint32_t textureIndices[4]; // framebuffers
 };
 
 //
 layout(set = 1, binding = 0) uniform texture2D textures[];
 layout(set = 2, binding = 0) uniform sampler samplers[];
-layout(set = 3, binding = 0, rgba8) uniform image2D images[];
+layout(set = 3, binding = 0, rgb10_a2) uniform image2D images[];
 
 //
 struct PushConstantData {
@@ -44,6 +44,43 @@ struct InstanceAddressBlock {
 struct SwapchainStateInfo {
   uint32_t image;
   uint32_t index;
+};
+
+//
+struct BufferViewRegion {
+  uint64_t deviceAddress;
+  uint32_t stride;
+  uint32_t size;
+};
+
+//
+struct BufferViewInfo {
+  BufferViewRegion region;
+  uint32_t format;
+  uint32_t flags;
+};
+
+// but may not to be...
+struct GeometryExtension {
+  BufferViewInfo texcoord;
+  BufferViewInfo normals;
+  BufferViewInfo tangets;
+};
+
+//
+struct GeometryInfo {
+  BufferViewInfo vertices;
+  BufferViewInfo indices;
+  BufferViewInfo transform;
+
+  //
+  uint64_t extensionRef;
+
+  //
+  uint32_t materialId;
+  uint32_t primitiveCount;
+  uint32_t flags;
+  uint32_t reserved;
 };
 
 //
