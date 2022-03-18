@@ -171,6 +171,71 @@ namespace ZNAMED {
     };
 
     //
+    virtual vk::CommandBuffer const& writeBuildStructureCmd(cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf = {}) {
+      decltype(auto) device = this->base.as<vk::Device>();
+      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(this->cInfo->uploader);
+
+      // 
+      uploaderObj->writeUploadToResourceCmd(UploadCommandWriteInfo{
+        .cmdBuf = cmdBuf,
+        .hostMapOffset = 0ull,
+        .dstBuffer = BufferRegion{this->instanceBuffer, DataRegion{ 0ull, this->cInfo->instanceData.size() * sizeof(InstanceInfo) }}
+        });
+
+      // parallelize by offset
+      uploaderObj->writeUploadToResourceCmd(UploadCommandWriteInfo{
+        .cmdBuf = cmdBuf,
+        .hostMapOffset = this->cInfo->instanceData.size() * sizeof(InstanceInfo),
+        .dstBuffer = BufferRegion{this->instanceExtBuffer, DataRegion{ 0ull, this->cInfo->instanceData.size() * sizeof(InstanceDrawData) }}
+        });
+
+      //
+      decltype(auto) accelGeomInfo = infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR);
+      decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelGeomInfo->setGeometries(this->instances), this->cInfo->limits, deviceObj->getDispatch()));
+      decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
+      decltype(auto) accessMask = vk::AccessFlagBits2(vku::getAccessMaskByImageUsage(deviceObj->get<ResourceObj>(this->instanceBuild)->getBufferUsage()));
+
+      //
+      decltype(auto) bufferBarriersBegin = std::vector<vk::BufferMemoryBarrier2>{
+        vk::BufferMemoryBarrier2{
+          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(accessMask) | (accessMask & vk::AccessFlagBits2(AccessFlagBitsSet::eShaderReadWrite) ? vk::PipelineStageFlagBits2::eAllCommands : vk::PipelineStageFlagBits2{}),
+          .srcAccessMask = accessMask,
+          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(vk::AccessFlagBits2::eAccelerationStructureWriteKHR | vk::AccessFlagBits2::eAccelerationStructureReadKHR),
+          .dstAccessMask = vk::AccessFlagBits2::eAccelerationStructureWriteKHR | vk::AccessFlagBits2::eAccelerationStructureReadKHR,
+          .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
+          .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
+          .buffer = this->instanceBuild,
+          .offset = 0ull,
+          .size = accelSizes->accelerationStructureSize
+        },
+      };
+
+      //
+      decltype(auto) bufferBarriersEnd = std::vector<vk::BufferMemoryBarrier2>{
+        vk::BufferMemoryBarrier2{
+          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(vk::AccessFlagBits2::eAccelerationStructureWriteKHR | vk::AccessFlagBits2::eAccelerationStructureReadKHR),
+          .srcAccessMask = vk::AccessFlagBits2::eAccelerationStructureWriteKHR | vk::AccessFlagBits2::eAccelerationStructureReadKHR,
+          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(accessMask) | (accessMask & vk::AccessFlagBits2(AccessFlagBitsSet::eShaderReadWrite) ? vk::PipelineStageFlagBits2::eAllCommands : vk::PipelineStageFlagBits2{}),
+          .dstAccessMask = accessMask,
+          .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
+          .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
+          .buffer = this->instanceBuild,
+          .offset = 0ull,
+          .size = accelSizes->accelerationStructureSize
+        }
+      };
+
+      // 
+      cmdBuf->pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersBegin));
+      cmdBuf->buildAccelerationStructuresKHR(1u, &infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR)->setGeometries(this->instances), cpp21::rvalue_to_ptr(instanceRanges.data()), deviceObj->getDispatch());
+      cmdBuf->pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersEnd));
+
+      //
+      return cmdBuf;
+    };
+
+    //
     virtual FenceType buildStructure(cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}) {
       this->updateInstances();
 
@@ -185,26 +250,7 @@ namespace ZNAMED {
 
       // TODO: Acceleration Structure Build Barriers per Buffers
       submission.commandInits.push_back([dispatch = deviceObj->getDispatch(), this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
-        decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
-        decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(this->cInfo->uploader);
-
-        // 
-        uploaderObj->writeUploadToResourceCmd(UploadCommandWriteInfo{
-          .cmdBuf = cmdBuf,
-          .hostMapOffset = 0ull,
-          .dstBuffer = BufferRegion{this->instanceBuffer, DataRegion{ 0ull, this->cInfo->instanceData.size() * sizeof(InstanceInfo) }}
-        });
-
-        // parallelize by offset
-        uploaderObj->writeUploadToResourceCmd(UploadCommandWriteInfo{
-          .cmdBuf = cmdBuf,
-          .hostMapOffset = this->cInfo->instanceData.size() * sizeof(InstanceInfo),
-          .dstBuffer = BufferRegion{this->instanceExtBuffer, DataRegion{ 0ull, this->cInfo->instanceData.size() * sizeof(InstanceDrawData) }}
-        });
-
-        // 
-        cmdBuf->buildAccelerationStructuresKHR(1u, &infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR)->setGeometries(this->instances), cpp21::rvalue_to_ptr(instanceRanges.data()), dispatch);
-        return cmdBuf;
+        return this->writeBuildStructureCmd(cmdBuf);
       });
 
       //
