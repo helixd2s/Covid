@@ -325,8 +325,8 @@ namespace ZNAMED {
       using fnTp = std::function<fnT>;
 
       //
-      if (exec->instanceInfos.size() > 0) {
-        for (decltype(auto) instInfo : exec->instanceInfos) {
+      if (exec->instanceDraws.size() > 0) {
+        for (decltype(auto) instInfo : exec->instanceDraws) {
           decltype(auto) multiDrawDirect = supportMultiDraw ?
             fnTp([cmdBuf = exec->cmdBuf, dispatch = deviceObj->getDispatch()](cpp21::shared_vector<vk::MultiDrawInfoEXT> const& multiDraw) {
               cmdBuf.drawMultiEXT(*multiDraw, 1u, 0u, sizeof(vk::MultiDrawInfoEXT), dispatch);

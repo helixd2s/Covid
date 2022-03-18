@@ -352,6 +352,8 @@ namespace ZNAMED {
     uint32_t physicalDeviceIndex = 0u;
   };
 
+
+
   //
   struct TexOrDef {
     uint32_t textureIdPOne = 0u, samplerIdPOne = 0u;
@@ -401,6 +403,45 @@ namespace ZNAMED {
     uint32_t flags = 1u;
   };
 
+
+
+  //
+  struct SwapchainStateInfo {
+    uint32_t image = 0u;
+    uint32_t index = uint32_t(-1);
+  };
+
+  //
+  struct PushConstantData {
+    uint64_t dataAddress = 0ull;
+    uint32_t drawIndex = 0u;
+    uint32_t reserved = 0u;
+  };
+
+  //
+  struct InstanceAddressInfo {
+    uint64_t data = 0ull;
+    uint64_t accelStruct = 0ull;
+  };
+
+  //
+  struct InstanceAddressBlock {
+    InstanceAddressInfo opaqueAddressInfo = {};
+    InstanceAddressInfo transparentAddressInfo = {};
+  };
+
+  //
+  struct InstanceInfo {
+    glm::mat3x4 transform = glm::mat3x4(1.f);
+    uint64_t reference = 0ull;
+  };
+
+  //
+  using InstanceDevInfo = vk::AccelerationStructureInstanceKHR;
+
+
+
+
   //
   inline decltype(auto) cvtFormat(BufferViewFormat const& format) {
     switch (format) {
@@ -443,7 +484,7 @@ namespace ZNAMED {
 
   //
   struct GeometryLevelCreateInfo : BaseCreateInfo {
-    std::vector<GeometryInfo> geometryData = {};
+    std::vector<GeometryInfo> geometries = {};
     std::vector<uint32_t> limits = {};
     //size_t geometryCount = 1u;
     uintptr_t uploader = 0ull;
@@ -453,11 +494,8 @@ namespace ZNAMED {
   };
 
   //
-  using InstanceInfo = vk::AccelerationStructureInstanceKHR;
-
-  //
   struct InstanceLevelCreateInfo : BaseCreateInfo {
-    std::vector<InstanceInfo> instanceData = {};
+    std::vector<InstanceDevInfo> instances = {};
     uint32_t limit = uint32_t(0u);
     //std::vector<uint32_t> limits = {};
     //size_t instanceCount = 1u;
@@ -742,42 +780,16 @@ namespace ZNAMED {
   };
 
 
-  //
-  struct SwapchainStateInfo {
-    uint32_t image = 0u;
-    uint32_t index = uint32_t(-1);
-  };
+
+
 
   //
-  struct PushConstantData {
-    uint64_t dataAddress = 0ull;
-    uint32_t drawIndex = 0u;
-    uint32_t reserved = 0u;
-  };
-
-  //
-  struct InstanceDrawInfo {
+  struct InstanceDraw {
     std::optional<PushConstantData> drawConst = {};
     cpp21::shared_vector<vk::MultiDrawInfoEXT> drawInfos = std::vector<vk::MultiDrawInfoEXT>{};
   };
 
-  //
-  struct InstanceAddressInfo {
-    uint64_t data = 0ull;
-    uint64_t accelStruct = 0ull;
-  };
 
-  //
-  struct InstanceAddressBlock {
-    InstanceAddressInfo opaqueAddressInfo = {};
-    InstanceAddressInfo transparentAddressInfo = {};
-  };
-
-  //
-  struct InstanceDrawData {
-    glm::mat3x4 transform = glm::mat3x4(1.f);
-    uint64_t reference = 0ull;
-  };
 
   
 
@@ -804,7 +816,7 @@ namespace ZNAMED {
     vk::SwapchainKHR swapchain = {};
 
     // needs multiple-levels support
-    std::vector<InstanceDrawInfo> instanceInfos = {}; // currently, problematic for dynamic rendering... 
+    std::vector<InstanceDraw> instanceDraws = {}; // currently, problematic for dynamic rendering... 
 
     // 
     std::optional<InstanceAddressBlock> instanceAddressBlock = {};

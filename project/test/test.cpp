@@ -257,7 +257,7 @@ int main() {
 
   //
   decltype(auto) geometryLevel = ZNAMED::GeometryLevelObj::make(device, ZNAMED::GeometryLevelCreateInfo{
-    .geometryData = std::vector<ZNAMED::GeometryInfo>{ZNAMED::GeometryInfo{
+    .geometries = std::vector<ZNAMED::GeometryInfo>{ZNAMED::GeometryInfo{
       .vertices = ZNAMED::BufferViewInfo{.region = ZNAMED::BufferViewRegion{.deviceAddress = verticesAddress, .stride = sizeof(glm::vec4), .size = uint32_t(sizeof(glm::vec4) * vertices.size())}, .format = ZNAMED::BufferViewFormat::eFloat3},
       .indices = ZNAMED::BufferViewInfo{.region = ZNAMED::BufferViewRegion{.deviceAddress = indicesAddress, .stride = sizeof(uint16_t), .size = uint32_t(sizeof(uint16_t) * indices.size())}, .format = ZNAMED::BufferViewFormat::eShort},
       .primitiveCount = 2u,
@@ -267,7 +267,7 @@ int main() {
 
   //
   decltype(auto) instanceLevel = ZNAMED::InstanceLevelObj::make(device, ZNAMED::InstanceLevelCreateInfo{
-    .instanceData = std::vector<ZNAMED::InstanceInfo>{ZNAMED::InstanceInfo{
+    .instances = std::vector<ZNAMED::InstanceDevInfo>{ZNAMED::InstanceDevInfo{
       .transform = reinterpret_cast<vk::TransformMatrixKHR&&>(glm::mat3x4(1.f)),
       .instanceCustomIndex = 0u,
       .mask = 0xFFu,
@@ -313,7 +313,7 @@ int main() {
         .layout = descriptors.as<vk::PipelineLayout>(),
         .framebuffer = framebuffer.as<uintptr_t>(),
         .swapchain = swapchain.as<vk::SwapchainKHR>(),
-        .instanceInfos = instanceLevel->getDrawInfo(),
+        .instanceDraws = instanceLevel->getDrawInfo(),
         .instanceAddressBlock = instanceAddressBlock
       },
       .submission = ZNAMED::SubmissionInfo{

@@ -77,14 +77,32 @@ struct GeometryInfo {
 };
 
 //
-layout(buffer_reference, scalar, buffer_reference_align = 8) buffer GeometryInfos {
-  GeometryInfo geometryInfos[];
+layout(buffer_reference, scalar, buffer_reference_align = 8) buffer GeometryData {
+  GeometryInfo infos[];
+};
+
+//
+struct InstanceInfo {
+  mat3x4 transform;
+  GeometryData data;
+};
+
+//
+layout(buffer_reference, scalar, buffer_reference_align = 8) buffer InstanceData {
+  InstanceInfo infos[];
 };
 
 //
 struct InstanceAddressInfo {
-  GeometryInfos data;
+  InstanceData data;
   uint64_t accelStruct;
+};
+
+// ALWAYS USE ZERO INDEX OF `InstanceDrawDatas`
+struct PushConstantData {
+  InstanceData data;
+  uint32_t drawIndex;
+  uint32_t reserved;
 };
 
 //
@@ -92,20 +110,6 @@ struct InstanceAddressBlock {
   InstanceAddressInfo opaqueAddressInfo;
   InstanceAddressInfo transparentAddressInfo;
 };
-
-//
-struct InstanceDrawData {
-  mat3x4 transform;
-  GeometryInfos reference;
-};
-
-// ALWAYS USE ZERO INDEX OF `GeometryInfos`
-struct PushConstantData {
-  GeometryInfos dataAddress;
-  uint32_t drawIndex;
-  uint32_t reserved;
-};
-
 
 
 //
