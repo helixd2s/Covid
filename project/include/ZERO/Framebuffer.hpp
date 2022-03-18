@@ -161,10 +161,10 @@ namespace ZNAMED {
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
 
-      decltype(auto) lastDepthFormat = descriptorsObj->cInfo->attachments.depthAttachmentFormat;
-      decltype(auto) lastStencilFormat = descriptorsObj->cInfo->attachments.stencilAttachmentFormat;
+      decltype(auto) lastDepthFormat = descriptorsObj->cInfo->attachments[uint32_t(this->cInfo->type)].depthAttachmentFormat;
+      decltype(auto) lastStencilFormat = descriptorsObj->cInfo->attachments[uint32_t(this->cInfo->type)].stencilAttachmentFormat;
 
-      decltype(auto) format = (*imageType) == ImageType::eDepthStencilAttachment ? lastDepthFormat : ((*imageType) == ImageType::eDepthAttachment ? lastDepthFormat : ((*imageType) == ImageType::eStencilAttachment ? lastStencilFormat : descriptorsObj->cInfo->attachments.colorAttachmentFormats[colorAttachments.size()]));
+      decltype(auto) format = (*imageType) == ImageType::eDepthStencilAttachment ? lastDepthFormat : ((*imageType) == ImageType::eDepthAttachment ? lastDepthFormat : ((*imageType) == ImageType::eStencilAttachment ? lastStencilFormat : descriptorsObj->cInfo->attachments[uint32_t(this->cInfo->type)].colorAttachmentFormats[colorAttachments.size()]));
       decltype(auto) aspectMask =
         (*imageType) == ImageType::eDepthStencilAttachment ? (vk::ImageAspectFlagBits::eDepth) :
         ((*imageType) == ImageType::eDepthAttachment ? vk::ImageAspectFlagBits::eDepth :
@@ -182,14 +182,15 @@ namespace ZNAMED {
           .baseMipLevel = 0u,
           .levelCount = 1u,
           .baseArrayLayer = 0u,
-          .layerCount = 1u
+          .layerCount = this->cInfo->type == FramebufferType::eCubemap ? 6u : 1u
         };
 
       //
       auto imageObj = ResourceObj::make(this->base, ResourceCreateInfo{
         .imageInfo = ImageCreateInfo{
+          .imageType = this->cInfo->type == FramebufferType::eCubemap ? vk::ImageType::e3D : vk::ImageType::e2D,
           .format = format,
-          .extent = vk::Extent3D{ cInfo->extent.width, cInfo->extent.height, 1u },
+          .extent = vk::Extent3D{ cInfo->extent.width, cInfo->extent.height, this->cInfo->type == FramebufferType::eCubemap ? 6u : 1u },
           .layout = vk::ImageLayout::eShaderReadOnlyOptimal,
           .type = imageType,
         }
@@ -198,7 +199,7 @@ namespace ZNAMED {
       //
       this->images.push_back(imageObj.as<vk::Image>());
       this->imageViews.push_back(std::get<0>(imageObj->createImageView(ImageViewCreateInfo{
-        .viewType = vk::ImageViewType::e2D,
+        .viewType = this->cInfo->type == FramebufferType::eCubemap ? vk::ImageViewType::eCube : vk::ImageViewType::e2D,
         .subresourceRange = subresourceRange
       })));
 
@@ -261,12 +262,12 @@ namespace ZNAMED {
       this->renderArea = vk::Rect2D{ vk::Offset2D{0u, 0u}, cInfo->extent };
 
       // 
-      for (auto& format : descriptorsObj->cInfo->attachments.colorAttachmentFormats) {
+      for (auto& format : descriptorsObj->cInfo->attachments[uint32_t(this->cInfo->type)].colorAttachmentFormats) {
         this->createImage(ImageType::eColorAttachment);
       };
 
       // 
-      if (descriptorsObj->cInfo->attachments.depthAttachmentFormat == descriptorsObj->cInfo->attachments.stencilAttachmentFormat) {
+      if (descriptorsObj->cInfo->attachments[uint32_t(this->cInfo->type)].depthAttachmentFormat == descriptorsObj->cInfo->attachments[uint32_t(this->cInfo->type)].stencilAttachmentFormat) {
         this->createImage(ImageType::eDepthStencilAttachment);
       } else {
         this->createImage(ImageType::eDepthAttachment);

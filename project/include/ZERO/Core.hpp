@@ -164,6 +164,13 @@ namespace ZNAMED {
   };
 
   //
+  enum class FramebufferType : uint32_t {
+    eUnknown = 0u,
+    eFrame = 1u,
+    eCubemap = 2u
+  };
+
+  //
   struct BufferViewFormatBitSet {
     uint32_t countMinusOne : 2;
     uint32_t is16bit : 1;
@@ -479,7 +486,63 @@ namespace ZNAMED {
   //
   struct DescriptorsCreateInfo : BaseCreateInfo {
     std::optional<QueueGetInfo> info = QueueGetInfo{};
-    AttachmentsInfo attachments = {};
+    std::vector<AttachmentsInfo> attachments = {
+      AttachmentsInfo{},
+      AttachmentsInfo{
+        .depthAttachmentFormat = vk::Format::eD32SfloatS8Uint,
+        .stencilAttachmentFormat = vk::Format::eD32SfloatS8Uint,
+        .colorAttachmentFormats = { vk::Format::eR32G32B32A32Sfloat, vk::Format::eR32G32B32A32Sfloat },
+        .blendStates = {
+          vk::PipelineColorBlendAttachmentState{
+            .blendEnable = false,
+            .srcColorBlendFactor = vk::BlendFactor::eOneMinusDstAlpha,
+            .dstColorBlendFactor = vk::BlendFactor::eDstAlpha,
+            .colorBlendOp = vk::BlendOp::eAdd,
+            .srcAlphaBlendFactor = vk::BlendFactor::eOne,
+            .dstAlphaBlendFactor = vk::BlendFactor::eOne,
+            .alphaBlendOp = vk::BlendOp::eMax,
+            .colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
+          },
+          vk::PipelineColorBlendAttachmentState{
+            .blendEnable = false,
+            .srcColorBlendFactor = vk::BlendFactor::eOneMinusDstAlpha,
+            .dstColorBlendFactor = vk::BlendFactor::eDstAlpha,
+            .colorBlendOp = vk::BlendOp::eAdd,
+            .srcAlphaBlendFactor = vk::BlendFactor::eOne,
+            .dstAlphaBlendFactor = vk::BlendFactor::eOne,
+            .alphaBlendOp = vk::BlendOp::eMax,
+            .colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
+          }
+        }
+      },
+      AttachmentsInfo{
+        .depthAttachmentFormat = vk::Format::eD32SfloatS8Uint,
+        .stencilAttachmentFormat = vk::Format::eD32SfloatS8Uint,
+        .colorAttachmentFormats = { vk::Format::eR8G8B8A8Unorm, vk::Format::eR8G8B8A8Unorm },
+        .blendStates = {
+          vk::PipelineColorBlendAttachmentState{
+            .blendEnable = false,
+            .srcColorBlendFactor = vk::BlendFactor::eOneMinusDstAlpha,
+            .dstColorBlendFactor = vk::BlendFactor::eDstAlpha,
+            .colorBlendOp = vk::BlendOp::eAdd,
+            .srcAlphaBlendFactor = vk::BlendFactor::eOne,
+            .dstAlphaBlendFactor = vk::BlendFactor::eOne,
+            .alphaBlendOp = vk::BlendOp::eMax,
+            .colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
+          },
+          vk::PipelineColorBlendAttachmentState{
+            .blendEnable = false,
+            .srcColorBlendFactor = vk::BlendFactor::eOneMinusDstAlpha,
+            .dstColorBlendFactor = vk::BlendFactor::eDstAlpha,
+            .colorBlendOp = vk::BlendOp::eAdd,
+            .srcAlphaBlendFactor = vk::BlendFactor::eOne,
+            .dstAlphaBlendFactor = vk::BlendFactor::eOne,
+            .alphaBlendOp = vk::BlendOp::eMax,
+            .colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
+          }
+        }
+      }
+    };
   };
 
   //
@@ -497,7 +560,7 @@ namespace ZNAMED {
   struct ImageCreateInfo : BaseCreateInfo {
     vk::ImageType imageType = vk::ImageType::e2D;
     vk::Format format = vk::Format::eUndefined;
-    vk::Extent3D extent = {2u,2u,2u};
+    vk::Extent3D extent = {2u,2u,1u};
     uint32_t mipLevelCount = 1u;
     uint32_t layerCount = 1u;
 
@@ -820,6 +883,7 @@ namespace ZNAMED {
 
   //
   struct GraphicsPipelineCreateInfo : BaseCreateInfo {
+    FramebufferType framebufferType = FramebufferType::eUnknown;
     robin_hood::unordered_map<vk::ShaderStageFlagBits, cpp21::shared_vector<uint32_t>> stageCodes = {};
   };
 
@@ -837,6 +901,7 @@ namespace ZNAMED {
 
   //
   struct FramebufferCreateInfo : BaseCreateInfo {
+    FramebufferType type = FramebufferType::eUnknown;
     vk::PipelineLayout layout = {};
     vk::Extent2D extent = {640u, 480u};
     std::optional<QueueGetInfo> info = {};

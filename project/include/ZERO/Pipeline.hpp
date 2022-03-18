@@ -100,8 +100,8 @@ namespace ZNAMED {
       //
       decltype(auto) pRendering = infoMap->set(vk::StructureType::ePipelineRenderingCreateInfo, vk::PipelineRenderingCreateInfo{
         .viewMask = 0x0u,
-        .depthAttachmentFormat = descriptors->cInfo->attachments.depthAttachmentFormat,
-        .stencilAttachmentFormat = descriptors->cInfo->attachments.stencilAttachmentFormat
+        .depthAttachmentFormat = descriptors->cInfo->attachments[uint32_t(graphics->framebufferType)].depthAttachmentFormat,
+        .stencilAttachmentFormat = descriptors->cInfo->attachments[uint32_t(graphics->framebufferType)].stencilAttachmentFormat
       });
 
       //
@@ -187,7 +187,7 @@ namespace ZNAMED {
 
       // 
       decltype(auto) pInfo = infoMap->set(vk::StructureType::eGraphicsPipelineCreateInfo, vk::GraphicsPipelineCreateInfo{
-        .pNext = &pRendering->setColorAttachmentFormats(descriptors->cInfo->attachments.colorAttachmentFormats),
+        .pNext = &pRendering->setColorAttachmentFormats(descriptors->cInfo->attachments[uint32_t(graphics->framebufferType)].colorAttachmentFormats),
         .flags = vk::PipelineCreateFlags{},
         .pVertexInputState = pVertexInput.get(),
         .pInputAssemblyState = pInputAssembly.get(),
@@ -196,7 +196,7 @@ namespace ZNAMED {
         .pRasterizationState = pRasterization.get(),
         .pMultisampleState = pMultisample.get(),
         .pDepthStencilState = pDepthStencil.get(),
-        .pColorBlendState = &pColorBlend->setAttachments(descriptors->cInfo->attachments.blendStates),
+        .pColorBlendState = &pColorBlend->setAttachments(descriptors->cInfo->attachments[uint32_t(graphics->framebufferType)].blendStates),
         .pDynamicState = &pDynamic->setDynamicStates(this->dynamicStates),
         .layout = this->cInfo->layout
       })->setStages(pipelineStages);
