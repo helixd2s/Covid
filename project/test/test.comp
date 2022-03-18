@@ -30,6 +30,6 @@ void main() {
       finalPosition.xyz = rayQueryGetIntersectionObjectRayOriginEXT(rayQuery, true);
   };
 
-  imageStore(images[imageIndices[currentImage]], ivec2(gl_GlobalInvocationID.xy), finalPosition);
+  imageStore(images[swapchain.image], ivec2(gl_GlobalInvocationID.xy), finalPosition);
   //imageStore(images[imageIndices[currentImage]], ivec2(gl_GlobalInvocationID.xy), vec4(vec2(gl_GlobalInvocationID.xy)/vec2(1280.f,720.f), 0.f, 1.f));
 };

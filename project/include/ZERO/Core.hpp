@@ -736,6 +736,11 @@ namespace ZNAMED {
   };
 
 
+  //
+  struct SwapchainStateInfo {
+    uint32_t image = 0u;
+    uint32_t index = uint32_t(-1);
+  };
 
   //
   struct PushConstantData {
@@ -776,7 +781,8 @@ namespace ZNAMED {
     vk::CommandBuffer cmdBuf = {};
     vk::Extent3D dispatch = { 1u, 1u, 1u };
     vk::PipelineLayout layout = {};
-    
+    vk::SwapchainKHR swapchain = {};
+
     //
     std::optional<InstanceAddressBlock> instanceAddressBlock = {};
 
@@ -789,6 +795,7 @@ namespace ZNAMED {
     vk::CommandBuffer cmdBuf = {};
     vk::PipelineLayout layout = {};
     uintptr_t framebuffer = {};
+    vk::SwapchainKHR swapchain = {};
 
     // 
     std::optional<InstanceAddressBlock> instanceAddressBlock = {};

@@ -45,7 +45,14 @@ struct InstanceAddressBlock {
 };
 
 //
+struct SwapchainStateInfo {
+  uint32_t image;
+  uint32_t index;
+};
+
+//
 layout(push_constant) uniform PConstBlock {
   InstanceAddressBlock instancedData;
   PushConstantData instanceDrawInfo;
+  SwapchainStateInfo swapchain;
 };

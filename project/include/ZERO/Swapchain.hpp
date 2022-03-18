@@ -65,6 +65,9 @@ namespace ZNAMED {
     //
     vk::Rect2D renderArea = {};
 
+    //
+    SwapchainStateInfo currentState = {};
+
   public:
     // 
     SwapchainObj(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) : cInfo(cInfo) {
@@ -76,6 +79,10 @@ namespace ZNAMED {
     SwapchainObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) : cInfo(cInfo) {
       this->construct(ZNAMED::context->get<DeviceObj>(this->base = handle), cInfo);
     };
+
+    //
+    virtual SwapchainStateInfo& getStateInfo() { return currentState; };
+    virtual SwapchainStateInfo const& getStateInfo() const { return currentState; };
 
     //
     virtual std::vector<uint32_t> const& getImageViewIndices() const { return imageViewIndices; };
@@ -103,6 +110,8 @@ namespace ZNAMED {
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = info ? info.value() : this->cInfo->info } };
 
       // 
+      submission.submission.waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{ presentSemaphoreInfos[*imageIndex] };
+      submission.submission.signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{ readySemaphoreInfos[*imageIndex] };
       submission.commandInits.push_back([this, imageIndex](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
         this->switchToPresentFn[*imageIndex](cmdBuf, state);
         return cmdBuf;
@@ -124,6 +133,30 @@ namespace ZNAMED {
 
       //
       return ZNAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
+    };
+
+    //
+    virtual uint32_t& acquireImage(cpp21::const_wrap_arg<ZNAMED::QueueGetInfo> qfAndQueue) {
+      decltype(auto) semIndex = (this->currentState.index + 1u) % this->imageViewIndices.size();
+      decltype(auto) acquired = (this->currentState.index = this->base.as<vk::Device>().acquireNextImage2KHR(vk::AcquireNextImageInfoKHR{ .swapchain = this->handle.as<vk::SwapchainKHR>(), .timeout = 1000 * 1000 * 1000, .semaphore = this->presentSemaphoreInfos[semIndex].semaphore, .deviceMask = 0x1u }));
+
+      //
+      this->switchToReady(acquired, qfAndQueue);
+      this->currentState.image = this->imageViewIndices[acquired];
+      return this->currentState.index;
+    };
+
+    //
+    virtual std::tuple<FenceType, vk::Result> presentImage(cpp21::const_wrap_arg<ZNAMED::QueueGetInfo> qfAndQueue) {
+      decltype(auto) fence = this->switchToPresent(this->currentState.index, qfAndQueue);
+      decltype(auto) result = ZNAMED::context->get<DeviceObj>(this->base)->getQueue(qfAndQueue).presentKHR(vk::PresentInfoKHR{
+        .waitSemaphoreCount = 1u,
+        .pWaitSemaphores = &readySemaphoreInfos[this->currentState.index].semaphore,
+        .swapchainCount = 1u,
+        .pSwapchains = &this->handle.as<vk::SwapchainKHR>(),
+        .pImageIndices = &this->currentState.index
+        });
+      return std::make_tuple(fence, result);
     };
 
   protected:
@@ -206,6 +239,8 @@ namespace ZNAMED {
       //ZNAMED::context->get<DeviceObj>(this->base)
     };
 
+    
+
     // 
     virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) {
       if (cInfo) { this->cInfo = cInfo; };
@@ -256,7 +291,8 @@ namespace ZNAMED {
       descriptorsObj->updateDescriptors();
 
       //
-      //this->handle = uintptr_t(this);
+      this->currentState.index = this->images.size()-1u;
+      this->currentState.image = this->imageViewIndices[this->currentState.index];
     };
 
 

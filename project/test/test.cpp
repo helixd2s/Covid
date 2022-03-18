@@ -305,10 +305,7 @@ int main() {
 
     // 
     decltype(auto) semIndex = (uniformData.currentImage + 1u) % imageIndices.size();
-    decltype(auto) acquired = device.as<vk::Device>().acquireNextImage2KHR(vk::AcquireNextImageInfoKHR{ .swapchain = swapchain.as<vk::SwapchainKHR>(), .timeout = 1000*1000*1000, .semaphore = presentSemaphoreInfos[semIndex].semaphore, .deviceMask = 0x1u });
-
-    //
-    swapchain->switchToReady(semIndex = uniformData.currentImage = acquired, qfAndQueue);
+    decltype(auto) acquired = (uniformData.currentImage = swapchain->acquireImage(qfAndQueue));
 
     // 
     decltype(auto) uniformFence = descriptors->executeUniformUpdateOnce(ZNAMED::UniformDataSet{
@@ -321,51 +318,36 @@ int main() {
       }
     });
 
-    // 
-    //framebuffer->switchToAttachment(qfAndQueue);
-
     //
     decltype(auto) graphicsFence = graphics->executePipelineOnce(ZNAMED::ExecutePipelineInfo{
       .graphics = ZNAMED::WriteGraphicsInfo{
         .layout = descriptors.as<vk::PipelineLayout>(),
         .framebuffer = framebuffer.as<uintptr_t>(),
-        .instanceInfos = instanceLevel->getDrawInfo(),
+        .swapchain = swapchain.as<vk::SwapchainKHR>(),
+        .instanceInfos = instanceLevel->getDrawInfo()
       },
       .submission = ZNAMED::SubmissionInfo{
         .info = qfAndQueue,
       }
     });
-
-    //
-    //framebuffer->switchToShaderRead(qfAndQueue);
 
     //
     decltype(auto) computeFence = compute->executePipelineOnce(ZNAMED::ExecutePipelineInfo{
       .compute = ZNAMED::WriteComputeInfo{
         .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 256u), renderArea.extent.height, 1u},
         .layout = descriptors.as<vk::PipelineLayout>(),
+        .swapchain = swapchain.as<vk::SwapchainKHR>()
       },
       
       .submission = ZNAMED::SubmissionInfo{
-        .info = qfAndQueue,
-        .waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{presentSemaphoreInfos[semIndex]},
-        .signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{readySemaphoreInfos[semIndex]},
+        .info = qfAndQueue
       }
     });
 
     //
     auto& fence = fences[semIndex]; 
     if (fence) { decltype(auto) unleak = std::get<0u>(*fence); }; device->tickProcessing();
-    fence = swapchain->switchToPresent(semIndex, qfAndQueue);
-    
-    //
-    decltype(auto) result = device->getQueue(qfAndQueue).presentKHR(vk::PresentInfoKHR{
-      .waitSemaphoreCount = 1u,
-      .pWaitSemaphores = &readySemaphoreInfos[semIndex].semaphore,
-      .swapchainCount = 1u,
-      .pSwapchains = &swapchain.as<vk::SwapchainKHR>(),
-      .pImageIndices = &uniformData.currentImage
-    });
+    fence = std::get<0u>(swapchain->presentImage(qfAndQueue));
 
     // stop the capture
 #ifdef ENABLE_RENDERDOC

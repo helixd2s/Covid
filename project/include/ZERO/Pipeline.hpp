@@ -5,6 +5,7 @@
 #include "./Device.hpp"
 #include "./Descriptors.hpp"
 #include "./Framebuffer.hpp"
+#include "./Swapchain.hpp"
 
 // 
 namespace ZNAMED {
@@ -255,6 +256,9 @@ namespace ZNAMED {
         if (exec->instanceAddressBlock) {
           exec->cmdBuf.pushConstants(descriptorsObj->handle.as<vk::PipelineLayout>(), vk::ShaderStageFlagBits::eAll, 0u, sizeof(InstanceAddressBlock), &exec->instanceAddressBlock.value());
         };
+        if (exec->swapchain) {
+          exec->cmdBuf.pushConstants(descriptorsObj->handle.as<vk::PipelineLayout>(), vk::ShaderStageFlagBits::eAll, sizeof(InstanceAddressBlock) + sizeof(PushConstantData), sizeof(SwapchainStateInfo), &deviceObj->get<SwapchainObj>(exec->swapchain)->getStateInfo());
+        };
         exec->cmdBuf.dispatch(exec->dispatch.width, exec->dispatch.height, exec->dispatch.depth);
         exec->cmdBuf.pipelineBarrier2(depInfo.setMemoryBarriers(memoryBarriersEnd));
       };
@@ -334,11 +338,14 @@ namespace ZNAMED {
             });
 
             // 
+            if (exec->instanceAddressBlock) {
+              exec->cmdBuf.pushConstants(descriptorsObj->handle.as<vk::PipelineLayout>(), vk::ShaderStageFlagBits::eAll, 0u, sizeof(InstanceAddressBlock), &exec->instanceAddressBlock.value());
+            };
             if (instInfo.drawConst) {
               exec->cmdBuf.pushConstants(descriptorsObj->handle.as<vk::PipelineLayout>(), vk::ShaderStageFlagBits::eAll, sizeof(InstanceAddressBlock), sizeof(PushConstantData), &instInfo.drawConst.value());
             };
-            if (exec->instanceAddressBlock) {
-              exec->cmdBuf.pushConstants(descriptorsObj->handle.as<vk::PipelineLayout>(), vk::ShaderStageFlagBits::eAll, 0u, sizeof(InstanceAddressBlock), &exec->instanceAddressBlock.value());
+            if (exec->swapchain) {
+              exec->cmdBuf.pushConstants(descriptorsObj->handle.as<vk::PipelineLayout>(), vk::ShaderStageFlagBits::eAll, sizeof(InstanceAddressBlock) + sizeof(PushConstantData), sizeof(SwapchainStateInfo), &deviceObj->get<SwapchainObj>(exec->swapchain)->getStateInfo());
             };
             multiDrawDirect(instInfo.drawInfos);
         };
