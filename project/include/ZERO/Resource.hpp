@@ -170,6 +170,14 @@ namespace ZNAMED {
     };
 
     //
+    virtual vk::ImageUsageFlags& getImageUsage() { return imageUsage; };
+    virtual vk::ImageUsageFlags const& getImageUsage() const { return imageUsage; };
+
+    //
+    virtual vk::BufferUsageFlags& getBufferUsage() { return bufferUsage; };
+    virtual vk::BufferUsageFlags const& getBufferUsage() const { return bufferUsage; };
+
+    //
     virtual vk::ImageUsageFlags& handleImageUsage(ImageType const& imageType) {
       // 
       switch (imageType) {
@@ -431,12 +439,13 @@ namespace ZNAMED {
         decltype(auto) oldImageLayout = switchInfo.oldImageLayout ? switchInfo.oldImageLayout.value() : this->cInfo->imageInfo->layout;
         //decltype(auto) submission = CommandOnceSubmission{ .info = switchInfo.info };
         decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
+        decltype(auto) externalAccessMask = vk::AccessFlagBits2(vku::getAccessMaskByImageUsage(this->getImageUsage()));
         decltype(auto) correctAccessMask = vku::getCorrectAccessMaskByImageLayout<vk::AccessFlagBits2>(switchInfo.newImageLayout);
         decltype(auto) transferBarrier = std::vector<vk::ImageMemoryBarrier2>{
           vk::ImageMemoryBarrier2{
-            .srcStageMask = vk::PipelineStageFlagBits2::eAllCommands,
-            .srcAccessMask = vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eMemoryWrite,
-            .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(correctAccessMask) | (correctAccessMask & vk::AccessFlagBits2::eShaderRead ? vk::PipelineStageFlagBits2::eAllCommands : vk::PipelineStageFlagBits2{}),
+            .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(externalAccessMask) | (externalAccessMask & vk::AccessFlagBits2(AccessFlagBitsSet::eShaderReadWrite) ? vk::PipelineStageFlagBits2::eAllCommands : vk::PipelineStageFlagBits2{}),
+            .srcAccessMask = externalAccessMask,
+            .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(correctAccessMask) | (correctAccessMask & vk::AccessFlagBits2(AccessFlagBitsSet::eShaderReadWrite) ? vk::PipelineStageFlagBits2::eAllCommands : vk::PipelineStageFlagBits2{}),
             .dstAccessMask = correctAccessMask,
             .oldLayout = oldImageLayout,
             .newLayout = switchInfo.newImageLayout,
@@ -517,16 +526,21 @@ namespace ZNAMED {
   inline WrapShared<DeviceObj> DeviceObj::writeCopyBuffersCommand(cpp21::const_wrap_arg<CopyBufferWriteInfo> copyInfoRaw) {
     //decltype(auto) submission = CommandOnceSubmission{ .info = QueueGetInfo {.queueFamilyIndex = copyInfoRaw.dst->queueFamilyIndex } };
     decltype(auto) device = this->base.as<vk::Device>();
+    decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
     decltype(auto) size = std::min(copyInfoRaw->src->region.size, copyInfoRaw->dst->region.size);
     decltype(auto) copyInfo = vk::CopyBufferInfo2{ .srcBuffer = copyInfoRaw->src->buffer, .dstBuffer = copyInfoRaw->dst->buffer };
     decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
     decltype(auto) regions = std::vector<vk::BufferCopy2>{ vk::BufferCopy2{.srcOffset = copyInfoRaw->src->region.offset, .dstOffset = copyInfoRaw->dst->region.offset, .size = size} };
 
     //
+    decltype(auto) srcAccessMask = vk::AccessFlagBits2(vku::getAccessMaskByImageUsage(deviceObj->get<ResourceObj>(copyInfoRaw->src->buffer)->getBufferUsage()));
+    decltype(auto) dstAccessMask = vk::AccessFlagBits2(vku::getAccessMaskByImageUsage(deviceObj->get<ResourceObj>(copyInfoRaw->dst->buffer)->getBufferUsage()));
+
+    //
     decltype(auto) bufferBarriersBegin = std::vector<vk::BufferMemoryBarrier2>{
       vk::BufferMemoryBarrier2{
-        .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
-        .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite),
+        .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(srcAccessMask),
+        .srcAccessMask = srcAccessMask,
         .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferRead),
         .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferRead),
         .srcQueueFamilyIndex = copyInfoRaw->src->queueFamilyIndex,
@@ -536,8 +550,8 @@ namespace ZNAMED {
         .size = size
       },
       vk::BufferMemoryBarrier2{
-        .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralRead),
-        .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralRead),
+        .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(dstAccessMask),
+        .srcAccessMask = dstAccessMask,
         .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferWrite),
         .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
         .srcQueueFamilyIndex = copyInfoRaw->src->queueFamilyIndex,
@@ -553,8 +567,8 @@ namespace ZNAMED {
       vk::BufferMemoryBarrier2{
         .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferRead),
         .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferRead),
-        .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
-        .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite),
+        .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(srcAccessMask),
+        .dstAccessMask = srcAccessMask,
         .srcQueueFamilyIndex = copyInfoRaw->dst->queueFamilyIndex,
         .dstQueueFamilyIndex = copyInfoRaw->src->queueFamilyIndex,
         .buffer = copyInfoRaw->src->buffer,
@@ -564,8 +578,8 @@ namespace ZNAMED {
       vk::BufferMemoryBarrier2{
         .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferWrite),
         .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
-        .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralRead),
-        .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralRead),
+        .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(dstAccessMask),
+        .dstAccessMask = dstAccessMask,
         .srcQueueFamilyIndex = copyInfoRaw->dst->queueFamilyIndex,
         .dstQueueFamilyIndex = copyInfoRaw->src->queueFamilyIndex,
         .buffer = copyInfoRaw->dst->buffer,
