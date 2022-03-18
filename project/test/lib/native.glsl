@@ -102,27 +102,27 @@ struct SwapchainStateInfo {
 };
 
 //
-layout(buffer_reference, scalar, buffer_reference_align = 4) buffer Float4 { vec4 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 16) buffer Float4 { vec4 data[]; };
 layout(buffer_reference, scalar, buffer_reference_align = 4) buffer Float3 { vec3 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 4) buffer Float2 { vec2 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 8) buffer Float2 { vec2 data[]; };
 layout(buffer_reference, scalar, buffer_reference_align = 4) buffer Float { float data[]; };
 
 //
-layout(buffer_reference, scalar, buffer_reference_align = 4) buffer Uint4 { uvec4 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 16) buffer Uint4 { uvec4 data[]; };
 layout(buffer_reference, scalar, buffer_reference_align = 4) buffer Uint3 { uvec3 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 4) buffer Uint2 { uvec2 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 8) buffer Uint2 { uvec2 data[]; };
 layout(buffer_reference, scalar, buffer_reference_align = 4) buffer Uint { uint data[]; };
 
 //
-layout(buffer_reference, scalar, buffer_reference_align = 2) buffer Half4 { f16vec4 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 8) buffer Half4 { f16vec4 data[]; };
 layout(buffer_reference, scalar, buffer_reference_align = 2) buffer Half3 { f16vec3 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 2) buffer Half2 { f16vec2 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 4) buffer Half2 { f16vec2 data[]; };
 layout(buffer_reference, scalar, buffer_reference_align = 2) buffer Half { float16_t data[]; };
 
 //
-layout(buffer_reference, scalar, buffer_reference_align = 2) buffer Ushort4 { u16vec4 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 8) buffer Ushort4 { u16vec4 data[]; };
 layout(buffer_reference, scalar, buffer_reference_align = 2) buffer Ushort3 { u16vec3 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 2) buffer Ushort2 { u16vec2 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 4) buffer Ushort2 { u16vec2 data[]; };
 layout(buffer_reference, scalar, buffer_reference_align = 2) buffer Ushort { uint16_t data[]; };
 
 //
