@@ -351,12 +351,19 @@ namespace ZNAMED {
     uint32_t physicalDeviceIndex = 0u;
   };
 
+  // 
+  struct BufferViewRegion {
+    uint64_t deviceAddress = 0ull;
+    uint32_t stride = 0u;
+    uint32_t size = uint32_t(VK_WHOLE_SIZE);
+  };
+
   //
   struct BufferViewInfo {
     //vk::DeviceAddress deviceAddress = 0ull;
     //vk::DeviceSize stride = 0ull;
     //vk::DeviceSize size = VK_WHOLE_SIZE;
-    vk::StridedDeviceAddressRegionKHR region = { .deviceAddress = 0ull, .stride = 0ull, .size = VK_WHOLE_SIZE };
+    BufferViewRegion region = { .deviceAddress = 0ull, .stride = 0u, .size = uint32_t(VK_WHOLE_SIZE) };
     BufferViewFormat format = BufferViewFormat::eNone;
     uint32_t flags = 0u;
   };

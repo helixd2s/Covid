@@ -161,10 +161,10 @@ namespace ZNAMED {
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
 
-      decltype(auto) lastDepthFormat = descriptorsObj->cInfo->attachments[uint32_t(this->cInfo->type)].depthAttachmentFormat;
-      decltype(auto) lastStencilFormat = descriptorsObj->cInfo->attachments[uint32_t(this->cInfo->type)].stencilAttachmentFormat;
+      decltype(auto) lastDepthFormat = descriptorsObj->cInfo->attachments[std::to_underlying(this->cInfo->type)].depthAttachmentFormat;
+      decltype(auto) lastStencilFormat = descriptorsObj->cInfo->attachments[std::to_underlying(this->cInfo->type)].stencilAttachmentFormat;
 
-      decltype(auto) format = (*imageType) == ImageType::eDepthStencilAttachment ? lastDepthFormat : ((*imageType) == ImageType::eDepthAttachment ? lastDepthFormat : ((*imageType) == ImageType::eStencilAttachment ? lastStencilFormat : descriptorsObj->cInfo->attachments[uint32_t(this->cInfo->type)].colorAttachmentFormats[colorAttachments.size()]));
+      decltype(auto) format = (*imageType) == ImageType::eDepthStencilAttachment ? lastDepthFormat : ((*imageType) == ImageType::eDepthAttachment ? lastDepthFormat : ((*imageType) == ImageType::eStencilAttachment ? lastStencilFormat : descriptorsObj->cInfo->attachments[std::to_underlying(this->cInfo->type)].colorAttachmentFormats[colorAttachments.size()]));
       decltype(auto) aspectMask =
         (*imageType) == ImageType::eDepthStencilAttachment ? (vk::ImageAspectFlagBits::eDepth) :
         ((*imageType) == ImageType::eDepthAttachment ? vk::ImageAspectFlagBits::eDepth :
@@ -263,12 +263,12 @@ namespace ZNAMED {
       this->renderArea = vk::Rect2D{ vk::Offset2D{0u, 0u}, cInfo->extent };
 
       // 
-      for (auto& format : descriptorsObj->cInfo->attachments[uint32_t(this->cInfo->type)].colorAttachmentFormats) {
+      for (auto& format : descriptorsObj->cInfo->attachments[std::to_underlying(this->cInfo->type)].colorAttachmentFormats) {
         this->createImage(ImageType::eColorAttachment);
       };
 
       // 
-      if (descriptorsObj->cInfo->attachments[uint32_t(this->cInfo->type)].depthAttachmentFormat == descriptorsObj->cInfo->attachments[uint32_t(this->cInfo->type)].stencilAttachmentFormat) {
+      if (descriptorsObj->cInfo->attachments[std::to_underlying(this->cInfo->type)].depthAttachmentFormat == descriptorsObj->cInfo->attachments[std::to_underlying(this->cInfo->type)].stencilAttachmentFormat) {
         this->createImage(ImageType::eDepthStencilAttachment);
       } else {
         this->createImage(ImageType::eDepthAttachment);
