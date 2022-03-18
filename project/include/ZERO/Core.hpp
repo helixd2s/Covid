@@ -454,7 +454,8 @@ namespace ZNAMED {
   //
   struct InstanceLevelCreateInfo : BaseCreateInfo {
     std::vector<InstanceInfo> instanceData = {};
-    std::vector<uint32_t> limits = {};
+    uint32_t limit = uint32_t(0u);
+    //std::vector<uint32_t> limits = {};
     //size_t instanceCount = 1u;
     uintptr_t uploader = 0ull;
 

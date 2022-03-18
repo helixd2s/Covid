@@ -26,8 +26,8 @@ namespace ZNAMED {
     vk::Buffer instanceExtBuffer = {};
 
     //
-    std::vector<vk::AccelerationStructureGeometryKHR> instances = {};
-    std::vector<vk::AccelerationStructureBuildRangeInfoKHR> instanceRanges = {};
+    std::array<vk::AccelerationStructureGeometryKHR, 1> instances = {};
+    std::array<vk::AccelerationStructureBuildRangeInfoKHR, 1> instanceRanges = {};
 
     //
     cpp21::shared_vector<InstanceDrawInfo> instanceDrawInfo = std::vector<InstanceDrawInfo>{};
@@ -153,20 +153,20 @@ namespace ZNAMED {
       };
 
       {
-        instances.push_back(vk::AccelerationStructureGeometryKHR{
+        instances[0] = vk::AccelerationStructureGeometryKHR{
           .geometryType = vk::GeometryTypeKHR::eInstances,
           .geometry = vk::AccelerationStructureGeometryDataKHR{.instances = vk::AccelerationStructureGeometryInstancesDataKHR{
             .arrayOfPointers = false,
             .data = vk::DeviceOrHostAddressConstKHR(this->getInstancedDeviceAddress()),
           }},
           .flags = vk::GeometryFlagBitsKHR{}
-        });
-        instanceRanges.push_back(vk::AccelerationStructureBuildRangeInfoKHR{
+        };
+        instanceRanges[0] = vk::AccelerationStructureBuildRangeInfoKHR{
           .primitiveCount = uint32_t(this->cInfo->instanceData.size()),
           .primitiveOffset = 0u,
           .firstVertex = 0u,
           .transformOffset = 0u
-        });
+        };
       };
     };
 
@@ -194,7 +194,7 @@ namespace ZNAMED {
       //
       decltype(auto) accelInfo = infoMap->get<vk::AccelerationStructureCreateInfoKHR>(vk::StructureType::eAccelerationStructureCreateInfoKHR);
       decltype(auto) accelGeomInfo = infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR);
-      decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelGeomInfo->setGeometries(this->instances), this->cInfo->limits, deviceObj->getDispatch()));
+      decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelGeomInfo->setGeometries(this->instances), this->cInfo->limit, deviceObj->getDispatch()));
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
       decltype(auto) accessMask = vk::AccessFlagBits2(vku::getAccessMaskByImageUsage(deviceObj->get<ResourceObj>(this->instanceBuild)->getBufferUsage()));
 
@@ -264,13 +264,13 @@ namespace ZNAMED {
       this->updateInstances();
 
       //
-      if (this->cInfo->limits.size() <= 0) {
-        this->cInfo->limits.push_back(this->cInfo->instanceData.size());
+      if (this->cInfo->limit <= 0u) {
+        this->cInfo->limit = this->cInfo->instanceData.size();
       };
 
       //
-      if (this->cInfo->instanceData.size() < this->cInfo->limits.size()) {
-        for (uintptr_t i = this->cInfo->instanceData.size(); i < this->cInfo->limits.size(); i++) {
+      if (this->cInfo->instanceData.size() < this->cInfo->limit) {
+        for (uintptr_t i = this->cInfo->instanceData.size(); i < this->cInfo->limit; i++) {
           this->cInfo->instanceData.push_back(InstanceInfo{
             .transform = reinterpret_cast<vk::TransformMatrixKHR&&>(glm::mat3x4(1.f)),
             .instanceCustomIndex = 0u,
@@ -286,7 +286,7 @@ namespace ZNAMED {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) accelInstInfo = infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR);
-      decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelInstInfo->setGeometries(this->instances), this->cInfo->limits, deviceObj->getDispatch()));
+      decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelInstInfo->setGeometries(this->instances), this->cInfo->limit, deviceObj->getDispatch()));
       decltype(auto) accelInfo = infoMap->get<vk::AccelerationStructureCreateInfoKHR>(vk::StructureType::eAccelerationStructureCreateInfoKHR);
 
       //
@@ -347,7 +347,7 @@ namespace ZNAMED {
       // 
       this->instanceBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
         .bufferInfo = BufferCreateInfo{
-          .size = std::max(cInfo->instanceData.size(), cInfo->limits.size()) * sizeof(InstanceInfo),
+          .size = std::max(cInfo->instanceData.size(), size_t(cInfo->limit)) * sizeof(InstanceInfo),
           .type = BufferType::eStorage
         }
       }).as<vk::Buffer>();
