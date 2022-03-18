@@ -16,11 +16,6 @@ namespace ZNAMED {
     std::vector<std::vector<vk::Queue>> queues = {};
   };
 
-  //
-  template<typename R>
-  inline bool is_ready(std::future<R> const& f)
-  { return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready; }
-
   // 
   class DeviceObj : public BaseObj {
   public:
@@ -260,7 +255,7 @@ namespace ZNAMED {
     virtual void tickProcessing() override {
       std::decay_t<decltype(futures)>::iterator future = futures.begin();
       while(future != futures.end()) {
-        bool ready = !(*future) || !(*future)->valid() || is_ready(**future);
+        bool ready = !(*future) || !(*future)->valid() || cpp21::is_ready(**future);
         if (ready) {
           future = futures.erase(future);
         } else {
