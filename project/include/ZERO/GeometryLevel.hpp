@@ -148,6 +148,7 @@ namespace ZNAMED {
         });
 
       //
+      decltype(auto) accelInfo = infoMap->get<vk::AccelerationStructureCreateInfoKHR>(vk::StructureType::eAccelerationStructureCreateInfoKHR);
       decltype(auto) accelGeomInfo = infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR);
       decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelGeomInfo->setGeometries(this->geometries), this->cInfo->limits, deviceObj->getDispatch()));
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
@@ -164,7 +165,7 @@ namespace ZNAMED {
           .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
           .buffer = this->geometryBuild,
           .offset = 0ull,
-          .size = accelSizes->accelerationStructureSize
+          .size = std::min(accelSizes->accelerationStructureSize, accelInfo->size)
         },
       };
 
@@ -179,7 +180,7 @@ namespace ZNAMED {
           .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
           .buffer = this->geometryBuild,
           .offset = 0ull,
-          .size = accelSizes->accelerationStructureSize
+          .size = std::min(accelSizes->accelerationStructureSize, accelInfo->size)
         }
       };
 
