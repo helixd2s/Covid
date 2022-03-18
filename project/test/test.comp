@@ -17,7 +17,7 @@ void main() {
   vec4 payload = vec4(0.3f, 0.3f, 0.3f, 1.f);
 
   rayQueryEXT rayQuery;
-  rayQueryInitializeEXT(rayQuery, accelerationStructureEXT(accStructAddress), gl_RayFlagsTerminateOnFirstHitEXT|gl_RayFlagsOpaqueEXT, 0xff, rayOrigin, 0.001, rayDir, 100.0);
+  rayQueryInitializeEXT(rayQuery, accelerationStructureEXT(instancedData.opaqueAddressInfo.accelStruct), gl_RayFlagsTerminateOnFirstHitEXT|gl_RayFlagsOpaqueEXT, 0xff, rayOrigin, 0.001, rayDir, 100.0);
 
   while(rayQueryProceedEXT(rayQuery)) {
       rayQueryConfirmIntersectionEXT(rayQuery);

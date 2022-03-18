@@ -13,11 +13,7 @@
 // 
 layout(set = 0, binding = 0, scalar) uniform MatrixBlock
 {
-  uint32_t imageIndices[4];
   uint32_t textureIndices[4];
-  uint32_t currentImage;
-  uint32_t reserved;
-  uint64_t accStructAddress;
 };
 
 //

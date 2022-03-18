@@ -797,11 +797,11 @@ namespace ZNAMED {
     uintptr_t framebuffer = {};
     vk::SwapchainKHR swapchain = {};
 
-    // 
-    std::optional<InstanceAddressBlock> instanceAddressBlock = {};
-
     // needs multiple-levels support
     std::vector<InstanceDrawInfo> instanceInfos = {}; // currently, problematic for dynamic rendering... 
+
+    // 
+    std::optional<InstanceAddressBlock> instanceAddressBlock = {};
 
     //
     decltype(auto) with(cpp21::const_wrap_arg<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };

@@ -28,11 +28,7 @@ void error(int errnum, const char* errmsg)
 
 //
 struct UniformData {
-  uint32_t imageIndices[4] = { 0u,0u,0u,0u };
   uint32_t textureIndices[4] = { 0u,0u,0u,0u };
-  uint32_t currentImage = 0u;
-  uint32_t reserved = 0u;
-  uint64_t accStruct = 0ull;
 };
 
 // 
@@ -253,18 +249,11 @@ int main() {
   decltype(auto) presentSemaphoreInfos = swapchain->getPresentSemaphoreInfos();
 
   // 
-  decltype(auto) imageIndices = swapchain->getImageViewIndices();
-  memcpy(uniformData.imageIndices, imageIndices.data(), std::min(imageIndices.size(), 4ull) * sizeof(uint32_t));
-
-  // 
   decltype(auto) textureIndices = framebuffer->getImageViewIndices();
   memcpy(uniformData.textureIndices, textureIndices.data(), std::min(textureIndices.size(), 4ull) * sizeof(uint32_t));
 
   //
   decltype(auto) renderArea = swapchain->getRenderArea();
-  uniformData.currentImage = uint32_t(imageIndices.size()) - 1u;
-
-  
 
   //
   decltype(auto) geometryLevel = ZNAMED::GeometryLevelObj::make(device, ZNAMED::GeometryLevelCreateInfo{
@@ -289,9 +278,10 @@ int main() {
     .uploader = uploader.as<uintptr_t>(),
   });
 
-  // 
-  uniformData.accStruct = instanceLevel.as<uintptr_t>();
-
+  //
+  decltype(auto) instanceAddressBlock = ZNAMED::InstanceAddressBlock{
+    .opaqueAddressInfo = instanceLevel->getAddressInfo()
+  };
 
   // 
   while (!glfwWindowShouldClose(window)) { // 
@@ -304,8 +294,7 @@ int main() {
 #endif
 
     // 
-    decltype(auto) semIndex = (uniformData.currentImage + 1u) % imageIndices.size();
-    decltype(auto) acquired = (uniformData.currentImage = swapchain->acquireImage(qfAndQueue));
+    decltype(auto) acquired = swapchain->acquireImage(qfAndQueue);
 
     // 
     decltype(auto) uniformFence = descriptors->executeUniformUpdateOnce(ZNAMED::UniformDataSet{
@@ -324,7 +313,8 @@ int main() {
         .layout = descriptors.as<vk::PipelineLayout>(),
         .framebuffer = framebuffer.as<uintptr_t>(),
         .swapchain = swapchain.as<vk::SwapchainKHR>(),
-        .instanceInfos = instanceLevel->getDrawInfo()
+        .instanceInfos = instanceLevel->getDrawInfo(),
+        .instanceAddressBlock = instanceAddressBlock
       },
       .submission = ZNAMED::SubmissionInfo{
         .info = qfAndQueue,
@@ -336,16 +326,16 @@ int main() {
       .compute = ZNAMED::WriteComputeInfo{
         .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 256u), renderArea.extent.height, 1u},
         .layout = descriptors.as<vk::PipelineLayout>(),
-        .swapchain = swapchain.as<vk::SwapchainKHR>()
+        .swapchain = swapchain.as<vk::SwapchainKHR>(),
+        .instanceAddressBlock = instanceAddressBlock
       },
-      
       .submission = ZNAMED::SubmissionInfo{
         .info = qfAndQueue
       }
     });
 
     //
-    auto& fence = fences[semIndex]; 
+    auto& fence = fences[acquired];
     if (fence) { decltype(auto) unleak = std::get<0u>(*fence); }; device->tickProcessing();
     fence = std::get<0u>(swapchain->presentImage(qfAndQueue));
 
