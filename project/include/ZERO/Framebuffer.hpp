@@ -188,6 +188,7 @@ namespace ZNAMED {
       //
       auto imageObj = ResourceObj::make(this->base, ResourceCreateInfo{
         .imageInfo = ImageCreateInfo{
+          .flags = this->cInfo->type == FramebufferType::eCubemap ? vk::ImageCreateFlagBits::eCubeCompatible : vk::ImageCreateFlagBits{},
           .imageType = this->cInfo->type == FramebufferType::eCubemap ? vk::ImageType::e3D : vk::ImageType::e2D,
           .format = format,
           .extent = vk::Extent3D{ cInfo->extent.width, cInfo->extent.height, this->cInfo->type == FramebufferType::eCubemap ? 6u : 1u },

@@ -298,6 +298,7 @@ namespace ZNAMED {
       decltype(auto) imageUsage = this->handleImageUsage(cInfo->type);
       decltype(auto) imageInfo = infoMap->set(vk::StructureType::eImageCreateInfo, vk::ImageCreateInfo{
         .pNext = memoryUsage == MemoryUsage::eGpuOnly ? externalInfo.get() : nullptr,
+        .flags = cInfo->flags,
         .imageType = cInfo->imageType,
         .format = cInfo->format,
         .extent = cInfo->extent,

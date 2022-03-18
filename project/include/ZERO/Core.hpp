@@ -558,6 +558,7 @@ namespace ZNAMED {
 
   //
   struct ImageCreateInfo : BaseCreateInfo {
+    vk::ImageCreateFlags flags = {};
     vk::ImageType imageType = vk::ImageType::e2D;
     vk::Format format = vk::Format::eUndefined;
     vk::Extent3D extent = {2u,2u,1u};
