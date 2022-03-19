@@ -178,16 +178,18 @@ uvec4 readAsUint4(in BufferViewInfo bufferViewInfo, in uint32_t index) {
   const uint stride = (bufferViewInfo.region.stride > 0) ? bufferViewInfo.region.stride : ((isHalf == 1u ? 2 : 4) * (cCnt + 1));
   const uint64_t address = bufferViewInfo.region.deviceAddress + index * stride;
   uvec4 uVec4 = uvec4(0u.xxxx);
-  if (isHalf == 1u) {
-    if (cCnt==0) { uVec4.x    = Ushort (address).data[0u]; };
-    if (cCnt==1) { uVec4.xy   = Ushort2(address).data[0u]; };
-    if (cCnt==2) { uVec4.xyz  = Ushort3(address).data[0u]; };
-    if (cCnt==3) { uVec4.xyzw = Ushort4(address).data[0u]; };
-  } else {
-    if (cCnt==0) { uVec4.x    = Uint (address).data[0u]; };
-    if (cCnt==1) { uVec4.xy   = Uint2(address).data[0u]; };
-    if (cCnt==2) { uVec4.xyz  = Uint3(address).data[0u]; };
-    if (cCnt==3) { uVec4.xyzw = Uint4(address).data[0u]; };
+  if (bufferViewInfo.region.deviceAddress > 0u) {
+    if (isHalf == 1u) {
+      if (cCnt==0) { uVec4.x    = Ushort (address).data[0u]; };
+      if (cCnt==1) { uVec4.xy   = Ushort2(address).data[0u]; };
+      if (cCnt==2) { uVec4.xyz  = Ushort3(address).data[0u]; };
+      if (cCnt==3) { uVec4.xyzw = Ushort4(address).data[0u]; };
+    } else {
+      if (cCnt==0) { uVec4.x    = Uint (address).data[0u]; };
+      if (cCnt==1) { uVec4.xy   = Uint2(address).data[0u]; };
+      if (cCnt==2) { uVec4.xyz  = Uint3(address).data[0u]; };
+      if (cCnt==3) { uVec4.xyzw = Uint4(address).data[0u]; };
+    };
   };
   return uVec4;
 };
