@@ -1,3 +1,6 @@
+#ifndef NATIVE_DEF
+#define NATIVE_DEF
+
 // 
 #extension GL_EXT_scalar_block_layout : require
 #extension GL_EXT_shader_explicit_arithmetic_types_int16 : require
@@ -44,6 +47,11 @@ struct MaterialInfo {
   TexOrDef pbr;
 };
 
+// but may not to be...
+layout(buffer_reference, scalar, buffer_reference_align = 8) buffer MaterialData {
+  MaterialInfo infos[];
+};
+
 
 //
 struct BufferViewRegion {
@@ -63,7 +71,23 @@ struct BufferViewInfo {
 layout(buffer_reference, scalar, buffer_reference_align = 8) buffer GeometryExtension {
   BufferViewInfo texcoord;
   BufferViewInfo normals;
-  BufferViewInfo tangets;
+  BufferViewInfo tangent;
+};
+
+//
+struct GeometryExtData {
+  mat3x4 vertices;
+  mat3x4 texcoord;
+  mat3x4 normals;
+  mat3x4 tangent;
+};
+
+//
+struct GeometryExtAttrib {
+  vec4 vertices;
+  vec4 texcoord;
+  vec4 normals;
+  vec4 tangent;
 };
 
 //
@@ -198,6 +222,11 @@ mat3x4 readTriangleVertices(in BufferViewInfo vertices, in uvec3 indices) {
 };
 
 //
+mat3x4 readTriangleVertices3One(in BufferViewInfo vertices, in uvec3 indices) {
+  return mat3x4(vec4(readAsUint3(vertices,indices.x), 1.f), vec4(readAsUint3(vertices,indices.y), 1.f), vec4(readAsUint3(vertices,indices.z), 1.f));
+};
+
+//
 vec4 interpolate(in mat3x4 vertices, in vec3 barycentric) {
   return vertices * barycentric;
 };
@@ -207,18 +236,43 @@ vec4 interpolate(in mat3x4 vertices, in vec2 barycentric) {
   return interpolate(vertices, vec3(1.f-barycentric.x-barycentric.y, barycentric.xy));
 };
 
+
 //
 const vec3 bary[3] = { vec3(1.f,0.f,0.f), vec3(0.f,1.f,0.f), vec3(0.f,0.f,1.f) };
 
+
+//
+InstanceInfo getInstance(in InstanceData data, in uint32_t index) {
+  return data.infos[index];
+};
+
 //
 InstanceInfo getInstance(in InstanceAddressInfo info, in uint32_t index) {
-  return info.data.infos[index];
+  return getInstance(info.data, index);
+};
+
+//
+GeometryInfo getGeometry(in GeometryData data, in uint32_t index) {
+  return data.infos[index];
 };
 
 //
 GeometryInfo getGeometry(in InstanceInfo info, in uint32_t index) {
-  return info.data.infos[index];
+  return getGeometry(info.data, index);
 };
+
+//
+GeometryInfo getGeometry(in InstanceData data, in uint32_t instanceId, in uint32_t index) {
+  return getGeometry(getInstance(data, instanceId), index);
+};
+
+//
+GeometryInfo getGeometry(in InstanceAddressInfo info, in uint32_t instanceId, in uint32_t index) {
+  return getGeometry(getInstance(info, instanceId), index);
+};
+
+// 
+InstanceInfo getInstance(in InstanceData data) { return data.infos[0u]; };
 
 //
 mat3x4 getInstanceTransform(in InstanceInfo info) {
@@ -230,11 +284,30 @@ mat3x4 getGeometryTransform(in GeometryInfo info) {
   return info.transform.region.deviceAddress > 0 ? TransformBlock(info.transform.region.deviceAddress).transform[0u] : mat3x4(1.f);
 };
 
+
 //
-vec4 fullTransform(in InstanceAddressInfo info, in vec4 vertices, in uint32_t instanceId, in uint32_t geometryId) {
-  InstanceInfo instance = getInstance(info, instanceId);
+vec4 fullTransform(in InstanceData data, in vec4 vertices, in uint32_t instanceId, in uint32_t geometryId) {
+  InstanceInfo instance = getInstance(data, instanceId);
   GeometryInfo geometry = getGeometry(instance, geometryId);
   return vec4(vec4(vertices * getGeometryTransform(geometry), 1.f) * getInstanceTransform(instance), 1.f);
+};
+
+//
+vec4 fullTransform(in InstanceData data, in vec3 vertices, in uint32_t instanceId, in uint32_t geometryId) {
+  return fullTransform(data, vec4(vertices, 1.f), instanceId, geometryId);
+};
+
+//
+vec3 fullTransformNormal(in InstanceData data, in vec3 normals, in uint32_t instanceId, in uint32_t geometryId) {
+  InstanceInfo instance = getInstance(data, instanceId);
+  GeometryInfo geometry = getGeometry(instance, geometryId);
+  return vec4(vec4(normals, 0.f) * getGeometryTransform(geometry), 0.f) * getInstanceTransform(instance);
+};
+
+
+//
+vec4 fullTransform(in InstanceAddressInfo info, in vec4 vertices, in uint32_t instanceId, in uint32_t geometryId) {
+  return fullTransform(info.data, vertices, instanceId, geometryId);
 };
 
 //
@@ -244,7 +317,44 @@ vec4 fullTransform(in InstanceAddressInfo info, in vec3 vertices, in uint32_t in
 
 //
 vec3 fullTransformNormal(in InstanceAddressInfo info, in vec3 normals, in uint32_t instanceId, in uint32_t geometryId) {
-  InstanceInfo instance = getInstance(info, instanceId);
-  GeometryInfo geometry = getGeometry(instance, geometryId);
-  return vec4(vec4(normals, 0.f) * getGeometryTransform(geometry), 0.f) * getInstanceTransform(instance);
+  return fullTransformNormal(info.data, normals, instanceId, geometryId);
 };
+
+//
+GeometryExtData getGeometryData(in GeometryInfo geometryInfo, in uvec3 indices) {
+  GeometryExtension extension = GeometryExtension(geometryInfo.extensionRef);
+  GeometryExtData result;
+  result.vertices = readTriangleVertices3One(geometryInfo.vertices, indices);
+  result.texcoord = readTriangleVertices(extension.texcoord, indices);
+  result.normals = readTriangleVertices(extension.normals, indices);
+  result.tangent = readTriangleVertices(extension.tangent, indices);
+  return result;
+};
+
+//
+GeometryExtData getGeometryData(in GeometryInfo geometryInfo, in uint32_t primitiveId) {
+  return getGeometryData(geometryInfo, readTriangleIndices(geometryInfo.indices, primitiveId));
+};
+
+//
+MaterialInfo getMaterialInfo(in GeometryInfo geometryInfo, in uint32_t materialId) {
+  return MaterialData(geometryInfo.materialRef).infos[materialId];
+};
+
+//
+MaterialInfo getMaterialInfo(in GeometryInfo geometryInfo) {
+  return getMaterialInfo(geometryInfo, 0u);
+};
+
+//
+GeometryExtAttrib interpolate(in GeometryExtData data, in vec3 barycentric) {
+  GeometryExtAttrib result;
+  result.vertices = data.vertices * barycentric;
+  result.texcoord = data.texcoord * barycentric;
+  result.normals = data.normals * barycentric;
+  result.tangent = data.tangent * barycentric;
+  return result;
+};
+
+
+#endif
