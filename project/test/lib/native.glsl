@@ -25,6 +25,11 @@ layout(set = 1, binding = 0) uniform texture2D textures[];
 layout(set = 2, binding = 0) uniform sampler samplers[];
 layout(set = 3, binding = 0, rgb10_a2) uniform image2D images[];
 
+// but may not to be...
+layout(buffer_reference, scalar, buffer_reference_align = 16) buffer TransformBlock {
+  mat3x4 transform[];
+};
+
 //
 struct TexOrDef {
   uint32_t textureIdPOne; // starts from 1u, count as Id-1u, zero are Null
@@ -111,7 +116,6 @@ struct InstanceAddressBlock {
   InstanceAddressInfo transparentAddressInfo;
 };
 
-
 //
 struct SwapchainStateInfo {
   uint32_t image;
@@ -119,30 +123,30 @@ struct SwapchainStateInfo {
 };
 
 //
-layout(buffer_reference, scalar, buffer_reference_align = 16) buffer Float4 { vec4 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 4) buffer Float3 { vec3 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 8) buffer Float2 { vec2 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 4) buffer Float { float data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 16, align=16) buffer Float4 { vec4 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 4, align=4) buffer Float3 { vec3 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 8, align=8) buffer Float2 { vec2 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 4, align=4) buffer Float { float data[]; };
 
 //
-layout(buffer_reference, scalar, buffer_reference_align = 16) buffer Uint4 { uvec4 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 4) buffer Uint3 { uvec3 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 8) buffer Uint2 { uvec2 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 4) buffer Uint { uint data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 16, align=16) buffer Uint4 { uvec4 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 4, align=4) buffer Uint3 { uvec3 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 8, align=8) buffer Uint2 { uvec2 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 4, align=4) buffer Uint { uint data[]; };
 
 //
-layout(buffer_reference, scalar, buffer_reference_align = 8) buffer Half4 { f16vec4 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 2) buffer Half3 { f16vec3 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 4) buffer Half2 { f16vec2 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 2) buffer Half { float16_t data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 8, align=8) buffer Half4 { f16vec4 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 2, align=2) buffer Half3 { f16vec3 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 4, align=4) buffer Half2 { f16vec2 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 2, align=2) buffer Half { float16_t data[]; };
 
 //
-layout(buffer_reference, scalar, buffer_reference_align = 8) buffer Ushort4 { u16vec4 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 2) buffer Ushort3 { u16vec3 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 4) buffer Ushort2 { u16vec2 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 2) buffer Ushort { uint16_t data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 8, align=8) buffer Ushort4 { u16vec4 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 2, align=2) buffer Ushort3 { u16vec3 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 4, align=4) buffer Ushort2 { u16vec2 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 2, align=2) buffer Ushort { uint16_t data[]; };
 
-//
+// instead of `0u` (zero) should to be `firstVertex`
 uvec4 readAsUint4(in BufferViewInfo bufferViewInfo, in uint32_t index) {
   const uint cCnt = bufferViewInfo.format&3u;
   const uint isHalf = (bufferViewInfo.format>>2)&1u;
@@ -200,5 +204,47 @@ vec4 interpolate(in mat3x4 vertices, in vec3 barycentric) {
 
 //
 vec4 interpolate(in mat3x4 vertices, in vec2 barycentric) {
-  return vertices * vec3(1.f-barycentric.x-barycentric.y, barycentric.xy);
+  return interpolate(vertices, vec3(1.f-barycentric.x-barycentric.y, barycentric.xy));
+};
+
+//
+const vec3 bary[3] = { vec3(1.f,0.f,0.f), vec3(0.f,1.f,0.f), vec3(0.f,0.f,1.f) };
+
+//
+InstanceInfo getInstance(in InstanceAddressInfo info, in uint32_t index) {
+  return info.data.infos[index];
+};
+
+//
+GeometryInfo getGeometry(in InstanceInfo info, in uint32_t index) {
+  return info.data.infos[index];
+};
+
+//
+mat3x4 getInstanceTransform(in InstanceInfo info) {
+  return info.transform;
+};
+
+//
+mat3x4 getGeometryTransform(in GeometryInfo info) {
+  return info.transform.region.deviceAddress > 0 ? TransformBlock(info.transform.region.deviceAddress).transform[0u] : mat3x4(1.f);
+};
+
+//
+vec4 fullTransform(in InstanceAddressInfo info, in vec4 vertices, in uint32_t instanceId, in uint32_t geometryId) {
+  InstanceInfo instance = getInstance(info, instanceId);
+  GeometryInfo geometry = getGeometry(instance, geometryId);
+  return vec4(vec4(vertices * getGeometryTransform(geometry), 1.f) * getInstanceTransform(instance), 1.f);
+};
+
+//
+vec4 fullTransform(in InstanceAddressInfo info, in vec3 vertices, in uint32_t instanceId, in uint32_t geometryId) {
+  return fullTransform(info, vec4(vertices, 1.f), instanceId, geometryId);
+};
+
+//
+vec3 fullTransformNormal(in InstanceAddressInfo info, in vec3 normals, in uint32_t instanceId, in uint32_t geometryId) {
+  InstanceInfo instance = getInstance(info, instanceId);
+  GeometryInfo geometry = getGeometry(instance, geometryId);
+  return vec4(vec4(normals, 0.f) * getGeometryTransform(geometry), 0.f) * getInstanceTransform(instance);
 };
