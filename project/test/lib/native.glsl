@@ -84,6 +84,8 @@ struct MaterialPixelInfo {
   vec4 color[MAX_MATERIAL_BIND];
 };
 
+// TODO: Parallax Mapping Support...
+
 //
 vec4 handleTexture(in TexOrDef tex, in vec2 texcoord) {
   if (tex.texture.textureIdPOne > 0u && tex.texture.textureIdPOne != -1) {
@@ -92,7 +94,7 @@ vec4 handleTexture(in TexOrDef tex, in vec2 texcoord) {
   return tex.defValue;
 };
 
-//
+// without parallax mapping or normal mapping
 MaterialPixelInfo handleMaterial(in MaterialInfo materialInfo, in vec2 texcoord) {
   MaterialPixelInfo result;
   for (uint32_t i=0;i<MAX_MATERIAL_BIND;i++) {
@@ -435,6 +437,10 @@ GeometryExtAttrib interpolate(in GeometryExtData data, in vec3 barycentric) {
   GeometryExtAttrib result;
   for (uint i=0u;i<4u;i++) { result.data[i] = data.triData[i]*barycentric; };
   return result;
+};
+
+GeometryExtAttrib interpolate(in GeometryExtData data, in vec2 barycentric) {
+  return interpolate(data, vec3(1.f-barycentric.x-barycentric.y, barycentric));
 };
 
 
