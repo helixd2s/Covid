@@ -236,15 +236,39 @@ uvec4 readAsUint4(in BufferViewInfo bufferViewInfo, in uint32_t index) {
 };
 
 //
+vec4 readAsFloat4(in BufferViewInfo bufferViewInfo, in uint32_t index) {
+  const uint cCnt = bufferViewInfo.format&3u;
+  const uint isHalf = (bufferViewInfo.format>>2)&1u;
+  const uint isUint = (bufferViewInfo.format>>3)&1u;
+  const uint stride = (bufferViewInfo.region.stride > 0) ? (bufferViewInfo.region.stride) : ((isHalf == 1u ? 2 : 4) * (cCnt + 1));
+  const uint64_t address = bufferViewInfo.region.deviceAddress + index * stride;
+  vec4 fVec4 = vec4(0.f.xxxx);
+  if (bufferViewInfo.region.deviceAddress > 0u) {
+    if (isHalf == 1u) {
+      if (cCnt==0) { fVec4.x    = Half (address).data[0u]; };
+      if (cCnt==1) { fVec4.xy   = Half2(address).data[0u]; };
+      if (cCnt==2) { fVec4.xyz  = Half3(address).data[0u]; };
+      if (cCnt==3) { fVec4.xyzw = Half4(address).data[0u]; };
+    } else {
+      if (cCnt==0) { fVec4.x    = Float (address).data[0u]; };
+      if (cCnt==1) { fVec4.xy   = Float2(address).data[0u]; };
+      if (cCnt==2) { fVec4.xyz  = Float3(address).data[0u]; };
+      if (cCnt==3) { fVec4.xyzw = Float4(address).data[0u]; };
+    };
+  };
+  return fVec4;
+};
+
+//
 uvec3 readAsUint3(in BufferViewInfo bufferViewInfo, in uint32_t index) { return readAsUint4(bufferViewInfo, index).xyz; };
 uvec2 readAsUint2(in BufferViewInfo bufferViewInfo, in uint32_t index) { return readAsUint4(bufferViewInfo, index).xy; };
 uint readAsUint(in BufferViewInfo bufferViewInfo, in uint32_t index) { return readAsUint4(bufferViewInfo, index).x; };
 
 //
-vec4 readAsFloat4(in BufferViewInfo bufferViewInfo, in uint32_t index) { return uintBitsToFloat(readAsUint4(bufferViewInfo, index)); };
-vec3 readAsFloat3(in BufferViewInfo bufferViewInfo, in uint32_t index) { return uintBitsToFloat(readAsUint3(bufferViewInfo, index)); };
-vec2 readAsFloat2(in BufferViewInfo bufferViewInfo, in uint32_t index) { return uintBitsToFloat(readAsUint2(bufferViewInfo, index)); };
-float readAsFloat(in BufferViewInfo bufferViewInfo, in uint32_t index) { return uintBitsToFloat(readAsUint(bufferViewInfo, index)); };
+//vec4 readAsFloat4(in BufferViewInfo bufferViewInfo, in uint32_t index) { return uintBitsToFloat(readAsUint4(bufferViewInfo, index)); };
+vec3 readAsFloat3(in BufferViewInfo bufferViewInfo, in uint32_t index) { return readAsFloat4(bufferViewInfo, index).xyz; };
+vec2 readAsFloat2(in BufferViewInfo bufferViewInfo, in uint32_t index) { return readAsFloat4(bufferViewInfo, index).xy; };
+float readAsFloat(in BufferViewInfo bufferViewInfo, in uint32_t index) { return readAsFloat4(bufferViewInfo, index).x; };
 
 //
 layout(push_constant) uniform PConstBlock {
