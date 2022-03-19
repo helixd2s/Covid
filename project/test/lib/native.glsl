@@ -33,12 +33,9 @@ layout(buffer_reference, scalar, buffer_reference_align = 16) buffer TransformBl
   mat3x4 transform[];
 };
 
-//
-struct TexOrDef {
-  uint32_t textureIdPOne; // starts from 1u, count as Id-1u, zero are Null
-  uint32_t samplerIdPOne; // starts from 1u, count as Id-1u, zero are Null
-  vec4 defValue;
-};
+// starts from 1u, count as Id-1u, zero are Null
+struct CTexture { uint32_t textureIdPOne, samplerIdPOne; };
+struct TexOrDef { CTexture texture; vec4 defValue; };
 
 //
 struct MaterialInfo {
