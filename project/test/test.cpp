@@ -20,6 +20,9 @@
 #include <eh.h>
 #endif
 
+//
+#include <tinygltf/tiny_gltf.h>
+
 // 
 void error(int errnum, const char* errmsg)
 {
@@ -169,10 +172,34 @@ int main() {
   uint64_t verticesAddress = buffer->getDeviceAddress() + voffset;
   uint64_t indicesAddress = buffer->getDeviceAddress() + ioffset;
 
+  //
+  decltype(auto) geometryLevel = ZNAMED::GeometryLevelObj::make(device, ZNAMED::GeometryLevelCreateInfo{
+    .geometries = std::vector<ZNAMED::GeometryInfo>{ZNAMED::GeometryInfo{
+      .vertices = ZNAMED::BufferViewInfo{.region = ZNAMED::BufferViewRegion{.deviceAddress = verticesAddress, .stride = sizeof(glm::vec4), .size = uint32_t(sizeof(glm::vec4) * vertices.size())}, .format = ZNAMED::BufferViewFormat::eFloat3},
+      .indices = ZNAMED::BufferViewInfo{.region = ZNAMED::BufferViewRegion{.deviceAddress = indicesAddress, .stride = sizeof(uint16_t), .size = uint32_t(sizeof(uint16_t) * indices.size())}, .format = ZNAMED::BufferViewFormat::eShort},
+      .primitiveCount = 2u,
+    }},
+    .uploader = uploader.as<uintptr_t>(),
+    });
 
+  //
+  decltype(auto) instanceLevel = ZNAMED::InstanceLevelObj::make(device, ZNAMED::InstanceLevelCreateInfo{
+    .instances = std::vector<ZNAMED::InstanceDevInfo>{ZNAMED::InstanceDevInfo{
+      .transform = reinterpret_cast<vk::TransformMatrixKHR&&>(glm::mat3x4(1.f)),
+      .instanceCustomIndex = 0u,
+      .mask = 0xFFu,
+      .instanceShaderBindingTableRecordOffset = 0u,
+      .flags = 0u,
+      .accelerationStructureReference = geometryLevel.as<uintptr_t>()
+    }},
+    .uploader = uploader.as<uintptr_t>(),
+    });
 
+  //
+  decltype(auto) instanceAddressBlock = ZNAMED::InstanceAddressBlock{
+    .opaqueAddressInfo = instanceLevel->getAddressInfo()
+  };
 
-  
 
 
   //
@@ -238,6 +265,10 @@ int main() {
   });
 
   //
+  decltype(auto) renderArea = swapchain->getRenderArea();
+
+
+  //
   decltype(auto) framebuffer = ZNAMED::FramebufferObj::make(device.with(0u), ZNAMED::FramebufferCreateInfo{
     .layout = descriptors.as<vk::PipelineLayout>(),
     .extent = swapchain->getRenderArea().extent,
@@ -252,36 +283,7 @@ int main() {
   decltype(auto) textureIndices = framebuffer->getImageViewIndices();
   memcpy(uniformData.textureIndices, textureIndices.data(), std::min(textureIndices.size(), 4ull) * sizeof(uint32_t));
 
-  //
-  decltype(auto) renderArea = swapchain->getRenderArea();
 
-  //
-  decltype(auto) geometryLevel = ZNAMED::GeometryLevelObj::make(device, ZNAMED::GeometryLevelCreateInfo{
-    .geometries = std::vector<ZNAMED::GeometryInfo>{ZNAMED::GeometryInfo{
-      .vertices = ZNAMED::BufferViewInfo{.region = ZNAMED::BufferViewRegion{.deviceAddress = verticesAddress, .stride = sizeof(glm::vec4), .size = uint32_t(sizeof(glm::vec4) * vertices.size())}, .format = ZNAMED::BufferViewFormat::eFloat3},
-      .indices = ZNAMED::BufferViewInfo{.region = ZNAMED::BufferViewRegion{.deviceAddress = indicesAddress, .stride = sizeof(uint16_t), .size = uint32_t(sizeof(uint16_t) * indices.size())}, .format = ZNAMED::BufferViewFormat::eShort},
-      .primitiveCount = 2u,
-    }},
-    .uploader = uploader.as<uintptr_t>(),
-  });
-
-  //
-  decltype(auto) instanceLevel = ZNAMED::InstanceLevelObj::make(device, ZNAMED::InstanceLevelCreateInfo{
-    .instances = std::vector<ZNAMED::InstanceDevInfo>{ZNAMED::InstanceDevInfo{
-      .transform = reinterpret_cast<vk::TransformMatrixKHR&&>(glm::mat3x4(1.f)),
-      .instanceCustomIndex = 0u,
-      .mask = 0xFFu,
-      .instanceShaderBindingTableRecordOffset = 0u,
-      .flags = 0u,
-      .accelerationStructureReference = geometryLevel.as<uintptr_t>()
-    }},
-    .uploader = uploader.as<uintptr_t>(),
-  });
-
-  //
-  decltype(auto) instanceAddressBlock = ZNAMED::InstanceAddressBlock{
-    .opaqueAddressInfo = instanceLevel->getAddressInfo()
-  };
 
   // 
   while (!glfwWindowShouldClose(window)) { // 

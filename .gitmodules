@@ -25,3 +25,6 @@
 [submodule "submodules/VulkanMemoryAllocator"]
 	path = submodules/VulkanMemoryAllocator
 	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
+[submodule "prebuild/include/tinygltf"]
+	path = prebuild/include/tinygltf
+	url = https://github.com/syoyo/tinygltf.git

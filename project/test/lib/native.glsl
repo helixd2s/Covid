@@ -181,3 +181,24 @@ layout(push_constant) uniform PConstBlock {
   PushConstantData instanceDrawInfo;
   SwapchainStateInfo swapchain;
 };
+
+//
+uvec3 readTriangleIndices(in BufferViewInfo indices, in uint32_t primitiveId) {
+  if (indices.region.deviceAddress > 0u) { return readAsUint3(indices, primitiveId*3u); };
+  return uvec3(primitiveId*3u+0u,primitiveId*3u+1u,primitiveId*3u+2u);
+};
+
+//
+mat3x4 readTriangleVertices(in BufferViewInfo vertices, in uvec3 indices) {
+  return mat3x4(readAsUint4(vertices,indices.x), readAsUint4(vertices,indices.y), readAsUint4(vertices,indices.z));
+};
+
+//
+vec4 interpolate(in mat3x4 vertices, in vec3 barycentric) {
+  return vertices * barycentric;
+};
+
+//
+vec4 interpolate(in mat3x4 vertices, in vec2 barycentric) {
+  return vertices * vec3(1.f-barycentric.x-barycentric.y, barycentric.xy);
+};
