@@ -44,13 +44,18 @@ layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer T
   mat3x4 data[];
 };
 
+//
+vec4 divW(in vec4 coord) {
+  return coord.xyzw/coord.w;
+};
+
 // 
 layout(set = 0, binding = 0, scalar) uniform MatrixBlock
 {
   uint32_t framebufferAttachments[4]; // framebuffers
   Constants constants;
 
-  TestVertices vertices;
+  //TestVertices vertices;
   // for test
   //uint64_t verticesAddress;
 };
@@ -138,8 +143,8 @@ struct GeometryInfo {
   BufferViewInfo transform;
 
   //
-  GeometryExtension extensionRef;
-  MaterialData materialRef;
+  uint64_t extensionRef;
+  uint64_t materialRef;
 
   //
   uint32_t primitiveCount;
@@ -353,10 +358,14 @@ mat3x4 getGeometryTransform(in GeometryInfo info) {
 
 
 //
-vec4 fullTransform(in InstanceData data, in vec4 vertices, in uint32_t instanceId, in uint32_t geometryId) {
-  InstanceInfo instance = getInstance(data, instanceId);
+vec4 fullTransform(in InstanceInfo instance, in vec4 vertices, in uint32_t geometryId) {
   GeometryInfo geometry = getGeometry(instance, geometryId);
   return vec4(vec4(vertices * getGeometryTransform(geometry), 1.f) * getInstanceTransform(instance), 1.f);
+};
+
+//
+vec4 fullTransform(in InstanceData data, in vec4 vertices, in uint32_t instanceId, in uint32_t geometryId) {
+  return fullTransform(getInstance(data, instanceId), vertices, geometryId);
 };
 
 //
@@ -365,10 +374,14 @@ vec4 fullTransform(in InstanceData data, in vec3 vertices, in uint32_t instanceI
 };
 
 //
-vec3 fullTransformNormal(in InstanceData data, in vec3 normals, in uint32_t instanceId, in uint32_t geometryId) {
-  InstanceInfo instance = getInstance(data, instanceId);
+vec3 fullTransformNormal(in InstanceInfo instance, in vec3 normals, in uint32_t geometryId) {
   GeometryInfo geometry = getGeometry(instance, geometryId);
   return vec4(vec4(normals, 0.f) * getGeometryTransform(geometry), 0.f) * getInstanceTransform(instance);
+};
+
+//
+vec3 fullTransformNormal(in InstanceData data, in vec3 normals, in uint32_t instanceId, in uint32_t geometryId) {
+  return fullTransformNormal(getInstance(data, instanceId), normals, geometryId);
 };
 
 
@@ -389,10 +402,12 @@ vec3 fullTransformNormal(in InstanceAddressInfo info, in vec3 normals, in uint32
 
 //
 GeometryExtData getGeometryData(in GeometryInfo geometryInfo, in uvec3 indices) {
-  GeometryExtension extension = geometryInfo.extensionRef;
   GeometryExtData result;
   result.triData[0u] = readTriangleVertices3One(geometryInfo.vertices, indices);
-  for (uint i=1u;i<MAX_VERTEX_DATA;i++) { result.triData[i] = readTriangleVertices(extension.bufferViews[i-1u], indices); };
+  if (geometryInfo.extensionRef > 0u) {
+    GeometryExtension extension = GeometryExtension(geometryInfo.extensionRef);
+    for (uint i=1u;i<MAX_VERTEX_DATA;i++) { result.triData[i] = readTriangleVertices(extension.bufferViews[i-1u], indices); };
+  };
   return result;
 };
 
@@ -403,7 +418,11 @@ GeometryExtData getGeometryData(in GeometryInfo geometryInfo, in uint32_t primit
 
 //
 MaterialInfo getMaterialInfo(in GeometryInfo geometryInfo, in uint32_t materialId) {
-  return geometryInfo.materialRef.infos[materialId];
+  MaterialInfo materialInfo;
+  if (geometryInfo.materialRef > 0) {
+    materialInfo = MaterialData(geometryInfo.materialRef).infos[materialId];
+  };
+  return materialInfo;
 };
 
 //

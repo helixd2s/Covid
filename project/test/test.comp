@@ -12,25 +12,26 @@ layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
 
 // 
 void main() {
-
-  const vec3 rayOrigin = vec3(vec2(gl_GlobalInvocationID.xy)/vec2(1280.f,720.f), 0.f)*2.f-1.f;
-  const vec3 rayDir = vec3(0.f,0.f,1.f);
+  const vec2 tCoord = vec2(gl_GlobalInvocationID.xy)/vec2(1280.f,720.f);
+  const vec3 rayOrigin = divW(vec4(vec3(tCoord, 0.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse;
+  const vec3 rayEnd = divW(vec4(vec3(tCoord, 1.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse;
+  const vec3 rayDir = normalize(rayEnd - rayOrigin);
   vec4 payload = vec4(0.3f, 0.3f, 0.3f, 1.f);
 
-  //rayQueryEXT rayQuery;
-  //rayQueryInitializeEXT(rayQuery, accelerationStructureEXT(instancedData.opaqueAddressInfo.accelStruct), gl_RayFlagsTerminateOnFirstHitEXT|gl_RayFlagsOpaqueEXT, 0xff, rayOrigin, 0.001, rayDir, 100.0);
+  // 
+  RayData rayData;
+  rayData.origin = rayOrigin;
+  rayData.direction = rayDir;
 
-  //while(rayQueryProceedEXT(rayQuery)) {
-      //rayQueryConfirmIntersectionEXT(rayQuery);
-  //};
+  //vec4 finalPosition = texelFetch(textures[framebufferAttachments[0]], ivec2(gl_GlobalInvocationID.xy), 0);
+  vec4 finalPosition = vec4(0.f.xxx, 1.f);
+  IntersectionInfo intersection = traceRaysOpaque(instancedData.opaqueAddressInfo, rayData, 10000.f);
+  InstanceInfo instanceInfo = getInstance(instancedData.opaqueAddressInfo, intersection.instanceId);
+  GeometryInfo geometryInfo = getGeometry(instanceInfo, intersection.geometryId);
+  GeometryExtData geometry = getGeometryData(geometryInfo, intersection.primitiveId);
+  const vec4 vertice = geometry.triData[VERTEX_VERTICES] * intersection.barycentric;
+  finalPosition.xyz = vertice.xyz*0.5f+0.5f;
 
-  vec4 finalPosition = texelFetch(textures[framebufferAttachments[0]], ivec2(gl_GlobalInvocationID.xy), 0);
-  //if (rayQueryGetIntersectionTypeEXT(rayQuery, true) != gl_RayQueryCommittedIntersectionNoneEXT) {
-      //vec2 attribs = rayQueryGetIntersectionBarycentricsEXT(rayQuery, true);
-      //payload = vec4(1.f - attribs.x - attribs.y, attribs.x, attribs.y, 1.f);
-      //finalPosition.xyz = rayQueryGetIntersectionObjectRayOriginEXT(rayQuery, true);
-  //};
-
+  // 
   imageStore(images[swapchain.image], ivec2(gl_GlobalInvocationID.xy), vec4(finalPosition.xyz, 1.f));
-  //imageStore(images[imageIndices[currentImage]], ivec2(gl_GlobalInvocationID.xy), vec4(vec2(gl_GlobalInvocationID.xy)/vec2(1280.f,720.f), 0.f, 1.f));
 };

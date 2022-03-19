@@ -5,10 +5,11 @@
 
 struct RayData
 {
-    vec4 origin;
-    vec4 direction;
+    vec3 origin; float r0;
+    vec3 direction; float r1;
     u16vec2 launchId;
-    uvec3 reserved0;
+    u16vec2 reserved;
+    f16vec4 energy;
 };
 
 struct IntersectionInfo 
@@ -17,9 +18,9 @@ struct IntersectionInfo
     uint instanceId, geometryId, primitiveId, reserved0;
 };
 
-IntersectionInfo traceRays(in InstanceAddressInfo instance, in RayData rays, in float maxT) {
+IntersectionInfo traceRaysOpaque(in InstanceAddressInfo instance, in RayData rays, in float maxT) {
     rayQueryEXT rayQuery;
-    rayQueryInitializeEXT(rayQuery, accelerationStructureEXT(instance.accelStruct), gl_RayFlagsNoneEXT, 0xff, rays.origin.xyz, 0.001f, rays.direction.xyz, maxT);
+    rayQueryInitializeEXT(rayQuery, accelerationStructureEXT(instance.accelStruct), gl_RayFlagsOpaqueEXT, 0xff, rays.origin.xyz, 0.001f, rays.direction.xyz, maxT);
 
     // 
     while(rayQueryProceedEXT(rayQuery)) {

@@ -17,13 +17,19 @@ const vec2 positions[6] = {
 
 // 
 void main() {
-  InstanceInfo instanceInfo = instanceDrawInfo.data.infos[0u];
-  GeometryInfo geometryInfo = instanceInfo.data.infos[/*gl_DrawID+instanceDrawInfo.drawIndex*/0u];
+  uint32_t instanceIndex = 0u;
+  uint32_t geometryIndex = gl_DrawID+instanceDrawInfo.drawIndex;
+
+  // 
+  InstanceInfo instanceInfo = instanceDrawInfo.data.infos[instanceIndex];
+  GeometryInfo geometryInfo = instanceInfo.data.infos[geometryIndex];
   GeometryExtData geometry = getGeometryData(geometryInfo, uint(gl_VertexIndex/3u));
 
   //const vec4 vertice = vertices.data[gl_VertexIndex/3u][gl_VertexIndex%3];//geometry.triData[VERTEX_VERTICES][gl_VertexIndex%3];
   const vec4 vertice = vec4(geometry.triData[VERTEX_VERTICES][gl_VertexIndex%3].xyz, 1.f);
+  const vec4 position = vec4(fullTransform(instanceInfo, vertice, geometryIndex) * constants.lookAt, 1.f) * constants.perspective;
 
-  gl_Position = vertice;
+  // 
+  gl_Position = position;
   pcolor = vec4(vertice.xyz*0.5f+0.5f, 1.f);
 };
