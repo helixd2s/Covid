@@ -1,4 +1,4 @@
-# 💔`ZERO`💔
+# ♠ `ZEON` ♠
 
 Some functionality still WIP, but almost ready to ***MVP***...
 
@@ -17,16 +17,6 @@ Some functionality still WIP, but almost ready to ***MVP***...
 - Implementation to some games
 - Multi-Draw for instances (TLAS)
 - Pre-defined shader packages
-
-## Code names and history (future)
-
-- [x] ♠`LXVC`♠ (**L**ightweight, e**X**tensible, **V**ulkan, **C**omplex or **C**ompatible)
-- [x] `ZNAMED` (💔`ZERO`💔)
-- [ ] `ANAMED` ( 🇷🇺 `ALPHA` 🇷🇺 ***or*** 🇺🇦 `AZOV` 🇺🇦 )
-- [ ] `BNAMED` (🔥`BLAZE(R?)`🔥)
-- [ ] `CNAMED`
-- [ ] `DNAMED`
-- [ ] etc. by alpha-beta...
 
 ## If you have issues...
 

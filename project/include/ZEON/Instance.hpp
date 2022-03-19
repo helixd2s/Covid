@@ -188,7 +188,7 @@ namespace ZNAMED {
           .applicationVersion = this->cInfo->appVersion,
 
           // TODO: updating this data before commit
-          .pEngineName = "ZERO",
+          .pEngineName = "ZEON",
           .engineVersion = VK_MAKE_VERSION(1,0,0),
 
           // 

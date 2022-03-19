@@ -2,7 +2,7 @@
 
 //
 #ifndef ZNAMED
-#define ZNAMED zero
+#define ZNAMED zeon 
 #endif
 
 //
@@ -286,7 +286,7 @@ namespace ZNAMED {
 
   // 
   struct InstanceCreateInfo : BaseCreateInfo {
-    std::string appName = "ZERO_APP";
+    std::string appName = "ZEON_APP";
     uint32_t appVersion = VK_MAKE_VERSION(1, 0, 0);
     cpp21::shared_vector<std::string> extensionList = std::vector<std::string>{ 
       "VK_KHR_surface", 

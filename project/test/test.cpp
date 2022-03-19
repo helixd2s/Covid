@@ -13,7 +13,7 @@
 #endif
 
 // 
-#include <ZERO/ZERO.hpp>
+#include <ZEON/ZEON.hpp>
 #include <GLFW/glfw3.h>
 #ifdef ENABLE_RENDERDOC
 #include "renderdoc_app.h"
@@ -253,7 +253,7 @@ int main() {
 
   //
   vk::SurfaceKHR surface = {};
-  std::string title = "ZERO.TEON.A";
+  std::string title = "ZEON.TEON.A";
   decltype(auto) window = glfwCreateWindow(SC_WIDTH, SC_HEIGHT, title.c_str(), nullptr, nullptr);
   glfwCreateWindowSurface(instance.as<VkInstance>(), window, nullptr, (VkSurfaceKHR*)&surface);
 
