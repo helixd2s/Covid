@@ -16,6 +16,18 @@
 #extension GL_EXT_ray_tracing : enable
 #extension GL_ARB_gpu_shader_int64 : require
 
+//
+const uint32_t VERTEX_VERTICES = 0u;
+const uint32_t VERTEX_TEXCOORD = 1u;
+const uint32_t VERTEX_NORMALS = 2u;
+const uint32_t VERTEX_TANGENT = 3u;
+const uint32_t MAX_VERTEX_DATA = 4u;
+
+//
+const uint32_t MATERIAL_ALBEDO = 0u;
+const uint32_t MATERIAL_NORMAL = 1u;
+const uint32_t MATERIAL_PBR = 2u;
+const uint32_t MAX_MATERIAL_BIND = 3u;
 
 // 
 layout(set = 0, binding = 0, scalar) uniform MatrixBlock
@@ -39,9 +51,29 @@ struct TexOrDef { CTexture texture; vec4 defValue; };
 
 //
 struct MaterialInfo {
-  TexOrDef albedo;
-  TexOrDef normal;
-  TexOrDef pbr;
+  TexOrDef texCol[MAX_MATERIAL_BIND];
+};
+
+//
+struct MaterialPixelInfo {
+  vec4 color[MAX_MATERIAL_BIND];
+};
+
+//
+vec4 handleTexture(in TexOrDef tex, in vec2 texcoord) {
+  if (tex.texture.textureIdPOne > 0u && tex.texture.textureIdPOne != -1) {
+    return texture(sampler2D(textures[tex.texture.textureIdPOne-1u], samplers[tex.texture.samplerIdPOne-1u]), texcoord);
+  };
+  return tex.defValue;
+};
+
+//
+MaterialPixelInfo handleMaterial(in MaterialInfo materialInfo, in vec2 texcoord) {
+  MaterialPixelInfo result;
+  for (uint32_t i=0;i<MAX_MATERIAL_BIND;i++) {
+    result.color[i] = handleTexture(materialInfo.texCol[i], texcoord);
+  };
+  return result;
 };
 
 // but may not to be...
@@ -66,25 +98,17 @@ struct BufferViewInfo {
 
 // but may not to be...
 layout(buffer_reference, scalar, buffer_reference_align = 8) buffer GeometryExtension {
-  BufferViewInfo texcoord;
-  BufferViewInfo normals;
-  BufferViewInfo tangent;
+  BufferViewInfo bufferViews[MAX_VERTEX_DATA-1u];
 };
 
 //
 struct GeometryExtData {
-  mat3x4 vertices;
-  mat3x4 texcoord;
-  mat3x4 normals;
-  mat3x4 tangent;
+  mat3x4 triData[MAX_VERTEX_DATA];
 };
 
 //
 struct GeometryExtAttrib {
-  vec4 vertices;
-  vec4 texcoord;
-  vec4 normals;
-  vec4 tangent;
+  vec4 data[MAX_VERTEX_DATA];
 };
 
 //
@@ -323,10 +347,8 @@ vec3 fullTransformNormal(in InstanceAddressInfo info, in vec3 normals, in uint32
 GeometryExtData getGeometryData(in GeometryInfo geometryInfo, in uvec3 indices) {
   GeometryExtension extension = GeometryExtension(geometryInfo.extensionRef);
   GeometryExtData result;
-  result.vertices = readTriangleVertices3One(geometryInfo.vertices, indices);
-  result.texcoord = readTriangleVertices(extension.texcoord, indices);
-  result.normals = readTriangleVertices(extension.normals, indices);
-  result.tangent = readTriangleVertices(extension.tangent, indices);
+  result.triData[0u] = readTriangleVertices3One(geometryInfo.vertices, indices);
+  for (uint i=1u;i<MAX_VERTEX_DATA;i++) { result.triData[i] = readTriangleVertices(extension.bufferViews[i-1u], indices); };
   return result;
 };
 
@@ -348,10 +370,7 @@ MaterialInfo getMaterialInfo(in GeometryInfo geometryInfo) {
 //
 GeometryExtAttrib interpolate(in GeometryExtData data, in vec3 barycentric) {
   GeometryExtAttrib result;
-  result.vertices = data.vertices * barycentric;
-  result.texcoord = data.texcoord * barycentric;
-  result.normals = data.normals * barycentric;
-  result.tangent = data.tangent * barycentric;
+  for (uint i=0u;i<4u;i++) { result.data[i] = data.triData[i]*barycentric; };
   return result;
 };
 

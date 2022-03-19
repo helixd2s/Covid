@@ -352,19 +352,30 @@ namespace ZNAMED {
     uint32_t physicalDeviceIndex = 0u;
   };
 
-
+  //
+  struct CTexture { uint32_t textureIdPOne = 0u, samplerIdPOne = 0u; };
+  struct TexOrDef { CTexture texture = {}; glm::vec4 defValue = {0.f,0.f,0.f,0.f}; };
 
   //
-  struct TexOrDef {
-    uint32_t textureIdPOne = 0u, samplerIdPOne = 0u;
-    glm::vec4 defValue = {0.f,0.f,0.f,0.f};
+  enum class TextureBind : uint32_t {
+    eAlbedo = 0u,
+    eNormal = 1u,
+    ePBR = 2u,
+    eMAX = 3u
+  };
+
+  //
+  enum class BufferBind : uint32_t {
+    eVertices = 0u,
+    eTexcoord = 1u,
+    eNormals = 2u,
+    eTangent = 3u,
+    eMAX = 4u
   };
 
   //
   struct MaterialInfo {
-    TexOrDef albedo;
-    TexOrDef normal;
-    TexOrDef pbr;
+    TexOrDef texCol[std::to_underlying(TextureBind::eMAX)];
   };
 
   // 
@@ -383,9 +394,7 @@ namespace ZNAMED {
 
   // but may not to be...
   struct GeometryExtension {
-    BufferViewInfo texcoord = {};
-    BufferViewInfo normals = {};
-    BufferViewInfo tangets = {};
+    BufferViewInfo bufferViews[std::to_underlying(BufferBind::eMAX)-1u];
   };
 
   //
