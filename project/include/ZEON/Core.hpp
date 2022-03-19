@@ -171,6 +171,8 @@ namespace ZNAMED {
   };
 
   //
+#pragma pack(1)
+  __declspec(align(1))
   struct BufferViewFormatBitSet {
     uint32_t countMinusOne : 2;
     uint32_t is16bit : 1;
@@ -353,7 +355,12 @@ namespace ZNAMED {
   };
 
   //
+#pragma pack(1)
+  __declspec(align(1))
   struct CTexture { uint32_t textureIdPOne = 0u, samplerIdPOne = 0u; };
+
+#pragma pack(1)
+  __declspec(align(1))
   struct TexOrDef { CTexture texture = {}; glm::vec4 defValue = {0.f,0.f,0.f,0.f}; };
 
   //
@@ -374,11 +381,15 @@ namespace ZNAMED {
   };
 
   //
+#pragma pack(1)
+  __declspec(align(1))
   struct MaterialInfo {
     TexOrDef texCol[std::to_underlying(TextureBind::eMAX)];
   };
 
   // 
+#pragma pack(1)
+  __declspec(align(1))
   struct BufferViewRegion {
     uint64_t deviceAddress = 0ull;
     uint32_t stride = 0u;
@@ -386,6 +397,8 @@ namespace ZNAMED {
   };
 
   //
+#pragma pack(1)
+  __declspec(align(1))
   struct BufferViewInfo {
     BufferViewRegion region = { .deviceAddress = 0ull, .stride = 0u, .size = uint32_t(VK_WHOLE_SIZE) };
     BufferViewFormat format = BufferViewFormat::eNone;
@@ -393,11 +406,15 @@ namespace ZNAMED {
   };
 
   // but may not to be...
+#pragma pack(1)
+  __declspec(align(1))
   struct GeometryExtension {
     BufferViewInfo bufferViews[std::to_underlying(BufferBind::eMAX)-1u];
   };
 
   //
+#pragma pack(1)
+  __declspec(align(1))
   struct GeometryInfo {
     BufferViewInfo vertices = {};
     BufferViewInfo indices = {};
@@ -415,37 +432,51 @@ namespace ZNAMED {
 
 
   //
+#pragma pack(1)
+  __declspec(align(1))
   struct SwapchainStateInfo {
     uint32_t image = 0u;
     uint32_t index = uint32_t(-1);
   };
 
   //
+#pragma pack(1)
+  __declspec(align(1))
   struct PushConstantData {
     uint64_t dataAddress = 0ull;
+    uint32_t instanceIndex = 0u;
     uint32_t drawIndex = 0u;
-    uint32_t reserved = 0u;
+
+    decltype(auto) with(uint32_t const& drawIndex) const { auto copy = *this; copy.drawIndex = drawIndex; return copy; };
   };
 
   //
+#pragma pack(1)
+  __declspec(align(1))
   struct InstanceAddressInfo {
     uint64_t data = 0ull;
     uint64_t accelStruct = 0ull;
   };
 
   //
+#pragma pack(1)
+  __declspec(align(1))
   struct InstanceAddressBlock {
     InstanceAddressInfo opaqueAddressInfo = {};
     InstanceAddressInfo transparentAddressInfo = {};
   };
 
   //
+#pragma pack(1)
+  __declspec(align(1))
   struct InstanceInfo {
     glm::mat3x4 transform = glm::mat3x4(1.f);
     uint64_t reference = 0ull;
   };
 
   //
+//#pragma pack(1)
+  //__declspec(align(1))
   using InstanceDevInfo = vk::AccelerationStructureInstanceKHR;
 
 
@@ -480,6 +511,8 @@ namespace ZNAMED {
     switch (format) {
       case BufferViewFormat::eUint: return vk::IndexType::eUint32; break;
       case BufferViewFormat::eShort: return vk::IndexType::eUint16; break;
+      case BufferViewFormat::eUint3: return vk::IndexType::eUint32; break;
+      case BufferViewFormat::eShort3: return vk::IndexType::eUint16; break;
       default: return vk::IndexType::eNoneKHR; break;
     };
     return vk::IndexType::eNoneKHR;

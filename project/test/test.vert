@@ -17,6 +17,13 @@ const vec2 positions[6] = {
 
 // 
 void main() {
-  gl_Position = vec4(positions[gl_VertexIndex] * 2.f - 1.f, 0.1f, 1.f);
-  pcolor = vec4(positions[gl_VertexIndex], 0.1f, 1.f);
+  InstanceInfo instanceInfo = instanceDrawInfo.data.infos[0u];
+  GeometryInfo geometryInfo = instanceInfo.data.infos[/*gl_DrawID+instanceDrawInfo.drawIndex*/0u];
+  GeometryExtData geometry = getGeometryData(geometryInfo, uint(gl_VertexIndex/3u));
+
+  //const vec4 vertice = vertices.data[gl_VertexIndex/3u][gl_VertexIndex%3];//geometry.triData[VERTEX_VERTICES][gl_VertexIndex%3];
+  const vec4 vertice = vec4(geometry.triData[VERTEX_VERTICES][gl_VertexIndex%3].xyz, 1.f);
+
+  gl_Position = vertice;
+  pcolor = vec4(vertice.xyz*0.5f+0.5f, 1.f);
 };

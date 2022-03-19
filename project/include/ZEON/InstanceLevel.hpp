@@ -31,7 +31,7 @@ namespace ZNAMED {
 
     //
     cpp21::shared_vector<InstanceDraw> instanceDraw = std::vector<InstanceDraw>{};
-    cpp21::shared_vector<InstanceInfo> instanceData = std::vector<InstanceInfo>{};
+    cpp21::shared_vector<InstanceInfo> instanceInfo = std::vector<InstanceInfo>{};
 
     //
     vk::AccelerationStructureKHR accelStruct = {};
@@ -51,13 +51,13 @@ namespace ZNAMED {
   public:
 
     // 
-    InstanceLevelObj(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) : cInfo(cInfo), instanceDraw(std::vector<InstanceDraw>{}), instanceData(std::vector<InstanceInfo>{}) {
+    InstanceLevelObj(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) : cInfo(cInfo), instanceDraw(std::vector<InstanceDraw>{}), instanceInfo(std::vector<InstanceInfo>{}) {
       this->base = deviceObj->getHandle();
       this->construct(deviceObj, cInfo);
     };
 
     // 
-    InstanceLevelObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) : cInfo(cInfo), instanceDraw(std::vector<InstanceDraw>{}), instanceData(std::vector<InstanceInfo>{}) {
+    InstanceLevelObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) : cInfo(cInfo), instanceDraw(std::vector<InstanceDraw>{}), instanceInfo(std::vector<InstanceInfo>{}) {
       this->construct(ZNAMED::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
@@ -85,7 +85,7 @@ namespace ZNAMED {
     };
 
     //
-    virtual WrapShared<ResourceObj> getDrawDataResource() const {
+    virtual WrapShared<ResourceObj> getInstanceInfoResource() const {
       return ZNAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->instanceExtBuffer);
     };
 
@@ -106,8 +106,8 @@ namespace ZNAMED {
     virtual cpp21::shared_vector<InstanceDraw> const& getDrawInfo() const { return this->instanceDraw; };
 
     //
-    virtual uintptr_t const& getDrawDataDeviceAddress() const { return this->getDrawDataResource()->getDeviceAddress(); };
-    virtual uintptr_t& getDrawDataDeviceAddress() { return this->getDrawDataResource()->getDeviceAddress(); };
+    virtual uintptr_t const& getInstanceInfoDeviceAddress() const { return this->getInstanceInfoResource()->getDeviceAddress(); };
+    virtual uintptr_t& getInstanceInfoDeviceAddress() { return this->getInstanceInfoResource()->getDeviceAddress(); };
 
     //
     virtual uintptr_t const& getInstancedDeviceAddress() const { return this->getInstancedResource()->getDeviceAddress(); };
@@ -129,7 +129,7 @@ namespace ZNAMED {
       if (this->instanceDraw->size() < this->cInfo->instances.size()) {
         for (uintptr_t idx = this->instanceDraw->size(); idx < this->cInfo->instances.size(); idx++) {
           this->instanceDraw->push_back(InstanceDraw{});
-          this->instanceData->push_back(InstanceInfo{});
+          this->instanceInfo->push_back(InstanceInfo{});
         };
       };
 
@@ -137,19 +137,19 @@ namespace ZNAMED {
       for (uintptr_t idx = 0ull; idx < this->cInfo->instances.size(); idx++) {
         auto& instances = this->cInfo->instances[idx];
         auto& instanceDraw = this->instanceDraw[idx];
-        auto& instanceData = this->instanceData[idx];
+        auto& instanceInfo = this->instanceInfo[idx];
 
         // 
         decltype(auto) geometryLevel = deviceObj->get<GeometryLevelObj>(instances.accelerationStructureReference);
 
         // 
-        if (this->getDrawDataResource()) {
+        if (this->getInstanceInfoResource()) {
           instanceDraw.drawInfos = geometryLevel->getDrawInfo();
-          instanceDraw.drawConst = PushConstantData{ .dataAddress = this->getDrawDataDeviceAddress() + sizeof(InstanceInfo) * idx, .drawIndex = uint32_t(idx) };
+          instanceDraw.drawConst = PushConstantData{ .dataAddress = this->getInstanceInfoDeviceAddress() + sizeof(InstanceInfo) * idx, .instanceIndex = uint32_t(idx), .drawIndex = 0u };
         };
 
         // 
-        instanceData = InstanceInfo{ .transform = reinterpret_cast<glm::mat3x4&>(instances.transform), .reference = geometryLevel->getGeometryDeviceAddress() };
+        instanceInfo = InstanceInfo{ .transform = reinterpret_cast<glm::mat3x4&>(instances.transform), .reference = geometryLevel->getGeometryDeviceAddress() };
       };
 
       {
@@ -248,7 +248,7 @@ namespace ZNAMED {
 
       // 
       memcpy(deviceObj->get<ResourceObj>(uploaderObj->uploadBuffer)->mappedMemory, this->cInfo->instances.data(), this->cInfo->instances.size()*sizeof(InstanceDevInfo));
-      memcpy(cpp21::shift(deviceObj->get<ResourceObj>(uploaderObj->uploadBuffer)->mappedMemory, this->cInfo->instances.size() * sizeof(InstanceDevInfo)), this->instanceData->data(), this->cInfo->instances.size() * sizeof(InstanceInfo));
+      memcpy(cpp21::shift(deviceObj->get<ResourceObj>(uploaderObj->uploadBuffer)->mappedMemory, this->cInfo->instances.size() * sizeof(InstanceDevInfo)), this->instanceInfo->data(), this->cInfo->instances.size() * sizeof(InstanceInfo));
 
       // TODO: Acceleration Structure Build Barriers per Buffers
       submission.commandInits.push_back([dispatch = deviceObj->getDispatch(), this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
@@ -327,7 +327,7 @@ namespace ZNAMED {
 
       //
       this->handle = device.getAccelerationStructureAddressKHR(vk::AccelerationStructureDeviceAddressInfoKHR{ .accelerationStructure = this->accelStruct }, deviceObj->getDispatch());
-      this->addressInfo = InstanceAddressInfo{ .data = this->getDrawDataDeviceAddress(), .accelStruct = this->handle.as<uintptr_t>() };
+      this->addressInfo = InstanceAddressInfo{ .data = this->getInstanceInfoDeviceAddress(), .accelStruct = this->handle.as<uintptr_t>() };
 
       //
       return std::get<0>(*this->buildStructure())->get();

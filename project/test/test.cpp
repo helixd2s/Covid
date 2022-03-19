@@ -22,6 +22,7 @@
 
 //
 #include <tinygltf/tiny_gltf.h>
+#include <glm/gtc/matrix_transform.hpp>
 
 // 
 void error(int errnum, const char* errmsg)
@@ -30,9 +31,23 @@ void error(int errnum, const char* errmsg)
 };
 
 //
-struct UniformData {
-  uint32_t textureIndices[4] = { 0u,0u,0u,0u };
+struct Constants
+{
+  glm::mat4x4 perspective = glm::mat4x4(1.f);
+  glm::mat4x4 perspectiveInverse = glm::mat4x4(1.f);
+  glm::mat3x4 lookAt = glm::mat3x4(1.f);
+  glm::mat3x4 lookAtInverse = glm::mat3x4(1.f);
 };
+
+//
+struct UniformData {
+  uint32_t framebufferAttachments[4] = { 0u,0u,0u,0u };
+  Constants constants = {};
+  uint64_t verticesAddress = 0ull;
+  
+};
+
+
 
 // 
 int main() {
@@ -86,6 +101,7 @@ int main() {
   ZNAMED::initialize();
 
 
+
   //
   //std::cout << "We running experimental renderer... continue?" << std::endl;
   //system("PAUSE");
@@ -137,8 +153,10 @@ int main() {
 
   //
   std::vector<glm::vec4> vertices{ 
-    glm::vec4{0.f, 0.f, 0.1f, 1.0}, glm::vec4{1.f, 0.f, 0.1f, 1.0}, glm::vec4{0.f, 1.f, 0.1f, 1.0},
-    glm::vec4{1.f, 1.f, 0.1f, 1.0}, glm::vec4{0.f, 1.f, 0.1f, 1.0}, glm::vec4{1.f, 0.f, 0.1f, 1.0},
+    glm::vec4{-1.f, -1.f, -0.8f, 1.0}, glm::vec4{1.f, -1.f, -0.8f, 1.0}, glm::vec4{-1.f, 1.f, -0.8f, 1.0},
+    glm::vec4{1.f, 1.f, -0.8f, 1.0}, glm::vec4{-1.f, 1.f, -0.8f, 1.0}, glm::vec4{1.f, -1.f, -0.8f, 1.0},
+    //glm::vec4{0.f, 0.f, 0.1f, 1.0}, glm::vec4{1.f, 0.f, 0.1f, 1.0}, glm::vec4{0.f, 1.f, 0.1f, 1.0},
+    //glm::vec4{1.f, 1.f, 0.1f, 1.0}, glm::vec4{0.f, 1.f, 0.1f, 1.0}, glm::vec4{1.f, 0.f, 0.1f, 1.0},
   };
   uintptr_t voffset = 0ull;
 
@@ -176,7 +194,7 @@ int main() {
   decltype(auto) geometryLevel = ZNAMED::GeometryLevelObj::make(device, ZNAMED::GeometryLevelCreateInfo{
     .geometries = std::vector<ZNAMED::GeometryInfo>{ZNAMED::GeometryInfo{
       .vertices = ZNAMED::BufferViewInfo{.region = ZNAMED::BufferViewRegion{.deviceAddress = verticesAddress, .stride = sizeof(glm::vec4), .size = uint32_t(sizeof(glm::vec4) * vertices.size())}, .format = ZNAMED::BufferViewFormat::eFloat3},
-      .indices = ZNAMED::BufferViewInfo{.region = ZNAMED::BufferViewRegion{.deviceAddress = indicesAddress, .stride = sizeof(uint16_t), .size = uint32_t(sizeof(uint16_t) * indices.size())}, .format = ZNAMED::BufferViewFormat::eShort},
+      .indices = ZNAMED::BufferViewInfo{.region = ZNAMED::BufferViewRegion{.deviceAddress = indicesAddress, .stride = sizeof(uint16_t), .size = uint32_t(sizeof(uint16_t) * indices.size())}, .format = ZNAMED::BufferViewFormat::eShort3},
       .primitiveCount = 2u,
     }},
     .uploader = uploader.as<uintptr_t>(),
@@ -267,11 +285,20 @@ int main() {
   //
   decltype(auto) renderArea = swapchain->getRenderArea();
 
+  // set perspective
+  auto persp = glm::perspective(60.f / 180 * glm::pi<float>(), float(renderArea.extent.width) / float(renderArea.extent.height), 0.001f, 10000.f);
+  auto lkat = glm::lookAt(glm::vec3(0.f, 0.f, -1.f), glm::vec3(0.f, 0.f, 1.f), glm::vec3(0.f, 1.f, 0.f));
+  uniformData.constants.perspective = glm::transpose(persp);
+  uniformData.constants.perspectiveInverse = glm::transpose(glm::inverse(persp));
+  uniformData.constants.lookAt = glm::mat3x4(glm::transpose(lkat));
+  uniformData.constants.lookAtInverse = glm::mat3x4(glm::transpose(glm::inverse(lkat)));
+  uniformData.verticesAddress = verticesAddress;
+
 
   //
   decltype(auto) framebuffer = ZNAMED::FramebufferObj::make(device.with(0u), ZNAMED::FramebufferCreateInfo{
     .layout = descriptors.as<vk::PipelineLayout>(),
-    .extent = swapchain->getRenderArea().extent,
+    .extent = renderArea.extent,
     .info = qfAndQueue
   });
 
@@ -280,8 +307,8 @@ int main() {
   decltype(auto) presentSemaphoreInfos = swapchain->getPresentSemaphoreInfos();
 
   // 
-  decltype(auto) textureIndices = framebuffer->getImageViewIndices();
-  memcpy(uniformData.textureIndices, textureIndices.data(), std::min(textureIndices.size(), 4ull) * sizeof(uint32_t));
+  decltype(auto) framebufferAttachments = framebuffer->getImageViewIndices();
+  memcpy(uniformData.framebufferAttachments, framebufferAttachments.data(), std::min(framebufferAttachments.size(), 4ull) * sizeof(uint32_t));
 
 
 

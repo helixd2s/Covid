@@ -15,6 +15,7 @@
 #extension GL_EXT_ray_query : enable
 #extension GL_EXT_ray_tracing : enable
 #extension GL_ARB_gpu_shader_int64 : require
+#extension GL_EXT_debug_printf : require
 
 //
 const uint32_t VERTEX_VERTICES = 0u;
@@ -29,10 +30,29 @@ const uint32_t MATERIAL_NORMAL = 1u;
 const uint32_t MATERIAL_PBR = 2u;
 const uint32_t MAX_MATERIAL_BIND = 3u;
 
+//
+struct Constants
+{
+  mat4x4 perspective;
+  mat4x4 perspectiveInverse;
+  mat3x4 lookAt;
+  mat3x4 lookAtInverse;
+};
+
+// but may not to be...
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer TestVertices {
+  mat3x4 data[];
+};
+
 // 
 layout(set = 0, binding = 0, scalar) uniform MatrixBlock
 {
-  uint32_t textureIndices[4]; // framebuffers
+  uint32_t framebufferAttachments[4]; // framebuffers
+  Constants constants;
+
+  TestVertices vertices;
+  // for test
+  //uint64_t verticesAddress;
 };
 
 //
@@ -41,7 +61,7 @@ layout(set = 2, binding = 0) uniform sampler samplers[];
 layout(set = 3, binding = 0, rgb10_a2) uniform image2D images[];
 
 // but may not to be...
-layout(buffer_reference, scalar, buffer_reference_align = 16) buffer TransformBlock {
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer TransformBlock {
   mat3x4 transform[];
 };
 
@@ -77,7 +97,7 @@ MaterialPixelInfo handleMaterial(in MaterialInfo materialInfo, in vec2 texcoord)
 };
 
 // but may not to be...
-layout(buffer_reference, scalar, buffer_reference_align = 8) buffer MaterialData {
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer MaterialData {
   MaterialInfo infos[];
 };
 
@@ -97,7 +117,7 @@ struct BufferViewInfo {
 };
 
 // but may not to be...
-layout(buffer_reference, scalar, buffer_reference_align = 8) buffer GeometryExtension {
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer GeometryExtension {
   BufferViewInfo bufferViews[MAX_VERTEX_DATA-1u];
 };
 
@@ -118,8 +138,8 @@ struct GeometryInfo {
   BufferViewInfo transform;
 
   //
-  uint64_t extensionRef;
-  uint64_t materialRef;
+  GeometryExtension extensionRef;
+  MaterialData materialRef;
 
   //
   uint32_t primitiveCount;
@@ -127,7 +147,7 @@ struct GeometryInfo {
 };
 
 //
-layout(buffer_reference, scalar, buffer_reference_align = 8) buffer GeometryData {
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer GeometryData {
   GeometryInfo infos[];
 };
 
@@ -138,7 +158,7 @@ struct InstanceInfo {
 };
 
 //
-layout(buffer_reference, scalar, buffer_reference_align = 8) buffer InstanceData {
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer InstanceData {
   InstanceInfo infos[];
 };
 
@@ -151,8 +171,8 @@ struct InstanceAddressInfo {
 // ALWAYS USE ZEON INDEX OF `InstanceDrawDatas`
 struct PushConstantData {
   InstanceData data;
+  uint32_t instanceIndex;
   uint32_t drawIndex;
-  uint32_t reserved;
 };
 
 //
@@ -168,35 +188,35 @@ struct SwapchainStateInfo {
 };
 
 //
-layout(buffer_reference, scalar, buffer_reference_align = 16, align=16) buffer Float4 { vec4 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 4, align=4) buffer Float3 { vec3 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 8, align=8) buffer Float2 { vec2 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 4, align=4) buffer Float { float data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer Float4 { vec4 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer Float3 { vec3 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer Float2 { vec2 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer Float { float data[]; };
 
 //
-layout(buffer_reference, scalar, buffer_reference_align = 16, align=16) buffer Uint4 { uvec4 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 4, align=4) buffer Uint3 { uvec3 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 8, align=8) buffer Uint2 { uvec2 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 4, align=4) buffer Uint { uint data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer Uint4 { uvec4 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer Uint3 { uvec3 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer Uint2 { uvec2 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer Uint { uint data[]; };
 
 //
-layout(buffer_reference, scalar, buffer_reference_align = 8, align=8) buffer Half4 { f16vec4 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 2, align=2) buffer Half3 { f16vec3 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 4, align=4) buffer Half2 { f16vec2 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 2, align=2) buffer Half { float16_t data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer Half4 { f16vec4 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer Half3 { f16vec3 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer Half2 { f16vec2 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer Half { float16_t data[]; };
 
 //
-layout(buffer_reference, scalar, buffer_reference_align = 8, align=8) buffer Ushort4 { u16vec4 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 2, align=2) buffer Ushort3 { u16vec3 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 4, align=4) buffer Ushort2 { u16vec2 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 2, align=2) buffer Ushort { uint16_t data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer Ushort4 { u16vec4 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer Ushort3 { u16vec3 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer Ushort2 { u16vec2 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer Ushort { uint16_t data[]; };
 
 // instead of `0u` (zero) should to be `firstVertex`
 uvec4 readAsUint4(in BufferViewInfo bufferViewInfo, in uint32_t index) {
   const uint cCnt = bufferViewInfo.format&3u;
   const uint isHalf = (bufferViewInfo.format>>2)&1u;
   const uint isUint = (bufferViewInfo.format>>3)&1u;
-  const uint stride = (bufferViewInfo.region.stride > 0) ? bufferViewInfo.region.stride : ((isHalf == 1u ? 2 : 4) * (cCnt + 1));
+  const uint stride = (bufferViewInfo.region.stride > 0) ? (bufferViewInfo.region.stride) : ((isHalf == 1u ? 2 : 4) * (cCnt + 1));
   const uint64_t address = bufferViewInfo.region.deviceAddress + index * stride;
   uvec4 uVec4 = uvec4(0u.xxxx);
   if (bufferViewInfo.region.deviceAddress > 0u) {
@@ -236,17 +256,17 @@ layout(push_constant) uniform PConstBlock {
 //
 uvec3 readTriangleIndices(in BufferViewInfo indices, in uint32_t primitiveId) {
   if (indices.region.deviceAddress > 0u) { return readAsUint3(indices, primitiveId*3u); };
-  return uvec3(primitiveId*3u+0u,primitiveId*3u+1u,primitiveId*3u+2u);
+  return primitiveId*3u+uvec3(0u,1u,2u);
 };
 
 //
 mat3x4 readTriangleVertices(in BufferViewInfo vertices, in uvec3 indices) {
-  return mat3x4(readAsUint4(vertices,indices.x), readAsUint4(vertices,indices.y), readAsUint4(vertices,indices.z));
+  return mat3x4(readAsFloat4(vertices,indices.x), readAsFloat4(vertices,indices.y), readAsFloat4(vertices,indices.z));
 };
 
 //
 mat3x4 readTriangleVertices3One(in BufferViewInfo vertices, in uvec3 indices) {
-  return mat3x4(vec4(readAsUint3(vertices,indices.x), 1.f), vec4(readAsUint3(vertices,indices.y), 1.f), vec4(readAsUint3(vertices,indices.z), 1.f));
+  return mat3x4(vec4(readAsFloat3(vertices,indices.x), 1.f), vec4(readAsFloat3(vertices,indices.y), 1.f), vec4(readAsFloat3(vertices,indices.z), 1.f));
 };
 
 //
@@ -345,7 +365,7 @@ vec3 fullTransformNormal(in InstanceAddressInfo info, in vec3 normals, in uint32
 
 //
 GeometryExtData getGeometryData(in GeometryInfo geometryInfo, in uvec3 indices) {
-  GeometryExtension extension = GeometryExtension(geometryInfo.extensionRef);
+  GeometryExtension extension = geometryInfo.extensionRef;
   GeometryExtData result;
   result.triData[0u] = readTriangleVertices3One(geometryInfo.vertices, indices);
   for (uint i=1u;i<MAX_VERTEX_DATA;i++) { result.triData[i] = readTriangleVertices(extension.bufferViews[i-1u], indices); };
@@ -359,7 +379,7 @@ GeometryExtData getGeometryData(in GeometryInfo geometryInfo, in uint32_t primit
 
 //
 MaterialInfo getMaterialInfo(in GeometryInfo geometryInfo, in uint32_t materialId) {
-  return MaterialData(geometryInfo.materialRef).infos[materialId];
+  return geometryInfo.materialRef.infos[materialId];
 };
 
 //

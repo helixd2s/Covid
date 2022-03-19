@@ -270,7 +270,8 @@ namespace ZNAMED {
     virtual tType writeGraphicsCommand(cpp21::const_wrap_arg<WriteGraphicsInfo> exec = WriteGraphicsInfo{}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
-      decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(exec->layout ? exec->layout : this->cInfo->layout);
+      decltype(auto) pipelineLayout = exec->layout ? exec->layout : this->cInfo->layout;
+      decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(pipelineLayout);
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
       decltype(auto) framebuffer = deviceObj->get<FramebufferObj>(exec->framebuffer).shared();
 
@@ -331,8 +332,11 @@ namespace ZNAMED {
             fnTp([cmdBuf = exec->cmdBuf, dispatch = deviceObj->getDispatch()](cpp21::shared_vector<vk::MultiDrawInfoEXT> const& multiDraw) {
               cmdBuf.drawMultiEXT(*multiDraw, 1u, 0u, sizeof(vk::MultiDrawInfoEXT), dispatch);
             }) :
-            fnTp([cmdBuf = exec->cmdBuf](cpp21::shared_vector<vk::MultiDrawInfoEXT> const& multiDraw) {
+            fnTp([cmdBuf = exec->cmdBuf, pipelineLayout, instInfo](cpp21::shared_vector<vk::MultiDrawInfoEXT> const& multiDraw) {
+              uint32_t index = 0u;
               for (decltype(auto) drawInfo : *multiDraw) {
+                decltype(auto) pushed = instInfo.drawConst->with(index++);
+                cmdBuf.pushConstants(pipelineLayout, vk::ShaderStageFlagBits::eAll, sizeof(InstanceAddressBlock), sizeof(PushConstantData), &pushed);
                 cmdBuf.draw(drawInfo.vertexCount, 1u, drawInfo.firstVertex, 0u);
               };
             });
