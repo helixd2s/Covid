@@ -6,6 +6,11 @@
 #include "./Device.hpp"
 #include "./Resource.hpp"
 
+//
+#ifdef Z_ENABLE_VMA
+#include "./MemoryAllocatorVma.hpp"
+#endif
+
 // 
 namespace ZNAMED {
   
@@ -27,6 +32,11 @@ namespace ZNAMED {
     cpp21::vector_of_shared<MSS> layoutInfoMaps = {};
     std::optional<UploaderCreateInfo> cInfo = UploaderCreateInfo{};
     
+    //
+#ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
+    VmaVirtualBlock uploadBlock;
+    VmaVirtualBlock downloadBlock;
+#endif
 
     //
     //std::shared_ptr<DeviceObj> deviceObj = {};
@@ -76,14 +86,14 @@ namespace ZNAMED {
 
     // you can copy from host to device Buffer and Image together!
     // TODO: per-type role based barriers...
-    virtual tType writeUploadToResourceCmd(cpp21::const_wrap_arg<UploadCommandWriteInfo> copyRegionInfo) {
+    virtual tType writeUploadToResourceCmd(cpp21::const_wrap_arg<UploadCommandWriteInfo> copyRegionInfo, cpp21::const_wrap_arg<uintptr_t> hostMapOffset_ = {}) {
       //decltype(auto) submission = CommandOnceSubmission{ .info = this->cInfo->info };
       decltype(auto) uploadBuffer = this->uploadBuffer;
-      decltype(auto) downloadBuffer = this->downloadBuffer;
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) size = copyRegionInfo->dstBuffer ? copyRegionInfo->dstBuffer->region.size : VK_WHOLE_SIZE;
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
+      decltype(auto) hostMapOffset = hostMapOffset_ ? (*hostMapOffset_) : copyRegionInfo->hostMapOffset;
 
       //
       decltype(auto) subresourceRange = vk::ImageSubresourceRange{};
@@ -109,7 +119,7 @@ namespace ZNAMED {
           .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
           .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
           .buffer = uploadBuffer,
-          .offset = copyRegionInfo->hostMapOffset,
+          .offset = hostMapOffset,
           .size = size
         }
       };
@@ -124,7 +134,7 @@ namespace ZNAMED {
           .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
           .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
           .buffer = uploadBuffer,
-          .offset = copyRegionInfo->hostMapOffset,
+          .offset = hostMapOffset,
           .size = size
         }
       };
@@ -137,7 +147,7 @@ namespace ZNAMED {
         decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
 
         BtIRegions.push_back(vk::BufferImageCopy2{
-          .bufferOffset = copyRegionInfo->hostMapOffset, .imageSubresource = subresourceLayers, .imageOffset = imageRegion.region.offset, .imageExtent = imageRegion.region.extent
+          .bufferOffset = hostMapOffset, .imageSubresource = subresourceLayers, .imageOffset = imageRegion.region.offset, .imageExtent = imageRegion.region.extent
         });
         BtI = vk::CopyBufferToImageInfo2{ .srcBuffer = uploadBuffer, .dstImage = imageRegion.image, .dstImageLayout = vk::ImageLayout::eTransferDstOptimal };
 
@@ -202,7 +212,7 @@ namespace ZNAMED {
         decltype(auto) accessMask = vk::AccessFlagBits2(vku::getAccessMaskByImageUsage(bufferObj->getBufferUsage()));
 
         //
-        BtBRegions.push_back(vk::BufferCopy2{ .srcOffset = copyRegionInfo->hostMapOffset, .dstOffset = bufferRegion.region.offset, .size = size });
+        BtBRegions.push_back(vk::BufferCopy2{ .srcOffset = hostMapOffset, .dstOffset = bufferRegion.region.offset, .size = size });
         BtB = vk::CopyBufferInfo2{ .srcBuffer = uploadBuffer, .dstBuffer = bufferRegion.buffer };
 
         //
@@ -245,9 +255,7 @@ namespace ZNAMED {
     //
     // TODO: per-type role based barriers...
     // TODO: image, imageType and imageLayout supports...
-    virtual tType writeDownloadToResourceCmd(cpp21::const_wrap_arg<DownloadCommandWriteInfo> info) {
-      //decltype(auto) submission = CommandOnceSubmission{ .info = SubmissionInfo {.info = this->cInfo->info } };
-      decltype(auto) uploadBuffer = this->uploadBuffer;
+    virtual tType writeDownloadToResourceCmd(cpp21::const_wrap_arg<DownloadCommandWriteInfo> info, cpp21::const_wrap_arg<uintptr_t> hostMapOffset_ = {}) {
       decltype(auto) downloadBuffer = this->downloadBuffer;
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) regions = std::vector<vk::BufferCopy2>{  };
@@ -255,6 +263,7 @@ namespace ZNAMED {
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
       decltype(auto) size = info->srcBuffer ? info->srcBuffer->region.size : VK_WHOLE_SIZE;
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) hostMapOffset = hostMapOffset_ ? (*hostMapOffset_) : info->hostMapOffset;
 
       //
       decltype(auto) bufferBarriersBegin = std::vector<vk::BufferMemoryBarrier2>{
@@ -266,7 +275,7 @@ namespace ZNAMED {
           .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
           .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
           .buffer = downloadBuffer,
-          .offset = info->hostMapOffset,
+          .offset = hostMapOffset,
           .size = size
         },
       };
@@ -281,7 +290,7 @@ namespace ZNAMED {
           .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
           .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
           .buffer = downloadBuffer,
-          .offset = info->hostMapOffset,
+          .offset = hostMapOffset,
           .size = size
         }
       };
@@ -294,7 +303,7 @@ namespace ZNAMED {
 
         //
         copyInfo = vk::CopyBufferInfo2{ .srcBuffer = info->srcBuffer->buffer, .dstBuffer = downloadBuffer };
-        regions.push_back(vk::BufferCopy2{ .srcOffset = info->srcBuffer->region.offset, .dstOffset = info->hostMapOffset, .size = size });
+        regions.push_back(vk::BufferCopy2{ .srcOffset = info->srcBuffer->region.offset, .dstOffset = hostMapOffset, .size = size });
 
         //
         bufferBarriersBegin.push_back(vk::BufferMemoryBarrier2{
@@ -336,22 +345,38 @@ namespace ZNAMED {
     //
     virtual FenceType executeUploadToResourceOnce(cpp21::const_wrap_arg<UploadExecutionOnce> exec) {
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo {.info = this->cInfo->info } };
-      decltype(auto) uploadBuffer = this->uploadBuffer;
-      decltype(auto) downloadBuffer = this->downloadBuffer;
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) size = exec->host ? (exec->writeInfo.dstBuffer ? std::min(exec->host->size(), exec->writeInfo.dstBuffer->region.size) : exec->host->size()) : (exec->writeInfo.dstBuffer ? exec->writeInfo.dstBuffer->region.size : VK_WHOLE_SIZE);
-      decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
+      decltype(auto) uploadBuffer = this->uploadBuffer;
+
+      // 
+      VkDeviceSize offset = exec->writeInfo.hostMapOffset;
+
+      // 
+#ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
+      VmaVirtualAllocationCreateInfo allocCreateInfo = {};
+      allocCreateInfo.size = size; // 4 KB
+      allocCreateInfo.flags = VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT;
+
+      VmaVirtualAllocation alloc;
+      VkResult upRes = vmaVirtualAllocate(uploadBlock, &allocCreateInfo, &alloc, &offset);
+#endif
 
       // 
       if (exec->host) {
-        memcpy(cpp21::shift(ZNAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(uploadBuffer)->mappedMemory, exec->writeInfo.hostMapOffset), exec->host->data(), size);
+        memcpy(this->getUploadMapped(offset), exec->host->data(), size);
       };
 
       // 
-      submission.commandInits.push_back([exec,this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
-        this->writeUploadToResourceCmd(exec->writeInfo.with(cmdBuf));
+      submission.commandInits.push_back([exec, offset, this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+        this->writeUploadToResourceCmd(exec->writeInfo.with(cmdBuf), offset);
         return cmdBuf;
+      });
+
+      //
+      submission.onDone.push_back([uploadBlock=this->uploadBlock, alloc](cpp21::const_wrap_arg<vk::Result> result) {
+        vmaVirtualFree(uploadBlock, alloc);
       });
 
       //
@@ -361,22 +386,35 @@ namespace ZNAMED {
     //
     virtual FenceType executeDownloadToResourceOnce(cpp21::const_wrap_arg<DownloadExecutionOnce> exec) {
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = this->cInfo->info } };
-      decltype(auto) uploadBuffer = this->uploadBuffer;
       decltype(auto) downloadBuffer = this->downloadBuffer;
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) size = exec->host ? (exec->writeInfo.srcBuffer ? std::min(exec->host->size(), exec->writeInfo.srcBuffer->region.size) : exec->host->size()) : (exec->writeInfo.srcBuffer ? exec->writeInfo.srcBuffer->region.size : VK_WHOLE_SIZE);
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
 
       // 
-      submission.commandInits.push_back([exec,this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
-        this->writeDownloadToResourceCmd(exec->writeInfo.with(cmdBuf));
+      VkDeviceSize offset = exec->writeInfo.hostMapOffset;
+
+      // 
+#ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
+      VmaVirtualAllocationCreateInfo allocCreateInfo = {};
+      allocCreateInfo.size = size; // 4 KB
+      allocCreateInfo.flags = VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT;
+
+      VmaVirtualAllocation alloc;
+      VkResult upRes = vmaVirtualAllocate(downloadBlock, &allocCreateInfo, &alloc, &offset);
+#endif
+
+      // 
+      submission.commandInits.push_back([exec, offset, this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+        this->writeDownloadToResourceCmd(exec->writeInfo.with(cmdBuf), offset);
         return cmdBuf;
       });
 
       //
       if (exec->host) {
-        submission.onDone.push_back([hostMapOffset = exec->writeInfo.hostMapOffset, size, _host = exec->host, mapped = ZNAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(downloadBuffer)->mappedMemory](cpp21::const_wrap_arg<vk::Result> result) {
-          memcpy(_host->data(), cpp21::shift(mapped, hostMapOffset), size);
+        submission.onDone.push_back([offset, downloadBlock = this->downloadBlock, alloc, size, _host = exec->host, mapped = this->getDownloadMapped(offset)](cpp21::const_wrap_arg<vk::Result> result) {
+          memcpy(_host->data(), cpp21::shift(mapped, offset), size);
+          vmaVirtualFree(downloadBlock, alloc);
         });
       };
 
@@ -406,6 +444,18 @@ namespace ZNAMED {
           .type = BufferType::eHostMap,
         }
       }).as<vk::Buffer>();
+
+#ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
+      // 
+      VmaVirtualBlockCreateInfo blockCreateInfo = {};
+      blockCreateInfo.size = this->cInfo->cacheSize;
+      //blockCreateInfo.flags = VMA_VIRTUAL_BLOCK_CREATE_LINEAR_ALGORITHM_BIT;
+
+      // 
+      VkResult upRes = vmaCreateVirtualBlock(&blockCreateInfo, &uploadBlock);
+      VkResult downRes = vmaCreateVirtualBlock(&blockCreateInfo, &downloadBlock);
+#endif
+
 
       this->handle = uintptr_t(this);
     };
