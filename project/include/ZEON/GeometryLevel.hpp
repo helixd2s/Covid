@@ -208,11 +208,8 @@ namespace ZNAMED {
 
       //
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
-      decltype(auto) geometryAlloc = uploaderObj->allocateUploadTemp(this->cInfo->geometries.size() * sizeof(InstanceDevInfo));
+      decltype(auto) geometryAlloc = uploaderObj->allocateUploadTemp(this->cInfo->geometries.size() * sizeof(InstanceDevInfo), geometryOffset);
       decltype(auto) uploadBlock = uploaderObj->getUploadBlock();
-
-      //
-      geometryOffset = std::get<0u>(geometryAlloc);
 #endif
 
       // 
@@ -224,9 +221,11 @@ namespace ZNAMED {
       });
 
       //
+#ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
       submission.onDone.push_back([uploadBlock, geometryAlloc](cpp21::const_wrap_arg<vk::Result> result) {
-        vmaVirtualFree(uploadBlock, std::get<1u>(geometryAlloc));
+        vmaVirtualFree(uploadBlock, geometryAlloc);
       });
+#endif
 
       //
       return ZNAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);

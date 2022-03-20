@@ -349,9 +349,7 @@ namespace ZNAMED {
     virtual VmaVirtualBlock const& getDownloadBlock() const { return downloadBlock; };
 
     //
-    virtual std::tuple<VkDeviceSize, VmaVirtualAllocation> allocateUploadTemp(size_t const& size) {
-      VkDeviceSize offset = 0ull;
-
+    virtual VmaVirtualAllocation allocateUploadTemp(size_t const& size, uintptr_t& offset) {
       // 
       VmaVirtualAllocationCreateInfo allocCreateInfo = {};
       allocCreateInfo.size = size; // 4 KB
@@ -362,24 +360,34 @@ namespace ZNAMED {
       VkResult upRes = vmaVirtualAllocate(uploadBlock, &allocCreateInfo, &alloc, &offset);
 
       //
-      return std::make_tuple(offset, alloc);
+      return alloc;
+    };
+
+    //
+    virtual VmaVirtualAllocation allocateDownloadTemp(size_t const& size, uintptr_t& offset) {
+      // 
+      VmaVirtualAllocationCreateInfo allocCreateInfo = {};
+      allocCreateInfo.size = size; // 4 KB
+      allocCreateInfo.flags = VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT;
+
+      //
+      VmaVirtualAllocation alloc;
+      VkResult upRes = vmaVirtualAllocate(uploadBlock, &allocCreateInfo, &alloc, &offset);
+
+      //
+      return alloc;
+    };
+
+    //
+    virtual std::tuple<VkDeviceSize, VmaVirtualAllocation> allocateUploadTemp(size_t const& size) {
+      VkDeviceSize offset = 0ull;
+      return std::make_tuple(offset, allocateUploadTemp(size, offset));
     };
 
     //
     virtual std::tuple<VkDeviceSize, VmaVirtualAllocation> allocateDownloadTemp(size_t const& size) {
       VkDeviceSize offset = 0ull;
-
-      // 
-      VmaVirtualAllocationCreateInfo allocCreateInfo = {};
-      allocCreateInfo.size = size; // 4 KB
-      allocCreateInfo.flags = VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT;
-
-      //
-      VmaVirtualAllocation alloc;
-      VkResult upRes = vmaVirtualAllocate(uploadBlock, &allocCreateInfo, &alloc, &offset);
-
-      //
-      return std::make_tuple(offset, alloc);
+      return std::make_tuple(offset, allocateDownloadTemp(size, offset));
     };
 #endif
 
@@ -396,12 +404,7 @@ namespace ZNAMED {
 
       // 
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
-      VmaVirtualAllocationCreateInfo allocCreateInfo = {};
-      allocCreateInfo.size = size; // 4 KB
-      allocCreateInfo.flags = VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT;
-
-      VmaVirtualAllocation alloc;
-      VkResult upRes = vmaVirtualAllocate(uploadBlock, &allocCreateInfo, &alloc, &offset);
+      decltype(auto) alloc = allocateUploadTemp(size, offset);
 #endif
 
       // 
@@ -416,9 +419,11 @@ namespace ZNAMED {
       });
 
       //
+#ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
       submission.onDone.push_back([uploadBlock=this->uploadBlock, alloc](cpp21::const_wrap_arg<vk::Result> result) {
         vmaVirtualFree(uploadBlock, alloc);
       });
+#endif
 
       //
       return ZNAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
@@ -437,12 +442,7 @@ namespace ZNAMED {
 
       // 
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
-      VmaVirtualAllocationCreateInfo allocCreateInfo = {};
-      allocCreateInfo.size = size; // 4 KB
-      allocCreateInfo.flags = VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT;
-
-      VmaVirtualAllocation alloc;
-      VkResult upRes = vmaVirtualAllocate(downloadBlock, &allocCreateInfo, &alloc, &offset);
+      decltype(auto) alloc = allocateDownloadTemp(size, offset);
 #endif
 
       // 
@@ -453,10 +453,16 @@ namespace ZNAMED {
 
       //
       if (exec->host) {
+#ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
         submission.onDone.push_back([offset, downloadBlock = this->downloadBlock, alloc, size, _host = exec->host, mapped = this->getDownloadMapped(offset)](cpp21::const_wrap_arg<vk::Result> result) {
           memcpy(_host->data(), cpp21::shift(mapped, offset), size);
           vmaVirtualFree(downloadBlock, alloc);
         });
+#else
+        submission.onDone.push_back([offset, size, _host = exec->host, mapped = this->getDownloadMapped(offset)](cpp21::const_wrap_arg<vk::Result> result) {
+          memcpy(_host->data(), cpp21::shift(mapped, offset), size);
+        });
+#endif
       };
 
       //
