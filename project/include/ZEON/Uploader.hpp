@@ -341,6 +341,47 @@ namespace ZNAMED {
       return SFT();
     };
 
+    //
+#ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
+    virtual VmaVirtualBlock& getUploadBlock() { return uploadBlock; };
+    virtual VmaVirtualBlock const& getUploadBlock() const { return uploadBlock; };
+    virtual VmaVirtualBlock& getDownloadBlock() { return downloadBlock; };
+    virtual VmaVirtualBlock const& getDownloadBlock() const { return downloadBlock; };
+
+    //
+    virtual std::tuple<VkDeviceSize, VmaVirtualAllocation> allocateUploadTemp(size_t const& size) {
+      VkDeviceSize offset = 0ull;
+
+      // 
+      VmaVirtualAllocationCreateInfo allocCreateInfo = {};
+      allocCreateInfo.size = size; // 4 KB
+      allocCreateInfo.flags = VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT;
+
+      //
+      VmaVirtualAllocation alloc;
+      VkResult upRes = vmaVirtualAllocate(uploadBlock, &allocCreateInfo, &alloc, &offset);
+
+      //
+      return std::make_tuple(offset, alloc);
+    };
+
+    //
+    virtual std::tuple<VkDeviceSize, VmaVirtualAllocation> allocateDownloadTemp(size_t const& size) {
+      VkDeviceSize offset = 0ull;
+
+      // 
+      VmaVirtualAllocationCreateInfo allocCreateInfo = {};
+      allocCreateInfo.size = size; // 4 KB
+      allocCreateInfo.flags = VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT;
+
+      //
+      VmaVirtualAllocation alloc;
+      VkResult upRes = vmaVirtualAllocate(uploadBlock, &allocCreateInfo, &alloc, &offset);
+
+      //
+      return std::make_tuple(offset, alloc);
+    };
+#endif
 
     //
     virtual FenceType executeUploadToResourceOnce(cpp21::const_wrap_arg<UploadExecutionOnce> exec) {

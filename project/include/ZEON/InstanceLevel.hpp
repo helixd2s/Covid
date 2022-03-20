@@ -7,6 +7,11 @@
 #include "./Resource.hpp"
 #include "./GeometryLevel.hpp"
 
+//
+#ifdef Z_ENABLE_VMA
+#include "./MemoryAllocatorVma.hpp"
+#endif
+
 // 
 namespace ZNAMED {
 
@@ -171,25 +176,24 @@ namespace ZNAMED {
     };
 
     //
-    virtual vk::CommandBuffer const& writeBuildStructureCmd(cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf = {}) {
+    virtual vk::CommandBuffer const& writeBuildStructureCmd(cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf = {}, uintptr_t const& instanceDevOffset = 0ull, uintptr_t const& instanceOffset = 0ull) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(this->cInfo->uploader);
 
-
       // 
       uploaderObj->writeUploadToResourceCmd(UploadCommandWriteInfo{
         .cmdBuf = cmdBuf,
-        .hostMapOffset = 0ull,
+        .hostMapOffset = instanceDevOffset,
         .dstBuffer = BufferRegion{this->instanceBuffer, DataRegion{ 0ull, this->cInfo->instances.size() * sizeof(InstanceDevInfo) }}
-        });
+      }, instanceDevOffset);
 
       // parallelize by offset
       uploaderObj->writeUploadToResourceCmd(UploadCommandWriteInfo{
         .cmdBuf = cmdBuf,
-        .hostMapOffset = this->cInfo->instances.size() * sizeof(InstanceDevInfo),
+        .hostMapOffset = instanceOffset,
         .dstBuffer = BufferRegion{this->instanceExtBuffer, DataRegion{ 0ull, this->cInfo->instances.size() * sizeof(InstanceInfo) }}
-        });
+      }, instanceOffset);
 
       //
       decltype(auto) accelInfo = infoMap->get<vk::AccelerationStructureCreateInfoKHR>(vk::StructureType::eAccelerationStructureCreateInfoKHR);
@@ -246,13 +250,34 @@ namespace ZNAMED {
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(this->cInfo->uploader);
 
+      //
+      uintptr_t instanceDevOffset = 0ull;
+      uintptr_t instanceOffset = this->cInfo->instances.size() * sizeof(InstanceDevInfo);
+
+      //
+#ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
+      decltype(auto) instanceDevAlloc = uploaderObj->allocateUploadTemp(this->cInfo->instances.size() * sizeof(InstanceDevInfo));
+      decltype(auto) instanceAlloc = uploaderObj->allocateUploadTemp(this->cInfo->instances.size() * sizeof(InstanceInfo));
+      decltype(auto) uploadBlock = uploaderObj->getUploadBlock();
+
+      //
+      instanceDevOffset = std::get<0u>(instanceDevAlloc);
+      instanceOffset = std::get<0u>(instanceAlloc);
+#endif
+
       // 
-      memcpy(deviceObj->get<ResourceObj>(uploaderObj->uploadBuffer)->mappedMemory, this->cInfo->instances.data(), this->cInfo->instances.size()*sizeof(InstanceDevInfo));
-      memcpy(cpp21::shift(deviceObj->get<ResourceObj>(uploaderObj->uploadBuffer)->mappedMemory, this->cInfo->instances.size() * sizeof(InstanceDevInfo)), this->instanceInfo->data(), this->cInfo->instances.size() * sizeof(InstanceInfo));
+      memcpy(uploaderObj->getUploadMapped(instanceDevOffset), this->cInfo->instances.data(), this->cInfo->instances.size() * sizeof(InstanceDevInfo));
+      memcpy(uploaderObj->getUploadMapped(instanceOffset), this->instanceInfo->data(), this->instanceInfo->size() * sizeof(InstanceInfo));
 
       // TODO: Acceleration Structure Build Barriers per Buffers
-      submission.commandInits.push_back([dispatch = deviceObj->getDispatch(), this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
-        return this->writeBuildStructureCmd(cmdBuf);
+      submission.commandInits.push_back([instanceDevOffset, instanceOffset, dispatch = deviceObj->getDispatch(), this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+        return this->writeBuildStructureCmd(cmdBuf, instanceDevOffset, instanceOffset);
+      });
+
+      //
+      submission.onDone.push_back([uploadBlock, instanceDevAlloc, instanceAlloc](cpp21::const_wrap_arg<vk::Result> result) {
+        vmaVirtualFree(uploadBlock, std::get<1u>(instanceDevAlloc));
+        vmaVirtualFree(uploadBlock, std::get<1u>(instanceAlloc));
       });
 
       //

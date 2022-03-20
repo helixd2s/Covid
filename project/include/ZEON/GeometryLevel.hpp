@@ -136,7 +136,7 @@ namespace ZNAMED {
     };
 
     //
-    virtual vk::CommandBuffer const& writeBuildStructureCmd(cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf = {}) {
+    virtual vk::CommandBuffer const& writeBuildStructureCmd(cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf = {}, uintptr_t const& geometryOffset = 0ull) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(this->cInfo->uploader);
@@ -144,8 +144,9 @@ namespace ZNAMED {
       // 
       uploaderObj->writeUploadToResourceCmd(UploadCommandWriteInfo{
         .cmdBuf = cmdBuf,
+        .hostMapOffset = geometryOffset,
         .dstBuffer = BufferRegion{this->geometryBuffer, DataRegion{ 0ull, this->cInfo->geometries.size() * sizeof(GeometryInfo) }}
-        });
+      }, geometryOffset);
 
       //
       decltype(auto) accelInfo = infoMap->get<vk::AccelerationStructureCreateInfoKHR>(vk::StructureType::eAccelerationStructureCreateInfoKHR);
@@ -202,12 +203,29 @@ namespace ZNAMED {
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(this->cInfo->uploader);
 
+      //
+      uintptr_t geometryOffset = 0ull;
+
+      //
+#ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
+      decltype(auto) geometryAlloc = uploaderObj->allocateUploadTemp(this->cInfo->geometries.size() * sizeof(InstanceDevInfo));
+      decltype(auto) uploadBlock = uploaderObj->getUploadBlock();
+
+      //
+      geometryOffset = std::get<0u>(geometryAlloc);
+#endif
+
       // 
-      memcpy(deviceObj->get<ResourceObj>(uploaderObj->uploadBuffer)->mappedMemory, this->cInfo->geometries.data(), this->cInfo->geometries.size()*sizeof(GeometryInfo));
+      memcpy(uploaderObj->getUploadMapped(geometryOffset), this->cInfo->geometries.data(), this->cInfo->geometries.size()*sizeof(GeometryInfo));
 
       // TODO: Acceleration Structure Build Barriers per Buffers
-      submission.commandInits.push_back([dispatch=deviceObj->getDispatch(), this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
-        return this->writeBuildStructureCmd(cmdBuf);
+      submission.commandInits.push_back([geometryOffset,dispatch=deviceObj->getDispatch(), this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+        return this->writeBuildStructureCmd(cmdBuf, geometryOffset);
+      });
+
+      //
+      submission.onDone.push_back([uploadBlock, geometryAlloc](cpp21::const_wrap_arg<vk::Result> result) {
+        vmaVirtualFree(uploadBlock, std::get<1u>(geometryAlloc));
       });
 
       //
