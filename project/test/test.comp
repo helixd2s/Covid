@@ -31,10 +31,14 @@ void main() {
   GeometryExtData geometry = getGeometryData(geometryInfo, intersection.primitiveId);
   GeometryExtAttrib attrib = interpolate(geometry, intersection.barycentric);
 
+  //
   const vec4 vertice = attrib.data[VERTEX_VERTICES];
   const vec4 texcoord = attrib.data[VERTEX_TEXCOORD];
   finalPosition.xyz = texcoord.xyz;
 
+  //
+  MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), texcoord.xy);
+
   // 
-  imageStore(images[swapchain.image], ivec2(gl_GlobalInvocationID.xy), vec4(finalPosition.xyz, 1.f));
+  imageStore(images[swapchain.image], ivec2(gl_GlobalInvocationID.xy), vec4(materialPix.color[MATERIAL_ALBEDO].xyz, 1.f));
 };

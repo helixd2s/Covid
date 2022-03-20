@@ -227,13 +227,17 @@ int main() {
   //
   uint64_t extensionAddress = extensionBuffer->getDeviceAddress();
 
-  // complete loader
-  decltype(auto) uploadExtFence = uploader->executeUploadToResourceOnce(ZNAMED::UploadExecutionOnce{
+  //
+  uploader->executeUploadToResourceOnce(ZNAMED::UploadExecutionOnce{
     .host = cpp21::data_view<char8_t>((char8_t*)extensions.data(), 0ull, cpp21::bytesize(extensions)),
     .writeInfo = ZNAMED::UploadCommandWriteInfo{
       .dstBuffer = ZNAMED::BufferRegion{extensionBuffer.as<vk::Buffer>(), ZNAMED::DataRegion{0ull, cpp21::bytesize(extensions)}},
     }
   });
+
+
+
+
 
   // 
   int w = 0, h = 0, comp = 0;
@@ -264,11 +268,49 @@ int main() {
   decltype(auto) texImageView = texture->createImageView(ZNAMED::ImageViewCreateInfo{.viewType = vk::ImageViewType::e2D});
 
   //
+  decltype(auto) samplerObj = ZNAMED::SamplerObj::make(device, ZNAMED::SamplerCreateInfo{
+    .descriptors = descriptors.as<vk::PipelineLayout>(),
+    .native = vk::SamplerCreateInfo {
+      .magFilter = vk::Filter::eLinear,
+      .minFilter = vk::Filter::eLinear,
+      .addressModeU = vk::SamplerAddressMode::eRepeat,
+      .addressModeV = vk::SamplerAddressMode::eRepeat
+    }
+  });
+
+  //
+  decltype(auto) material = ZNAMED::MaterialInfo{};
+  material.texCol[std::to_underlying(ZNAMED::TextureBind::eAlbedo)] = ZNAMED::TexOrDef{ .texture = ZNAMED::CTexture{.textureIdPOne = std::get<1u>(texImageView)+1u, .samplerIdPOne = samplerObj->getId()+1u }};
+  std::vector<ZNAMED::MaterialInfo> materials = { material };
+
+  //
+  decltype(auto) materialBuffer = ZNAMED::ResourceObj::make(device, ZNAMED::ResourceCreateInfo{
+    .descriptors = descriptors.as<vk::PipelineLayout>(),
+    .bufferInfo = ZNAMED::BufferCreateInfo{
+      .size = cpp21::bytesize(materials),
+      .type = ZNAMED::BufferType::eUniversal,
+    }
+    }.use(ZNAMED::ExtensionName::eMemoryAllocatorVma));
+
+  //
+  uint64_t materialAddress = materialBuffer->getDeviceAddress();
+
+  //
+  uploader->executeUploadToResourceOnce(ZNAMED::UploadExecutionOnce{
+    .host = cpp21::data_view<char8_t>((char8_t*)materials.data(), 0ull, cpp21::bytesize(materials)),
+    .writeInfo = ZNAMED::UploadCommandWriteInfo{
+      .dstBuffer = ZNAMED::BufferRegion{materialBuffer.as<vk::Buffer>(), ZNAMED::DataRegion{0ull, cpp21::bytesize(materials)}},
+    }
+    });
+
+
+  //
   decltype(auto) geometryLevel = ZNAMED::GeometryLevelObj::make(device, ZNAMED::GeometryLevelCreateInfo{
     .geometries = std::vector<ZNAMED::GeometryInfo>{ZNAMED::GeometryInfo{
       .vertices = ZNAMED::BufferViewInfo{.region = ZNAMED::BufferViewRegion{.deviceAddress = verticesAddress, .stride = sizeof(glm::vec4), .size = uint32_t(cpp21::bytesize(vertices))}, .format = ZNAMED::BufferViewFormat::eFloat3},
       .indices = ZNAMED::BufferViewInfo{.region = ZNAMED::BufferViewRegion{.deviceAddress = indicesAddress, .stride = sizeof(uint16_t), .size = uint32_t(cpp21::bytesize(indices))}, .format = ZNAMED::BufferViewFormat::eShort3},
       .extensionRef = extensionAddress,
+      .materialRef = materialAddress,
       .primitiveCount = 2u
     }},
     .uploader = uploader.as<uintptr_t>(),

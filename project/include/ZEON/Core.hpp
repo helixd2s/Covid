@@ -118,9 +118,10 @@ namespace ZNAMED {
     eFramebuffer = 15u,
     eSemaphore = 16u,
     eAccelerationStructure = 17u,
+    eSampler = 18u,
 
-    eDeviceMemory = 18u,
-    eMemoryAllocator = 19u
+    eDeviceMemory = 19u,
+    eMemoryAllocator = 20u
   };
 
   //
@@ -251,6 +252,7 @@ namespace ZNAMED {
   class SwapchainObj;
   class SemaphoreObj;
   class MemoryAllocatorObj;
+  class SamplerObj;
 
   //
   using MSS = cpp21::map_of_shared<vk::StructureType, vk::BaseInStructure, std::shared_ptr, robin_hood::unordered_map>;
@@ -665,6 +667,12 @@ namespace ZNAMED {
     std::optional<ImageSwapchainInfo> swapchain = {};
     std::optional<QueueGetInfo> info = QueueGetInfo{};
     ImageType type = ImageType::eStorage;
+  };
+
+  //
+  struct SamplerCreateInfo : BaseCreateInfo {
+    vk::PipelineLayout descriptors = {};
+    vk::SamplerCreateInfo native = {};
   };
 
   //
@@ -1121,6 +1129,7 @@ namespace ZNAMED {
     ZNAMED::handleTypeMap[std::type_index(typeid(vk::Framebuffer))] = HandleType::eFramebuffer;
     ZNAMED::handleTypeMap[std::type_index(typeid(vk::Semaphore))] = HandleType::eSemaphore;
     ZNAMED::handleTypeMap[std::type_index(typeid(vk::DeviceMemory))] = HandleType::eDeviceMemory;
+    ZNAMED::handleTypeMap[std::type_index(typeid(vk::Sampler))] = HandleType::eSampler;
 
     //
     return handleTypeMap;
