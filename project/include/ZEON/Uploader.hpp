@@ -401,11 +401,11 @@ namespace ZNAMED {
 
       //
       if (exec->writeInfo.dstImage) {
-        decltype(auto) pixelCount = uintptr_t(exec->writeInfo.dstImage->region.extent.width) * uintptr_t(exec->writeInfo.dstImage->region.extent.height) * uintptr_t(exec->writeInfo.dstImage->region.extent.depth) * uintptr_t(exec->writeInfo.dstImage->region.layerCount);
+        decltype(auto) pixelCount = size_t(exec->writeInfo.dstImage->region.extent.width) * size_t(exec->writeInfo.dstImage->region.extent.height) * size_t(exec->writeInfo.dstImage->region.extent.depth) * size_t(exec->writeInfo.dstImage->region.layerCount);
         decltype(auto) imageObj = deviceObj->get<ResourceObj>(exec->writeInfo.dstImage->image);
         decltype(auto) cInfo = imageObj->infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
         if (cInfo) {
-          size = std::min(size, pixelCount * vku::vk_format_table.at(VkFormat(cInfo->format)).size);
+          size = std::min(size, pixelCount * size_t(vku::vk_format_table.at(VkFormat(cInfo->format)).size));
         };
       };
 
