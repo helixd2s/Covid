@@ -138,6 +138,18 @@ namespace ZNAMED {
     virtual uintptr_t& getDeviceAddress() { return this->deviceAddress; };
     virtual uintptr_t const& getDeviceAddress() const { return this->deviceAddress; };
 
+    //
+    virtual vk::ImageLayout& getImageLayout() { return cInfo->imageInfo->layout; };
+    virtual vk::ImageLayout const& getImageLayout() const { return cInfo->imageInfo->layout; };
+
+    //
+    virtual vk::ImageUsageFlags& getImageUsage() { return imageUsage; };
+    virtual vk::ImageUsageFlags const& getImageUsage() const { return imageUsage; };
+
+    //
+    virtual vk::BufferUsageFlags& getBufferUsage() { return bufferUsage; };
+    virtual vk::BufferUsageFlags const& getBufferUsage() const { return bufferUsage; };
+
   protected:
 
     //
@@ -168,14 +180,6 @@ namespace ZNAMED {
         if (this->cInfo->bufferInfo) { this->createBuffer(this->cInfo->bufferInfo.value()); };
       };
     };
-
-    //
-    virtual vk::ImageUsageFlags& getImageUsage() { return imageUsage; };
-    virtual vk::ImageUsageFlags const& getImageUsage() const { return imageUsage; };
-
-    //
-    virtual vk::BufferUsageFlags& getBufferUsage() { return bufferUsage; };
-    virtual vk::BufferUsageFlags const& getBufferUsage() const { return bufferUsage; };
 
     //
     virtual vk::ImageUsageFlags& handleImageUsage(ImageType const& imageType) {

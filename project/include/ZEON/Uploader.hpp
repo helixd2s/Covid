@@ -143,13 +143,9 @@ namespace ZNAMED {
       if (copyRegionInfo->dstImage) {
         auto& imageRegion = copyRegionInfo->dstImage.value();
 
+        //
         decltype(auto) imageObj = deviceObj->get<ResourceObj>(imageRegion.image);
-        decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
-
-        BtIRegions.push_back(vk::BufferImageCopy2{
-          .bufferOffset = hostMapOffset, .imageSubresource = subresourceLayers, .imageOffset = imageRegion.region.offset, .imageExtent = imageRegion.region.extent
-        });
-        BtI = vk::CopyBufferToImageInfo2{ .srcBuffer = uploadBuffer, .dstImage = imageRegion.image, .dstImageLayout = vk::ImageLayout::eTransferDstOptimal };
+        decltype(auto) imageInfo = imageObj->infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
 
         // 
         subresourceRange = vk::ImageSubresourceRange{
@@ -158,9 +154,9 @@ namespace ZNAMED {
             (imageObj->cInfo->imageInfo->type == ImageType::eDepthAttachment ? vk::ImageAspectFlagBits::eDepth :
             (imageObj->cInfo->imageInfo->type == ImageType::eStencilAttachment ? vk::ImageAspectFlagBits::eStencil : vk::ImageAspectFlagBits::eColor)),
           .baseMipLevel = imageRegion.region.baseMipLevel,
-          .levelCount = imageRegion.region.layerCount,
+          .levelCount = 1u,
           .baseArrayLayer = imageRegion.region.baseLayer,
-          .layerCount = imageInfo->arrayLayers
+          .layerCount = imageRegion.region.layerCount
         };
 
         // 
@@ -171,25 +167,16 @@ namespace ZNAMED {
           .layerCount = subresourceRange.layerCount
         };
 
+        BtIRegions.push_back(vk::BufferImageCopy2{
+          .bufferOffset = hostMapOffset, .imageSubresource = subresourceLayers, .imageOffset = imageRegion.region.offset, .imageExtent = imageRegion.region.extent
+        });
+        BtI = vk::CopyBufferToImageInfo2{ .srcBuffer = uploadBuffer, .dstImage = imageRegion.image, .dstImageLayout = vk::ImageLayout::eTransferDstOptimal };
+
         //
         decltype(auto) accessMask = vk::AccessFlagBits2(vku::getAccessMaskByImageUsage(imageObj->getImageUsage()));
 
         //
         imageBarriersBegin.push_back(vk::ImageMemoryBarrier2{
-            .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferWrite),
-            .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
-            .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(accessMask) | (accessMask & vk::AccessFlagBits2(AccessFlagBitsSet::eShaderReadWrite) ? vk::PipelineStageFlagBits2::eAllCommands : vk::PipelineStageFlagBits2{}),
-            .dstAccessMask = vk::AccessFlagBits2(accessMask),
-            .oldLayout = vk::ImageLayout::eTransferDstOptimal,
-            .newLayout = imageObj->cInfo->imageInfo->layout,
-            .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
-            .dstQueueFamilyIndex = imageRegion.queueFamilyIndex,
-            .image = imageRegion.image,
-            .subresourceRange = subresourceRange
-          });
-
-        //
-        imageBarriersEnd.push_back(vk::ImageMemoryBarrier2{
             .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(accessMask) | (accessMask & vk::AccessFlagBits2(AccessFlagBitsSet::eShaderReadWrite) ? vk::PipelineStageFlagBits2::eAllCommands : vk::PipelineStageFlagBits2{}),
             .srcAccessMask = vk::AccessFlagBits2(accessMask),
             .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferWrite),
@@ -198,6 +185,20 @@ namespace ZNAMED {
             .newLayout = vk::ImageLayout::eTransferDstOptimal,
             .srcQueueFamilyIndex = imageRegion.queueFamilyIndex,
             .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
+            .image = imageRegion.image,
+            .subresourceRange = subresourceRange
+        });
+
+        //
+        imageBarriersEnd.push_back(vk::ImageMemoryBarrier2{
+            .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferWrite),
+            .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
+            .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(accessMask) | (accessMask & vk::AccessFlagBits2(AccessFlagBitsSet::eShaderReadWrite) ? vk::PipelineStageFlagBits2::eAllCommands : vk::PipelineStageFlagBits2{}),
+            .dstAccessMask = vk::AccessFlagBits2(accessMask),
+            .oldLayout = vk::ImageLayout::eTransferDstOptimal,
+            .newLayout = imageObj->cInfo->imageInfo->layout,
+            .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
+            .dstQueueFamilyIndex = imageRegion.queueFamilyIndex,
             .image = imageRegion.image,
             .subresourceRange = subresourceRange
           });

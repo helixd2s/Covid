@@ -22,6 +22,7 @@
 
 //
 #include <tinygltf/tiny_gltf.h>
+#include <tinygltf/stb_image.h>
 #include <glm/gtc/matrix_transform.hpp>
 
 // 
@@ -42,7 +43,7 @@ struct Constants
 //
 struct UniformData {
   uint32_t framebufferAttachments[4] = { 0u,0u,0u,0u };
-  glm::uvec2 extent = {};
+  glm::uvec2 extent = {}; uint32_t testTex, testSampler;
   Constants constants = {};
   //uint64_t verticesAddress = 0ull;
 };
@@ -174,15 +175,31 @@ int main() {
   }.use(ZNAMED::ExtensionName::eMemoryAllocatorVma));
 
   //
-  memcpy(uploader->getUploadMapped(voffset), vertices.data(), cpp21::bytesize(vertices));
-  memcpy(uploader->getUploadMapped(ioffset), indices.data(), cpp21::bytesize(indices));
-  memcpy(uploader->getUploadMapped(toffset), texcoords.data(), cpp21::bytesize(texcoords));
+  //memcpy(uploader->getUploadMapped(voffset), vertices.data(), cpp21::bytesize(vertices));
+  //memcpy(uploader->getUploadMapped(ioffset), indices.data(), cpp21::bytesize(indices));
+  //memcpy(uploader->getUploadMapped(toffset), texcoords.data(), cpp21::bytesize(texcoords));
 
   // complete loader
-  decltype(auto) uploadFence = uploader->executeUploadToResourceOnce(ZNAMED::UploadExecutionOnce{
+  uploader->executeUploadToResourceOnce(ZNAMED::UploadExecutionOnce{
+    .host = cpp21::data_view<char8_t>((char8_t*)vertices.data(), 0ull, cpp21::bytesize(vertices)),
     .writeInfo = ZNAMED::UploadCommandWriteInfo{
-      .hostMapOffset = 0ull,
-      .dstBuffer = ZNAMED::BufferRegion{buffer.as<vk::Buffer>(), ZNAMED::DataRegion{0ull, cpp21::bytesize(vertices) + cpp21::bytesize(indices) + cpp21::bytesize(texcoords)}},
+      .dstBuffer = ZNAMED::BufferRegion{buffer.as<vk::Buffer>(), ZNAMED::DataRegion{voffset, cpp21::bytesize(vertices)}},
+    }
+  });
+
+  //
+  uploader->executeUploadToResourceOnce(ZNAMED::UploadExecutionOnce{
+    .host = cpp21::data_view<char8_t>((char8_t*)indices.data(), 0ull, cpp21::bytesize(indices)),
+    .writeInfo = ZNAMED::UploadCommandWriteInfo{
+      .dstBuffer = ZNAMED::BufferRegion{buffer.as<vk::Buffer>(), ZNAMED::DataRegion{ioffset, cpp21::bytesize(indices)}},
+    }
+  });
+
+  //
+  uploader->executeUploadToResourceOnce(ZNAMED::UploadExecutionOnce{
+    .host = cpp21::data_view<char8_t>((char8_t*)texcoords.data(), 0ull, cpp21::bytesize(texcoords)),
+    .writeInfo = ZNAMED::UploadCommandWriteInfo{
+      .dstBuffer = ZNAMED::BufferRegion{buffer.as<vk::Buffer>(), ZNAMED::DataRegion{toffset, cpp21::bytesize(texcoords)}},
     }
   });
 
@@ -210,17 +227,41 @@ int main() {
   //
   uint64_t extensionAddress = extensionBuffer->getDeviceAddress();
 
-  //
-  memcpy(uploader->getUploadMapped(toffset + cpp21::bytesize(texcoords)), extensions.data(), cpp21::bytesize(extensions));
-
   // complete loader
   decltype(auto) uploadExtFence = uploader->executeUploadToResourceOnce(ZNAMED::UploadExecutionOnce{
+    .host = cpp21::data_view<char8_t>((char8_t*)extensions.data(), 0ull, cpp21::bytesize(extensions)),
     .writeInfo = ZNAMED::UploadCommandWriteInfo{
-      .hostMapOffset = toffset + cpp21::bytesize(texcoords),
       .dstBuffer = ZNAMED::BufferRegion{extensionBuffer.as<vk::Buffer>(), ZNAMED::DataRegion{0ull, cpp21::bytesize(extensions)}},
     }
   });
 
+  // 
+  int w = 0, h = 0, comp = 0;
+  unsigned char* image = stbi_load("./texture.png", &w, &h, &comp, STBI_rgb_alpha);
+
+  // 
+  if (image == nullptr) { throw(std::string("Failed to load texture")); };
+
+  //
+  decltype(auto) texture = ZNAMED::ResourceObj::make(device, ZNAMED::ResourceCreateInfo{
+    .descriptors = descriptors.as<vk::PipelineLayout>(),
+    .imageInfo = ZNAMED::ImageCreateInfo{
+      .format = vk::Format::eR8G8B8A8Unorm,
+      .extent = vk::Extent3D{uint32_t(w), uint32_t(h), 1u},
+      .type = ZNAMED::ImageType::eTexture
+    }
+  }.use(ZNAMED::ExtensionName::eMemoryAllocatorVma));
+
+  //
+  uploader->executeUploadToResourceOnce(ZNAMED::UploadExecutionOnce{
+    .host = cpp21::data_view<char8_t>((char8_t*)image, 0ull, uint32_t(w) * uint32_t(h) * 4u),
+    .writeInfo = ZNAMED::UploadCommandWriteInfo{
+      .dstImage = ZNAMED::ImageRegion{.image = texture.as<vk::Image>(), .region = ZNAMED::ImageDataRegion{.extent = vk::Extent3D{uint32_t(w), uint32_t(h), 1u}}},
+    }
+  });
+
+  //
+  decltype(auto) texImageView = texture->createImageView(ZNAMED::ImageViewCreateInfo{.viewType = vk::ImageViewType::e2D});
 
   //
   decltype(auto) geometryLevel = ZNAMED::GeometryLevelObj::make(device, ZNAMED::GeometryLevelCreateInfo{
@@ -362,7 +403,7 @@ int main() {
     decltype(auto) uniformFence = descriptors->executeUniformUpdateOnce(ZNAMED::UniformDataSet{
       .writeInfo = ZNAMED::UniformDataWriteSet{
         .region = ZNAMED::DataRegion{0ull, sizeof(UniformData)},
-        .data = cpp21::data_view<char8_t>((char8_t*)&uniformData, sizeof(UniformData)),
+        .data = cpp21::data_view<char8_t>((char8_t*)&uniformData, 0ull, sizeof(UniformData)),
       },
       .submission = ZNAMED::SubmissionInfo{
         .info = qfAndQueue,
