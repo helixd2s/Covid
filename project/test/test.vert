@@ -27,9 +27,10 @@ void main() {
 
   //const vec4 vertice = vertices.data[gl_VertexIndex/3u][gl_VertexIndex%3];//geometry.triData[VERTEX_VERTICES][gl_VertexIndex%3];
   const vec4 vertice = vec4(geometry.triData[VERTEX_VERTICES][gl_VertexIndex%3].xyz, 1.f);
+  const vec4 texcoord = vec4(geometry.triData[VERTEX_TEXCOORD][gl_VertexIndex%3].xyz, 1.f);
   const vec4 position = vec4(fullTransform(instanceInfo, vertice, geometryIndex) * constants.lookAt, 1.f) * constants.perspective;
 
   // 
   gl_Position = position;
-  pcolor = vec4(vertice.xyz*0.5f+0.5f, 1.f);
+  pcolor = vec4(texcoord.xyz, 1.f);
 };

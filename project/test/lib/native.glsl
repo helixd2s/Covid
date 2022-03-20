@@ -22,6 +22,9 @@ const uint32_t VERTEX_VERTICES = 0u;
 const uint32_t VERTEX_TEXCOORD = 1u;
 const uint32_t VERTEX_NORMALS = 2u;
 const uint32_t VERTEX_TANGENT = 3u;
+const uint32_t VERTEX_EXT_TEXCOORD = 0u;
+const uint32_t VERTEX_EXT_NORMALS = 1u;
+const uint32_t VERTEX_EXT_TANGENT = 2u;
 const uint32_t MAX_VERTEX_DATA = 4u;
 
 //
@@ -435,7 +438,7 @@ MaterialInfo getMaterialInfo(in GeometryInfo geometryInfo) {
 //
 GeometryExtAttrib interpolate(in GeometryExtData data, in vec3 barycentric) {
   GeometryExtAttrib result;
-  for (uint i=0u;i<4u;i++) { result.data[i] = data.triData[i]*barycentric; };
+  for (uint i=0u;i<4u;i++) { result.data[i] = interpolate(data.triData[i], barycentric); };
   return result;
 };
 

@@ -377,6 +377,9 @@ namespace ZNAMED {
     eTexcoord = 1u,
     eNormals = 2u,
     eTangent = 3u,
+    eExtTexcoord = 0u,
+    eExtNormals = 1u,
+    eExtTangent = 2u,
     eMAX = 4u
   };
 
