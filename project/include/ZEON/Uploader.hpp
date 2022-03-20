@@ -158,8 +158,8 @@ namespace ZNAMED {
             (imageObj->cInfo->imageInfo->type == ImageType::eDepthAttachment ? vk::ImageAspectFlagBits::eDepth :
             (imageObj->cInfo->imageInfo->type == ImageType::eStencilAttachment ? vk::ImageAspectFlagBits::eStencil : vk::ImageAspectFlagBits::eColor)),
           .baseMipLevel = imageRegion.region.baseMipLevel,
-          .levelCount = 1u,//imageInfo->mipLevels - imageRegion->region->baseMipLevel,
-          .baseArrayLayer = 0u,
+          .levelCount = imageRegion.region.layerCount,
+          .baseArrayLayer = imageRegion.region.baseLayer,
           .layerCount = imageInfo->arrayLayers
         };
 
@@ -398,6 +398,16 @@ namespace ZNAMED {
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) size = exec->host ? (exec->writeInfo.dstBuffer ? std::min(exec->host->size(), exec->writeInfo.dstBuffer->region.size) : exec->host->size()) : (exec->writeInfo.dstBuffer ? exec->writeInfo.dstBuffer->region.size : VK_WHOLE_SIZE);
       decltype(auto) uploadBuffer = this->uploadBuffer;
+
+      //
+      if (exec->writeInfo.dstImage) {
+        decltype(auto) pixelCount = uintptr_t(exec->writeInfo.dstImage->region.extent.width) * uintptr_t(exec->writeInfo.dstImage->region.extent.height) * uintptr_t(exec->writeInfo.dstImage->region.extent.depth) * uintptr_t(exec->writeInfo.dstImage->region.layerCount);
+        decltype(auto) imageObj = deviceObj->get<ResourceObj>(exec->writeInfo.dstImage->image);
+        decltype(auto) cInfo = imageObj->infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
+        if (cInfo) {
+          size = std::min(size, pixelCount * vku::vk_format_table.at(VkFormat(cInfo->format)).size);
+        };
+      };
 
       // 
       VkDeviceSize offset = exec->writeInfo.hostMapOffset;

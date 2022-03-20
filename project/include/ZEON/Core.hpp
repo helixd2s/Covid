@@ -697,6 +697,8 @@ namespace ZNAMED {
   };
 
   //
+#pragma pack(4)
+  __declspec(align(4))
   struct AllocatedMemory {
     vk::DeviceMemory memory = {};
     uintptr_t offset = 0ull;
@@ -704,19 +706,27 @@ namespace ZNAMED {
   };
 
   //
+#pragma pack(4)
+  __declspec(align(4))
   struct DataRegion {
     uintptr_t offset = 0ull;
     size_t size = VK_WHOLE_SIZE;
   };
 
   //
+#pragma pack(4)
+  __declspec(align(4))
   struct ImageDataRegion {
     vk::Offset3D offset = { 0u, 0u, 0u };
     vk::Extent3D extent = { 1u, 1u, 1u };
     uint32_t baseMipLevel = 0u;
+    uint32_t baseLayer = 0u;
+    uint32_t layerCount = 1u;
   };
 
   //
+#pragma pack(4)
+  __declspec(align(4))
   struct BufferRegion {
     vk::Buffer buffer = {};
     DataRegion region = {};
@@ -724,6 +734,8 @@ namespace ZNAMED {
   };
 
   //
+#pragma pack(4)
+  __declspec(align(4))
   struct ImageRegion {
     vk::Image image = {};
     ImageDataRegion region = {};
