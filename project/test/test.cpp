@@ -133,15 +133,7 @@ int main() {
   //
   //rcCInfo.extUsed = std::make_shared<ZNAMED::EXIP>(ZNAMED::EXIP{ {ZNAMED::ExtensionInfoName::eMemoryAllocator, ZNAMED::ExtensionName::eMemoryAllocatorVma} });
 
-  //
-  decltype(auto) buffer = ZNAMED::ResourceObj::make(device, ZNAMED::ResourceCreateInfo{
-    .descriptors = descriptors.as<vk::PipelineLayout>(),
-    .bufferInfo = ZNAMED::BufferCreateInfo{
-      .size = 1024ull,
-      .type = ZNAMED::BufferType::eUniversal,
-    }
-  }.use(ZNAMED::ExtensionName::eMemoryAllocatorVma));
-
+  
   //
   decltype(auto) uploader = ZNAMED::UploaderObj::make(device, ZNAMED::UploaderCreateInfo{
 
@@ -149,6 +141,8 @@ int main() {
 
   //
   decltype(auto) samplers = descriptors->getSamplerDescriptors();
+
+  
 
   //
   std::vector<glm::vec4> vertices{ 
@@ -161,33 +155,41 @@ int main() {
 
   //
   std::vector<uint16_t> indices{0u,1u,2u,3u,4u,5u};
-  uintptr_t ioffset = sizeof(glm::vec4) * vertices.size();
+  uintptr_t ioffset = cpp21::bytesize(vertices);
+
+  // 
+  std::vector<glm::vec2> texcoords{
+    glm::vec2{0.f, 0.f}, glm::vec2{1.f, 0.f}, glm::vec2{0.f, 1.f},
+    glm::vec2{1.f, 1.f}, glm::vec2{0.f, 1.f}, glm::vec2{1.f, 0.f},
+  };
+  uintptr_t toffset = cpp21::bytesize(indices) + ioffset;
 
   //
-  memcpy(uploader->getUploadMapped(voffset), vertices.data(), vertices.size() * sizeof(glm::vec4));
-  memcpy(uploader->getUploadMapped(ioffset), indices.data(), indices.size() * sizeof(uint16_t));
-
-  //
-  uploader->executeUploadToResourceOnce(ZNAMED::UploadExecutionOnce{
-    //.host = std::span<char8_t>{(char8_t*)vertices.data(), vertices.size() * sizeof(glm::vec4)},
-    .writeInfo = ZNAMED::UploadCommandWriteInfo{
-      .hostMapOffset = voffset,
-      .dstBuffer = ZNAMED::BufferRegion{buffer.as<vk::Buffer>(), ZNAMED::DataRegion{voffset, sizeof(glm::vec4) * vertices.size()}},
+  decltype(auto) buffer = ZNAMED::ResourceObj::make(device, ZNAMED::ResourceCreateInfo{
+    .descriptors = descriptors.as<vk::PipelineLayout>(),
+    .bufferInfo = ZNAMED::BufferCreateInfo{
+      .size = cpp21::bytesize(indices) + cpp21::bytesize(vertices) + cpp21::bytesize(texcoords),
+      .type = ZNAMED::BufferType::eUniversal,
     }
-  });
+    }.use(ZNAMED::ExtensionName::eMemoryAllocatorVma));
 
   //
-  uploader->executeUploadToResourceOnce(ZNAMED::UploadExecutionOnce{
-    //.host = std::span<char8_t>{(char8_t*)indices.data(), indices.size() * sizeof(uint16_t)},
+  memcpy(uploader->getUploadMapped(voffset), vertices.data(), cpp21::bytesize(vertices));
+  memcpy(uploader->getUploadMapped(ioffset), indices.data(), cpp21::bytesize(indices));
+  memcpy(uploader->getUploadMapped(toffset), texcoords.data(), cpp21::bytesize(texcoords));
+
+  // complete loader
+  decltype(auto) uploadFence = uploader->executeUploadToResourceOnce(ZNAMED::UploadExecutionOnce{
     .writeInfo = ZNAMED::UploadCommandWriteInfo{
-      .hostMapOffset = ioffset,
-      .dstBuffer = ZNAMED::BufferRegion{buffer.as<vk::Buffer>(), ZNAMED::DataRegion{ioffset, sizeof(uint16_t) * indices.size()}},
+      .hostMapOffset = 0ull,
+      .dstBuffer = ZNAMED::BufferRegion{buffer.as<vk::Buffer>(), ZNAMED::DataRegion{0ull, cpp21::bytesize(vertices) + cpp21::bytesize(indices) + cpp21::bytesize(texcoords)}},
     }
   });
 
   //
   uint64_t verticesAddress = buffer->getDeviceAddress() + voffset;
   uint64_t indicesAddress = buffer->getDeviceAddress() + ioffset;
+  uint64_t texcoordsAddress = buffer->getDeviceAddress() + toffset;
 
   //
   decltype(auto) geometryLevel = ZNAMED::GeometryLevelObj::make(device, ZNAMED::GeometryLevelCreateInfo{
