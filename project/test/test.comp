@@ -12,7 +12,7 @@ layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
 
 // 
 void main() {
-  const vec2 tCoord = vec2(gl_GlobalInvocationID.xy)/vec2(1280.f,720.f);
+  const vec2 tCoord = vec2(gl_GlobalInvocationID.xy)/vec2(extent);
   const vec3 rayOrigin = divW(vec4(vec3(tCoord, 0.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse;
   const vec3 rayEnd = divW(vec4(vec3(tCoord, 1.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse;
   const vec3 rayDir = normalize(rayEnd - rayOrigin);

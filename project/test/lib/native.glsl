@@ -56,6 +56,7 @@ vec4 divW(in vec4 coord) {
 layout(set = 0, binding = 0, scalar) uniform MatrixBlock
 {
   uint32_t framebufferAttachments[4]; // framebuffers
+  uvec2 extent;
   Constants constants;
 
   //TestVertices vertices;

@@ -42,6 +42,7 @@ struct Constants
 //
 struct UniformData {
   uint32_t framebufferAttachments[4] = { 0u,0u,0u,0u };
+  glm::uvec2 extent = {};
   Constants constants = {};
   //uint64_t verticesAddress = 0ull;
 };
@@ -316,6 +317,7 @@ int main() {
 
   //
   decltype(auto) renderArea = swapchain->getRenderArea();
+  
 
   // set perspective
   auto persp = glm::perspective(60.f / 180 * glm::pi<float>(), float(renderArea.extent.width) / float(renderArea.extent.height), 0.001f, 10000.f);
@@ -324,8 +326,7 @@ int main() {
   uniformData.constants.perspectiveInverse = glm::transpose(glm::inverse(persp));
   uniformData.constants.lookAt = glm::mat3x4(glm::transpose(lkat));
   uniformData.constants.lookAtInverse = glm::mat3x4(glm::transpose(glm::inverse(lkat)));
-  //uniformData.verticesAddress = verticesAddress;
-
+  uniformData.extent = glm::uvec2(renderArea.extent.width, renderArea.extent.height);
 
   //
   decltype(auto) framebuffer = ZNAMED::FramebufferObj::make(device.with(0u), ZNAMED::FramebufferCreateInfo{
