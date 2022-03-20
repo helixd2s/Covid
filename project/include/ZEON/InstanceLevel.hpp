@@ -186,14 +186,14 @@ namespace ZNAMED {
         .cmdBuf = cmdBuf,
         .hostMapOffset = instanceDevOffset,
         .dstBuffer = BufferRegion{this->instanceBuffer, DataRegion{ 0ull, this->cInfo->instances.size() * sizeof(InstanceDevInfo) }}
-      }, instanceDevOffset);
+      });
 
       // parallelize by offset
       uploaderObj->writeUploadToResourceCmd(UploadCommandWriteInfo{
         .cmdBuf = cmdBuf,
         .hostMapOffset = instanceOffset,
         .dstBuffer = BufferRegion{this->instanceExtBuffer, DataRegion{ 0ull, this->cInfo->instances.size() * sizeof(InstanceInfo) }}
-      }, instanceOffset);
+      });
 
       //
       decltype(auto) accelInfo = infoMap->get<vk::AccelerationStructureCreateInfoKHR>(vk::StructureType::eAccelerationStructureCreateInfoKHR);

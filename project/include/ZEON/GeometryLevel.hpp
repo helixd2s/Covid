@@ -146,7 +146,7 @@ namespace ZNAMED {
         .cmdBuf = cmdBuf,
         .hostMapOffset = geometryOffset,
         .dstBuffer = BufferRegion{this->geometryBuffer, DataRegion{ 0ull, this->cInfo->geometries.size() * sizeof(GeometryInfo) }}
-      }, geometryOffset);
+      });
 
       //
       decltype(auto) accelInfo = infoMap->get<vk::AccelerationStructureCreateInfoKHR>(vk::StructureType::eAccelerationStructureCreateInfoKHR);

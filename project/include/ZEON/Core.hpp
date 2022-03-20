@@ -917,6 +917,7 @@ namespace ZNAMED {
     decltype(auto) with(cpp21::const_wrap_arg<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
   };
 
+
   //
   struct UploadCommandWriteInfo : BaseCreateInfo {
     vk::CommandBuffer cmdBuf = {};
@@ -928,6 +929,7 @@ namespace ZNAMED {
 
     //
     decltype(auto) with(cpp21::const_wrap_arg<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
+    decltype(auto) mapOffset(cpp21::const_wrap_arg<uintptr_t> offset) const { auto copy = *this; copy.hostMapOffset = offset; return copy; };
   };
 
   //
@@ -940,6 +942,7 @@ namespace ZNAMED {
 
     //
     decltype(auto) with(cpp21::const_wrap_arg<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
+    decltype(auto) mapOffset(cpp21::const_wrap_arg<uintptr_t> offset) const { auto copy = *this; copy.hostMapOffset = offset; return copy; };
   };
 
 

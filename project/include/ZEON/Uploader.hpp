@@ -86,14 +86,14 @@ namespace ZNAMED {
 
     // you can copy from host to device Buffer and Image together!
     // TODO: per-type role based barriers...
-    virtual tType writeUploadToResourceCmd(cpp21::const_wrap_arg<UploadCommandWriteInfo> copyRegionInfo, cpp21::const_wrap_arg<uintptr_t> hostMapOffset_ = {}) {
+    virtual tType writeUploadToResourceCmd(cpp21::const_wrap_arg<UploadCommandWriteInfo> copyRegionInfo) {
       //decltype(auto) submission = CommandOnceSubmission{ .info = this->cInfo->info };
       decltype(auto) uploadBuffer = this->uploadBuffer;
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) size = copyRegionInfo->dstBuffer ? copyRegionInfo->dstBuffer->region.size : VK_WHOLE_SIZE;
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
-      decltype(auto) hostMapOffset = hostMapOffset_ ? (*hostMapOffset_) : copyRegionInfo->hostMapOffset;
+      decltype(auto) hostMapOffset = /*hostMapOffset_ ? (*hostMapOffset_) :*/ copyRegionInfo->hostMapOffset;
 
       //
       decltype(auto) subresourceRange = vk::ImageSubresourceRange{};
@@ -255,7 +255,7 @@ namespace ZNAMED {
     //
     // TODO: per-type role based barriers...
     // TODO: image, imageType and imageLayout supports...
-    virtual tType writeDownloadToResourceCmd(cpp21::const_wrap_arg<DownloadCommandWriteInfo> info, cpp21::const_wrap_arg<uintptr_t> hostMapOffset_ = {}) {
+    virtual tType writeDownloadToResourceCmd(cpp21::const_wrap_arg<DownloadCommandWriteInfo> info) {
       decltype(auto) downloadBuffer = this->downloadBuffer;
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) regions = std::vector<vk::BufferCopy2>{  };
@@ -263,7 +263,7 @@ namespace ZNAMED {
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
       decltype(auto) size = info->srcBuffer ? info->srcBuffer->region.size : VK_WHOLE_SIZE;
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
-      decltype(auto) hostMapOffset = hostMapOffset_ ? (*hostMapOffset_) : info->hostMapOffset;
+      decltype(auto) hostMapOffset = /*hostMapOffset_ ? (*hostMapOffset_) :*/ info->hostMapOffset;
 
       //
       decltype(auto) bufferBarriersBegin = std::vector<vk::BufferMemoryBarrier2>{
@@ -424,7 +424,7 @@ namespace ZNAMED {
 
       // 
       submission.commandInits.push_back([exec, offset, this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
-        this->writeUploadToResourceCmd(exec->writeInfo.with(cmdBuf), offset);
+        this->writeUploadToResourceCmd(exec->writeInfo.with(cmdBuf).mapOffset(offset));
         return cmdBuf;
       });
 
@@ -457,7 +457,7 @@ namespace ZNAMED {
 
       // 
       submission.commandInits.push_back([exec, offset, this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
-        this->writeDownloadToResourceCmd(exec->writeInfo.with(cmdBuf), offset);
+        this->writeDownloadToResourceCmd(exec->writeInfo.with(cmdBuf).mapOffset(offset));
         return cmdBuf;
       });
 
