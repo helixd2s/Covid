@@ -213,7 +213,7 @@ int main() {
 
   //
   decltype(auto) geomExt = ZNAMED::GeometryExtension{};
-  geomExt.bufferViews[std::to_underlying(ZNAMED::BufferBind::eExtTexcoord)] = ZNAMED::BufferViewInfo{ .region = ZNAMED::BufferViewRegion{.deviceAddress = texcoordsAddress, .stride = sizeof(glm::vec2), .size = uint32_t(cpp21::bytesize(indices))}, .format = ZNAMED::BufferViewFormat::eFloat2 };
+  geomExt.bufferViews[std::to_underlying(ZNAMED::BufferBind::eExtTexcoord)] = ZNAMED::BufferViewInfo{ .region = ZNAMED::BufferViewRegion{.deviceAddress = texcoordsAddress, .stride = sizeof(glm::vec2), .size = uint32_t(cpp21::bytesize(texcoords))}, .format = ZNAMED::BufferViewFormat::eFloat2 };
   std::vector<ZNAMED::GeometryExtension> extensions = { geomExt };
 
   //

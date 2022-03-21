@@ -52,6 +52,12 @@ vec4 divW(in vec4 coord) {
   return coord.xyzw/coord.w;
 };
 
+//
+uint sgn(in uint val) { return uint(0 < val) - uint(val < 0); }
+uint tiled(in uint sz, in uint gmaxtile) {
+  return sz <= 0 ? 0 : (sz / gmaxtile + sgn(sz % gmaxtile));
+};
+
 // 
 layout(set = 0, binding = 0, scalar) uniform MatrixBlock
 {
@@ -227,22 +233,27 @@ uvec4 readAsUint4(in BufferViewInfo bufferViewInfo, in uint32_t index) {
   const uint cCnt = bufferViewInfo.format&3u;
   const uint isHalf = (bufferViewInfo.format>>2)&1u;
   const uint isUint = (bufferViewInfo.format>>3)&1u;
-  const uint stride = (bufferViewInfo.region.stride > 0) ? (bufferViewInfo.region.stride) : ((isHalf == 1u ? 2 : 4) * (cCnt + 1));
-  const uint64_t address = bufferViewInfo.region.deviceAddress + index * stride;
+  const uint stride = max(bufferViewInfo.region.stride, (isHalf == 1u ? 2 : 4) * (cCnt + 1));
+  const uint local = index * stride;
+  const uint realCnt = tiled(min(stride, bufferViewInfo.region.size-local), (isHalf == 1u ? 2 : 4)) - 1u;
+
+  const uint64_t address = bufferViewInfo.region.deviceAddress + local;
+
   uvec4 uVec4 = uvec4(0u.xxxx);
   if (bufferViewInfo.region.deviceAddress > 0u) {
     if (isHalf == 1u) {
-      if (cCnt==0) { uVec4.x    = Ushort (address).data[0u]; };
-      if (cCnt==1) { uVec4.xy   = Ushort2(address).data[0u]; };
-      if (cCnt==2) { uVec4.xyz  = Ushort3(address).data[0u]; };
-      if (cCnt==3) { uVec4.xyzw = Ushort4(address).data[0u]; };
+      if (realCnt==0) { uVec4.x    = Ushort (address).data[0u]; } else
+      if (realCnt==1) { uVec4.xy   = Ushort2(address).data[0u]; } else
+      if (realCnt==2) { uVec4.xyz  = Ushort3(address).data[0u]; } else
+                      { uVec4.xyzw = Ushort4(address).data[0u]; };
     } else {
-      if (cCnt==0) { uVec4.x    = Uint (address).data[0u]; };
-      if (cCnt==1) { uVec4.xy   = Uint2(address).data[0u]; };
-      if (cCnt==2) { uVec4.xyz  = Uint3(address).data[0u]; };
-      if (cCnt==3) { uVec4.xyzw = Uint4(address).data[0u]; };
+      if (realCnt==0) { uVec4.x    = Uint (address).data[0u]; } else
+      if (realCnt==1) { uVec4.xy   = Uint2(address).data[0u]; } else
+      if (realCnt==2) { uVec4.xyz  = Uint3(address).data[0u]; } else
+                      { uVec4.xyzw = Uint4(address).data[0u]; };
     };
   };
+
   return uVec4;
 };
 
@@ -251,20 +262,24 @@ vec4 readAsFloat4(in BufferViewInfo bufferViewInfo, in uint32_t index) {
   const uint cCnt = bufferViewInfo.format&3u;
   const uint isHalf = (bufferViewInfo.format>>2)&1u;
   const uint isUint = (bufferViewInfo.format>>3)&1u;
-  const uint stride = (bufferViewInfo.region.stride > 0) ? (bufferViewInfo.region.stride) : ((isHalf == 1u ? 2 : 4) * (cCnt + 1));
-  const uint64_t address = bufferViewInfo.region.deviceAddress + index * stride;
+  const uint stride = max(bufferViewInfo.region.stride, (isHalf == 1u ? 2 : 4) * (cCnt + 1));
+  const uint local = index * stride;
+  const uint realCnt = tiled(min(stride, bufferViewInfo.region.size-local), (isHalf == 1u ? 2 : 4)) - 1u;
+
+  const uint64_t address = bufferViewInfo.region.deviceAddress + local;
+
   vec4 fVec4 = vec4(0.f.xxxx);
   if (bufferViewInfo.region.deviceAddress > 0u) {
     if (isHalf == 1u) {
-      if (cCnt==0) { fVec4.x    = Half (address).data[0u]; };
-      if (cCnt==1) { fVec4.xy   = Half2(address).data[0u]; };
-      if (cCnt==2) { fVec4.xyz  = Half3(address).data[0u]; };
-      if (cCnt==3) { fVec4.xyzw = Half4(address).data[0u]; };
+      if (realCnt==0) { fVec4.x    = Half (address).data[0u]; } else
+      if (realCnt==1) { fVec4.xy   = Half2(address).data[0u]; } else
+      if (realCnt==2) { fVec4.xyz  = Half3(address).data[0u]; } else
+                      { fVec4.xyzw = Half4(address).data[0u]; };
     } else {
-      if (cCnt==0) { fVec4.x    = Float (address).data[0u]; };
-      if (cCnt==1) { fVec4.xy   = Float2(address).data[0u]; };
-      if (cCnt==2) { fVec4.xyz  = Float3(address).data[0u]; };
-      if (cCnt==3) { fVec4.xyzw = Float4(address).data[0u]; };
+      if (realCnt==0) { fVec4.x    = Float (address).data[0u]; } else
+      if (realCnt==1) { fVec4.xy   = Float2(address).data[0u]; } else
+      if (realCnt==2) { fVec4.xyz  = Float3(address).data[0u]; } else
+                      { fVec4.xyzw = Float4(address).data[0u]; };
     };
   };
   return fVec4;
@@ -290,7 +305,7 @@ layout(push_constant) uniform PConstBlock {
 
 //
 uvec3 readTriangleIndices(in BufferViewInfo indices, in uint32_t primitiveId) {
-  if (indices.region.deviceAddress > 0u) { return readAsUint3(indices, primitiveId*3u); };
+  if (indices.region.deviceAddress > 0u) { return readAsUint3(indices, primitiveId); };
   return primitiveId*3u+uvec3(0u,1u,2u);
 };
 
