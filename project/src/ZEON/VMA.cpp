@@ -7,6 +7,7 @@
 
 // 
 #include <ZEON/ZEON.hpp>
+#include <vk_mem_alloc.h>
 
 // 
 namespace ZNAMED {

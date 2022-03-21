@@ -12,6 +12,11 @@
 #endif
 #endif
 
+//
+#include <tinygltf/tiny_gltf.h>
+#include <tinygltf/stb_image.h>
+#include <glm/gtc/matrix_transform.hpp>
+
 // 
 #include <ZEON/ZEON.hpp>
 #include <GLFW/glfw3.h>
@@ -19,11 +24,6 @@
 #include "renderdoc_app.h"
 #include <eh.h>
 #endif
-
-//
-#include <tinygltf/tiny_gltf.h>
-#include <tinygltf/stb_image.h>
-#include <glm/gtc/matrix_transform.hpp>
 
 // 
 void error(int errnum, const char* errmsg)
@@ -98,11 +98,31 @@ int main() {
   if (rdoc_api) rdoc_api->SetCaptureOptionU32(eRENDERDOC_Option_DebugOutputMute, true);
 #endif
 
+  tinygltf::Model model;
+  tinygltf::TinyGLTF loader;
+  std::string err = "";
+  std::string warn = "";
+
+  bool ret = loader.LoadASCIIFromFile(&model, &err, &warn, "./BoomBox.gltf");
+  //bool ret = loader.LoadBinaryFromFile(&model, &err, &warn, argv[1]); // for binary glTF(.glb)
+
+  if (!warn.empty()) {
+    printf("Warn: %s\n", warn.c_str());
+  }
+
+  if (!err.empty()) {
+    printf("Err: %s\n", err.c_str());
+  }
+
+  if (!ret) {
+    printf("Failed to parse glTF\n");
+    return -1;
+  }
+
   //
   ZNAMED::initialize();
 
-
-
+ 
   //
   //std::cout << "We running experimental renderer... continue?" << std::endl;
   //system("PAUSE");

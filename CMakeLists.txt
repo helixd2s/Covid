@@ -30,6 +30,7 @@ find_package(Vulkan REQUIRED FATAL_ERROR)
 find_package(glfw3 REQUIRED)
 
 # 
+set(CMAKE_C_STANDARD 23)
 set(CMAKE_CXX_STANDARD 23)
 set(_src_root_path "${PROJECT_SOURCE_DIR}/project")
 file(GLOB_RECURSE _source_list 
@@ -67,7 +68,7 @@ ENDIF()
 
 # 
 add_executable(${PROJECT_NAME} ${_source_list})
-target_compile_definitions(${PROJECT_NAME} PUBLIC VULKAN_HPP_NO_CONSTRUCTORS NOMINMAX Z_ENABLE_VMA CPP21_DEBUG_MEMORY TINYGLTF_USE_CPP14 ZNAMED=zeon ${PLATFORM_DEF})
+target_compile_definitions(${PROJECT_NAME} PUBLIC UNICODE VULKAN_HPP_NO_CONSTRUCTORS NOMINMAX Z_ENABLE_VMA CPP21_DEBUG_MEMORY TINYGLTF_USE_CPP14 ZNAMED=zeon ${PLATFORM_DEF})
 target_include_directories(${PROJECT_NAME} PUBLIC 
   ${PROJECT_SOURCE_DIR}/project/include 
   ${PROJECT_SOURCE_DIR}/prebuild/include

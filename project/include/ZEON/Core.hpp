@@ -27,13 +27,6 @@
 #include <vk-utils/cpp21.hpp>
 #include <vk-utils/chain.hpp>
 
-// 
-#include <vector>
-#include <string>
-#include <memory>
-#include <string_view>
-#include <utility>
-
 //
 #include <glm/glm.hpp>
 
