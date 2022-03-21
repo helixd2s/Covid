@@ -5,6 +5,7 @@
 #include "./Device.hpp"
 #include "./MemoryAllocator.hpp"
 #include "./Descriptors.hpp"
+#include "./Sampler.hpp"
 
 // 
 namespace ZNAMED {
@@ -503,6 +504,46 @@ namespace ZNAMED {
       // 
       return FenceType{};
     };
+
+  };
+
+  //
+  inline void DescriptorsObj::createNullImages() {
+    //
+    decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+
+    //
+    decltype(auto) texture = ZNAMED::ResourceObj::make(deviceObj, ZNAMED::ResourceCreateInfo{
+      .descriptors = this->handle,
+      .imageInfo = ZNAMED::ImageCreateInfo{
+        .format = vk::Format::eR8G8B8A8Unorm,
+        .extent = vk::Extent3D{2u, 2u, 1u},
+        .type = ZNAMED::ImageType::eTexture
+      }
+    });
+
+    //
+    decltype(auto) image = ZNAMED::ResourceObj::make(deviceObj, ZNAMED::ResourceCreateInfo{
+      .descriptors = this->handle,
+      .imageInfo = ZNAMED::ImageCreateInfo{
+        .format = vk::Format::eR8G8B8A8Unorm,
+        .extent = vk::Extent3D{2u, 2u, 1u},
+        .type = ZNAMED::ImageType::eStorage
+      }
+    });
+
+    //
+    decltype(auto) texImageView = texture->createImageView(ZNAMED::ImageViewCreateInfo{ .viewType = vk::ImageViewType::e2D });
+    decltype(auto) imgImageView = image->createImageView(ZNAMED::ImageViewCreateInfo{ .viewType = vk::ImageViewType::e2D });
+    decltype(auto) samplerObj = ZNAMED::SamplerObj::make(deviceObj, ZNAMED::SamplerCreateInfo{
+      .descriptors = this->handle,
+      .native = vk::SamplerCreateInfo {
+        .magFilter = vk::Filter::eLinear,
+        .minFilter = vk::Filter::eLinear,
+        .addressModeU = vk::SamplerAddressMode::eRepeat,
+        .addressModeV = vk::SamplerAddressMode::eRepeat
+      }
+    });
 
   };
 

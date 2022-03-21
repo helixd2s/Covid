@@ -365,7 +365,7 @@ namespace ZNAMED {
   //
 #pragma pack(1)
   __declspec(align(1))
-  struct CTexture { uint32_t textureIdPOne = 0u, samplerIdPOne = 0u; };
+  struct CTexture { uint32_t textureId = 0u, samplerId = 0u; };
 
 #pragma pack(1)
   __declspec(align(1))

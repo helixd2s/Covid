@@ -72,6 +72,11 @@ namespace ZNAMED {
     inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
     inline decltype(auto) SFT() const { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::const_pointer_cast<T>(std::dynamic_pointer_cast<T const>(shared_from_this()))); };
 
+    //
+    vk::Image nullTexture = {};
+    vk::Image nullImage = {};
+    vk::Image nullSampler = {};
+
   public:
 
     // 
@@ -124,6 +129,7 @@ namespace ZNAMED {
     inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) {
       auto shared = std::make_shared<DescriptorsObj>(handle, cInfo);
       auto wrap = shared->registerSelf();
+      wrap->createNullImages();
       return wrap;
     };
 
@@ -240,6 +246,7 @@ namespace ZNAMED {
     //
     virtual vk::Buffer& createUniformBuffer();
     virtual vk::Buffer& createCacheBuffer();
+    virtual void createNullImages();
 
   // 
   public:

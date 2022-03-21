@@ -281,7 +281,7 @@ int main() {
 
   //
   decltype(auto) material = ZNAMED::MaterialInfo{};
-  material.texCol[std::to_underlying(ZNAMED::TextureBind::eAlbedo)] = ZNAMED::TexOrDef{ .texture = ZNAMED::CTexture{.textureIdPOne = std::get<1u>(texImageView)+1u, .samplerIdPOne = samplerObj->getId()+1u }};
+  material.texCol[std::to_underlying(ZNAMED::TextureBind::eAlbedo)] = ZNAMED::TexOrDef{ .texture = ZNAMED::CTexture{.textureId = std::get<1u>(texImageView), .samplerId = samplerObj->getId() }};
   std::vector<ZNAMED::MaterialInfo> materials = { material };
 
   //

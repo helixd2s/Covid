@@ -75,7 +75,7 @@ layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer T
 };
 
 // starts from 1u, count as Id-1u, zeon  are Null
-struct CTexture { uint32_t textureIdPOne, samplerIdPOne; };
+struct CTexture { uint32_t textureId, samplerId; };
 struct TexOrDef { CTexture texture; vec4 defValue; };
 
 //
@@ -92,8 +92,8 @@ struct MaterialPixelInfo {
 
 //
 vec4 handleTexture(in TexOrDef tex, in vec2 texcoord) {
-  if (tex.texture.textureIdPOne > 0u && tex.texture.textureIdPOne != -1) {
-    return texture(sampler2D(textures[tex.texture.textureIdPOne-1u], samplers[tex.texture.samplerIdPOne-1u]), texcoord);
+  if (tex.texture.textureId > 0u && tex.texture.textureId != -1) {
+    return texture(sampler2D(textures[tex.texture.textureId], samplers[tex.texture.samplerId]), texcoord);
   };
   return tex.defValue;
 };
