@@ -95,8 +95,11 @@ target_link_directories(${PROJECT_NAME} PUBLIC
 target_link_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS} ${Vulkan_LIBRARIES} glfw)
 target_precompile_headers(${PROJECT_NAME}
   PUBLIC
-  <memory>
   <vector>
+  <string>
+  <memory>
+  <string_view>
+  <utility>
   <map>
   <future>
   <iostream>

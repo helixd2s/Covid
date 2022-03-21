@@ -98,6 +98,10 @@ int main() {
   if (rdoc_api) rdoc_api->SetCaptureOptionU32(eRENDERDOC_Option_DebugOutputMute, true);
 #endif
 
+  //
+  ZNAMED::initialize();
+
+  //
   tinygltf::Model model;
   tinygltf::TinyGLTF loader;
   std::string err = "";
@@ -118,10 +122,6 @@ int main() {
     printf("Failed to parse glTF\n");
     return -1;
   }
-
-  //
-  ZNAMED::initialize();
-
  
   //
   //std::cout << "We running experimental renderer... continue?" << std::endl;
