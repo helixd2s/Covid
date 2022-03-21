@@ -25,9 +25,6 @@
 #include <eh.h>
 #endif
 
-//
-#include "./gltf.hpp"
-
 // 
 void error(int errnum, const char* errmsg)
 {
@@ -342,14 +339,13 @@ int main() {
 
 
   //
-  decltype(auto) gltfLoader = std::make_shared<ZNAMED::GltfLoader>(ZNAMED::GltfLoaderCreateInfo{
-    .device = device.as<vk::Device>(),
+  decltype(auto) gltfLoader = ZNAMED::GltfLoaderObj::make(device, ZNAMED::GltfLoaderCreateInfo{
     .uploader = uploader.as<uintptr_t>(),
     .descriptors = descriptors.as<vk::PipelineLayout>()
   });
 
   // 
-  gltfLoader->loadGLTF("./BoomBox.gltf");
+  gltfLoader->load("./BoomBox.gltf");
 
 
 

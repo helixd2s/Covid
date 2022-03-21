@@ -13,16 +13,34 @@
 #endif
 
 //
+#ifdef Z_ENABLE_GLTF
 #include <tinygltf/tiny_gltf.h>
 #include <tinygltf/stb_image.h>
 #include <glm/gtc/matrix_transform.hpp>
+#endif
+
+//
+#include "./Core.hpp"
+#include "./Context.hpp"
+#include "./Instance.hpp"
+#include "./Device.hpp"
+#include "./MemoryAllocator.hpp"
+#include "./QueueFamily.hpp"
+#include "./Resource.hpp"
+#include "./Sampler.hpp"
+#include "./Descriptors.hpp"
+#include "./Framebuffer.hpp"
+#include "./Pipeline.hpp"
+#include "./Uploader.hpp"
+#include "./Semaphore.hpp"
+#include "./Swapchain.hpp"
+#include "./GeometryLevel.hpp"
+#include "./InstanceLevel.hpp"
 
 // 
-#include <ZEON/ZEON.hpp>
-#include <GLFW/glfw3.h>
-#ifdef ENABLE_RENDERDOC
-#include "renderdoc_app.h"
-#include <eh.h>
+#ifdef Z_ENABLE_VMA
+#include "./MemoryAllocatorVma.hpp"
+#include "./ResourceVma.hpp"
 #endif
 
 //
@@ -30,13 +48,18 @@ namespace ZNAMED {
 
   // 
   struct GltfLoaderCreateInfo {
-    vk::Device device = {};
     uintptr_t uploader = 0ull;
     vk::PipelineLayout descriptors = {};
   };
-  
+
   // 
-  class GltfLoader {
+  class GltfLoaderObj : public BaseObj {
+  public:
+    using BaseObj::BaseObj;
+    using tType = WrapShared<GltfLoaderObj>;
+    using cType = const char const*;
+    //using BaseObj;
+
   protected:
 
     //
@@ -45,18 +68,27 @@ namespace ZNAMED {
     std::string err = "";
     std::string warn = "";
 
+    // 
     std::vector<WrapShared<ResourceObj>> buffers = {};
     std::vector<BufferRegion> regions = {};
     std::optional<GltfLoaderCreateInfo> cInfo = GltfLoaderCreateInfo{};
 
+    // 
+    inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
+    inline decltype(auto) SFT() const { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::const_pointer_cast<T>(std::dynamic_pointer_cast<T const>(shared_from_this()))); };
+
   public: 
-    GltfLoader(std::optional<GltfLoaderCreateInfo> const& cInfo = GltfLoaderCreateInfo{}) {
+
+    //
+    GltfLoaderObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<GltfLoaderCreateInfo> cInfo = GltfLoaderCreateInfo{}) {
       this->cInfo = cInfo;
+      this->base = handle;
     };
 
     // 
-    virtual int loadGLTF(std::string const& filename = "./BoomBox.gltf") {
-      decltype(auto) handle = Handle(cInfo->device, HandleType::eDevice);
+    virtual tType load(std::string const& filename = "./BoomBox.gltf") {
+      //decltype(auto) handle = Handle(cInfo->device, HandleType::eDevice);
+      decltype(auto) handle = this->base;
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(handle);
       decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(this->cInfo->uploader);
 
@@ -73,7 +105,7 @@ namespace ZNAMED {
 
       if (!ret) {
         printf("Failed to parse glTF\n");
-        return -1;
+        return SFT();
       }
 
       for (auto& buffer : model.buffers) {
@@ -104,10 +136,26 @@ namespace ZNAMED {
       };
 
       // 
-      return 0;
+      return SFT();
     };
 
+    //
+    virtual tType registerSelf() {
+      ZNAMED::context->registerObj(this->handle, shared_from_this());
+      return SFT();
+    };
 
+    // 
+    virtual std::type_info const& type_info() const override {
+      return typeid(std::decay_t<decltype(this)>);
+    };
+
+    //
+    inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<GltfLoaderCreateInfo> cInfo = GltfLoaderCreateInfo{}) {
+      auto shared = std::make_shared<GltfLoaderObj>(handle, cInfo);
+      auto wrap = shared->registerSelf();
+      return wrap;
+    };
 
   };
   

@@ -1,6 +1,13 @@
 #pragma once
 
 //
+#ifdef Z_ENABLE_GLTF
+#include <tinygltf/tiny_gltf.h>
+#include <tinygltf/stb_image.h>
+#include <glm/gtc/matrix_transform.hpp>
+#endif
+
+//
 #ifndef ZNAMED
 #define ZNAMED zeon 
 #endif
@@ -246,6 +253,12 @@ namespace ZNAMED {
   class SemaphoreObj;
   class MemoryAllocatorObj;
   class SamplerObj;
+
+  // 
+  class GltfLoaderObj;
+  class ResourceVma;
+  class MemoryAllocatorVma;
+
 
   //
   using MSS = cpp21::map_of_shared<vk::StructureType, vk::BaseInStructure, std::shared_ptr, robin_hood::unordered_map>;

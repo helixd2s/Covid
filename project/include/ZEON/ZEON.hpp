@@ -1,5 +1,12 @@
 #pragma once
 
+//
+#ifdef Z_ENABLE_GLTF
+#include <tinygltf/tiny_gltf.h>
+#include <tinygltf/stb_image.h>
+#include <glm/gtc/matrix_transform.hpp>
+#endif
+
 // 
 #include "./Core.hpp"
 #include "./Context.hpp"
@@ -22,6 +29,11 @@
 #ifdef Z_ENABLE_VMA
 #include "./MemoryAllocatorVma.hpp"
 #include "./ResourceVma.hpp"
+#endif
+
+//
+#ifdef Z_ENABLE_GLTF
+#include "./GltfLoader.hpp"
 #endif
 
 // 
