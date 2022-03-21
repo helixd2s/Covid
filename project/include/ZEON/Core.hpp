@@ -711,6 +711,7 @@ namespace ZNAMED {
   __declspec(align(4))
   struct DataRegion {
     uintptr_t offset = 0ull;
+    size_t stride = 0u;
     size_t size = VK_WHOLE_SIZE;
   };
 

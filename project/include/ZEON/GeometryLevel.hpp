@@ -145,7 +145,7 @@ namespace ZNAMED {
       uploaderObj->writeUploadToResourceCmd(UploadCommandWriteInfo{
         .cmdBuf = cmdBuf,
         .hostMapOffset = geometryOffset,
-        .dstBuffer = BufferRegion{this->geometryBuffer, DataRegion{ 0ull, this->cInfo->geometries.size() * sizeof(GeometryInfo) }}
+        .dstBuffer = BufferRegion{this->geometryBuffer, DataRegion{ 0ull, sizeof(GeometryInfo), this->cInfo->geometries.size() * sizeof(GeometryInfo) }}
       });
 
       //

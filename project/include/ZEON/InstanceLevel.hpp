@@ -185,14 +185,14 @@ namespace ZNAMED {
       uploaderObj->writeUploadToResourceCmd(UploadCommandWriteInfo{
         .cmdBuf = cmdBuf,
         .hostMapOffset = instanceDevOffset,
-        .dstBuffer = BufferRegion{this->instanceBuffer, DataRegion{ 0ull, this->cInfo->instances.size() * sizeof(InstanceDevInfo) }}
+        .dstBuffer = BufferRegion{this->instanceBuffer, DataRegion{ 0ull, sizeof(InstanceDevInfo), this->cInfo->instances.size() * sizeof(InstanceDevInfo) }}
       });
 
       // parallelize by offset
       uploaderObj->writeUploadToResourceCmd(UploadCommandWriteInfo{
         .cmdBuf = cmdBuf,
         .hostMapOffset = instanceOffset,
-        .dstBuffer = BufferRegion{this->instanceExtBuffer, DataRegion{ 0ull, this->cInfo->instances.size() * sizeof(InstanceInfo) }}
+        .dstBuffer = BufferRegion{this->instanceExtBuffer, DataRegion{ 0ull, sizeof(InstanceInfo), this->cInfo->instances.size() * sizeof(InstanceInfo) }}
       });
 
       //

@@ -25,6 +25,9 @@
 #include <eh.h>
 #endif
 
+//
+#include "./gltf.hpp"
+
 // 
 void error(int errnum, const char* errmsg)
 {
@@ -101,28 +104,9 @@ int main() {
   //
   ZNAMED::initialize();
 
-  //
-  tinygltf::Model model;
-  tinygltf::TinyGLTF loader;
-  std::string err = "";
-  std::string warn = "";
 
-  bool ret = loader.LoadASCIIFromFile(&model, &err, &warn, "./BoomBox.gltf");
-  //bool ret = loader.LoadBinaryFromFile(&model, &err, &warn, argv[1]); // for binary glTF(.glb)
 
-  if (!warn.empty()) {
-    printf("Warn: %s\n", warn.c_str());
-  }
 
-  if (!err.empty()) {
-    printf("Err: %s\n", err.c_str());
-  }
-
-  if (!ret) {
-    printf("Failed to parse glTF\n");
-    return -1;
-  }
- 
   //
   //std::cout << "We running experimental renderer... continue?" << std::endl;
   //system("PAUSE");
@@ -203,7 +187,7 @@ int main() {
   uploader->executeUploadToResourceOnce(ZNAMED::UploadExecutionOnce{
     .host = cpp21::data_view<char8_t>((char8_t*)vertices.data(), 0ull, cpp21::bytesize(vertices)),
     .writeInfo = ZNAMED::UploadCommandWriteInfo{
-      .dstBuffer = ZNAMED::BufferRegion{buffer.as<vk::Buffer>(), ZNAMED::DataRegion{voffset, cpp21::bytesize(vertices)}},
+      .dstBuffer = ZNAMED::BufferRegion{buffer.as<vk::Buffer>(), ZNAMED::DataRegion{voffset, sizeof(glm::vec4), cpp21::bytesize(vertices)}},
     }
   });
 
@@ -211,7 +195,7 @@ int main() {
   uploader->executeUploadToResourceOnce(ZNAMED::UploadExecutionOnce{
     .host = cpp21::data_view<char8_t>((char8_t*)indices.data(), 0ull, cpp21::bytesize(indices)),
     .writeInfo = ZNAMED::UploadCommandWriteInfo{
-      .dstBuffer = ZNAMED::BufferRegion{buffer.as<vk::Buffer>(), ZNAMED::DataRegion{ioffset, cpp21::bytesize(indices)}},
+      .dstBuffer = ZNAMED::BufferRegion{buffer.as<vk::Buffer>(), ZNAMED::DataRegion{ioffset, sizeof(glm::u16vec3), cpp21::bytesize(indices)}},
     }
   });
 
@@ -219,7 +203,7 @@ int main() {
   uploader->executeUploadToResourceOnce(ZNAMED::UploadExecutionOnce{
     .host = cpp21::data_view<char8_t>((char8_t*)texcoords.data(), 0ull, cpp21::bytesize(texcoords)),
     .writeInfo = ZNAMED::UploadCommandWriteInfo{
-      .dstBuffer = ZNAMED::BufferRegion{buffer.as<vk::Buffer>(), ZNAMED::DataRegion{toffset, cpp21::bytesize(texcoords)}},
+      .dstBuffer = ZNAMED::BufferRegion{buffer.as<vk::Buffer>(), ZNAMED::DataRegion{toffset, sizeof(glm::vec2), cpp21::bytesize(texcoords)}},
     }
   });
 
@@ -251,7 +235,7 @@ int main() {
   uploader->executeUploadToResourceOnce(ZNAMED::UploadExecutionOnce{
     .host = cpp21::data_view<char8_t>((char8_t*)extensions.data(), 0ull, cpp21::bytesize(extensions)),
     .writeInfo = ZNAMED::UploadCommandWriteInfo{
-      .dstBuffer = ZNAMED::BufferRegion{extensionBuffer.as<vk::Buffer>(), ZNAMED::DataRegion{0ull, cpp21::bytesize(extensions)}},
+      .dstBuffer = ZNAMED::BufferRegion{extensionBuffer.as<vk::Buffer>(), ZNAMED::DataRegion{0ull, sizeof(ZNAMED::GeometryExtension), cpp21::bytesize(extensions)}},
     }
   });
 
@@ -319,9 +303,10 @@ int main() {
   uploader->executeUploadToResourceOnce(ZNAMED::UploadExecutionOnce{
     .host = cpp21::data_view<char8_t>((char8_t*)materials.data(), 0ull, cpp21::bytesize(materials)),
     .writeInfo = ZNAMED::UploadCommandWriteInfo{
-      .dstBuffer = ZNAMED::BufferRegion{materialBuffer.as<vk::Buffer>(), ZNAMED::DataRegion{0ull, cpp21::bytesize(materials)}},
+      .dstBuffer = ZNAMED::BufferRegion{materialBuffer.as<vk::Buffer>(), ZNAMED::DataRegion{0ull, sizeof(ZNAMED::MaterialInfo), cpp21::bytesize(materials)}},
     }
     });
+
 
 
   //
@@ -353,6 +338,19 @@ int main() {
   decltype(auto) instanceAddressBlock = ZNAMED::InstanceAddressBlock{
     .opaqueAddressInfo = instanceLevel->getAddressInfo()
   };
+
+
+
+  //
+  decltype(auto) gltfLoader = std::make_shared<ZNAMED::GltfLoader>(ZNAMED::GltfLoaderCreateInfo{
+    .device = device.as<vk::Device>(),
+    .uploader = uploader.as<uintptr_t>(),
+    .descriptors = descriptors.as<vk::PipelineLayout>()
+  });
+
+  // 
+  gltfLoader->loadGLTF("./BoomBox.gltf");
+
 
 
 
@@ -464,7 +462,7 @@ int main() {
     // 
     decltype(auto) uniformFence = descriptors->executeUniformUpdateOnce(ZNAMED::UniformDataSet{
       .writeInfo = ZNAMED::UniformDataWriteSet{
-        .region = ZNAMED::DataRegion{0ull, sizeof(UniformData)},
+        .region = ZNAMED::DataRegion{0ull, 4ull, sizeof(UniformData)},
         .data = cpp21::data_view<char8_t>((char8_t*)&uniformData, 0ull, sizeof(UniformData)),
       },
       .submission = ZNAMED::SubmissionInfo{
