@@ -233,9 +233,8 @@ uvec4 readAsUint4(in BufferViewInfo bufferViewInfo, in uint32_t index) {
   const uint cCnt = bufferViewInfo.format&3u;
   const uint isHalf = (bufferViewInfo.format>>2)&1u;
   const uint isUint = (bufferViewInfo.format>>3)&1u;
-  const uint stride = max(bufferViewInfo.region.stride, (isHalf == 1u ? 2 : 4) * (cCnt + 1));
-  const uint local = index * stride;
-  const uint realCnt = tiled(min(stride, bufferViewInfo.region.size-local), (isHalf == 1u ? 2 : 4)) - 1u;
+  const uint local = index * (bufferViewInfo.region.stride > 0 ? bufferViewInfo.region.stride : (isHalf == 1u ? 2 : 4) * (cCnt + 1));
+  const uint realCnt = tiled(min(max(bufferViewInfo.region.stride, (isHalf == 1u ? 2 : 4) * (cCnt + 1)), bufferViewInfo.region.size-local), (isHalf == 1u ? 2 : 4)) - 1u;
 
   const uint64_t address = bufferViewInfo.region.deviceAddress + local;
 
@@ -262,9 +261,8 @@ vec4 readAsFloat4(in BufferViewInfo bufferViewInfo, in uint32_t index) {
   const uint cCnt = bufferViewInfo.format&3u;
   const uint isHalf = (bufferViewInfo.format>>2)&1u;
   const uint isUint = (bufferViewInfo.format>>3)&1u;
-  const uint stride = max(bufferViewInfo.region.stride, (isHalf == 1u ? 2 : 4) * (cCnt + 1));
-  const uint local = index * stride;
-  const uint realCnt = tiled(min(stride, bufferViewInfo.region.size-local), (isHalf == 1u ? 2 : 4)) - 1u;
+  const uint local = index * (bufferViewInfo.region.stride > 0 ? bufferViewInfo.region.stride : (isHalf == 1u ? 2 : 4) * (cCnt + 1));
+  const uint realCnt = tiled(min(max(bufferViewInfo.region.stride, (isHalf == 1u ? 2 : 4) * (cCnt + 1)), bufferViewInfo.region.size-local), (isHalf == 1u ? 2 : 4)) - 1u;
 
   const uint64_t address = bufferViewInfo.region.deviceAddress + local;
 
@@ -305,7 +303,7 @@ layout(push_constant) uniform PConstBlock {
 
 //
 uvec3 readTriangleIndices(in BufferViewInfo indices, in uint32_t primitiveId) {
-  if (indices.region.deviceAddress > 0u) { return readAsUint3(indices, primitiveId); };
+  if (indices.region.deviceAddress > 0u) { return readAsUint3(indices, primitiveId*3u); };
   return primitiveId*3u+uvec3(0u,1u,2u);
 };
 
