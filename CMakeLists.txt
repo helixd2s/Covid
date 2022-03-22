@@ -78,8 +78,10 @@ file(GLOB_RECURSE _source_list
 
 #
 SET(PLATFORM_DEF )
+set(PLATFORM_HEAD )
 IF (WIN32)
   SET (PLATFORM_DEF VK_USE_PLATFORM_WIN32_KHR)
+  SET (PLATFORM_HEAD <windows.h>)
 ELSE()
   SET (PLATFORM_DEF )
 ENDIF()
@@ -137,11 +139,16 @@ target_precompile_headers(${PROJECT_NAME}
   <iterator>
   <fstream>
   <typeindex>
+  <tinygltf/tiny_gltf.h>
+  <tinygltf/stb_image.h>
   <vulkan/vulkan.h>
   <vulkan/vulkan.hpp>
   <vulkan/vulkan_raii.hpp>
   <glm/glm.hpp>
+  <glm/gtc/matrix_transform.hpp>
+  <glm/gtc/quaternion.hpp>
   <robin_hood.h>
+  ${PLATFORM_HEAD}
 )
 
 #

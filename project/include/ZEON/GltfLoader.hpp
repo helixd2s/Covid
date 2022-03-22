@@ -1,26 +1,6 @@
 #pragma once
 
 //
-#ifdef _WIN32
-#ifndef VK_USE_PLATFORM_WIN32_KHR
-#define VK_USE_PLATFORM_WIN32_KHR
-#include <windows.h>
-#endif
-#else
-#ifdef __linux__ 
-//FD defaultly
-#endif
-#endif
-
-//
-#ifdef Z_ENABLE_GLTF
-#include <tinygltf/tiny_gltf.h>
-#include <tinygltf/stb_image.h>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/quaternion.hpp>
-#endif
-
-//
 #include "./Core.hpp"
 #include "./Context.hpp"
 #include "./Instance.hpp"

@@ -1,20 +1,10 @@
 #pragma once
 
 //
+#ifndef USE_CMAKE_PCH
 #ifdef Z_ENABLE_GLTF
 #include <tinygltf/tiny_gltf.h>
 #include <tinygltf/stb_image.h>
-#include <glm/gtc/matrix_transform.hpp>
-#endif
-
-//
-#ifndef ZNAMED
-#define ZNAMED zeon 
-#endif
-
-//
-#ifndef VULKAN_HPP_NO_CONSTRUCTORS
-#define VULKAN_HPP_NO_CONSTRUCTORS
 #endif
 
 //
@@ -29,21 +19,32 @@
 #endif
 #endif
 
+//
+#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_raii.hpp>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <robin_hood.h>
+#else
+#include <cmake_pch.hxx>
+#endif
+
+//
+#ifndef ZNAMED
+#define ZNAMED zeon 
+#endif
+
+//
+#ifndef VULKAN_HPP_NO_CONSTRUCTORS
+#define VULKAN_HPP_NO_CONSTRUCTORS
+#endif
+
 // 
 #define VKU_ENABLE_INTERVAL
 #include <vk-utils/cpp21.hpp>
 #include <vk-utils/chain.hpp>
-
-// but used by precompiled headers
-#ifdef USE_CMAKE_PCH
-#include <cmake_pch.hxx>
-#else
-#include <glm/glm.hpp>
-#include <vulkan/vulkan.h>
-#include <vulkan/vulkan.hpp>
-#include <vulkan/vulkan_raii.hpp>
-#include <robin_hood.h>
-#endif
 
 // 
 namespace ZNAMED {
