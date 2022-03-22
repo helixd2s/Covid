@@ -218,7 +218,7 @@ int main() {
 
   // set perspective
   auto persp = glm::perspective(60.f / 180 * glm::pi<float>(), float(renderArea.extent.width) / float(renderArea.extent.height), 0.001f, 10000.f);
-  auto lkat = glm::lookAt(glm::vec3(0.f, 0.f, 1.f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f));
+  auto lkat = glm::lookAt(glm::vec3(0.f, 0.f, 0.1f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f));
   uniformData.constants.perspective = glm::transpose(persp);
   uniformData.constants.perspectiveInverse = glm::transpose(glm::inverse(persp));
   uniformData.constants.lookAt = glm::mat3x4(glm::transpose(lkat));
