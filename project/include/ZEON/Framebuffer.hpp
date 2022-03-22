@@ -36,16 +36,18 @@ namespace ZNAMED {
     std::vector<vk::Image> images = {};
     std::vector<vk::ImageView> imageViews = {};
     std::vector<uint32_t> imageViewIndices = {};
-    std::vector<vk::ClearValue> clearValues = {};
 
     //
     std::vector<vk::RenderingAttachmentInfo> colorAttachments = {};
+
+    //
     vk::RenderingAttachmentInfo depthAttachment = {};
     vk::RenderingAttachmentInfo stencilAttachment = {};
 
     //
     std::vector<std::function<void(cpp21::const_wrap_arg<vk::CommandBuffer>, cpp21::const_wrap_arg<FramebufferState>)>> switchToShaderReadFn = {};
     std::vector<std::function<void(cpp21::const_wrap_arg<vk::CommandBuffer>, cpp21::const_wrap_arg<FramebufferState>)>> switchToAttachmentFn = {};
+    std::vector<std::function<void(cpp21::const_wrap_arg<vk::CommandBuffer>, cpp21::const_wrap_arg<FramebufferState>)>> clearAttachmentFn = {};
 
     //
     FramebufferState state = FramebufferState::eShaderRead;
@@ -118,6 +120,57 @@ namespace ZNAMED {
       return SFT();
     };
 
+    //
+    virtual tType writeClearAttachments(cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+      decltype(auto) device = this->base.as<vk::Device>();
+      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
+
+      //
+      std::vector<vk::ClearRect> clearRects = {};
+      std::vector<vk::ClearAttachment> clearAttachments = {};
+
+      // 
+      clearRects.push_back(vk::ClearRect{ .rect = this->renderArea, .baseArrayLayer = 0u, .layerCount = this->cInfo->type == FramebufferType::eCubemap ? 6u : 1u });
+      uint32_t i = 0u; for (decltype(auto) color : this->colorAttachments) {
+        uint32_t t = i++;
+        clearAttachments.push_back(vk::ClearAttachment{ .aspectMask = vk::ImageAspectFlagBits::eColor, .colorAttachment = t, .clearValue = descriptorsObj->cInfo->attachments[std::to_underlying(this->cInfo->type)].colorClearValues[t] });
+      };
+
+      //
+      clearAttachments.push_back(vk::ClearAttachment{ .aspectMask = vk::ImageAspectFlagBits::eDepth, .clearValue = descriptorsObj->cInfo->attachments[std::to_underlying(this->cInfo->type)].depthClearValue });
+      clearAttachments.push_back(vk::ClearAttachment{ .aspectMask = vk::ImageAspectFlagBits::eStencil, .clearValue = descriptorsObj->cInfo->attachments[std::to_underlying(this->cInfo->type)].stencilClearValue });
+
+      // 
+      cmdBuf->beginRendering(vk::RenderingInfoKHR{
+        .renderArea = renderArea,
+        .layerCount = this->cInfo->type == FramebufferType::eCubemap ? 6u : 1u,
+        .viewMask = 0x0u,
+        .colorAttachmentCount = uint32_t(colorAttachments.size()),
+        .pColorAttachments = colorAttachments.data(),
+        .pDepthAttachment = &depthAttachment,
+        .pStencilAttachment = &stencilAttachment
+      });
+      cmdBuf->clearAttachments(clearAttachments, clearRects);
+      cmdBuf->endRendering();
+
+      //
+      return SFT();
+    };
+
+    //
+    virtual FenceType clearAttachments(cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}) {
+      // 
+      decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo{.info = info } };
+      submission.commandInits.push_back([this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+        this->writeClearAttachments(cmdBuf);
+        return cmdBuf;
+      });
+      ZNAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
+
+      //
+      return FenceType{};
+    };
 
     //
     virtual FenceType switchToShaderRead(cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}) {
@@ -230,28 +283,20 @@ namespace ZNAMED {
       });
 
       //
-      glm::vec4 color = glm::vec4(0.f, 0.f, 0.f, 0.f);
-
-      //
       if ((*imageType) == ImageType::eDepthStencilAttachment) {
-        stencilAttachment = depthAttachment = vk::RenderingAttachmentInfo{ .imageView = imageView, .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eClear, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = vk::ClearValue{.depthStencil = vk::ClearDepthStencilValue{.depth = 1.f, .stencil = 0u} } };
+        stencilAttachment = depthAttachment = vk::RenderingAttachmentInfo{ .imageView = imageView, .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eClear, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = descriptorsObj->cInfo->attachments[std::to_underlying(this->cInfo->type)].depthClearValue };
       }
       else
       if ((*imageType) == ImageType::eDepthAttachment) {
-        depthAttachment = vk::RenderingAttachmentInfo{ .imageView = imageView, .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eClear, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = vk::ClearValue{ .depthStencil = vk::ClearDepthStencilValue{.depth = 1.f} } };
+        depthAttachment = vk::RenderingAttachmentInfo{ .imageView = imageView, .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eClear, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = descriptorsObj->cInfo->attachments[std::to_underlying(this->cInfo->type)].depthClearValue };
       }
       else 
       if ((*imageType) == ImageType::eStencilAttachment) {
-        stencilAttachment = vk::RenderingAttachmentInfo{ .imageView = imageView, .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eClear, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = vk::ClearValue{.depthStencil = vk::ClearDepthStencilValue{.stencil = 0u} } };
+        stencilAttachment = vk::RenderingAttachmentInfo{ .imageView = imageView, .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eClear, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = descriptorsObj->cInfo->attachments[std::to_underlying(this->cInfo->type)].depthClearValue };
       }
       else {
-        colorAttachments.push_back(vk::RenderingAttachmentInfo{ .imageView = imageView, .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eClear, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = vk::ClearValue{.color = reinterpret_cast<vk::ClearColorValue&>(color)}});
-      }
-
-      //
-      //this->handle = uintptr_t(this);
-
-      //ZNAMED::context->get<DeviceObj>(this->base)
+        colorAttachments.push_back(vk::RenderingAttachmentInfo{ .imageView = imageView, .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eClear, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = descriptorsObj->cInfo->attachments[std::to_underlying(this->cInfo->type)].colorClearValues.back() });
+      };
     };
 
     // 
@@ -264,6 +309,7 @@ namespace ZNAMED {
       this->renderArea = vk::Rect2D{ vk::Offset2D{0u, 0u}, cInfo->extent };
 
       // 
+      glm::vec4 color = glm::vec4(0.f,0.f,0.f,0.f);
       for (auto& format : descriptorsObj->cInfo->attachments[std::to_underlying(this->cInfo->type)].colorAttachmentFormats) {
         this->createImage(ImageType::eColorAttachment);
       };

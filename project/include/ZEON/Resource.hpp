@@ -436,16 +436,42 @@ namespace ZNAMED {
   public:
 
     //
-    virtual void writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo const switchInfo) {
+    virtual void writeClearCommand(cpp21::const_wrap_arg<ImageClearWriteInfo> clearInfo) {
       if (this->cInfo->imageInfo && this->handle.type == HandleType::eImage) {
         //decltype(auto) info = switchInfo.info ? switchInfo.info : this->cInfo->imageInfo->info;
         decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
         decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
-        decltype(auto) oldImageLayout = switchInfo.oldImageLayout ? switchInfo.oldImageLayout.value() : this->cInfo->imageInfo->layout;
+        decltype(auto) imageLayout = this->cInfo->imageInfo->layout;
+        decltype(auto) subresourceRange = clearInfo->subresourceRange ? clearInfo->subresourceRange.value() : vk::ImageSubresourceRange{
+          .aspectMask =
+            this->cInfo->imageInfo->type == ImageType::eDepthStencilAttachment ? (vk::ImageAspectFlagBits::eDepth) :
+            (this->cInfo->imageInfo->type == ImageType::eDepthAttachment ? vk::ImageAspectFlagBits::eDepth :
+            (this->cInfo->imageInfo->type == ImageType::eStencilAttachment ? vk::ImageAspectFlagBits::eStencil : vk::ImageAspectFlagBits::eColor)),
+          .baseMipLevel = 0u,
+          .levelCount = imageInfo->mipLevels,
+          .baseArrayLayer = 0u,
+          .layerCount = imageInfo->arrayLayers
+        };
+
+        auto clearColor = reinterpret_cast<vk::ClearColorValue const&>(clearInfo->clearColor);
+        auto clearValue = vk::ClearValue{ .color = clearColor };
+        this->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{ .cmdBuf = clearInfo->cmdBuf, .newImageLayout = vk::ImageLayout::eTransferDstOptimal, .queueFamilyIndex = clearInfo->queueFamilyIndex });
+        clearInfo->cmdBuf.clearColorImage(this->handle.as<vk::Image>(), vk::ImageLayout::eTransferDstOptimal, clearColor, std::vector<vk::ImageSubresourceRange>{subresourceRange});
+        this->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{ .cmdBuf = clearInfo->cmdBuf, .newImageLayout = imageLayout, .queueFamilyIndex = clearInfo->queueFamilyIndex });
+      };
+    };
+
+    //
+    virtual void writeSwitchLayoutCommand(cpp21::const_wrap_arg<ImageLayoutSwitchWriteInfo> switchInfo) {
+      if (this->cInfo->imageInfo && this->handle.type == HandleType::eImage) {
+        //decltype(auto) info = switchInfo.info ? switchInfo.info : this->cInfo->imageInfo->info;
+        decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+        decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
+        decltype(auto) oldImageLayout = switchInfo->oldImageLayout ? switchInfo->oldImageLayout.value() : this->cInfo->imageInfo->layout;
         //decltype(auto) submission = CommandOnceSubmission{ .info = switchInfo.info };
         decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
         decltype(auto) externalAccessMask = vk::AccessFlagBits2(vku::getAccessMaskByImageUsage(this->getImageUsage()));
-        decltype(auto) correctAccessMask = vku::getCorrectAccessMaskByImageLayout<vk::AccessFlagBits2>(switchInfo.newImageLayout);
+        decltype(auto) correctAccessMask = vku::getCorrectAccessMaskByImageLayout<vk::AccessFlagBits2>(switchInfo->newImageLayout);
         decltype(auto) transferBarrier = std::vector<vk::ImageMemoryBarrier2>{
           vk::ImageMemoryBarrier2{
             .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(externalAccessMask) | (externalAccessMask & vk::AccessFlagBits2(AccessFlagBitsSet::eShaderReadWrite) ? vk::PipelineStageFlagBits2::eAllCommands : vk::PipelineStageFlagBits2{}),
@@ -453,11 +479,11 @@ namespace ZNAMED {
             .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(correctAccessMask) | (correctAccessMask & vk::AccessFlagBits2(AccessFlagBitsSet::eShaderReadWrite) ? vk::PipelineStageFlagBits2::eAllCommands : vk::PipelineStageFlagBits2{}),
             .dstAccessMask = correctAccessMask,
             .oldLayout = oldImageLayout,
-            .newLayout = switchInfo.newImageLayout,
-            .srcQueueFamilyIndex = switchInfo.queueFamilyIndex,
-            .dstQueueFamilyIndex = switchInfo.queueFamilyIndex,
+            .newLayout = switchInfo->newImageLayout,
+            .srcQueueFamilyIndex = switchInfo->queueFamilyIndex, // TODO: SRC queueFamilyIndex
+            .dstQueueFamilyIndex = switchInfo->queueFamilyIndex, // TODO: DST queueFamilyIndex
             .image = this->handle.as<vk::Image>(),
-            .subresourceRange = switchInfo.subresourceRange ? switchInfo.subresourceRange.value() : vk::ImageSubresourceRange{
+            .subresourceRange = switchInfo->subresourceRange ? switchInfo->subresourceRange.value() : vk::ImageSubresourceRange{
               .aspectMask =
                 this->cInfo->imageInfo->type == ImageType::eDepthStencilAttachment ? (vk::ImageAspectFlagBits::eDepth) :
                 (this->cInfo->imageInfo->type == ImageType::eDepthAttachment ? vk::ImageAspectFlagBits::eDepth :
@@ -470,8 +496,8 @@ namespace ZNAMED {
           }
         };
 
-        switchInfo.cmdBuf.pipelineBarrier2(depInfo.setImageMemoryBarriers(transferBarrier));
-        this->cInfo->imageInfo->layout = switchInfo.newImageLayout;
+        switchInfo->cmdBuf.pipelineBarrier2(depInfo.setImageMemoryBarriers(transferBarrier));
+        this->cInfo->imageInfo->layout = switchInfo->newImageLayout;
       };
 
       //return SFT();

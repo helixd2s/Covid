@@ -584,15 +584,26 @@ namespace ZNAMED {
   };
 
   //
+  constexpr float attachDef0[4] = { 0.f, 0.f, 0.f, 0.f };
+  constexpr uint32_t attachDef1[4] = { 0u, 0u, 0u, 0u };
+
+  //
   struct AttachmentsInfo {
+    vk::ClearValue depthClearValue = vk::ClearValue{ .depthStencil = vk::ClearDepthStencilValue{.depth = 1.f, .stencil = 0u} };
+    vk::ClearValue stencilClearValue = vk::ClearValue{ .depthStencil = vk::ClearDepthStencilValue{.depth = 1.f, .stencil = 0u} };
+    std::vector<vk::ClearValue> colorClearValues = { 
+      vk::ClearValue{.color = vk::ClearColorValue{.float32 = std::array<float, 4>{0.f,0.f,0.f,0.f}} }, 
+      vk::ClearValue{.color = vk::ClearColorValue{.uint32 = std::array<uint32_t, 4>{0u,0u,0u,0u}}} 
+    };
+
     vk::Format depthAttachmentFormat = vk::Format::eD32SfloatS8Uint;//eD32Sfloat;
     vk::Format stencilAttachmentFormat = vk::Format::eD32SfloatS8Uint;//eS8Uint;
     std::vector<vk::Format> colorAttachmentFormats = { vk::Format::eR32G32B32A32Sfloat, vk::Format::eR32G32B32A32Uint };
     std::vector<vk::PipelineColorBlendAttachmentState> blendStates = {
       vk::PipelineColorBlendAttachmentState{
         .blendEnable = false,
-        .srcColorBlendFactor = vk::BlendFactor::eOneMinusDstAlpha,
-        .dstColorBlendFactor = vk::BlendFactor::eDstAlpha,
+        .srcColorBlendFactor = vk::BlendFactor::eOne, // needs pre-mult
+        .dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha, 
         .colorBlendOp = vk::BlendOp::eAdd,
         .srcAlphaBlendFactor = vk::BlendFactor::eOne,
         .dstAlphaBlendFactor = vk::BlendFactor::eOne,
@@ -601,8 +612,8 @@ namespace ZNAMED {
       },
       vk::PipelineColorBlendAttachmentState{
         .blendEnable = false,
-        .srcColorBlendFactor = vk::BlendFactor::eOneMinusDstAlpha,
-        .dstColorBlendFactor = vk::BlendFactor::eDstAlpha,
+        .srcColorBlendFactor = vk::BlendFactor::eOne, // needs pre-mult
+        .dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha, 
         .colorBlendOp = vk::BlendOp::eAdd,
         .srcAlphaBlendFactor = vk::BlendFactor::eOne,
         .dstAlphaBlendFactor = vk::BlendFactor::eOne,
@@ -618,14 +629,18 @@ namespace ZNAMED {
     std::vector<AttachmentsInfo> attachments = {
       AttachmentsInfo{},
       AttachmentsInfo{
+        .depthClearValue = vk::ClearValue{.depthStencil = vk::ClearDepthStencilValue{.depth = 1.f, .stencil = 0u} },
+        .stencilClearValue = vk::ClearValue{.depthStencil = vk::ClearDepthStencilValue{.depth = 1.f, .stencil = 0u} },
+        .colorClearValues = { vk::ClearValue{.color = vk::ClearColorValue{.float32 = std::array<float, 4>{0.f,0.f,0.f,0.f}} }, vk::ClearValue{.color = vk::ClearColorValue{.uint32 = std::array<uint32_t, 4>{0u,0u,0u,0u}}} },
+
         .depthAttachmentFormat = vk::Format::eD32SfloatS8Uint,
         .stencilAttachmentFormat = vk::Format::eD32SfloatS8Uint,
-        .colorAttachmentFormats = { vk::Format::eR32G32B32A32Sfloat, vk::Format::eR32G32B32A32Sfloat },
+        .colorAttachmentFormats = { vk::Format::eR32G32B32A32Sfloat, vk::Format::eR32G32B32A32Uint },
         .blendStates = {
           vk::PipelineColorBlendAttachmentState{
             .blendEnable = false,
-            .srcColorBlendFactor = vk::BlendFactor::eOneMinusDstAlpha,
-            .dstColorBlendFactor = vk::BlendFactor::eDstAlpha,
+            .srcColorBlendFactor = vk::BlendFactor::eOne, // needs pre-mult
+            .dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
             .colorBlendOp = vk::BlendOp::eAdd,
             .srcAlphaBlendFactor = vk::BlendFactor::eOne,
             .dstAlphaBlendFactor = vk::BlendFactor::eOne,
@@ -634,8 +649,8 @@ namespace ZNAMED {
           },
           vk::PipelineColorBlendAttachmentState{
             .blendEnable = false,
-            .srcColorBlendFactor = vk::BlendFactor::eOneMinusDstAlpha,
-            .dstColorBlendFactor = vk::BlendFactor::eDstAlpha,
+            .srcColorBlendFactor = vk::BlendFactor::eOne, // needs pre-mult
+            .dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
             .colorBlendOp = vk::BlendOp::eAdd,
             .srcAlphaBlendFactor = vk::BlendFactor::eOne,
             .dstAlphaBlendFactor = vk::BlendFactor::eOne,
@@ -645,14 +660,18 @@ namespace ZNAMED {
         }
       },
       AttachmentsInfo{
+        .depthClearValue = vk::ClearValue{.depthStencil = vk::ClearDepthStencilValue{.depth = 1.f, .stencil = 0u} },
+        .stencilClearValue = vk::ClearValue{.depthStencil = vk::ClearDepthStencilValue{.depth = 1.f, .stencil = 0u} },
+        .colorClearValues = { vk::ClearValue{.color = vk::ClearColorValue{.float32 = std::array<float, 4>{0.f,0.f,0.f,0.f}} }, vk::ClearValue{.color = vk::ClearColorValue{.uint32 = std::array<uint32_t, 4>{0u,0u,0u,0u}}} },
+
         .depthAttachmentFormat = vk::Format::eD32SfloatS8Uint,
         .stencilAttachmentFormat = vk::Format::eD32SfloatS8Uint,
         .colorAttachmentFormats = { vk::Format::eR8G8B8A8Unorm, vk::Format::eR8G8B8A8Unorm },
         .blendStates = {
           vk::PipelineColorBlendAttachmentState{
             .blendEnable = false,
-            .srcColorBlendFactor = vk::BlendFactor::eOneMinusDstAlpha,
-            .dstColorBlendFactor = vk::BlendFactor::eDstAlpha,
+            .srcColorBlendFactor = vk::BlendFactor::eOne, // needs pre-mult
+            .dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
             .colorBlendOp = vk::BlendOp::eAdd,
             .srcAlphaBlendFactor = vk::BlendFactor::eOne,
             .dstAlphaBlendFactor = vk::BlendFactor::eOne,
@@ -661,8 +680,8 @@ namespace ZNAMED {
           },
           vk::PipelineColorBlendAttachmentState{
             .blendEnable = false,
-            .srcColorBlendFactor = vk::BlendFactor::eOneMinusDstAlpha,
-            .dstColorBlendFactor = vk::BlendFactor::eDstAlpha,
+            .srcColorBlendFactor = vk::BlendFactor::eOne, // needs pre-mult
+            .dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
             .colorBlendOp = vk::BlendOp::eAdd,
             .srcAlphaBlendFactor = vk::BlendFactor::eOne,
             .dstAlphaBlendFactor = vk::BlendFactor::eOne,
@@ -792,6 +811,19 @@ namespace ZNAMED {
     std::optional<vk::ImageLayout> oldImageLayout = {};
     std::optional<vk::ImageSubresourceRange> subresourceRange = {};
     
+    //
+    decltype(auto) with(cpp21::const_wrap_arg<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
+  };
+
+  //
+  struct ImageClearWriteInfo : BaseCreateInfo {
+    vk::CommandBuffer cmdBuf = {};
+    glm::vec4 clearColor = glm::vec4(0.f);
+    uint32_t queueFamilyIndex = 0u;
+
+    //
+    std::optional<vk::ImageSubresourceRange> subresourceRange = {};
+
     //
     decltype(auto) with(cpp21::const_wrap_arg<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
   };

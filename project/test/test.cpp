@@ -267,6 +267,9 @@ int main() {
     });
 
     //
+    framebuffer->clearAttachments(qfAndQueue);
+
+    //
     decltype(auto) graphicsFence = graphics->executePipelineOnce(ZNAMED::ExecutePipelineInfo{
       .graphics = ZNAMED::WriteGraphicsInfo{
         .layout = descriptors.as<vk::PipelineLayout>(),
