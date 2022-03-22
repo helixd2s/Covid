@@ -338,11 +338,11 @@ int main() {
     });
 
   // 
-  decltype(auto) scene = gltfLoader->load("./BoomBox.gltf");
+  decltype(auto) modelObj = gltfLoader->load("./BoomBox.gltf");
 
   //
   decltype(auto) instanceAddressBlock = ZNAMED::InstanceAddressBlock{
-    .opaqueAddressInfo = scene->generics->instanced->getAddressInfo()
+    .opaqueAddressInfo = modelObj->getDefaultScene()->instanced->getAddressInfo()
   };
 
 

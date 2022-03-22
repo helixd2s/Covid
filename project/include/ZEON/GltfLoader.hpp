@@ -67,7 +67,7 @@ namespace ZNAMED {
   };
 
   //
-  struct GltfScene : std::enable_shared_from_this<GltfScene> {
+  struct GltfModel : std::enable_shared_from_this<GltfModel> {
     //
     std::string err = "";
     std::string warn = "";
@@ -89,9 +89,25 @@ namespace ZNAMED {
     std::vector<WrapShared<GeometryLevelObj>> meshes = {};
 
     // 
-    std::shared_ptr<GltfInstanced> generics = {};
-    std::shared_ptr<GltfInstanced> opaque = {};
-    std::shared_ptr<GltfInstanced> translucent = {};
+    std::vector<std::shared_ptr<GltfInstanced>> scenes = {};
+
+    //
+    uintptr_t defaultScene = 0ull;
+
+    //
+    virtual std::shared_ptr<GltfInstanced> getDefaultScene() {
+      return this->scenes[this->defaultScene];
+    };
+
+    //
+    virtual std::shared_ptr<GltfInstanced> getScene(uintptr_t const& scene) {
+      return this->scenes[scene];
+    };
+
+    //
+    virtual std::shared_ptr<GltfInstanced> getScene() {
+      return this->getDefaultScene();
+    };
   };
 
   // 
@@ -108,7 +124,7 @@ namespace ZNAMED {
   protected:
 
     //
-    std::vector<std::shared_ptr<GltfScene>> gltfScenes = {};
+    std::vector<std::shared_ptr<GltfModel>> gltfModels = {};
     tinygltf::TinyGLTF loader;
 
     // 
@@ -124,8 +140,8 @@ namespace ZNAMED {
     };
 
     // 
-    virtual std::shared_ptr<GltfScene> load(std::string const& filename = "./BoomBox.gltf", FilterType const& filter = FilterType::eOpaque) {
-      decltype(auto) gltf = std::make_shared<GltfScene>();
+    virtual std::shared_ptr<GltfModel> load(std::string const& filename = "./BoomBox.gltf", FilterType const& filter = FilterType::eOpaque) {
+      decltype(auto) gltf = std::make_shared<GltfModel>();
 
       //decltype(auto) handle = Handle(cInfo->device, HandleType::eDevice);
       decltype(auto) handle = this->base;
@@ -148,7 +164,7 @@ namespace ZNAMED {
 
       if (!ret) {
         printf("Failed to parse glTF\n");
-        return std::shared_ptr<GltfScene>{};
+        return std::shared_ptr<GltfModel>{};
       };
 
       //
@@ -416,21 +432,46 @@ namespace ZNAMED {
       };
 
       //
-      decltype(auto) inst = std::make_shared<GltfInstanced>();
-      decltype(auto) scene = gltf->model.scenes[gltf->model.defaultScene];
-      for (decltype(auto) node : scene.nodes) { handleNodes(inst, gltf->model, gltf->model.nodes[node], glm::mat4x4(1.f)); };
+      for (auto& scene : gltf->model.scenes) {
+        decltype(auto) inst = std::make_shared<GltfInstanced>();
+        for (decltype(auto) node : scene.nodes) {
+          handleNodes(inst, gltf->model, gltf->model.nodes[node], glm::mat4x4(1.f));
+        };
+
+        //
+        inst->instanced = ZNAMED::InstanceLevelObj::make(handle, ZNAMED::InstanceLevelCreateInfo{
+          .instances = inst->instances,
+          .uploader = this->cInfo->uploader,
+          });
+
+        //
+        gltf->scenes.push_back(inst);
+      };
 
       //
-      inst->instanced = ZNAMED::InstanceLevelObj::make(handle, ZNAMED::InstanceLevelCreateInfo{
-        .instances = inst->instances,
-        .uploader = this->cInfo->uploader,
-      });
+      gltf->defaultScene = gltf->model.defaultScene;
 
       //
-      gltf->generics = inst;
-      this->gltfScenes.push_back(gltf);
-      return this->gltfScenes.back();
+      this->gltfModels.push_back(gltf);
+      return this->gltfModels.back();
     };
+
+    //
+    virtual std::shared_ptr<GltfInstanced> getDefaultScene(uintptr_t const& model = 0ull) {
+      return this->gltfModels[model]->getDefaultScene();
+    };
+
+    //
+    virtual std::shared_ptr<GltfInstanced> getScene(uintptr_t const& model, uintptr_t const& scene) {
+      return this->gltfModels[model]->getScene(scene);
+    };
+
+    //
+    virtual std::shared_ptr<GltfInstanced> getScene(uintptr_t const& model = 0ull) {
+      return this->gltfModels[model]->getScene();
+    };
+
+    
 
     //
     virtual tType registerSelf() {
