@@ -79,6 +79,10 @@ namespace ZNAMED {
     std::vector<MaterialInfo> materials = {};
     std::vector<BufferRegion> regions = {};
 
+    //
+    std::vector<WrapShared<ResourceObj>> images = {};
+    std::vector<WrapShared<SamplerObj>> samplers = {};
+
     // indices cache
     std::vector<uint32_t> imageIndices = {};
     std::vector<uint32_t> samplerIndices = {};
@@ -90,6 +94,10 @@ namespace ZNAMED {
 
     // 
     std::vector<std::shared_ptr<GltfInstanced>> scenes = {};
+    std::vector<WrapShared<ResourceObj>> extensionBuffers = {};
+    
+    //
+    WrapShared<ResourceObj> materialBuffer = {};
 
     //
     uintptr_t defaultScene = 0ull;
@@ -276,6 +284,7 @@ namespace ZNAMED {
         decltype(auto) imgImageView = imageObj->createImageView(ZNAMED::ImageViewCreateInfo{ .viewType = vk::ImageViewType::e2D });
 
         //
+        gltf->images.push_back(imageObj);
         gltf->imageIndices.push_back(std::get<1u>(imgImageView));
       };
 
@@ -291,6 +300,7 @@ namespace ZNAMED {
             .addressModeV = vk::SamplerAddressMode::eRepeat
           }
         });
+        gltf->samplers.push_back(samplerObj);
         gltf->samplerIndices.push_back(samplerObj->getId());
       };
 
@@ -316,6 +326,9 @@ namespace ZNAMED {
           .dstBuffer = ZNAMED::BufferRegion{materialBuffer.as<vk::Buffer>(), ZNAMED::DataRegion{0ull, sizeof(ZNAMED::MaterialInfo), cpp21::bytesize(gltf->materials)}},
         }
       });
+
+      //
+      gltf->materialBuffer = materialBuffer;
 
       //
       for (decltype(auto) mesh : gltf->model.meshes) {
@@ -379,6 +392,9 @@ namespace ZNAMED {
           .geometries = gltf->geometries,
           .uploader = uploaderObj.as<uintptr_t>(),
         }));
+
+        //
+        gltf->extensionBuffers.push_back(extensionBuffer);
       };
 
       // 
