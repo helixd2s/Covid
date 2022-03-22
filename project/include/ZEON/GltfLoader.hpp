@@ -150,7 +150,7 @@ namespace ZNAMED {
           auto realStride = std::max(uint32_t(bufferView.byteStride), (decomposeFormat.countMinusOne + 1u) * (decomposeFormat.is16bit ? 2u : 4u));
 
           //
-          return (bresult = ZNAMED::BufferViewInfo{ .region = ZNAMED::BufferViewRegion{.deviceAddress = address + bv.region.offset + accessor.byteOffset, .stride = uint32_t(virtualStride), .size = std::min(uint32_t(bv.region.size - accessor.byteOffset), uint32_t(realStride * accessor.count))}, .format = defFormat });
+          return (bresult = ZNAMED::BufferViewInfo{ .region = ZNAMED::BufferViewRegion{.deviceAddress = address + bv.region.offset + accessor.byteOffset, .stride = uint32_t(virtualStride), .size = std::min(uint32_t(bv.region.size - accessor.byteOffset), uint32_t(virtualStride * accessor.count))}, .format = defFormat });
         };
 
         return bresult;

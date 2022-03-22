@@ -518,6 +518,30 @@ namespace ZNAMED {
   };
 
   //
+  inline decltype(auto) cvtFormatRT(BufferViewFormat const& format) {
+    switch (format) {
+    case BufferViewFormat::eFloat: return vk::Format::eR32Sfloat; break;
+    case BufferViewFormat::eFloat2: return vk::Format::eR32G32Sfloat; break;
+    case BufferViewFormat::eFloat3: return vk::Format::eR32G32B32Sfloat; break;
+    case BufferViewFormat::eFloat4: return vk::Format::eR32G32B32Sfloat; break;
+    case BufferViewFormat::eHalf: return vk::Format::eR16Sfloat; break;
+    case BufferViewFormat::eHalf2: return vk::Format::eR16G16Sfloat; break;
+    case BufferViewFormat::eHalf3: return vk::Format::eR16G16B16Sfloat; break;
+    case BufferViewFormat::eHalf4: return vk::Format::eR16G16B16Sfloat; break;
+    case BufferViewFormat::eUint: return vk::Format::eR32Uint; break;
+    case BufferViewFormat::eUint2: return vk::Format::eR32G32Uint; break;
+    case BufferViewFormat::eUint3: return vk::Format::eR32G32B32Uint; break;
+    case BufferViewFormat::eUint4: return vk::Format::eR32G32B32Uint; break;
+    case BufferViewFormat::eShort: return vk::Format::eR16Uint; break;
+    case BufferViewFormat::eShort2: return vk::Format::eR16G16Uint; break;
+    case BufferViewFormat::eShort3: return vk::Format::eR16G16B16Uint; break;
+    case BufferViewFormat::eShort4: return vk::Format::eR16G16B16Uint; break;
+    default: return vk::Format::eUndefined; break;
+    };
+    return vk::Format::eUndefined;
+  };
+
+  //
   inline decltype(auto) cvtIndex(BufferViewFormat const& format) {
     switch (format) {
       case BufferViewFormat::eUint: return vk::IndexType::eUint32; break;

@@ -112,7 +112,7 @@ namespace ZNAMED {
         geometryInfos.push_back(vk::AccelerationStructureGeometryKHR{
           .geometryType = vk::GeometryTypeKHR::eTriangles,
           .geometry = vk::AccelerationStructureGeometryDataKHR{.triangles = vk::AccelerationStructureGeometryTrianglesDataKHR{
-            .vertexFormat = cvtFormat(geometry.vertices.format),
+            .vertexFormat = cvtFormatRT(geometry.vertices.format),
             .vertexData = geometry.vertices.region.deviceAddress,
             .vertexStride = geometry.vertices.region.stride,
             .maxVertex = uint32_t(cpp21::tiled(geometry.vertices.region.size, geometry.vertices.region.stride)),
