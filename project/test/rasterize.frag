@@ -15,7 +15,9 @@ layout(location = 0) out vec4 baryData;
 layout(location = 1) out uvec4 indices;
 
 //
+#ifndef TRANSLUCENT
 layout(early_fragment_tests) in;
+#endif
 
 // 
 void main() {
@@ -28,11 +30,27 @@ void main() {
   GeometryInfo geometryInfo = instanceInfo.data.infos[geometryIndex];
 
   // if translucent - discard!
+#ifdef TRANSLUCENT
+  if ((geometryInfo.flags&1u) == 0u) { discard; };
+#else
   if ((geometryInfo.flags&1u) <= 0u) { discard; };
+#endif
 
   //
   GeometryExtData geometry = getGeometryData(geometryInfo, pIndices.z);
   GeometryExtAttrib attrib = interpolate(geometry, pBary);
+
+  //
+  const vec4 vertice = attrib.data[VERTEX_VERTICES];
+  const vec4 texcoord = attrib.data[VERTEX_TEXCOORD];
+
+  //
+  MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), texcoord.xy);
+
+  // alpha test failure
+#ifdef TRANSLUCENT
+  if (materialPix.color[MATERIAL_ALBEDO].a < 0.001f) { discard; };
+#endif
 
   //
   baryData = vec4(pBary, 1.f);
