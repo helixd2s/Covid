@@ -411,7 +411,7 @@ namespace ZNAMED {
 #pragma pack(1)
   __declspec(align(1))
   struct BufferViewInfo {
-    BufferViewRegion region = { .deviceAddress = 0ull, .stride = 0u, .size = uint32_t(VK_WHOLE_SIZE) };
+    BufferViewRegion region = { .deviceAddress = 0ull, .stride = 0u, .size = 0u };
     BufferViewFormat format = BufferViewFormat::eNone;
     uint32_t flags = 0u;
   };

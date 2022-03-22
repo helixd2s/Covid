@@ -241,11 +241,13 @@ uvec4 readAsUint4(in BufferViewInfo bufferViewInfo, in uint32_t index) {
   uvec4 uVec4 = uvec4(0u.xxxx);
   if (bufferViewInfo.region.deviceAddress > 0u) {
     if (isHalf == 1u) {
+      if (realCnt==0xFFFFFFFFu || realCnt < 0) {} else
       if (realCnt==0) { uVec4.x    = Ushort (address).data[0u]; } else
       if (realCnt==1) { uVec4.xy   = Ushort2(address).data[0u]; } else
       if (realCnt==2) { uVec4.xyz  = Ushort3(address).data[0u]; } else
                       { uVec4.xyzw = Ushort4(address).data[0u]; };
     } else {
+      if (realCnt==0xFFFFFFFFu || realCnt < 0) {} else
       if (realCnt==0) { uVec4.x    = Uint (address).data[0u]; } else
       if (realCnt==1) { uVec4.xy   = Uint2(address).data[0u]; } else
       if (realCnt==2) { uVec4.xyz  = Uint3(address).data[0u]; } else
@@ -269,11 +271,13 @@ vec4 readAsFloat4(in BufferViewInfo bufferViewInfo, in uint32_t index) {
   vec4 fVec4 = vec4(0.f.xxxx);
   if (bufferViewInfo.region.deviceAddress > 0u) {
     if (isHalf == 1u) {
+      if (realCnt==0xFFFFFFFFu || realCnt < 0) {} else
       if (realCnt==0) { fVec4.x    = Half (address).data[0u]; } else
       if (realCnt==1) { fVec4.xy   = Half2(address).data[0u]; } else
       if (realCnt==2) { fVec4.xyz  = Half3(address).data[0u]; } else
                       { fVec4.xyzw = Half4(address).data[0u]; };
     } else {
+      if (realCnt==0xFFFFFFFFu || realCnt < 0) {} else
       if (realCnt==0) { fVec4.x    = Float (address).data[0u]; } else
       if (realCnt==1) { fVec4.xy   = Float2(address).data[0u]; } else
       if (realCnt==2) { fVec4.xyz  = Float3(address).data[0u]; } else

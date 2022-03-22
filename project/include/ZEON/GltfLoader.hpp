@@ -17,6 +17,7 @@
 #include <tinygltf/tiny_gltf.h>
 #include <tinygltf/stb_image.h>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
 #endif
 
 //
@@ -45,6 +46,13 @@
 
 //
 namespace ZNAMED {
+
+  //
+  enum class FilterType : uint32_t {
+    eEverything = 0u,
+    eOpaque = 1u,
+    eTranslucent = 2u
+  };
 
   // 
   struct GltfLoaderCreateInfo {
@@ -75,6 +83,8 @@ namespace ZNAMED {
     std::vector<uint32_t> imageIndices = {};
     std::vector<uint32_t> samplerIndices = {};
     std::vector<CTexture> textures = {};
+    std::vector<WrapShared<GeometryLevelObj>> meshes = {};
+    WrapShared<InstanceLevelObj> instanced = {};
 
     // 
     inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
@@ -89,7 +99,7 @@ namespace ZNAMED {
     };
 
     // 
-    virtual tType load(std::string const& filename = "./BoomBox.gltf") {
+    virtual tType load(std::string const& filename = "./BoomBox.gltf", FilterType const& filter = FilterType::eOpaque) {
       //decltype(auto) handle = Handle(cInfo->device, HandleType::eDevice);
       decltype(auto) handle = this->base;
       decltype(auto) device = this->base.as<vk::Device>();
@@ -113,8 +123,6 @@ namespace ZNAMED {
         printf("Failed to parse glTF\n");
         return SFT();
       }
-
-
 
       //
       decltype(auto) handleAccessor = [=,this](intptr_t const& accessorIndex, bool const& isIndice = false) {
@@ -161,8 +169,7 @@ namespace ZNAMED {
         return glm::vec4(factor[0], factor[1], factor[2], factor[3]);
       };
 
-
-
+      // 
       for (decltype(auto) buffer : model.buffers) {
         //
         decltype(auto) bufferObj = ZNAMED::ResourceObj::make(handle, ZNAMED::ResourceCreateInfo{
@@ -171,7 +178,7 @@ namespace ZNAMED {
             .size = cpp21::bytesize(buffer.data),
             .type = ZNAMED::BufferType::eUniversal,
           }
-          }.use(ZNAMED::ExtensionName::eMemoryAllocatorVma));
+        }.use(ZNAMED::ExtensionName::eMemoryAllocatorVma));
 
         // complete loader
         uploaderObj->executeUploadToResourceOnce(ZNAMED::UploadExecutionOnce{
@@ -265,8 +272,6 @@ namespace ZNAMED {
         materials.push_back(materialInf);
       };
 
-      
-
       //
       for (decltype(auto) mesh : model.meshes) {
         std::vector<ZNAMED::GeometryExtension> extensions = {};
@@ -299,16 +304,22 @@ namespace ZNAMED {
             .indices = indices,
             .extensionRef = extensionAddress + pId * sizeof(ZNAMED::GeometryExtension),
             .materialRef = materialAddress + primitive.material * sizeof(ZNAMED::MaterialInfo),
-            .primitiveCount = cpp21::tiled(uint32_t(model.accessors[primitive.indices >= 0 ? primitive.indices :primitive.attributes.at("POSITION")].count), 3u),
+            .primitiveCount = cpp21::tiled(uint32_t(model.accessors[primitive.indices >= 0 ? primitive.indices : primitive.attributes.at("POSITION")].count), 3u),
           });
 
           //
           extensions.push_back(ZNAMED::GeometryExtension{});
 
           //
-          for (auto& attrib : primitive.attributes) {
+          for (decltype(auto) attrib : primitive.attributes) {
             if (attrib.first == "TEXCOORD_0") {
               extensions.back().bufferViews[std::to_underlying(ZNAMED::BufferBind::eExtTexcoord)] = handleAccessor(attrib.second);
+            };
+            if (attrib.first == "NORMAL") {
+              extensions.back().bufferViews[std::to_underlying(ZNAMED::BufferBind::eExtNormals)] = handleAccessor(attrib.second);
+            };
+            if (attrib.first == "TANGENT") {
+              extensions.back().bufferViews[std::to_underlying(ZNAMED::BufferBind::eExtTangent)] = handleAccessor(attrib.second);
             };
           };
         };
@@ -322,11 +333,71 @@ namespace ZNAMED {
         });
 
         //
-        decltype(auto) geometryLevel = ZNAMED::GeometryLevelObj::make(handle, ZNAMED::GeometryLevelCreateInfo{
+        meshes.push_back(ZNAMED::GeometryLevelObj::make(handle, ZNAMED::GeometryLevelCreateInfo{
           .geometries = geometries,
           .uploader = uploaderObj.as<uintptr_t>(),
+        }));
+      };
+
+      // CURRENTLY, OPAQUE INSTANCES
+      decltype(auto) instances = std::vector<InstanceDevInfo>{};
+      decltype(auto) useMesh = [=, &instances, this](tinygltf::Model& model, intptr_t const& meshId, glm::mat4x4 transform = glm::mat4x4()) {
+        decltype(auto) mesh = model.meshes[meshId];
+        decltype(auto) transposed = glm::transpose(transform);
+        instances.push_back(InstanceDevInfo{
+          .transform = reinterpret_cast<vk::TransformMatrixKHR&>(transposed),
+          .instanceCustomIndex = 0u,
+          .mask = 0xFFu,
+          .instanceShaderBindingTableRecordOffset = 0u,
+          .flags = uint8_t(vk::GeometryInstanceFlagBitsKHR::eForceOpaque),
+          .accelerationStructureReference = this->meshes[meshId]->getDeviceAddress()
         });
       };
+
+      //
+      std::function<void(tinygltf::Model&, tinygltf::Node&, glm::mat4x4 parentTransform)> handleNodes = {};
+      handleNodes = [=, &handleNodes, this](tinygltf::Model& model, tinygltf::Node& node, glm::mat4x4 parentTransform = glm::mat4x4(1.f)) {
+        //parentTransform;
+        if (node.matrix.size() == 16) {
+          parentTransform = parentTransform * glm::mat4x4(reinterpret_cast<glm::dmat4x4&>(*node.matrix.data()));
+        };
+
+        // 
+        if (node.translation.size() == 3) {
+          parentTransform = parentTransform * glm::translate(glm::mat4x4(1.f), glm::vec3(reinterpret_cast<glm::dvec3&>(*node.translation.data())));
+        };
+
+        // 
+        if (node.rotation.size() == 4) {
+          parentTransform = parentTransform * glm::mat4_cast(glm::quat(reinterpret_cast<glm::dquat&>(*node.rotation.data())));
+        };
+
+        // 
+        if (node.scale.size() == 3) {
+          parentTransform = parentTransform * glm::scale(glm::mat4x4(1.f), glm::vec3(reinterpret_cast<glm::dvec3&>(*node.scale.data())));
+        };
+
+        //
+        if ((node.mesh >= 0) && (node.mesh < model.meshes.size())) {
+          useMesh(model, node.mesh, parentTransform);
+        };
+
+        //
+        for (size_t i = 0; i < node.children.size(); i++) {
+          assert((node.children[i] >= 0) && (node.children[i] < model.nodes.size()));
+          handleNodes(model, model.nodes[node.children[i]], parentTransform);
+        };
+      };
+
+      //
+      decltype(auto) scene = model.scenes[model.defaultScene];
+      for (decltype(auto) node : scene.nodes) { handleNodes(model, model.nodes[node], glm::mat4x4(1.f)); };
+
+      //
+      instanced = ZNAMED::InstanceLevelObj::make(handle, ZNAMED::InstanceLevelCreateInfo{
+        .instances = instances,
+        .uploader = this->cInfo->uploader,
+      });
 
       // 
       return SFT();
