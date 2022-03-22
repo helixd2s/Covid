@@ -40,5 +40,5 @@ void main() {
   MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), texcoord.xy);
 
   // 
-  imageStore(images[swapchain.image], ivec2(gl_GlobalInvocationID.xy), vec4(materialPix.color[MATERIAL_ALBEDO].xyz, 1.f));
+  imageStore(images[swapchain.image], ivec2(gl_GlobalInvocationID.xy), vec4(!all(lessThanEqual(intersection.barycentric, 0.f.xxx)) ? materialPix.color[MATERIAL_ALBEDO].xyz : 0.f.xxx, 1.f));
 };
