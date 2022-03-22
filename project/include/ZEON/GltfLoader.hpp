@@ -284,7 +284,6 @@ namespace ZNAMED {
         gltf->textures.push_back(CTexture{ gltf->imageIndices[texture.source], texture.sampler >= 0 ? gltf->samplerIndices[texture.sampler] : 0u});
       };
 
-
       //
       for (auto& material : gltf->model.materials) {
         //
@@ -294,6 +293,14 @@ namespace ZNAMED {
 
         gltf->materials.push_back(materialInf);
       };
+
+      //
+      uploaderObj->executeUploadToResourceOnce(ZNAMED::UploadExecutionOnce{
+        .host = cpp21::data_view<char8_t>((char8_t*)gltf->materials.data(), 0ull, cpp21::bytesize(gltf->materials)),
+        .writeInfo = ZNAMED::UploadCommandWriteInfo{
+          .dstBuffer = ZNAMED::BufferRegion{materialBuffer.as<vk::Buffer>(), ZNAMED::DataRegion{0ull, sizeof(ZNAMED::MaterialInfo), cpp21::bytesize(gltf->materials)}},
+        }
+      });
 
       //
       for (decltype(auto) mesh : gltf->model.meshes) {

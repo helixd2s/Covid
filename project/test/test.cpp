@@ -332,20 +332,22 @@ int main() {
     });
 
   //
+  decltype(auto) gltfLoader = ZNAMED::GltfLoaderObj::make(device, ZNAMED::GltfLoaderCreateInfo{
+    .uploader = uploader.as<uintptr_t>(),
+    .descriptors = descriptors.as<vk::PipelineLayout>()
+    });
+
+  // 
+  decltype(auto) scene = gltfLoader->load("./BoomBox.gltf");
+
+  //
   decltype(auto) instanceAddressBlock = ZNAMED::InstanceAddressBlock{
-    .opaqueAddressInfo = instanceLevel->getAddressInfo()
+    .opaqueAddressInfo = scene->generics->instanced->getAddressInfo()
   };
 
 
 
-  //
-  decltype(auto) gltfLoader = ZNAMED::GltfLoaderObj::make(device, ZNAMED::GltfLoaderCreateInfo{
-    .uploader = uploader.as<uintptr_t>(),
-    .descriptors = descriptors.as<vk::PipelineLayout>()
-  });
 
-  // 
-  gltfLoader->load("./BoomBox.gltf");
 
 
 
