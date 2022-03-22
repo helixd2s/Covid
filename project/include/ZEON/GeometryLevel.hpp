@@ -120,7 +120,7 @@ namespace ZNAMED {
             .indexData = geometry.indices.region.deviceAddress,
             .transformData = geometry.transform.region.deviceAddress
           }},
-          .flags = (geometry.flags&1u) ? vk::GeometryFlagBitsKHR::eOpaque : vk::GeometryFlagBitsKHR{}
+          .flags = geometry.flags
         });
         geometryRanges.push_back(vk::AccelerationStructureBuildRangeInfoKHR{
           .primitiveCount = geometry.primitiveCount,

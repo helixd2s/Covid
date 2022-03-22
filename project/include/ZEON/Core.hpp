@@ -437,7 +437,7 @@ namespace ZNAMED {
 
     //
     uint32_t primitiveCount = 0u;
-    uint32_t flags = 1u;
+    vk::GeometryFlagsKHR flags = vk::GeometryFlagBitsKHR::eOpaque;
   };
 
 
