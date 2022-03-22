@@ -19,9 +19,6 @@ layout(early_fragment_tests) in;
 
 // 
 void main() {
-  baryData = vec4(pBary, 1.f);
-  indices = pIndices;
-
   //
   uint32_t instanceIndex = pIndices.x;
   uint32_t geometryIndex = pIndices.y;
@@ -29,11 +26,15 @@ void main() {
   // 
   InstanceInfo instanceInfo = instanceDrawInfo.data.infos[instanceIndex];
   GeometryInfo geometryInfo = instanceInfo.data.infos[geometryIndex];
-  GeometryExtData geometry = getGeometryData(geometryInfo, pIndices.z);
 
   // if translucent - discard!
   if ((geometryInfo.flags&1u) <= 0u) { discard; };
 
   //
+  GeometryExtData geometry = getGeometryData(geometryInfo, pIndices.z);
   GeometryExtAttrib attrib = interpolate(geometry, pBary);
+
+  //
+  baryData = vec4(pBary, 1.f);
+  indices = pIndices;
 };
