@@ -34,13 +34,15 @@
 #include <vk-utils/cpp21.hpp>
 #include <vk-utils/chain.hpp>
 
-//
-#include <glm/glm.hpp>
-
 // but used by precompiled headers
+#ifdef USE_CMAKE_PCH
+#include <cmake_pch.hxx>
+#else
+#include <glm/glm.hpp>
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_raii.hpp>
+#endif
 
 //
 #include <robin_hood.h>

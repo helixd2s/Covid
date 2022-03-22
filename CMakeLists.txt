@@ -2,6 +2,24 @@ cmake_minimum_required(VERSION 3.20)
 project(ZEON VERSION 0.1.0)
 set(PROJECT_NAME ZEON)
 
+#
+MACRO(ADD_MSVC_PRECOMPILED_HEADER PrecompiledHeader PrecompiledSource SourcesVar)
+  IF(MSVC)
+    GET_FILENAME_COMPONENT(PrecompiledBasename ${PrecompiledHeader} NAME_WE)
+    SET(PrecompiledBinary "${CMAKE_CURRENT_BINARY_DIR}/${PrecompiledBasename}.pch")
+    SET(Sources ${${SourcesVar}})
+
+    SET_SOURCE_FILES_PROPERTIES(${PrecompiledSource}
+                                PROPERTIES COMPILE_FLAGS "/Yc\"${PrecompiledHeader}\" /Fp\"${PrecompiledBinary}\""
+                                           OBJECT_OUTPUTS "${PrecompiledBinary}")
+    SET_SOURCE_FILES_PROPERTIES(${Sources}
+                                PROPERTIES COMPILE_FLAGS "/Yu\"${PrecompiledHeader}\" /FI\"${PrecompiledHeader}\" /Fp\"${PrecompiledBinary}\""
+                                           OBJECT_DEPENDS "${PrecompiledBinary}")  
+    # Add precompiled header to SourcesVar
+    LIST(APPEND ${SourcesVar} ${PrecompiledSource})
+  ENDIF(MSVC)
+ENDMACRO(ADD_MSVC_PRECOMPILED_HEADER)
+
 # 
 IF (WIN32)
   set(ENV{ASAN_OPTIONS} [windows_hook_legacy_allocators=true])
@@ -68,7 +86,7 @@ ENDIF()
 
 # 
 add_executable(${PROJECT_NAME} ${_source_list})
-target_compile_definitions(${PROJECT_NAME} PUBLIC UNICODE VULKAN_HPP_NO_CONSTRUCTORS NOMINMAX Z_ENABLE_VMA Z_ENABLE_GLTF CPP21_DEBUG_MEMORY TINYGLTF_USE_CPP14 ZNAMED=zeon ${PLATFORM_DEF})
+target_compile_definitions(${PROJECT_NAME} PUBLIC UNICODE USE_CMAKE_PCH VULKAN_HPP_NO_CONSTRUCTORS NOMINMAX Z_ENABLE_VMA Z_ENABLE_GLTF CPP21_DEBUG_MEMORY TINYGLTF_USE_CPP14 ZNAMED=zeon ${PLATFORM_DEF})
 target_include_directories(${PROJECT_NAME} PUBLIC 
   ${PROJECT_SOURCE_DIR}/project/include 
   ${PROJECT_SOURCE_DIR}/prebuild/include
@@ -92,7 +110,14 @@ target_link_directories(${PROJECT_NAME} PUBLIC
   ${PROJECT_SOURCE_DIR}/submodules/*/lib/
   ${PROJECT_SOURCE_DIR}/../external/lib
 )
-target_link_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS} ${Vulkan_LIBRARIES} glfw)
+
+#
+set (HSOURCES "prebuild/include/vk-utils/cpp21/core.hpp" "project/include/ZEON/Core.hpp")
+
+#
+ADD_MSVC_PRECOMPILED_HEADER("prebuild/include/cmake_pch.hxx" "prebuild/include/cmake_pch.cxx" HSOURCES)
+
+#
 target_precompile_headers(${PROJECT_NAME}
   PUBLIC
   <vector>
@@ -118,6 +143,9 @@ target_precompile_headers(${PROJECT_NAME}
   <glm/glm.hpp>
   <robin_hood.h>
 )
+
+#
+target_link_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS} ${Vulkan_LIBRARIES} glfw)
 
 # 
 if (MSVC)
