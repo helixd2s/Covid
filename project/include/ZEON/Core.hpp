@@ -42,10 +42,8 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_raii.hpp>
-#endif
-
-//
 #include <robin_hood.h>
+#endif
 
 // 
 namespace ZNAMED {
