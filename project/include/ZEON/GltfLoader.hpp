@@ -60,6 +60,40 @@ namespace ZNAMED {
     vk::PipelineLayout descriptors = {};
   };
 
+  //
+  struct GltfInstanced : std::enable_shared_from_this<GltfInstanced> {
+    std::vector<InstanceDevInfo> instances = {};
+    WrapShared<InstanceLevelObj> instanced = {};
+  };
+
+  //
+  struct GltfScene : std::enable_shared_from_this<GltfScene> {
+    //
+    std::string err = "";
+    std::string warn = "";
+    tinygltf::Model model;
+
+    // data
+    std::vector<GeometryExtension> extensions = {};
+    std::vector<GeometryInfo> geometries = {};
+    std::vector<MaterialInfo> materials = {};
+    std::vector<BufferRegion> regions = {};
+
+    // indices cache
+    std::vector<uint32_t> imageIndices = {};
+    std::vector<uint32_t> samplerIndices = {};
+    std::vector<CTexture> textures = {};
+
+    // objects
+    std::vector<WrapShared<ResourceObj>> buffers = {};
+    std::vector<WrapShared<GeometryLevelObj>> meshes = {};
+
+    // 
+    std::shared_ptr<GltfInstanced> generics = {};
+    std::shared_ptr<GltfInstanced> opaque = {};
+    std::shared_ptr<GltfInstanced> translucent = {};
+  };
+
   // 
   class GltfLoaderObj : public BaseObj {
   public:
@@ -68,23 +102,14 @@ namespace ZNAMED {
     using cType = const char const*;
     //using BaseObj;
 
+    //
+    std::optional<GltfLoaderCreateInfo> cInfo = GltfLoaderCreateInfo{};
+
   protected:
 
     //
-    tinygltf::Model model;
+    std::vector<std::shared_ptr<GltfScene>> gltfScenes = {};
     tinygltf::TinyGLTF loader;
-    std::string err = "";
-    std::string warn = "";
-
-    // 
-    std::vector<WrapShared<ResourceObj>> buffers = {};
-    std::vector<BufferRegion> regions = {};
-    std::optional<GltfLoaderCreateInfo> cInfo = GltfLoaderCreateInfo{};
-    std::vector<uint32_t> imageIndices = {};
-    std::vector<uint32_t> samplerIndices = {};
-    std::vector<CTexture> textures = {};
-    std::vector<WrapShared<GeometryLevelObj>> meshes = {};
-    WrapShared<InstanceLevelObj> instanced = {};
 
     // 
     inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
@@ -99,7 +124,9 @@ namespace ZNAMED {
     };
 
     // 
-    virtual tType load(std::string const& filename = "./BoomBox.gltf", FilterType const& filter = FilterType::eOpaque) {
+    virtual std::shared_ptr<GltfScene> load(std::string const& filename = "./BoomBox.gltf", FilterType const& filter = FilterType::eOpaque) {
+      decltype(auto) gltf = std::make_shared<GltfScene>();
+
       //decltype(auto) handle = Handle(cInfo->device, HandleType::eDevice);
       decltype(auto) handle = this->base;
       decltype(auto) device = this->base.as<vk::Device>();
@@ -108,21 +135,21 @@ namespace ZNAMED {
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->descriptors);
 
       // 
-      bool ret = loader.LoadASCIIFromFile(&model, &err, &warn, filename);
+      bool ret = loader.LoadASCIIFromFile(&gltf->model, &gltf->err, &gltf->warn, filename);
       //bool ret = loader.LoadBinaryFromFile(&model, &err, &warn, argv[1]); // for binary glTF(.glb)
 
-      if (!warn.empty()) {
-        printf("Warn: %s\n", warn.c_str());
-      }
+      if (!gltf->warn.empty()) {
+        printf("Warn: %s\n", gltf->warn.c_str());
+      };
 
-      if (!err.empty()) {
-        printf("Err: %s\n", err.c_str());
-      }
+      if (!gltf->err.empty()) {
+        printf("Err: %s\n", gltf->err.c_str());
+      };
 
       if (!ret) {
         printf("Failed to parse glTF\n");
-        return SFT();
-      }
+        return std::shared_ptr<GltfScene>{};
+      };
 
       //
       decltype(auto) handleAccessor = [=,this](intptr_t const& accessorIndex, bool const& isIndice = false) {
@@ -130,9 +157,9 @@ namespace ZNAMED {
 
         if (accessorIndex >= 0) {
           //decltype(auto) bufferView = ZNAMED::BufferViewInfo{ .region = ZNAMED::BufferViewRegion{} };
-          auto accessor = model.accessors[accessorIndex];
-          auto bv = this->regions[accessor.bufferView];
-          auto bufferView = model.bufferViews[accessor.bufferView];
+          auto accessor = gltf->model.accessors[accessorIndex];
+          auto bv = gltf->regions[accessor.bufferView];
+          auto bufferView = gltf->model.bufferViews[accessor.bufferView];
           auto bufferObj = deviceObj->get<ResourceObj>(bv.buffer);
           auto address = bufferObj->getDeviceAddress();
 
@@ -170,7 +197,7 @@ namespace ZNAMED {
       };
 
       // 
-      for (decltype(auto) buffer : model.buffers) {
+      for (decltype(auto) buffer : gltf->model.buffers) {
         //
         decltype(auto) bufferObj = ZNAMED::ResourceObj::make(handle, ZNAMED::ResourceCreateInfo{
           .descriptors = cInfo->descriptors,
@@ -189,19 +216,19 @@ namespace ZNAMED {
         });
 
         // 
-        buffers.push_back(bufferObj);
+        gltf->buffers.push_back(bufferObj);
       };
 
       //
-      for (decltype(auto) bufferView : model.bufferViews) {
-        regions.push_back(BufferRegion{ .buffer = buffers[bufferView.buffer].as<vk::Buffer>(), .region = DataRegion{bufferView.byteOffset, bufferView.byteStride, bufferView.byteLength}});
+      for (decltype(auto) bufferView : gltf->model.bufferViews) {
+        gltf->regions.push_back(BufferRegion{ .buffer = gltf->buffers[bufferView.buffer].as<vk::Buffer>(), .region = DataRegion{bufferView.byteOffset, bufferView.byteStride, bufferView.byteLength}});
       };
 
       //
       decltype(auto) materialBuffer = ZNAMED::ResourceObj::make(handle, ZNAMED::ResourceCreateInfo{
         .descriptors = cInfo->descriptors,
         .bufferInfo = ZNAMED::BufferCreateInfo{
-          .size = model.materials.size() * sizeof(ZNAMED::MaterialInfo),
+          .size = gltf->model.materials.size() * sizeof(ZNAMED::MaterialInfo),
           .type = ZNAMED::BufferType::eUniversal,
         }
       }.use(ZNAMED::ExtensionName::eMemoryAllocatorVma));
@@ -210,11 +237,7 @@ namespace ZNAMED {
       uint64_t materialAddress = materialBuffer->getDeviceAddress();
 
       //
-      std::vector<ZNAMED::MaterialInfo> materials = {};
-
-
-      //
-      for (decltype(auto) image : model.images) {
+      for (decltype(auto) image : gltf->model.images) {
         //
         decltype(auto) imageObj = ZNAMED::ResourceObj::make(deviceObj, ZNAMED::ResourceCreateInfo{
           .descriptors = cInfo->descriptors,
@@ -237,12 +260,12 @@ namespace ZNAMED {
         decltype(auto) imgImageView = imageObj->createImageView(ZNAMED::ImageViewCreateInfo{ .viewType = vk::ImageViewType::e2D });
 
         //
-        imageIndices.push_back(std::get<1u>(imgImageView));
+        gltf->imageIndices.push_back(std::get<1u>(imgImageView));
       };
 
 
       //
-      for (decltype(auto) sampler : model.samplers) {
+      for (decltype(auto) sampler : gltf->model.samplers) {
         decltype(auto) samplerObj = ZNAMED::SamplerObj::make(deviceObj, ZNAMED::SamplerCreateInfo{
           .descriptors = cInfo->descriptors,
           .native = vk::SamplerCreateInfo {
@@ -252,31 +275,28 @@ namespace ZNAMED {
             .addressModeV = vk::SamplerAddressMode::eRepeat
           }
         });
-        samplerIndices.push_back(samplerObj->getId());
+        gltf->samplerIndices.push_back(samplerObj->getId());
       };
 
 
       //
-      for (decltype(auto) texture : model.textures) {
-        textures.push_back(CTexture{ imageIndices[texture.source], texture.sampler >= 0 ? samplerIndices[texture.sampler] : 0u});
+      for (decltype(auto) texture : gltf->model.textures) {
+        gltf->textures.push_back(CTexture{ gltf->imageIndices[texture.source], texture.sampler >= 0 ? gltf->samplerIndices[texture.sampler] : 0u});
       };
 
 
       //
-      for (auto& material : model.materials) {
+      for (auto& material : gltf->model.materials) {
         //
         decltype(auto) materialInf = ZNAMED::MaterialInfo{};
 
-        materialInf.texCol[std::to_underlying(ZNAMED::TextureBind::eAlbedo)] = ZNAMED::TexOrDef{ .texture = material.pbrMetallicRoughness.baseColorTexture.index >= 0 ? textures[material.pbrMetallicRoughness.baseColorTexture.index] : CTexture{}, .defValue = handleFactor(material.pbrMetallicRoughness.baseColorFactor)};
+        materialInf.texCol[std::to_underlying(ZNAMED::TextureBind::eAlbedo)] = ZNAMED::TexOrDef{ .texture = material.pbrMetallicRoughness.baseColorTexture.index >= 0 ? gltf->textures[material.pbrMetallicRoughness.baseColorTexture.index] : CTexture{}, .defValue = handleFactor(material.pbrMetallicRoughness.baseColorFactor)};
 
-        materials.push_back(materialInf);
+        gltf->materials.push_back(materialInf);
       };
 
       //
-      for (decltype(auto) mesh : model.meshes) {
-        std::vector<ZNAMED::GeometryExtension> extensions = {};
-        std::vector<ZNAMED::GeometryInfo> geometries = {};
-
+      for (decltype(auto) mesh : gltf->model.meshes) {
         //
         decltype(auto) extensionBuffer = ZNAMED::ResourceObj::make(handle, ZNAMED::ResourceCreateInfo{
           .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
@@ -299,64 +319,63 @@ namespace ZNAMED {
           decltype(auto) indices = handleAccessor(primitive.indices, true);
 
           //
-          geometries.push_back(ZNAMED::GeometryInfo{
+          gltf->geometries.push_back(ZNAMED::GeometryInfo{
             .vertices = vertices,
             .indices = indices,
             .extensionRef = extensionAddress + pId * sizeof(ZNAMED::GeometryExtension),
             .materialRef = materialAddress + primitive.material * sizeof(ZNAMED::MaterialInfo),
-            .primitiveCount = cpp21::tiled(uint32_t(model.accessors[primitive.indices >= 0 ? primitive.indices : primitive.attributes.at("POSITION")].count), 3u),
+            .primitiveCount = cpp21::tiled(uint32_t(gltf->model.accessors[primitive.indices >= 0 ? primitive.indices : primitive.attributes.at("POSITION")].count), 3u),
           });
 
           //
-          extensions.push_back(ZNAMED::GeometryExtension{});
+          gltf->extensions.push_back(ZNAMED::GeometryExtension{});
 
           //
           for (decltype(auto) attrib : primitive.attributes) {
             if (attrib.first == "TEXCOORD_0") {
-              extensions.back().bufferViews[std::to_underlying(ZNAMED::BufferBind::eExtTexcoord)] = handleAccessor(attrib.second);
+              gltf->extensions.back().bufferViews[std::to_underlying(ZNAMED::BufferBind::eExtTexcoord)] = handleAccessor(attrib.second);
             };
             if (attrib.first == "NORMAL") {
-              extensions.back().bufferViews[std::to_underlying(ZNAMED::BufferBind::eExtNormals)] = handleAccessor(attrib.second);
+              gltf->extensions.back().bufferViews[std::to_underlying(ZNAMED::BufferBind::eExtNormals)] = handleAccessor(attrib.second);
             };
             if (attrib.first == "TANGENT") {
-              extensions.back().bufferViews[std::to_underlying(ZNAMED::BufferBind::eExtTangent)] = handleAccessor(attrib.second);
+              gltf->extensions.back().bufferViews[std::to_underlying(ZNAMED::BufferBind::eExtTangent)] = handleAccessor(attrib.second);
             };
           };
         };
 
         //
         uploaderObj->executeUploadToResourceOnce(ZNAMED::UploadExecutionOnce{
-          .host = cpp21::data_view<char8_t>((char8_t*)extensions.data(), 0ull, cpp21::bytesize(extensions)),
+          .host = cpp21::data_view<char8_t>((char8_t*)gltf->extensions.data(), 0ull, cpp21::bytesize(gltf->extensions)),
           .writeInfo = ZNAMED::UploadCommandWriteInfo{
-            .dstBuffer = ZNAMED::BufferRegion{extensionBuffer.as<vk::Buffer>(), ZNAMED::DataRegion{0ull, sizeof(ZNAMED::GeometryExtension), cpp21::bytesize(extensions)}},
+            .dstBuffer = ZNAMED::BufferRegion{extensionBuffer.as<vk::Buffer>(), ZNAMED::DataRegion{0ull, sizeof(ZNAMED::GeometryExtension), cpp21::bytesize(gltf->extensions)}},
           }
         });
 
         //
-        meshes.push_back(ZNAMED::GeometryLevelObj::make(handle, ZNAMED::GeometryLevelCreateInfo{
-          .geometries = geometries,
+        gltf->meshes.push_back(ZNAMED::GeometryLevelObj::make(handle, ZNAMED::GeometryLevelCreateInfo{
+          .geometries = gltf->geometries,
           .uploader = uploaderObj.as<uintptr_t>(),
         }));
       };
 
-      // CURRENTLY, OPAQUE INSTANCES
-      decltype(auto) instances = std::vector<InstanceDevInfo>{};
-      decltype(auto) useMesh = [=, &instances, this](tinygltf::Model& model, intptr_t const& meshId, glm::mat4x4 transform = glm::mat4x4()) {
+      // 
+      decltype(auto) useMesh = [=, this](std::shared_ptr<GltfInstanced> inst, tinygltf::Model& model, intptr_t const& meshId, glm::mat4x4 transform = glm::mat4x4()) {
         decltype(auto) mesh = model.meshes[meshId];
         decltype(auto) transposed = glm::transpose(transform);
-        instances.push_back(InstanceDevInfo{
+        inst->instances.push_back(InstanceDevInfo{
           .transform = reinterpret_cast<vk::TransformMatrixKHR&>(transposed),
           .instanceCustomIndex = 0u,
           .mask = 0xFFu,
           .instanceShaderBindingTableRecordOffset = 0u,
-          .flags = uint8_t(vk::GeometryInstanceFlagBitsKHR::eForceOpaque),
-          .accelerationStructureReference = this->meshes[meshId]->getDeviceAddress()
+          .flags = uint8_t(vk::GeometryInstanceFlagBitsKHR{}),
+          .accelerationStructureReference = gltf->meshes[meshId]->getDeviceAddress()
         });
       };
 
       //
-      std::function<void(tinygltf::Model&, tinygltf::Node&, glm::mat4x4 parentTransform)> handleNodes = {};
-      handleNodes = [=, &handleNodes, this](tinygltf::Model& model, tinygltf::Node& node, glm::mat4x4 parentTransform = glm::mat4x4(1.f)) {
+      std::function<void(std::shared_ptr<GltfInstanced>, tinygltf::Model&, tinygltf::Node&, glm::mat4x4 parentTransform)> handleNodes = {};
+      handleNodes = [=, &handleNodes, this](std::shared_ptr<GltfInstanced> inst, tinygltf::Model& model, tinygltf::Node& node, glm::mat4x4 parentTransform = glm::mat4x4(1.f)) {
         //parentTransform;
         if (node.matrix.size() == 16) {
           parentTransform = parentTransform * glm::mat4x4(reinterpret_cast<glm::dmat4x4&>(*node.matrix.data()));
@@ -379,28 +398,31 @@ namespace ZNAMED {
 
         //
         if ((node.mesh >= 0) && (node.mesh < model.meshes.size())) {
-          useMesh(model, node.mesh, parentTransform);
+          useMesh(inst, model, node.mesh, parentTransform);
         };
 
         //
         for (size_t i = 0; i < node.children.size(); i++) {
           assert((node.children[i] >= 0) && (node.children[i] < model.nodes.size()));
-          handleNodes(model, model.nodes[node.children[i]], parentTransform);
+          handleNodes(inst, model, model.nodes[node.children[i]], parentTransform);
         };
       };
 
       //
-      decltype(auto) scene = model.scenes[model.defaultScene];
-      for (decltype(auto) node : scene.nodes) { handleNodes(model, model.nodes[node], glm::mat4x4(1.f)); };
+      decltype(auto) inst = std::make_shared<GltfInstanced>();
+      decltype(auto) scene = gltf->model.scenes[gltf->model.defaultScene];
+      for (decltype(auto) node : scene.nodes) { handleNodes(inst, gltf->model, gltf->model.nodes[node], glm::mat4x4(1.f)); };
 
       //
-      instanced = ZNAMED::InstanceLevelObj::make(handle, ZNAMED::InstanceLevelCreateInfo{
-        .instances = instances,
+      inst->instanced = ZNAMED::InstanceLevelObj::make(handle, ZNAMED::InstanceLevelCreateInfo{
+        .instances = inst->instances,
         .uploader = this->cInfo->uploader,
       });
 
-      // 
-      return SFT();
+      //
+      gltf->generics = inst;
+      this->gltfScenes.push_back(gltf);
+      return this->gltfScenes.back();
     };
 
     //
