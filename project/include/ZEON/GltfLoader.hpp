@@ -72,8 +72,9 @@ namespace ZNAMED {
     std::vector<WrapShared<ResourceObj>> buffers = {};
     std::vector<BufferRegion> regions = {};
     std::optional<GltfLoaderCreateInfo> cInfo = GltfLoaderCreateInfo{};
-    std::vector<uint32_t> textureIndices = {};
+    std::vector<uint32_t> imageIndices = {};
     std::vector<uint32_t> samplerIndices = {};
+    std::vector<CTexture> textures = {};
 
     // 
     inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
@@ -113,7 +114,56 @@ namespace ZNAMED {
         return SFT();
       }
 
-      for (auto& buffer : model.buffers) {
+
+
+      //
+      decltype(auto) handleAccessor = [=,this](intptr_t const& accessorIndex, bool const& isIndice = false) {
+        auto bresult = ZNAMED::BufferViewInfo{ .region = ZNAMED::BufferViewRegion{.deviceAddress = 0ull, .stride = 0ull, .size = 0ull}, .format = ZNAMED::BufferViewFormat::eNone };;
+
+        if (accessorIndex >= 0) {
+          //decltype(auto) bufferView = ZNAMED::BufferViewInfo{ .region = ZNAMED::BufferViewRegion{} };
+          auto accessor = model.accessors[accessorIndex];
+          auto bv = this->regions[accessor.bufferView];
+          auto bufferView = model.bufferViews[accessor.bufferView];
+          auto bufferObj = deviceObj->get<ResourceObj>(bv.buffer);
+          auto address = bufferObj->getDeviceAddress();
+
+          //
+          if (isIndice) {
+            auto defFormat = ZNAMED::BufferViewFormat::eUint3;
+            if (accessor.componentType == 5123) { defFormat = ZNAMED::BufferViewFormat::eShort3; };
+            return (bresult = ZNAMED::BufferViewInfo{ .region = ZNAMED::BufferViewRegion{.deviceAddress = address + bv.region.offset + accessor.byteOffset, .stride = defFormat == ZNAMED::BufferViewFormat::eUint3 ? 4u : 2u, .size = uint32_t(bv.region.size - accessor.byteOffset)}, .format = defFormat });
+          };
+
+          //
+          auto defFormat = ZNAMED::BufferViewFormat::eFloat3;
+          if (accessor.componentType == 5126) {
+            if (accessor.type == TINYGLTF_TYPE_VEC4) { defFormat = ZNAMED::BufferViewFormat::eFloat4; };
+            if (accessor.type == TINYGLTF_TYPE_VEC3) { defFormat = ZNAMED::BufferViewFormat::eFloat3; };
+            if (accessor.type == TINYGLTF_TYPE_VEC2) { defFormat = ZNAMED::BufferViewFormat::eFloat2; };
+            if (accessor.type == TINYGLTF_TYPE_SCALAR) { defFormat = ZNAMED::BufferViewFormat::eFloat; };
+          };
+
+          //
+          auto decomposeFormat = BufferViewFormatBitSet(defFormat);
+          auto virtualStride = bufferView.byteStride > 0 ? bufferView.byteStride : (decomposeFormat.countMinusOne + 1u) * (decomposeFormat.is16bit ? 2u : 4u);
+          auto realStride = std::max(uint32_t(bufferView.byteStride), (decomposeFormat.countMinusOne + 1u) * (decomposeFormat.is16bit ? 2u : 4u));
+
+          //
+          return (bresult = ZNAMED::BufferViewInfo{ .region = ZNAMED::BufferViewRegion{.deviceAddress = address + bv.region.offset + accessor.byteOffset, .stride = uint32_t(virtualStride), .size = std::min(uint32_t(bv.region.size - accessor.byteOffset), uint32_t(realStride * accessor.count))}, .format = defFormat });
+        };
+
+        return bresult;
+      };
+
+      //
+      decltype(auto) handleFactor = [=](auto const& factor) {
+        return glm::vec4(factor[0], factor[1], factor[2], factor[3]);
+      };
+
+
+
+      for (decltype(auto) buffer : model.buffers) {
         //
         decltype(auto) bufferObj = ZNAMED::ResourceObj::make(handle, ZNAMED::ResourceCreateInfo{
           .descriptors = cInfo->descriptors,
@@ -136,13 +186,13 @@ namespace ZNAMED {
       };
 
       //
-      for (auto& bufferView : model.bufferViews) {
+      for (decltype(auto) bufferView : model.bufferViews) {
         regions.push_back(BufferRegion{ .buffer = buffers[bufferView.buffer].as<vk::Buffer>(), .region = DataRegion{bufferView.byteOffset, bufferView.byteStride, bufferView.byteLength}});
       };
 
       //
       decltype(auto) materialBuffer = ZNAMED::ResourceObj::make(handle, ZNAMED::ResourceCreateInfo{
-        .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
+        .descriptors = cInfo->descriptors,
         .bufferInfo = ZNAMED::BufferCreateInfo{
           .size = model.materials.size() * sizeof(ZNAMED::MaterialInfo),
           .type = ZNAMED::BufferType::eUniversal,
@@ -155,22 +205,67 @@ namespace ZNAMED {
       //
       std::vector<ZNAMED::MaterialInfo> materials = {};
 
+
+      //
+      for (decltype(auto) image : model.images) {
+        //
+        decltype(auto) imageObj = ZNAMED::ResourceObj::make(deviceObj, ZNAMED::ResourceCreateInfo{
+          .descriptors = cInfo->descriptors,
+          .imageInfo = ZNAMED::ImageCreateInfo{
+            .format = vk::Format::eR8G8B8A8Unorm,
+            .extent = vk::Extent3D{uint32_t(image.width), uint32_t(image.height), 1u},
+            .type = ZNAMED::ImageType::eTexture
+          }
+        }.use(ZNAMED::ExtensionName::eMemoryAllocatorVma));
+
+        //
+        uploaderObj->executeUploadToResourceOnce(ZNAMED::UploadExecutionOnce{
+          .host = cpp21::data_view<char8_t>((char8_t*)image.image.data(), 0ull, cpp21::bytesize(image.image)),
+          .writeInfo = ZNAMED::UploadCommandWriteInfo{
+            .dstImage = ZNAMED::ImageRegion{.image = imageObj.as<vk::Image>(), .region = ZNAMED::ImageDataRegion{.extent = vk::Extent3D{uint32_t(image.width), uint32_t(image.height), 1u}}},
+          }
+        });
+
+        //
+        decltype(auto) imgImageView = imageObj->createImageView(ZNAMED::ImageViewCreateInfo{ .viewType = vk::ImageViewType::e2D });
+
+        //
+        imageIndices.push_back(std::get<1u>(imgImageView));
+      };
+
+
+      //
+      for (decltype(auto) sampler : model.samplers) {
+        decltype(auto) samplerObj = ZNAMED::SamplerObj::make(deviceObj, ZNAMED::SamplerCreateInfo{
+          .descriptors = cInfo->descriptors,
+          .native = vk::SamplerCreateInfo {
+            .magFilter = vk::Filter::eLinear,
+            .minFilter = vk::Filter::eLinear,
+            .addressModeU = vk::SamplerAddressMode::eRepeat,
+            .addressModeV = vk::SamplerAddressMode::eRepeat
+          }
+        });
+        samplerIndices.push_back(samplerObj->getId());
+      };
+
+
+      //
+      for (decltype(auto) texture : model.textures) {
+        textures.push_back(CTexture{ imageIndices[texture.source], texture.sampler >= 0 ? samplerIndices[texture.sampler] : 0u});
+      };
+
+
       //
       for (auto& material : model.materials) {
         //
         decltype(auto) materialInf = ZNAMED::MaterialInfo{};
 
-        //materialInf.texCol[std::to_underlying(ZNAMED::TextureBind::eAlbedo)] = ZNAMED::TexOrDef{ .texture = ZNAMED::CTexture{.textureId = textureIndices[material.pbrMetallicRoughness.baseColorTexture.index], .samplerId = 0u}};
+        materialInf.texCol[std::to_underlying(ZNAMED::TextureBind::eAlbedo)] = ZNAMED::TexOrDef{ .texture = material.pbrMetallicRoughness.baseColorTexture.index >= 0 ? textures[material.pbrMetallicRoughness.baseColorTexture.index] : CTexture{}, .defValue = handleFactor(material.pbrMetallicRoughness.baseColorFactor)};
 
         materials.push_back(materialInf);
       };
 
-      //
-      decltype(auto) handleAccessor = [=](uintptr_t const& accessorIndex) {
-        decltype(auto) bufferView = ZNAMED::BufferViewInfo{ .region = ZNAMED::BufferViewRegion{} };
-
-        return bufferView;
-      };
+      
 
       //
       for (decltype(auto) mesh : model.meshes) {
@@ -194,13 +289,17 @@ namespace ZNAMED {
         for (decltype(auto) primitive : mesh.primitives) {
           uintptr_t pId = pCount++;
 
+          // 
+          decltype(auto) vertices = handleAccessor(primitive.attributes.at("POSITION"));
+          decltype(auto) indices = handleAccessor(primitive.indices, true);
+
           //
           geometries.push_back(ZNAMED::GeometryInfo{
-            .vertices = handleAccessor(primitive.attributes.at("POSITION")),
-            .indices = handleAccessor(primitive.indices),
+            .vertices = vertices,
+            .indices = indices,
             .extensionRef = extensionAddress + pId * sizeof(ZNAMED::GeometryExtension),
             .materialRef = materialAddress + primitive.material * sizeof(ZNAMED::MaterialInfo),
-            .primitiveCount = 2u
+            .primitiveCount = cpp21::tiled(uint32_t(model.accessors[primitive.indices >= 0 ? primitive.indices :primitive.attributes.at("POSITION")].count), 3u),
           });
 
           //
@@ -223,10 +322,10 @@ namespace ZNAMED {
         });
 
         //
-        //decltype(auto) geometryLevel = ZNAMED::GeometryLevelObj::make(handle, ZNAMED::GeometryLevelCreateInfo{
-          //.geometries = geometries,
-          //.uploader = uploaderObj.as<uintptr_t>(),
-        //});
+        decltype(auto) geometryLevel = ZNAMED::GeometryLevelObj::make(handle, ZNAMED::GeometryLevelCreateInfo{
+          .geometries = geometries,
+          .uploader = uploaderObj.as<uintptr_t>(),
+        });
       };
 
       // 

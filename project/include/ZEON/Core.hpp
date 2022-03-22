@@ -986,7 +986,7 @@ namespace ZNAMED {
   //
   struct UploaderCreateInfo : BaseCreateInfo {
     std::optional<QueueGetInfo> info = QueueGetInfo{};
-    size_t cacheSize = 1024ull * 1024ull * 4ull;
+    size_t cacheSize = 4096ull * 4096ull * 4ull;
   };
 
   //
