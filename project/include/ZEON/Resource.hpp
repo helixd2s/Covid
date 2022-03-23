@@ -105,10 +105,10 @@ namespace ZNAMED {
 
       // 
       if (descriptorsObj) {
-        if (this->cInfo->imageInfo->type == ImageType::eStorage) {
+        if ((this->imageUsage & vk::ImageUsageFlagBits::eStorage) && info->preference == ImageViewPreference::eStorage || !(this->imageUsage & vk::ImageUsageFlagBits::eSampled)) {
           descriptorId = descriptorsObj->images.add(vk::DescriptorImageInfo{ .imageView = imageView, .imageLayout = this->cInfo->imageInfo->layout });
         } else
-        if (this->cInfo->imageInfo->type == ImageType::eTexture || this->cInfo->imageInfo->type == ImageType::eColorAttachment) {
+        if ((this->imageUsage & vk::ImageUsageFlagBits::eSampled) && info->preference == ImageViewPreference::eSampled || !(this->imageUsage & vk::ImageUsageFlagBits::eStorage)) {
           descriptorId = descriptorsObj->textures.add(vk::DescriptorImageInfo{ .imageView = imageView, .imageLayout = this->cInfo->imageInfo->layout });
         };
       };

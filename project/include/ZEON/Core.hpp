@@ -172,6 +172,11 @@ namespace ZNAMED {
     eCubemap = 2u
   };
 
+  enum class ImageViewPreference : uint32_t {
+    eSampled = 0u,
+    eStorage = 1u
+  };
+
   //
 #pragma pack(1)
   __declspec(align(1))
@@ -752,6 +757,7 @@ namespace ZNAMED {
   struct ImageViewCreateInfo : BaseCreateInfo {
     vk::ImageViewType viewType = vk::ImageViewType::e2D;
     vk::ImageSubresourceRange subresourceRange = { vk::ImageAspectFlagBits::eColor, 0u, 1u, 0u, 1u };
+    ImageViewPreference preference = ImageViewPreference::eSampled;
   };
 
   //

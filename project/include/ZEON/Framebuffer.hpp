@@ -255,7 +255,8 @@ namespace ZNAMED {
       this->images.push_back(imageObj.as<vk::Image>());
       this->imageViews.push_back(std::get<0>(imageObj->createImageView(ImageViewCreateInfo{
         .viewType = this->cInfo->type == FramebufferType::eCubemap ? vk::ImageViewType::eCube : vk::ImageViewType::e2D,
-        .subresourceRange = subresourceRange
+        .subresourceRange = subresourceRange,
+        .preference = ImageViewPreference::eSampled
       })));
 
       //

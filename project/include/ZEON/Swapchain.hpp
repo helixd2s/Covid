@@ -196,7 +196,8 @@ namespace ZNAMED {
       this->renderArea = vk::Rect2D{ vk::Offset2D{0u, 0u}, capInfo.capabilities->currentExtent };
       this->imageViews.push_back(std::get<0>(imageObj->createImageView(ImageViewCreateInfo{
         .viewType = vk::ImageViewType::e2D,
-        .subresourceRange = subresourceRange
+        .subresourceRange = subresourceRange,
+        .preference = ImageViewPreference::eStorage
       })));
 
       // 
