@@ -62,7 +62,6 @@ namespace ZNAMED {
   inline std::optional<UNORDER_MAP<uintptr_t, std::shared_ptr<BaseObj>>::iterator> BaseObj::destroy(Handle const& parent, HMAP_T* parentMap) {
     //
     if (parent.value == this->base.value && this->alive) {
-      //
       this->tickProcessing();
 
       // 
@@ -81,18 +80,19 @@ namespace ZNAMED {
       // needs only before deleting main object...
       for (decltype(auto) fn : this->destructors) { fn(this); };
       this->destructors = {};
+      this->alive = false;
 
       // erase from parent element
-      bool wasAlive = this->alive; this->alive = false;
-      //decltype(auto) nullMap = HMAP_T{};
       auto* handleMap = parentMap;
-      if (wasAlive && !handleMap && ZNAMED::context && ZNAMED::context->isAlive()) {
+      if (!handleMap && ZNAMED::context && ZNAMED::context->isAlive()) {
         decltype(auto) baseObj = ZNAMED::context->get(this->base);
         if (baseObj) {
           handleMap = &baseObj->getHandleMap();
         };
       };
-      if (wasAlive && handleMap && handleMap->size() > 0) {
+
+      //
+      if (handleMap && handleMap->size() > 0) {
         auto& handleValMap = handleMap->at(this->handle.type);
         decltype(auto) interator = handleValMap->find(this->handle.value);
         if (interator != handleValMap->end()) {
