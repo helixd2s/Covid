@@ -94,7 +94,8 @@ namespace ZNAMED {
     eDepthAttachment = 3u,
     eStencilAttachment = 4u,
     eDepthStencilAttachment = 5u,
-    eSwapchain = 6u
+    eSwapchain = 6u,
+    eUniversal = 7u
   };
 
   //

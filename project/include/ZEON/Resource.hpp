@@ -193,7 +193,7 @@ namespace ZNAMED {
 
       case ImageType::eStorage:
         memoryUsage = MemoryUsage::eGpuOnly;
-        imageUsage |= vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eSampled;
+        imageUsage |= vk::ImageUsageFlagBits::eStorage;
         break;
 
       case ImageType::eTexture:
@@ -203,7 +203,7 @@ namespace ZNAMED {
 
       case ImageType::eColorAttachment:
         memoryUsage = MemoryUsage::eGpuOnly;
-        imageUsage |= vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eSampled;
+        imageUsage |= vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled;
         break;
 
       case ImageType::eDepthAttachment:
@@ -219,6 +219,11 @@ namespace ZNAMED {
       case ImageType::eStencilAttachment:
         memoryUsage = MemoryUsage::eGpuOnly;
         imageUsage |= vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled;
+        break;
+
+      case ImageType::eUniversal:
+        memoryUsage = MemoryUsage::eGpuOnly;
+        imageUsage |= vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eSampled;
         break;
 
       default:;
@@ -453,11 +458,17 @@ namespace ZNAMED {
           .layerCount = imageInfo->arrayLayers
         };
 
+        // 
+        bool isValidLayout = imageLayout == vk::ImageLayout::eGeneral || imageLayout == vk::ImageLayout::eSharedPresentKHR || imageLayout == vk::ImageLayout::eTransferDstOptimal;
         auto clearColor = reinterpret_cast<vk::ClearColorValue const&>(clearInfo->clearColor);
         auto clearValue = vk::ClearValue{ .color = clearColor };
-        this->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{ .cmdBuf = clearInfo->cmdBuf, .newImageLayout = vk::ImageLayout::eTransferDstOptimal, .queueFamilyIndex = clearInfo->queueFamilyIndex });
-        clearInfo->cmdBuf.clearColorImage(this->handle.as<vk::Image>(), vk::ImageLayout::eTransferDstOptimal, clearColor, std::vector<vk::ImageSubresourceRange>{subresourceRange});
-        this->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{ .cmdBuf = clearInfo->cmdBuf, .newImageLayout = imageLayout, .queueFamilyIndex = clearInfo->queueFamilyIndex });
+        if (!isValidLayout) {
+          this->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{ .cmdBuf = clearInfo->cmdBuf, .newImageLayout = vk::ImageLayout::eTransferDstOptimal, .queueFamilyIndex = clearInfo->queueFamilyIndex });
+        };
+        clearInfo->cmdBuf.clearColorImage(this->handle.as<vk::Image>(), isValidLayout ? imageLayout : vk::ImageLayout::eTransferDstOptimal, clearColor, std::vector<vk::ImageSubresourceRange>{subresourceRange});
+        if (!isValidLayout) {
+          this->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{ .cmdBuf = clearInfo->cmdBuf, .newImageLayout = imageLayout, .queueFamilyIndex = clearInfo->queueFamilyIndex });
+        };
       };
     };
 
