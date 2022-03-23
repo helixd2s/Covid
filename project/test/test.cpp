@@ -257,6 +257,12 @@ int main() {
     // 
     decltype(auto) acquired = swapchain->acquireImage(qfAndQueue);
 
+    // wait ready for filling
+    auto& fence = (*fences)[acquired];
+    decltype(auto) status = false;
+    //if (fence) { decltype(auto) unleak = fence->future->get(); }; device->tickProcessing();
+    if (fence) { while (!(status = fence->checkStatus())) { co_yield status; }; };
+
     // 
     decltype(auto) uniformFence = descriptors->executeUniformUpdateOnce(ZNAMED::UniformDataSet{
       .writeInfo = ZNAMED::UniformDataWriteSet{
@@ -299,10 +305,6 @@ int main() {
     });
 
     //
-    auto& fence = (*fences)[acquired];
-    decltype(auto) status = false;
-    //if (fence) { decltype(auto) unleak = fence->future->get(); }; device->tickProcessing();
-    if (fence) { while (!(status = fence->checkStatus())) { co_yield status; }; };
     fence = std::get<0u>(swapchain->presentImage(qfAndQueue));
 
     // stop the capture
