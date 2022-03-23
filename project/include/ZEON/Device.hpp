@@ -316,8 +316,8 @@ namespace ZNAMED {
         };
       };
 
-      // 
-      decltype(auto) promise = std::make_shared<std::future<vk::Result>>(std::async(std::launch::async | std::launch::deferred, [callstack = std::weak_ptr<CallStack>(this->callstack), device, fence, commandPool, submissionRef, commandBuffers, deAllocation]() {
+      //
+      decltype(auto) onDone = [callstack = std::weak_ptr<CallStack>(this->callstack), device, fence, commandPool, submissionRef, commandBuffers, deAllocation]() {
         //auto result = device.waitForFences(*fence, true, 1000 * 1000 * 1000);
         auto result = device.getFenceStatus(*fence);
         while (result == vk::Result::eNotReady) { result = device.getFenceStatus(*fence); };
@@ -327,13 +327,20 @@ namespace ZNAMED {
         };
         cl->add(deAllocation);
         return result;
-      }));
+      };
+
+      // 
+      decltype(auto) promise = std::make_shared<std::future<vk::Result>>(std::async(std::launch::async | std::launch::deferred, onDone));
 
       //
       this->futures.push_back(promise);
 
+      //
+      fence->future = promise;
+
       // 
-      return std::make_shared<FenceTypeRaw>(promise, fence);
+      //return std::make_shared<FenceTypeRaw>(promise, fence);
+      return fence;
     };
 
     //

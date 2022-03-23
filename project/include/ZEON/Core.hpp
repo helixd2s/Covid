@@ -1099,6 +1099,7 @@ namespace ZNAMED {
     vk::Fence fence = {};
     vk::Result status = vk::Result::eNotReady;
     std::function<void(vk::Result const&)> onDone = {};
+    std::shared_ptr<std::future<vk::Result>> future = {};
 
     //
     bool checkStatus() {
@@ -1131,11 +1132,17 @@ namespace ZNAMED {
     inline operator vk::Device& () { return device; };
     inline operator vk::Device const& () const { return device; };
     inline decltype(auto) operator=(vk::Device const& device) { this->device = device; return *this; };
+
+    //
+    inline operator std::shared_ptr<std::future<vk::Result>>& () { return future; };
+    inline operator std::shared_ptr<std::future<vk::Result>> const& () const { return future; };
+    inline decltype(auto) operator=(std::shared_ptr<std::future<vk::Result>> const& future) { this->future = future; return *this; };
   };
 
   //
-  using FenceTypeRaw = std::tuple< std::shared_ptr<std::future<vk::Result>>, std::shared_ptr<FenceStatus>>;
-  using FenceType = std::shared_ptr<FenceTypeRaw>;
+  using FenceTypeRaw = std::shared_ptr<FenceStatus>;
+  using FenceType = FenceTypeRaw;
+  //using FenceType = std::shared_ptr<FenceTypeRaw>;
 
   // 
   struct ComputeStageCreateInfo : BaseCreateInfo {

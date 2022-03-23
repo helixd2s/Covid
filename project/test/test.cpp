@@ -305,7 +305,7 @@ int main() {
 
         //
         auto& fence = (*fences)[acquired];
-        if (fence) { decltype(auto) unleak = std::get<0u>(*fence); }; device->tickProcessing();
+        if (fence) { decltype(auto) unleak = fence->future->get(); }; device->tickProcessing();
         fence = std::get<0u>(swapchain->presentImage(qfAndQueue));
 
         // stop the capture
