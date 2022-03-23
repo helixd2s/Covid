@@ -249,14 +249,16 @@ int main() {
     glfwPollEvents();
     _CrtDumpMemoryLeaks();
 
-    //
-#ifdef ENABLE_RENDERDOC
-    if (rdoc_api) rdoc_api->StartFrameCapture(NULL, NULL);
-#endif
+
 
     //
     if (!processing || cpp21::is_ready(*processing)) {
       processing = std::make_shared<std::future<bool>>(std::async(std::launch::async | std::launch::deferred, [=]() {
+        //
+#ifdef ENABLE_RENDERDOC
+        if (rdoc_api) rdoc_api->StartFrameCapture(NULL, NULL);
+#endif
+
         // 
         decltype(auto) acquired = swapchain->acquireImage(qfAndQueue);
 
@@ -306,15 +308,17 @@ int main() {
         if (fence) { decltype(auto) unleak = std::get<0u>(*fence); }; device->tickProcessing();
         fence = std::get<0u>(swapchain->presentImage(qfAndQueue));
 
+        // stop the capture
+#ifdef ENABLE_RENDERDOC
+        if (rdoc_api) rdoc_api->EndFrameCapture(NULL, NULL);
+#endif
+
         //
         return true;
       }));
     };
 
-    // stop the capture
-#ifdef ENABLE_RENDERDOC
-    if (rdoc_api) rdoc_api->EndFrameCapture(NULL, NULL);
-#endif
+
   };
 
   // waiting at least...

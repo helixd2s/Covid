@@ -318,7 +318,9 @@ namespace ZNAMED {
 
       // 
       decltype(auto) promise = std::make_shared<std::future<vk::Result>>(std::async(std::launch::async | std::launch::deferred, [callstack = std::weak_ptr<CallStack>(this->callstack), device, fence, commandPool, submissionRef, commandBuffers, deAllocation]() {
-        auto result = device.waitForFences(*fence, true, 1000 * 1000 * 1000);
+        //auto result = device.waitForFences(*fence, true, 1000 * 1000 * 1000);
+        auto result = device.getFenceStatus(*fence);
+        while (result == vk::Result::eNotReady) { result = device.getFenceStatus(*fence); };
         auto cl = callstack.lock();
         for (auto& fn : submissionRef->onDone) {
           cl->add(std::bind(fn, result));
