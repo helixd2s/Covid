@@ -1408,10 +1408,6 @@ namespace ZNAMED {
         this->tickProcessing();
 
         // 
-        for (decltype(auto) fn : this->destructors) { fn(this); };
-        this->destructors = {};
-
-        // 
         std::decay_t<decltype(handleObjectMap)>::iterator map = handleObjectMap.begin();
         while (map != this->handleObjectMap.end()) {
           std::decay_t<decltype(*(map->second))>& mapc = *(map->second);
@@ -1422,6 +1418,10 @@ namespace ZNAMED {
           };
           map = handleObjectMap.erase(map);
         };
+
+        // needs only before deleting main object...
+        for (decltype(auto) fn : this->destructors) { fn(this); };
+        this->destructors = {};
       };
     };
 
