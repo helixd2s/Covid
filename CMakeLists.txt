@@ -139,6 +139,8 @@ target_precompile_headers(${PROJECT_NAME}
   <iterator>
   <fstream>
   <typeindex>
+  <coroutine>
+  <experimental/generator>
   <tinygltf/tiny_gltf.h>
   <tinygltf/stb_image.h>
   <vulkan/vulkan.h>

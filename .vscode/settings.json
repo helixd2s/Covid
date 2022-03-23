@@ -86,7 +86,8 @@
     "numeric": "cpp",
     "queue": "cpp",
     "shared_mutex": "cpp",
-    "valarray": "cpp"
+    "valarray": "cpp",
+    "generator": "cpp"
   },
   "C_Cpp.default.cStandard": "c17",
   "C_Cpp.default.cppStandard": "c++20",

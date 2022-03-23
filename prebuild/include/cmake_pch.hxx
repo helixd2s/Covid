@@ -30,6 +30,8 @@
 #include <iterator>
 #include <fstream>
 #include <typeindex>
+#include <coroutine>
+#include <experimental/generator>
 #include <tinygltf/tiny_gltf.h>
 #include <tinygltf/stb_image.h>
 #include <vulkan/vulkan.h>

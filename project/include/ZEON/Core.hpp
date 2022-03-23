@@ -1094,7 +1094,47 @@ namespace ZNAMED {
   };
 
   //
-  using FenceTypeRaw = std::tuple< std::shared_ptr<std::future<vk::Result>>, std::shared_ptr<vk::Fence>>;
+  struct FenceStatus {
+    vk::Device device = {};
+    vk::Fence fence = {};
+    vk::Result status = vk::Result::eNotReady;
+    std::function<void(vk::Result const&)> onDone = {};
+
+    //
+    bool checkStatus() {
+      if ((this->status = this->device.getFenceStatus(this->fence)) != vk::Result::eNotReady) { if (this->onDone) { this->onDone(this->status); }; this->onDone = {}; return true; };
+      return false;
+    };
+
+    // 
+    FenceStatus(vk::Device const& device, vk::Fence const& fence, std::function<void(vk::Result const&)> onDone = {}, vk::Result const& status = vk::Result::eNotReady) : device(device), fence(fence), status(status), onDone(onDone) {};
+    //~FenceStatus() { this->device.destroyFence(this->fence); };
+
+    //
+    inline operator bool() const { return !!fence; };
+
+    //
+    inline auto& operator*() { return fence; };
+    inline auto const& operator*() const { return fence; };
+
+    //
+    inline operator vk::Fence&() { return fence; };
+    inline operator vk::Fence const&() const { return fence; };
+    inline decltype(auto) operator=(vk::Fence const& fence) { this->fence = fence; return *this; };
+
+    //
+    inline operator vk::Result& () { this->checkStatus(); return status; };
+    inline operator vk::Result const& () const { const_cast<FenceStatus*>(this)->checkStatus(); return status; };
+    inline decltype(auto) operator=(vk::Result const& status) { this->status = status; return *this; };
+
+    //
+    inline operator vk::Device& () { return device; };
+    inline operator vk::Device const& () const { return device; };
+    inline decltype(auto) operator=(vk::Device const& device) { this->device = device; return *this; };
+  };
+
+  //
+  using FenceTypeRaw = std::tuple< std::shared_ptr<std::future<vk::Result>>, std::shared_ptr<FenceStatus>>;
   using FenceType = std::shared_ptr<FenceTypeRaw>;
 
   // 
@@ -1368,6 +1408,8 @@ namespace ZNAMED {
       };
     }
   };
+
+  
 
   //
   class BaseObj;
