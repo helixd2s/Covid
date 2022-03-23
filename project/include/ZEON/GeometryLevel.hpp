@@ -25,6 +25,9 @@ namespace ZNAMED {
 
     //
     //vk::AccelerationStructureKHR accelStruct = {};
+    WrapShared<ResourceObj> bindGeometryBuffer = {};
+    WrapShared<ResourceObj> bindGeometryScratch = {};
+    WrapShared<ResourceObj> bindGeometryBuild = {};
 
     //
     std::vector<vk::AccelerationStructureGeometryKHR> geometryInfos = {};
@@ -257,28 +260,28 @@ namespace ZNAMED {
       decltype(auto) accelInfo = infoMap->get<vk::AccelerationStructureCreateInfoKHR>(vk::StructureType::eAccelerationStructureCreateInfoKHR);
       
       // 
-      this->geometryBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
+      this->geometryBuffer = (this->bindGeometryBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
         .bufferInfo = BufferCreateInfo{
           .size = std::max(cInfo->geometries.size(), cInfo->limits.size()) * sizeof(GeometryInfo),
           .type = BufferType::eStorage
         }
-      }).as<vk::Buffer>();
+      })).as<vk::Buffer>();
 
       //
-      this->geometryScratch = ResourceObj::make(this->base, ResourceCreateInfo{
+      this->geometryScratch = (this->bindGeometryScratch = ResourceObj::make(this->base, ResourceCreateInfo{
         .bufferInfo = BufferCreateInfo{
           .size = std::max(accelSizes->buildScratchSize, accelSizes->updateScratchSize),
           .type = BufferType::eStorage
         }
-      }).as<vk::Buffer>();
+      })).as<vk::Buffer>();
 
       //
-      this->geometryBuild = ResourceObj::make(this->base, ResourceCreateInfo{
+      this->geometryBuild = (this->bindGeometryBuild = ResourceObj::make(this->base, ResourceCreateInfo{
         .bufferInfo = BufferCreateInfo{
           .size = accelSizes->accelerationStructureSize,
           .type = BufferType::eStorage
         }
-      }).as<vk::Buffer>();
+      })).as<vk::Buffer>();
 
       //
       //accelInfo->type = vk::AccelerationStructureTypeKHR::eBottomLevel;
@@ -294,6 +297,15 @@ namespace ZNAMED {
 
       // 
       this->handle = device.getAccelerationStructureAddressKHR(vk::AccelerationStructureDeviceAddressInfoKHR{ .accelerationStructure = this->accelStruct }, deviceObj->getDispatch());
+
+      //
+      this->destructors.push_back([this, device, accellStruct = accelGeomInfo->dstAccelerationStructure, dispatch = deviceObj->getDispatch()](BaseObj const* baseObj) {
+        device.waitIdle();
+        device.destroyAccelerationStructureKHR(accellStruct, nullptr, dispatch);
+        this->bindGeometryBuffer->destroy(baseObj);
+        this->bindGeometryScratch->destroy(baseObj);
+        this->bindGeometryBuild->destroy(baseObj);
+      });
 
       //
       return std::get<0>(*this->buildStructure())->get();

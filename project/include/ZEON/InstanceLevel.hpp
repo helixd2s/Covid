@@ -30,6 +30,11 @@ namespace ZNAMED {
     vk::Buffer instanceBuild = {};
     vk::Buffer instanceExtBuffer = {};
 
+    WrapShared<ResourceObj> bindInstanceBuffer = {};
+    WrapShared<ResourceObj> bindInstanceScratch = {};
+    WrapShared<ResourceObj> bindInstanceBuild = {};
+    WrapShared<ResourceObj> bindInstanceExtBuffer = {};
+
     //
     std::array<vk::AccelerationStructureGeometryKHR, 1> instances = {};
     std::array<vk::AccelerationStructureBuildRangeInfoKHR, 1> instanceRanges = {};
@@ -312,29 +317,37 @@ namespace ZNAMED {
       decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelInstInfo->setGeometries(this->instances), this->cInfo->limit, deviceObj->getDispatch()));
       decltype(auto) accelInfo = infoMap->get<vk::AccelerationStructureCreateInfoKHR>(vk::StructureType::eAccelerationStructureCreateInfoKHR);
 
+      // 
+      this->instanceBuffer = (this->bindInstanceBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
+        .bufferInfo = BufferCreateInfo{
+          .size = std::max(cInfo->instances.size(), size_t(cInfo->limit)) * sizeof(InstanceDevInfo),
+          .type = BufferType::eStorage
+        }
+      })).as<vk::Buffer>();
+
       //
-      this->instanceScratch = ResourceObj::make(this->base, ResourceCreateInfo{
+      this->instanceScratch = (this->bindInstanceScratch = ResourceObj::make(this->base, ResourceCreateInfo{
         .bufferInfo = BufferCreateInfo{
           .size = std::max(accelSizes->buildScratchSize, accelSizes->updateScratchSize),
           .type = BufferType::eStorage
         }
-      }).as<vk::Buffer>();
+      })).as<vk::Buffer>();
 
       //
-      this->instanceBuild = ResourceObj::make(this->base, ResourceCreateInfo{
+      this->instanceBuild = (this->bindInstanceBuild = ResourceObj::make(this->base, ResourceCreateInfo{
         .bufferInfo = BufferCreateInfo{
           .size = accelSizes->accelerationStructureSize,
           .type = BufferType::eStorage
         }
-      }).as<vk::Buffer>();
+      })).as<vk::Buffer>();
 
       // 
-      this->instanceExtBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
+      this->instanceExtBuffer = (this->bindInstanceExtBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
         .bufferInfo = BufferCreateInfo{
           .size = cInfo->instances.size() * sizeof(InstanceInfo),
           .type = BufferType::eStorage
         }
-      }).as<vk::Buffer>();
+      })).as<vk::Buffer>();
 
       //
       //accelInfo->type = vk::AccelerationStructureTypeKHR::eBottomLevel;
@@ -344,13 +357,23 @@ namespace ZNAMED {
 
       //
       accelInstInfo->type = accelInfo->type;
-      accelInstInfo->scratchData = vk::DeviceOrHostAddressKHR(ZNAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->instanceScratch)->getDeviceAddress());
+      accelInstInfo->scratchData = vk::DeviceOrHostAddressKHR(this->bindInstanceScratch->getDeviceAddress());
       accelInstInfo->srcAccelerationStructure = accelInstInfo->dstAccelerationStructure;
       accelInstInfo->dstAccelerationStructure = (this->accelStruct = device.createAccelerationStructureKHR(accelInfo.ref(), nullptr, deviceObj->getDispatch()));
 
       //
       this->handle = device.getAccelerationStructureAddressKHR(vk::AccelerationStructureDeviceAddressInfoKHR{ .accelerationStructure = this->accelStruct }, deviceObj->getDispatch());
       this->addressInfo = InstanceAddressInfo{ .data = this->getInstanceInfoDeviceAddress(), .accelStruct = this->handle.as<uintptr_t>() };
+
+      //
+      this->destructors.push_back([this, device, accellStruct = accelInstInfo->dstAccelerationStructure, dispatch = deviceObj->getDispatch()](BaseObj const* baseObj) {
+        device.waitIdle();
+        device.destroyAccelerationStructureKHR(accellStruct, nullptr, dispatch);
+        this->bindInstanceBuffer->destroy(baseObj);
+        this->bindInstanceScratch->destroy(baseObj);
+        this->bindInstanceBuild->destroy(baseObj);
+        this->bindInstanceExtBuffer->destroy(baseObj);
+      });
 
       //
       return std::get<0>(*this->buildStructure())->get();
@@ -366,14 +389,6 @@ namespace ZNAMED {
       this->infoMap = std::make_shared<MSS>(MSS());
       decltype(auto) device = this->base.as<vk::Device>();
       //decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
-
-      // 
-      this->instanceBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
-        .bufferInfo = BufferCreateInfo{
-          .size = std::max(cInfo->instances.size(), size_t(cInfo->limit)) * sizeof(InstanceDevInfo),
-          .type = BufferType::eStorage
-        }
-      }).as<vk::Buffer>();
 
       //
       decltype(auto) accelInfo = infoMap->set(vk::StructureType::eAccelerationStructureCreateInfoKHR, vk::AccelerationStructureCreateInfoKHR{
