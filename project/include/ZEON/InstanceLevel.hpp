@@ -184,7 +184,7 @@ namespace ZNAMED {
     virtual vk::CommandBuffer const& writeBuildStructureCmd(cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf = {}, uintptr_t const& instanceDevOffset = 0ull, uintptr_t const& instanceOffset = 0ull) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
-      decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(this->cInfo->uploader);
+      decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(Handle(this->cInfo->uploader, HandleType::eUploader));
 
       // 
       uploaderObj->writeUploadToResourceCmd(UploadCommandWriteInfo{
@@ -253,7 +253,7 @@ namespace ZNAMED {
       //
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo {.info = info ? info.value() : this->cInfo->info } };
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
-      decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(this->cInfo->uploader);
+      decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(Handle(this->cInfo->uploader, HandleType::eUploader));
 
       //
       uintptr_t instanceDevOffset = 0ull;

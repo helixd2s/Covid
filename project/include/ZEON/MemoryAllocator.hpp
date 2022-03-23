@@ -33,6 +33,7 @@ namespace ZNAMED {
       this->infoMap = std::make_shared<MSS>(MSS());
       this->callstack = std::make_shared<CallStack>();
       this->handle = uintptr_t(this);
+      this->handle.type = HandleType::eMemoryAllocator; // Unable to Map without specific type
 
       if (!this->cInfo->extInfoMap) {
         this->cInfo->extInfoMap = std::make_shared<EXIF>();

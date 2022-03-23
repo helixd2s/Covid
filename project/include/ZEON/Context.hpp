@@ -68,13 +68,15 @@ namespace ZNAMED {
       std::decay_t<decltype(*this->handleObjectMap)>::iterator map = handleObjectMap->begin();
       while (map != this->handleObjectMap->end()) {
         std::decay_t<decltype(*(map->second))>& mapc = *(map->second);
-        std::decay_t<decltype(mapc)>::iterator pair = mapc.begin();
-        while (pair != mapc.end() && pair->second && pair->second->isAlive()) {
+        std::decay_t<decltype(*mapc)>::iterator pair = (*mapc).begin();
+        while (pair != mapc->end() && pair->second && pair->second->isAlive()) {
           decltype(auto) optPair = pair->second->destroy(this->handle, this->handleObjectMap);
           if (optPair) { pair = optPair.value(); } else { pair++; };
+          //if (pair != mapc->end()) { pair++; };
           //pair = mapc.erase(pair);
         };
         if (map != this->handleObjectMap->end()) { map = this->handleObjectMap->erase(map); };
+        //if (map != this->handleObjectMap->end()) { map++; };
       };
 
       // needs only before deleting main object...
@@ -92,11 +94,13 @@ namespace ZNAMED {
       };
 
       //
-      if (handleMap && handleMap->size() > 0) {
-        auto& handleValMap = handleMap->at(this->handle.type);
-        decltype(auto) interator = handleValMap->find(this->handle.value);
-        if (interator != handleValMap->end()) {
-          return handleValMap->erase(interator);
+      if (handleMap && handleMap->size() > 0 && handleMap->find(this->handle.type) != handleMap->end()) {
+        decltype(auto) handleValMap = handleMap->at(this->handle.type);
+        if (handleValMap) {
+          decltype(auto) interator = (*handleValMap)->find(this->handle.value);
+          if (interator != (*handleValMap)->end()) {
+            return (*handleValMap)->erase(interator);
+          };
         };
       };
     };

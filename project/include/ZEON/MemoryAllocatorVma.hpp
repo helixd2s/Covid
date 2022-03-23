@@ -80,6 +80,7 @@ namespace ZNAMED {
 
       // 
       vmaCreateAllocator(&vmaCreateInfo, &this->handle.as<VmaAllocator>());
+      this->handle.type = HandleType::eMemoryAllocator; // Unable to Map without specific type
     };
 
   public:

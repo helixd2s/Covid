@@ -135,7 +135,7 @@ namespace ZNAMED {
       decltype(auto) handle = this->base;
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(handle);
-      decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(this->cInfo->uploader);
+      decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(Handle(this->cInfo->uploader, HandleType::eUploader));
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->descriptors);
 
       // 

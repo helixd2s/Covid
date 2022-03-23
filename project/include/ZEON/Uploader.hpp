@@ -514,8 +514,9 @@ namespace ZNAMED {
       VkResult downRes = vmaCreateVirtualBlock(&blockCreateInfo, &downloadBlock);
 #endif
 
-
-      this->handle = uintptr_t(this);
+      // 
+      this->handle = uintptr_t(this);//Handle(uintptr_t(this), HandleType::eUploader);
+      this->handle.type = HandleType::eUploader; // Unable to Map without specific type
     };
   };
 
