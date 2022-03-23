@@ -219,7 +219,7 @@ int main() {
 
   // set perspective
   auto persp = glm::perspective(60.f / 180 * glm::pi<float>(), float(renderArea.extent.width) / float(renderArea.extent.height), 0.001f, 10000.f);
-  auto lkat = glm::lookAt(glm::vec3(0.f, 0.f, 0.1f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f));
+  auto lkat = glm::lookAt(glm::vec3(0.f, 0.f, 0.05f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f));
   uniformData.constants.perspective = glm::transpose(persp);
   uniformData.constants.perspectiveInverse = glm::transpose(glm::inverse(persp));
   uniformData.constants.lookAt = glm::mat3x4(glm::transpose(lkat));
@@ -244,15 +244,32 @@ int main() {
   //
   std::shared_ptr<std::future<bool>> processing = {};
 
+  //
+  double previousTime = glfwGetTime();
+  int frameCount = 0;
 
   //
-  decltype(auto) renderGen = [=]() -> std::experimental::generator<bool> {
+  decltype(auto) renderGen = [=,&previousTime,&frameCount]() -> std::experimental::generator<bool> {
     co_yield false;
 
     //
 #ifdef ENABLE_RENDERDOC
     if (rdoc_api) rdoc_api->StartFrameCapture(NULL, NULL);
 #endif
+
+    //
+    double currentTime = glfwGetTime();
+    frameCount++;
+
+    if (currentTime - previousTime >= 1.0)
+    {
+      // Display the frame count here any way you want.
+      //displayFPS(frameCount);
+      glfwSetWindowTitle(window, (std::string("ZEON.TEON.A; FPS: ") + std::to_string(frameCount)).c_str());
+
+      frameCount = 0;
+      previousTime = currentTime;
+    };
 
     // 
     decltype(auto) acquired = swapchain->acquireImage(qfAndQueue);
@@ -318,27 +335,17 @@ int main() {
 
   //
   decltype(auto) rendering = renderGen();
-
-  //
   decltype(auto) iterator = rendering.begin();
 
   // 
   while (!glfwWindowShouldClose(window)) { // 
     glfwPollEvents();
     _CrtDumpMemoryLeaks();
-
     // 
-    if (iterator == rendering.end()) { rendering = renderGen(); iterator = rendering.begin(); };
-    iterator++;
 
-    //
-    //if (!processing || cpp21::is_ready(*processing)) {
-      //processing = std::make_shared<std::future<bool>>(std::async(std::launch::async | std::launch::deferred, renderGen));
-    //};
+    if (iterator == rendering.end()) { rendering = renderGen(), iterator = rendering.begin(); };
+    device->tickProcessing(); iterator++;
   };
-
-  // waiting at least...
-  //if (processing) { processing.get(); };
 
   // 
   return 0;
