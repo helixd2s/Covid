@@ -132,6 +132,14 @@ namespace ZNAMED {
       };
 
       //
+      this->destructors.push_back([device, image = this->handle.as<vk::Image>(), type = cInfo->type, allocator = memoryAllocatorObj->getHandle().as<VmaAllocator>(), allocation = alloc->allocation](BaseObj const*) {
+        if (type != ImageType::eSwapchain) {
+          device.waitIdle();
+          vmaDestroyImage(allocator, image, allocation);
+        };
+      });
+
+      //
       return FenceType{};
     };
 
@@ -184,9 +192,15 @@ namespace ZNAMED {
       if (bufferUsage & vk::BufferUsageFlagBits::eShaderDeviceAddress) {
         this->deviceAddress = device.getBufferAddress(vk::BufferDeviceAddressInfo{
           .buffer = this->handle.as<vk::Buffer>()
-          });
+        });
         deviceObj->getAddressSpace().insert({ this->deviceAddress, this->deviceAddress + cInfo->size }, this->handle.as<vk::Buffer>());
       };
+
+      //
+      this->destructors.push_back([device, buffer = this->handle.as<vk::Buffer>(), type = cInfo->type, allocator = memoryAllocatorObj->getHandle().as<VmaAllocator>(), allocation = alloc->allocation](BaseObj const*) {
+        device.waitIdle();
+        vmaDestroyBuffer(allocator, buffer, allocation);
+      });
     };
 
 

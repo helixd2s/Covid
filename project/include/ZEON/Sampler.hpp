@@ -86,6 +86,16 @@ namespace ZNAMED {
       if (descriptorsObj) {
         descriptorId = descriptorsObj->getSamplerDescriptors().add(vk::DescriptorImageInfo{.sampler = this->handle.as<vk::Sampler>()});
       };
+
+      //
+      this->destructors.insert(this->destructors.begin(), 1, [device, sampler = this->handle.as<vk::Sampler>(), descriptorId=this->descriptorId, descriptors = this->cInfo->descriptors](BaseObj const* baseObj) {
+        decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(device);
+        decltype(auto) descriptorsObj = descriptors ? deviceObj->get<DescriptorsObj>(descriptors) : WrapShared<DescriptorsObj>{};
+        device.destroySampler(sampler);
+        if (descriptorsObj) {
+          descriptorsObj->getSamplerDescriptors().removeByIndex(descriptorId);
+        };
+      });
     };
 
   public:
