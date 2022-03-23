@@ -49,7 +49,8 @@ namespace ZNAMED {
     SMAP addressSpace = {};
 
     //
-    std::vector<std::shared_ptr<std::future<vk::Result>>> futures = {};
+    //std::vector<std::shared_ptr<std::future<vk::Result>>> futures = {};
+    std::vector<FenceType> fences = {};
 
   public:
 
@@ -253,13 +254,15 @@ namespace ZNAMED {
 
     //
     virtual void tickProcessing() override {
-      std::decay_t<decltype(futures)>::iterator future = futures.begin();
-      while(future != futures.end()) {
-        bool ready = !(*future) || !(*future)->valid() || cpp21::is_ready(**future);
+      std::decay_t<decltype(fences)>::iterator fenceIt = fences.begin();
+      while(fenceIt != fences.end()) {
+        decltype(auto) fence = *fenceIt;
+        bool ready = fence->checkStatus();
+        //bool ready = !(fence->future) || !fence->future->valid() || cpp21::is_ready(*fence->future);
         if (ready) {
-          future = futures.erase(future);
+          fenceIt = fences.erase(fenceIt);
         } else {
-          future++;
+          fenceIt++;
         }
       };
       if (this->callstack) {
@@ -304,8 +307,7 @@ namespace ZNAMED {
       };
       queue.submit2(submits, *fence);
 
-      // clean and call events
-      this->tickProcessing();
+      
 
       // 
       decltype(auto) deAllocation = [device, fence, commandPool, commandBuffers]() {
@@ -317,10 +319,10 @@ namespace ZNAMED {
       };
 
       //
-      decltype(auto) onDone = [callstack = std::weak_ptr<CallStack>(this->callstack), device, fence, commandPool, submissionRef, commandBuffers, deAllocation]() {
+      decltype(auto) onDone = [callstack = std::weak_ptr<CallStack>(this->callstack), device, fence, commandPool, submissionRef, commandBuffers, deAllocation](vk::Result const& result = vk::Result::eNotReady) {
         //auto result = device.waitForFences(*fence, true, 1000 * 1000 * 1000);
-        auto result = device.getFenceStatus(*fence);
-        while (result == vk::Result::eNotReady) { result = device.getFenceStatus(*fence); };
+        //auto result = device.getFenceStatus(*fence);
+        //while (result == vk::Result::eNotReady) { result = device.getFenceStatus(*fence); };
         auto cl = callstack.lock();
         for (auto& fn : submissionRef->onDone) {
           cl->add(std::bind(fn, result));
@@ -330,13 +332,22 @@ namespace ZNAMED {
       };
 
       // 
-      decltype(auto) promise = std::make_shared<std::future<vk::Result>>(std::async(std::launch::async | std::launch::deferred, onDone));
+      fence->onDone = onDone;
 
       //
-      this->futures.push_back(promise);
+      fences.push_back(fence);
+
+      // clean and call events
+      this->tickProcessing();
+
+      // 
+      //decltype(auto) promise = std::make_shared<std::future<vk::Result>>(std::async(std::launch::async | std::launch::deferred, onDone));
 
       //
-      fence->future = promise;
+      //this->futures.push_back(promise);
+
+      //
+      //fence->future = promise;
 
       // 
       //return std::make_shared<FenceTypeRaw>(promise, fence);

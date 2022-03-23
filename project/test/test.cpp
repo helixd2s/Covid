@@ -244,85 +244,99 @@ int main() {
   //
   std::shared_ptr<std::future<bool>> processing = {};
 
+
+  //
+  decltype(auto) renderGen = [=]() -> std::experimental::generator<bool> {
+    co_yield false;
+
+    //
+#ifdef ENABLE_RENDERDOC
+    if (rdoc_api) rdoc_api->StartFrameCapture(NULL, NULL);
+#endif
+
+    // 
+    decltype(auto) acquired = swapchain->acquireImage(qfAndQueue);
+
+    // 
+    decltype(auto) uniformFence = descriptors->executeUniformUpdateOnce(ZNAMED::UniformDataSet{
+      .writeInfo = ZNAMED::UniformDataWriteSet{
+        .region = ZNAMED::DataRegion{0ull, 4ull, sizeof(UniformData)},
+        .data = cpp21::data_view<char8_t>((char8_t*)&uniformData, 0ull, sizeof(UniformData)),
+      },
+      .submission = ZNAMED::SubmissionInfo{
+        .info = qfAndQueue,
+      }
+      });
+
+    //
+    framebuffer->clearAttachments(qfAndQueue);
+
+    //
+    decltype(auto) graphicsFence = graphics->executePipelineOnce(ZNAMED::ExecutePipelineInfo{
+      .graphics = ZNAMED::WriteGraphicsInfo{
+        .layout = descriptors.as<vk::PipelineLayout>(),
+        .framebuffer = framebuffer.as<uintptr_t>(),
+        .swapchain = swapchain.as<vk::SwapchainKHR>(),
+        .instanceDraws = modelObj->getDefaultScene()->instanced->getDrawInfo(),
+        .instanceAddressBlock = instanceAddressBlock
+      },
+      .submission = ZNAMED::SubmissionInfo{
+        .info = qfAndQueue,
+      }
+      });
+
+    //
+    decltype(auto) computeFence = compute->executePipelineOnce(ZNAMED::ExecutePipelineInfo{
+      .compute = ZNAMED::WriteComputeInfo{
+        .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 256u), renderArea.extent.height, 1u},
+        .layout = descriptors.as<vk::PipelineLayout>(),
+        .swapchain = swapchain.as<vk::SwapchainKHR>(),
+        .instanceAddressBlock = instanceAddressBlock
+      },
+      .submission = ZNAMED::SubmissionInfo{
+        .info = qfAndQueue
+      }
+    });
+
+    //
+    auto& fence = (*fences)[acquired];
+    decltype(auto) status = false;
+    //if (fence) { decltype(auto) unleak = fence->future->get(); }; device->tickProcessing();
+    if (fence) { while (!(status = fence->checkStatus())) { co_yield status; }; };
+    fence = std::get<0u>(swapchain->presentImage(qfAndQueue));
+
+    // stop the capture
+#ifdef ENABLE_RENDERDOC
+    if (rdoc_api) rdoc_api->EndFrameCapture(NULL, NULL);
+#endif
+
+    // 
+    co_yield true;
+  };
+
+  //
+  decltype(auto) rendering = renderGen();
+
+  //
+  decltype(auto) iterator = rendering.begin();
+
   // 
   while (!glfwWindowShouldClose(window)) { // 
     glfwPollEvents();
     _CrtDumpMemoryLeaks();
 
-
+    // 
+    if (iterator == rendering.end()) { rendering = renderGen(); iterator = rendering.begin(); };
+    iterator++;
 
     //
-    if (!processing || cpp21::is_ready(*processing)) {
-      processing = std::make_shared<std::future<bool>>(std::async(std::launch::async | std::launch::deferred, [=]() {
-        //
-#ifdef ENABLE_RENDERDOC
-        if (rdoc_api) rdoc_api->StartFrameCapture(NULL, NULL);
-#endif
-
-        // 
-        decltype(auto) acquired = swapchain->acquireImage(qfAndQueue);
-
-        // 
-        decltype(auto) uniformFence = descriptors->executeUniformUpdateOnce(ZNAMED::UniformDataSet{
-          .writeInfo = ZNAMED::UniformDataWriteSet{
-            .region = ZNAMED::DataRegion{0ull, 4ull, sizeof(UniformData)},
-            .data = cpp21::data_view<char8_t>((char8_t*)&uniformData, 0ull, sizeof(UniformData)),
-          },
-          .submission = ZNAMED::SubmissionInfo{
-            .info = qfAndQueue,
-          }
-          });
-
-        //
-        framebuffer->clearAttachments(qfAndQueue);
-
-        //
-        decltype(auto) graphicsFence = graphics->executePipelineOnce(ZNAMED::ExecutePipelineInfo{
-          .graphics = ZNAMED::WriteGraphicsInfo{
-            .layout = descriptors.as<vk::PipelineLayout>(),
-            .framebuffer = framebuffer.as<uintptr_t>(),
-            .swapchain = swapchain.as<vk::SwapchainKHR>(),
-            .instanceDraws = modelObj->getDefaultScene()->instanced->getDrawInfo(),
-            .instanceAddressBlock = instanceAddressBlock
-          },
-          .submission = ZNAMED::SubmissionInfo{
-            .info = qfAndQueue,
-          }
-          });
-
-        //
-        decltype(auto) computeFence = compute->executePipelineOnce(ZNAMED::ExecutePipelineInfo{
-          .compute = ZNAMED::WriteComputeInfo{
-            .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 256u), renderArea.extent.height, 1u},
-            .layout = descriptors.as<vk::PipelineLayout>(),
-            .swapchain = swapchain.as<vk::SwapchainKHR>(),
-            .instanceAddressBlock = instanceAddressBlock
-          },
-          .submission = ZNAMED::SubmissionInfo{
-            .info = qfAndQueue
-          }
-          });
-
-        //
-        auto& fence = (*fences)[acquired];
-        if (fence) { decltype(auto) unleak = fence->future->get(); }; device->tickProcessing();
-        fence = std::get<0u>(swapchain->presentImage(qfAndQueue));
-
-        // stop the capture
-#ifdef ENABLE_RENDERDOC
-        if (rdoc_api) rdoc_api->EndFrameCapture(NULL, NULL);
-#endif
-
-        //
-        return true;
-      }));
-    };
-
-
+    //if (!processing || cpp21::is_ready(*processing)) {
+      //processing = std::make_shared<std::future<bool>>(std::async(std::launch::async | std::launch::deferred, renderGen));
+    //};
   };
 
   // waiting at least...
-  if (processing) { processing.get(); };
+  //if (processing) { processing.get(); };
 
   // 
   return 0;

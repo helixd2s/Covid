@@ -1103,7 +1103,7 @@ namespace ZNAMED {
 
     //
     bool checkStatus() {
-      if ((this->status = this->device.getFenceStatus(this->fence)) != vk::Result::eNotReady) { if (this->onDone) { this->onDone(this->status); }; this->onDone = {}; return true; };
+      if (!this->fence || (this->status = this->device.getFenceStatus(this->fence)) != vk::Result::eNotReady) { if (this->onDone) { this->onDone(this->status); }; this->onDone = {}; return true; };
       return false;
     };
 
