@@ -70,13 +70,13 @@ namespace ZNAMED {
 
   public:
     // 
-    SwapchainObj(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) : cInfo(cInfo) {
+    SwapchainObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) : BaseObj(deviceObj), cInfo(cInfo) {
       this->base = deviceObj->getHandle();
       this->construct(deviceObj, cInfo);
     };
 
     // 
-    SwapchainObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) : cInfo(cInfo) {
+    SwapchainObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
       this->construct(ZNAMED::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 

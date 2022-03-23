@@ -36,13 +36,13 @@ namespace ZNAMED {
 
   public: 
     // 
-    InstanceObj(std::shared_ptr<ContextObj> contextObj = {}, cpp21::const_wrap_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : cInfo(cInfo) {
+    InstanceObj(WrapShared<ContextObj> contextObj = {}, cpp21::const_wrap_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : BaseObj(contextObj), cInfo(cInfo) {
       this->base = contextObj->handle;
       this->construct(contextObj, cInfo);
     };
 
     // 
-    InstanceObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : cInfo(cInfo) {
+    InstanceObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
       this->base = handle;
       this->construct(ZNAMED::context, cInfo);
     };

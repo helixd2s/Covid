@@ -90,7 +90,7 @@ namespace ZNAMED {
     };
 
     // 
-    MemoryAllocatorVma(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) : MemoryAllocatorObj(deviceObj, cInfo)  {
+    MemoryAllocatorVma(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) : MemoryAllocatorObj(deviceObj, cInfo)  {
       this->base = deviceObj->getHandle();
       this->construct(deviceObj, cInfo);
     };

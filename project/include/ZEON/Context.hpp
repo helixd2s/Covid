@@ -59,22 +59,22 @@ namespace ZNAMED {
   };
 
   //
-  inline std::optional<UNORDER_MAP<uintptr_t, std::shared_ptr<BaseObj>>::iterator> BaseObj::destroy(Handle const& parent, HMAP_T* parentMap) {
+  inline std::optional<Z_UNORDERED_MAP<uintptr_t, std::shared_ptr<BaseObj>>::iterator> BaseObj::destroy(Handle const& parent, HMAP_S parentMap) {
     //
     if (parent.value == this->base.value && this->alive) {
       this->tickProcessing();
 
       // 
-      std::decay_t<decltype(handleObjectMap)>::iterator map = handleObjectMap.begin();
-      while (map != this->handleObjectMap.end()) {
+      std::decay_t<decltype(*this->handleObjectMap)>::iterator map = handleObjectMap->begin();
+      while (map != this->handleObjectMap->end()) {
         std::decay_t<decltype(*(map->second))>& mapc = *(map->second);
         std::decay_t<decltype(mapc)>::iterator pair = mapc.begin();
         while (pair != mapc.end() && pair->second && pair->second->isAlive()) {
-          decltype(auto) optPair = pair->second->destroy(this->handle, &this->handleObjectMap);
+          decltype(auto) optPair = pair->second->destroy(this->handle, this->handleObjectMap);
           if (optPair) { pair = optPair.value(); } else { pair++; };
           //pair = mapc.erase(pair);
         };
-        map = handleObjectMap.erase(map);
+        if (map != this->handleObjectMap->end()) { map = this->handleObjectMap->erase(map); };
       };
 
       // needs only before deleting main object...
@@ -83,11 +83,11 @@ namespace ZNAMED {
       this->alive = false;
 
       // erase from parent element
-      auto* handleMap = parentMap;
+      HMAP_S handleMap = parentMap;
       if (!handleMap && ZNAMED::context && ZNAMED::context->isAlive()) {
         decltype(auto) baseObj = ZNAMED::context->get(this->base);
         if (baseObj) {
-          handleMap = &baseObj->getHandleMap();
+          handleMap = baseObj->getHandleMap();
         };
       };
 

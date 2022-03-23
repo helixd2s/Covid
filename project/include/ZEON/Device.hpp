@@ -513,13 +513,13 @@ namespace ZNAMED {
     };
 
     // 
-    DeviceObj(std::shared_ptr<InstanceObj> instanceObj = {}, cpp21::const_wrap_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) : cInfo(cInfo) {
+    DeviceObj(WrapShared<InstanceObj> instanceObj = {}, cpp21::const_wrap_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) : BaseObj(instanceObj), cInfo(cInfo) {
       this->base = instanceObj->handle;
       this->construct(instanceObj, cInfo);
     };
 
     // 
-    DeviceObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) : cInfo(cInfo) {
+    DeviceObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
       this->construct(ZNAMED::context->get<InstanceObj>(this->base = handle), cInfo);
     };
 

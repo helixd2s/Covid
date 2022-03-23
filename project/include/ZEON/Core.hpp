@@ -67,10 +67,10 @@ namespace ZNAMED {
 #endif
 
 //
-#ifdef USE_ROBIN_HOOD
-#define UNORDER_MAP robin_hood::unordered_map
+#ifdef Z_USE_ROBIN_HOOD
+#define Z_UNORDERED_MAP robin_hood::unordered_map
 #else
-#define UNORDER_MAP std::unordered_map
+#define Z_UNORDERED_MAP std::unordered_map
 #endif
 
   //
@@ -275,11 +275,11 @@ namespace ZNAMED {
 
 
   //
-  using MSS = cpp21::map_of_shared<vk::StructureType, vk::BaseInStructure, std::shared_ptr, UNORDER_MAP>;
-  using EXM = cpp21::map_of_shared<ExtensionName, uintptr_t, std::shared_ptr, UNORDER_MAP>;
-  using EXIF = cpp21::map_of_shared<ExtensionInfoName, std::shared_ptr<cpp21::void_t>, std::shared_ptr, UNORDER_MAP>;
-  using SMAP = cpp21::interval_map<uintptr_t, vk::Buffer, UNORDER_MAP>;
-  using EXIP = UNORDER_MAP<ExtensionInfoName, ExtensionName>;
+  using MSS = cpp21::map_of_shared<vk::StructureType, vk::BaseInStructure, std::shared_ptr, Z_UNORDERED_MAP>;
+  using EXM = cpp21::map_of_shared<ExtensionName, uintptr_t, std::shared_ptr, Z_UNORDERED_MAP>;
+  using EXIF = cpp21::map_of_shared<ExtensionInfoName, std::shared_ptr<cpp21::void_t>, std::shared_ptr, Z_UNORDERED_MAP>;
+  using SMAP = cpp21::interval_map<uintptr_t, vk::Buffer, Z_UNORDERED_MAP>;
+  using EXIP = Z_UNORDERED_MAP<ExtensionInfoName, ExtensionName>;
 
   //
   struct BaseCreateInfo {
@@ -1063,7 +1063,7 @@ namespace ZNAMED {
   //
   struct GraphicsPipelineCreateInfo : BaseCreateInfo {
     FramebufferType framebufferType = FramebufferType::eUnknown;
-    UNORDER_MAP<vk::ShaderStageFlagBits, cpp21::shared_vector<uint32_t>> stageCodes = {};
+    Z_UNORDERED_MAP<vk::ShaderStageFlagBits, cpp21::shared_vector<uint32_t>> stageCodes = {};
   };
 
   //
@@ -1227,7 +1227,7 @@ namespace ZNAMED {
   };
 
   //
-  inline extern UNORDER_MAP<std::type_index, HandleType> handleTypeMap = {};
+  inline extern Z_UNORDERED_MAP<std::type_index, HandleType> handleTypeMap = {};
 
   //
   inline static decltype(auto) registerTypes() {
@@ -1284,7 +1284,7 @@ namespace ZNAMED {
     Handle() {};
     Handle(auto const& _handle, cpp21::const_wrap_arg<HandleType> type, cpp21::const_wrap_arg<uint32_t> family = 0u) : value(reinterpret_cast<uintptr_t const&>(_handle)), type(type), family(family) {};
     Handle(auto const& _handle, cpp21::const_wrap_arg<uint32_t> family = 0u) : value(reinterpret_cast<uintptr_t const&>(_handle)), type(getHandleType(_handle)), family(family) {};
-    Handle(cpp21::const_wrap_arg<Handle> _handle) : value(_handle->value), type(_handle->type), family(_handle->family) {};
+    Handle(cpp21::const_wrap_arg<Handle> _handle) : value(_handle ? _handle->value : 0ull), type(_handle ? _handle->type : HandleType::eUnknown), family(_handle ? _handle->family : 0u) {};
 
     // 
     template<class T = uintptr_t> inline decltype(auto) as() { return reinterpret_cast<T&>(this->value); };
@@ -1422,7 +1422,8 @@ namespace ZNAMED {
   class BaseObj;
 
   //
-  using HMAP_T = UNORDER_MAP<HandleType, cpp21::map_of_shared<uintptr_t, BaseObj, std::shared_ptr, UNORDER_MAP>>;
+  using HMAP_T = Z_UNORDERED_MAP<HandleType, cpp21::map_of_shared<uintptr_t, BaseObj, std::shared_ptr, Z_UNORDERED_MAP>>;
+  using HMAP_S = std::shared_ptr<HMAP_T>;
 
   //
   class BaseObj : public std::enable_shared_from_this<BaseObj> {
@@ -1439,7 +1440,7 @@ namespace ZNAMED {
     Handle handle = {}, base = {};
     ExtHandle extHandle = {};
     GLObject glObject = {};
-    HMAP_T handleObjectMap = {};
+    HMAP_S handleObjectMap = {};
 
     // 
     std::shared_ptr<MSS> infoMap = {};
@@ -1475,7 +1476,7 @@ namespace ZNAMED {
     virtual Handle const& getBase() const { return this->base; };
 
     //
-    virtual std::optional<UNORDER_MAP<uintptr_t, std::shared_ptr<BaseObj>>::iterator> destroy(Handle const& parent, HMAP_T*parentMap = nullptr);
+    virtual std::optional<Z_UNORDERED_MAP<uintptr_t, std::shared_ptr<BaseObj>>::iterator> destroy(Handle const& parent, HMAP_S parentMap = {});
 
     //
     virtual void tickProcessing() {
@@ -1491,8 +1492,8 @@ namespace ZNAMED {
     };
 
     // 
-    BaseObj() : infoMap(std::make_shared<MSS>(MSS())), callstack(std::make_shared<CallStack>()) {};
-    BaseObj(cpp21::const_wrap_arg<Handle> base, cpp21::const_wrap_arg<Handle> handle = {}) : base(base), handle(handle), infoMap(std::make_shared<MSS>()), callstack(std::make_shared<CallStack>()) {
+    BaseObj() : handleObjectMap(std::make_shared<HMAP_T>()), infoMap(std::make_shared<MSS>(MSS())), callstack(std::make_shared<CallStack>()) {};
+    BaseObj(cpp21::const_wrap_arg<Handle> base, cpp21::const_wrap_arg<Handle> handle = {}) : base(base), handle(handle), infoMap(std::make_shared<MSS>()), callstack(std::make_shared<CallStack>()), handleObjectMap(std::make_shared<HMAP_T>()) {
 
     };
 
@@ -1504,8 +1505,8 @@ namespace ZNAMED {
     template<class T = BaseObj>
     inline std::shared_ptr<T> emplace(cpp21::const_wrap_arg<Handle> handle) {
       std::shared_ptr<T> sh_ptr = {};
-      if (handleObjectMap.find(handle->type) != handleObjectMap.end()) {
-        decltype(auto) objMap = handleObjectMap.at(handle->type);
+      if (handleObjectMap->find(handle->type) != handleObjectMap->end()) {
+        decltype(auto) objMap = handleObjectMap->at(handle->type);
         if (objMap->find(handle->value) == objMap->end()) {
           sh_ptr = objMap->at(handle->value);
           objMap->erase(handle->value);
@@ -1522,8 +1523,8 @@ namespace ZNAMED {
     //
     template<class T = BaseObj>
     inline void registerObj(cpp21::const_wrap_arg<Handle> handle, std::shared_ptr<T> obj = {}) {
-      if (handleObjectMap.find(handle->type) == handleObjectMap.end()) { handleObjectMap[handle->type] = {}; };
-      decltype(auto) map = handleObjectMap.at(handle->type);
+      if (handleObjectMap->find(handle->type) == handleObjectMap->end()) { (*handleObjectMap)[handle->type] = {}; };
+      decltype(auto) map = handleObjectMap->at(handle->type);
       map.set(handle->value, (obj ? obj : std::make_shared<T>(this->handle, handle)));
       //return shared_from_this();
     };
@@ -1560,12 +1561,12 @@ namespace ZNAMED {
     //
     template<class T = BaseObj>
     inline decltype(auto) get(cpp21::const_wrap_arg<Handle> handle) {
-      if (handleObjectMap.find(handle->type) == handleObjectMap.end()) {
-        handleObjectMap[handle->type] = {};
+      if (handleObjectMap->find(handle->type) == handleObjectMap->end()) {
+        (*handleObjectMap)[handle->type] = {};
       };
 
       // 
-      decltype(auto) objMap = handleObjectMap.at(handle->type);
+      decltype(auto) objMap = handleObjectMap->at(handle->type);
       if (objMap->find(handle->value) == objMap->end()) { 
         auto obj = std::make_shared<T>(this->handle, handle); 
         objMap.set(handle->value, obj);
@@ -1577,7 +1578,7 @@ namespace ZNAMED {
     //
     template<class T = BaseObj>
     inline decltype(auto) get(cpp21::const_wrap_arg<Handle> handle) const {
-      decltype(auto) objMap = handleObjectMap.at(handle->type);
+      decltype(auto) objMap = handleObjectMap->at(handle->type);
       return WrapShared<T>(std::dynamic_pointer_cast<T>(objMap.at(handle->value).shared()));
     };
 
