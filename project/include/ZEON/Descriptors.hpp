@@ -71,26 +71,26 @@ namespace ZNAMED {
     size_t cacheSize = 65536ull;
     size_t uniformSize = 65536ull;
 
-    // 
-    inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
-    inline decltype(auto) SFT() const { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::const_pointer_cast<T>(std::dynamic_pointer_cast<T const>(shared_from_this()))); };
-
     //
     vk::Image nullTexture = {};
     vk::Image nullImage = {};
     vk::Image nullSampler = {};
 
+    // 
+    inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
+    inline decltype(auto) SFT() const { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::const_pointer_cast<T>(std::dynamic_pointer_cast<T const>(shared_from_this()))); };
+
+
   public:
 
     // 
     DescriptorsObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) : BaseObj(deviceObj), cInfo(cInfo) {
-      this->base = deviceObj->getHandle();
       this->construct(deviceObj, cInfo);
     };
 
     // 
     DescriptorsObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
-      this->construct(ZNAMED::context->get<DeviceObj>(this->base = handle), cInfo);
+      this->construct(ZNAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
     // 
@@ -181,10 +181,8 @@ namespace ZNAMED {
 
     // 
     virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) {
-      this->base = deviceObj->getHandle();
       //this->deviceObj = deviceObj;
       if (cInfo) { this->cInfo = cInfo; };
-      this->infoMap = std::make_shared<MSS>(MSS());
 
       //
       decltype(auto) device = this->base.as<vk::Device>();

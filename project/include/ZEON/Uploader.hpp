@@ -53,13 +53,12 @@ namespace ZNAMED {
 
     // 
     UploaderObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) : BaseObj(deviceObj), cInfo(cInfo) {
-      this->base = deviceObj->getHandle();
       this->construct(deviceObj, cInfo);
     };
 
     // 
     UploaderObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
-      this->construct(ZNAMED::context->get<DeviceObj>(this->base = handle), cInfo);
+      this->construct(ZNAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
     // 
@@ -486,7 +485,6 @@ namespace ZNAMED {
     // 
     virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) {
       if (cInfo) { this->cInfo = cInfo; };
-      this->base = deviceObj->getHandle();
       //this->deviceObj = deviceObj;
 
       this->uploadBuffer = ResourceObj::make(this->base, ResourceCreateInfo{

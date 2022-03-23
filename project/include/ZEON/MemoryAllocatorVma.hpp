@@ -29,34 +29,22 @@ namespace ZNAMED {
   // 
   class MemoryAllocatorVma : public MemoryAllocatorObj {
   public:
-    //using BaseObj::BaseObj;
     using MemoryAllocatorObj::MemoryAllocatorObj;
     using tType = WrapShared<MemoryAllocatorVma>;
     using cType = const char const*;
-    //using BaseObj;
 
   protected:
     vk::DispatchLoaderDynamic dispatch = {};
     std::optional<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{};
 
+  protected:
+
     // 
     inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
     inline decltype(auto) SFT() const { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::const_pointer_cast<T>(std::dynamic_pointer_cast<T const>(shared_from_this()))); };
 
-  protected:
-
     // 
     virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) override {
-      //this->deviceObj = deviceObj;
-      this->base = deviceObj->getHandle();
-      this->infoMap = std::make_shared<MSS>(MSS());
-      this->callstack = std::make_shared<CallStack>();
-
-      // 
-      if (!this->cInfo->extInfoMap) {
-        this->cInfo->extInfoMap = std::make_shared<EXIF>();
-      };
-
       //
       if ((*this->cInfo->extInfoMap)->find(ExtensionInfoName::eMemoryAllocatorVma) != (*this->cInfo->extInfoMap)->end()) {
         this->cInfo->extInfoMap->set(ExtensionInfoName::eMemoryAllocatorVma, VmaAllocatorExtension{});
@@ -92,13 +80,12 @@ namespace ZNAMED {
 
     // 
     MemoryAllocatorVma(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) : MemoryAllocatorObj(deviceObj, cInfo)  {
-      this->base = deviceObj->getHandle();
-      this->construct(deviceObj, cInfo);
+      //this->construct(deviceObj, cInfo);
     };
 
     // 
     MemoryAllocatorVma(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) : MemoryAllocatorObj(handle, cInfo) {
-      this->construct(ZNAMED::context->get<DeviceObj>(this->base = handle), cInfo);
+      //this->construct(ZNAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
     //

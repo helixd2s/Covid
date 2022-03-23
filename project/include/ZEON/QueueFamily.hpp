@@ -20,10 +20,6 @@ namespace ZNAMED {
     // 
     std::vector<vk::Queue> queues = {};
     std::optional<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{};
-    //std::shared_ptr<MSS> infoMap = {};
-
-    //
-    //std::shared_ptr<DeviceObj> deviceObj = {};
 
     // 
     inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
@@ -37,7 +33,7 @@ namespace ZNAMED {
 
     // 
     QueueFamilyObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
-      this->construct(ZNAMED::context->get<DeviceObj>(this->base = handle), cInfo);
+      this->construct(ZNAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
     // 
@@ -61,13 +57,10 @@ namespace ZNAMED {
     // 
   protected:
     virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{}) {
-      this->base = deviceObj->getHandle();
-      //this->deviceObj = deviceObj;
       if (cInfo) { this->cInfo = cInfo; };
-      this->infoMap = std::make_shared<MSS>(MSS());
-
-      //return this->SFT();
     };
+
+    
 
   };
   

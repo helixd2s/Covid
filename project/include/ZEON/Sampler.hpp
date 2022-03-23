@@ -38,13 +38,12 @@ namespace ZNAMED {
   public:
     // 
     SamplerObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<SamplerCreateInfo> cInfo = SamplerCreateInfo{}) : BaseObj(deviceObj), cInfo(cInfo) {
-      this->base = deviceObj->getHandle();
       this->construct(deviceObj, cInfo);
     };
 
     // 
     SamplerObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<SamplerCreateInfo> cInfo = SamplerCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
-      this->construct(ZNAMED::context->get<DeviceObj>(this->base = handle), cInfo);
+      this->construct(ZNAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
     // 
@@ -69,12 +68,7 @@ namespace ZNAMED {
 
     // 
     virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<SamplerCreateInfo> cInfo = SamplerCreateInfo{}) {
-      this->base = deviceObj->getHandle();
       if (cInfo) { this->cInfo = cInfo; };
-      this->infoMap = std::make_shared<MSS>(MSS());
-      if (!this->cInfo->extInfoMap) {
-        this->cInfo->extInfoMap = std::make_shared<EXIF>();
-      };
 
       // 
       decltype(auto) device = this->base.as<vk::Device>();

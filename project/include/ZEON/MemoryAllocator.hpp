@@ -20,21 +20,17 @@ namespace ZNAMED {
     vk::DispatchLoaderDynamic dispatch = {};
     std::optional<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{};
 
+  protected:
+
     // 
     inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
     inline decltype(auto) SFT() const { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::const_pointer_cast<T>(std::dynamic_pointer_cast<T const>(shared_from_this()))); };
 
-  protected:
-
     // 
     virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) {
-      //this->deviceObj = deviceObj;
-      this->base = deviceObj->getHandle();
-      this->infoMap = std::make_shared<MSS>(MSS());
-      this->callstack = std::make_shared<CallStack>();
-      this->handle = uintptr_t(this);
-      this->handle.type = HandleType::eMemoryAllocator; // Unable to Map without specific type
+      this->handle = Handle(uintptr_t(this), HandleType::eMemoryAllocator);
 
+      // 
       if (!this->cInfo->extInfoMap) {
         this->cInfo->extInfoMap = std::make_shared<EXIF>();
       };

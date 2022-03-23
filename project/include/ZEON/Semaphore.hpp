@@ -34,7 +34,6 @@ namespace ZNAMED {
 
     // 
     SemaphoreObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<SemaphoreCreateInfo> cInfo = SemaphoreCreateInfo{}) : BaseObj(deviceObj), cInfo(cInfo) {
-      this->base = deviceObj->getHandle();
       this->construct(deviceObj, cInfo);
     };
 
@@ -65,10 +64,7 @@ namespace ZNAMED {
 
     // 
     virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<SemaphoreCreateInfo> cInfo = SemaphoreCreateInfo{}) {
-      this->base = deviceObj->getHandle();
-      //this->deviceObj = deviceObj;
       if (cInfo) { this->cInfo = cInfo; };
-      this->infoMap = std::make_shared<MSS>(MSS());
 
       //
       decltype(auto) device = this->base.as<vk::Device>();

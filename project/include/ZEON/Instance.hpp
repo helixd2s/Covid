@@ -34,16 +34,15 @@ namespace ZNAMED {
     inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
     inline decltype(auto) SFT() const { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::const_pointer_cast<T>(std::dynamic_pointer_cast<T const>(shared_from_this()))); };
 
+
   public: 
     // 
     InstanceObj(WrapShared<ContextObj> contextObj = {}, cpp21::const_wrap_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : BaseObj(contextObj), cInfo(cInfo) {
-      this->base = contextObj->handle;
       this->construct(contextObj, cInfo);
     };
 
     // 
     InstanceObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
-      this->base = handle;
       this->construct(ZNAMED::context, cInfo);
     };
 
@@ -172,10 +171,8 @@ namespace ZNAMED {
 
     // 
     virtual void construct(std::shared_ptr<ContextObj> contextObj, cpp21::const_wrap_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
-      this->base = contextObj->handle;
       //this->deviceObj = deviceObj;
       if (cInfo) { this->cInfo = cInfo; };
-      this->infoMap = std::make_shared<MSS>(MSS());
       this->extensionNames = {};
       this->layerNames = {};
 

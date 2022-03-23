@@ -34,10 +34,6 @@ namespace ZNAMED {
     friend PipelineObj;
     friend ResourceObj;
 
-    // 
-    inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
-    inline decltype(auto) SFT() const { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::const_pointer_cast<T>(std::dynamic_pointer_cast<T const>(shared_from_this()))); };
-
     //
     std::optional<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{};
 
@@ -68,16 +64,20 @@ namespace ZNAMED {
     //
     SwapchainStateInfo currentState = {};
 
+    // 
+    inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
+    inline decltype(auto) SFT() const { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::const_pointer_cast<T>(std::dynamic_pointer_cast<T const>(shared_from_this()))); };
+
+
   public:
     // 
     SwapchainObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) : BaseObj(deviceObj), cInfo(cInfo) {
-      this->base = deviceObj->getHandle();
       this->construct(deviceObj, cInfo);
     };
 
     // 
     SwapchainObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
-      this->construct(ZNAMED::context->get<DeviceObj>(this->base = handle), cInfo);
+      this->construct(ZNAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
     //

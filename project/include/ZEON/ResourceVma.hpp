@@ -37,13 +37,10 @@ namespace ZNAMED {
   public:
     // 
     ResourceVma(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : ResourceObj(deviceObj, cInfo) {
-      this->base = deviceObj->getHandle();
-      this->construct(deviceObj, cInfo);
     };
 
     // 
     ResourceVma(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : ResourceObj(handle, cInfo) {
-      this->construct(ZNAMED::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
     // 
@@ -67,7 +64,7 @@ namespace ZNAMED {
   protected:
 
     // 
-    virtual FenceType createImage(cpp21::const_wrap_arg<ImageCreateInfo> cInfo = {}) {
+    virtual FenceType createImage(cpp21::const_wrap_arg<ImageCreateInfo> cInfo = {}) override {
       // 
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
@@ -144,7 +141,7 @@ namespace ZNAMED {
     };
 
     // 
-    virtual void createBuffer(cpp21::const_wrap_arg<BufferCreateInfo> cInfo = {}) {
+    virtual void createBuffer(cpp21::const_wrap_arg<BufferCreateInfo> cInfo = {}) override {
       //
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();

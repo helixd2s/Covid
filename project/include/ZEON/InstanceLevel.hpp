@@ -58,17 +58,17 @@ namespace ZNAMED {
     inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
     inline decltype(auto) SFT() const { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::const_pointer_cast<T>(std::dynamic_pointer_cast<T const>(shared_from_this()))); };
 
+
   public:
 
     // 
     InstanceLevelObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) : BaseObj(deviceObj), cInfo(cInfo), instanceDraw(std::vector<InstanceDraw>{}), instanceInfo(std::vector<InstanceInfo>{}) {
-      this->base = deviceObj->getHandle();
       this->construct(deviceObj, cInfo);
     };
 
     // 
     InstanceLevelObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) : BaseObj(handle), cInfo(cInfo), instanceDraw(std::vector<InstanceDraw>{}), instanceInfo(std::vector<InstanceInfo>{}) {
-      this->construct(ZNAMED::context->get<DeviceObj>(this->base = handle), cInfo);
+      this->construct(ZNAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
     // 
@@ -384,10 +384,8 @@ namespace ZNAMED {
 
     // 
     virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) {
-      this->base = deviceObj->getHandle();
       //this->deviceObj = deviceObj;
       if (cInfo) { this->cInfo = cInfo; };
-      this->infoMap = std::make_shared<MSS>(MSS());
       decltype(auto) device = this->base.as<vk::Device>();
       //decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
 

@@ -26,7 +26,7 @@ namespace ZNAMED {
     std::optional<PipelineCreateInfo> cInfo = PipelineCreateInfo{};
     std::vector<vk::PipelineShaderStageCreateInfo> pipelineStages = {};
     std::vector<vk::DynamicState> dynamicStates = {};
-    
+
     // 
     std::vector<vk::Viewport> viewports = {};
     std::vector<vk::Rect2D> scissors = {};
@@ -39,13 +39,12 @@ namespace ZNAMED {
   public:
     // 
     PipelineObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) : BaseObj(deviceObj), cInfo(cInfo) {
-      this->base = deviceObj->getHandle();
       this->construct(deviceObj, cInfo);
     };
 
     // 
     PipelineObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
-      this->construct(ZNAMED::context->get<DeviceObj>(this->base = handle), cInfo);
+      this->construct(ZNAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
     // 
@@ -67,6 +66,7 @@ namespace ZNAMED {
     };
 
   protected:
+    
     //
     virtual void createCompute(cpp21::const_wrap_arg<ComputePipelineCreateInfo> compute = {}) {
       decltype(auto) descriptors = ZNAMED::context->get<DeviceObj>(this->base)->get<DescriptorsObj>(this->cInfo->layout);

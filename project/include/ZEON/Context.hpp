@@ -22,8 +22,9 @@ namespace ZNAMED {
     inline decltype(auto) SFT() const { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::const_pointer_cast<T>(std::dynamic_pointer_cast<T const>(shared_from_this()))); };
 
   public: 
+
     // 
-    ContextObj(cpp21::const_wrap_arg<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
+    ContextObj(cpp21::const_wrap_arg<Handle> handle = Handle(0ull, HandleType::eUnknown), cpp21::const_wrap_arg<ContextCreateInfo> cInfo = ContextCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
       this->construct(cInfo);
     };
 
@@ -33,9 +34,9 @@ namespace ZNAMED {
     };
 
     //
-    inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
-      auto shared = std::make_shared<ContextObj>(cInfo);
-      auto wrap = shared->SFT();//->registerSelf();
+    inline static tType make(cpp21::const_wrap_arg<Handle> handle = Handle(0ull, HandleType::eUnknown), cpp21::const_wrap_arg<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
+      auto shared = std::make_shared<ContextObj>(handle, cInfo);
+      auto wrap = shared->SFT();
       return wrap;
     };
 
@@ -54,7 +55,7 @@ namespace ZNAMED {
   // 
   inline static decltype(auto) initialize(cpp21::const_wrap_arg<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
     ZNAMED::registerTypes();
-    ZNAMED::context = ContextObj::make(Handle(0ull), cInfo);
+    ZNAMED::context = ContextObj::make(Handle(0ull, HandleType::eUnknown), cInfo);
     return ZNAMED::context;
   };
 

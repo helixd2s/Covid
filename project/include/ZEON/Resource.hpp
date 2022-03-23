@@ -56,16 +56,16 @@ namespace ZNAMED {
     inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
     inline decltype(auto) SFT() const { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::const_pointer_cast<T>(std::dynamic_pointer_cast<T const>(shared_from_this()))); };
 
+
   public:
     // 
     ResourceObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : BaseObj(deviceObj), cInfo(cInfo) {
-      this->base = deviceObj->getHandle();
       this->construct(deviceObj, cInfo);
     };
 
     // 
     ResourceObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
-      this->construct(ZNAMED::context->get<DeviceObj>(this->base = handle), cInfo);
+      this->construct(ZNAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
     //
@@ -175,20 +175,7 @@ namespace ZNAMED {
 
     // 
     virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
-      //try {
-        this->base = deviceObj->getHandle();
-        //this->deviceObj = deviceObj;
-        if (cInfo) { this->cInfo = cInfo; };
-        this->infoMap = std::make_shared<MSS>(MSS());
-        if (!this->cInfo->extInfoMap) {
-          this->cInfo->extInfoMap = std::make_shared<EXIF>();
-        };
-      //}
-      //catch (std::exception e) {
-        //std::cerr << "Unable to initialize ResourceObj itself" << std::endl; std::cerr << e.what() << std::endl;
-      //};
-
-      // 
+      if (cInfo) { this->cInfo = cInfo; };
       if (this->cInfo) {
         if (this->cInfo->imageInfo) { this->createImage(this->cInfo->imageInfo.value()); };
         if (this->cInfo->bufferInfo) { this->createBuffer(this->cInfo->bufferInfo.value()); };
