@@ -288,7 +288,7 @@ namespace ZNAMED {
     };
 
     //
-    virtual vk::Result createStructure() {
+    virtual FenceType createStructure() {
       this->updateInstances();
 
       //
@@ -376,7 +376,8 @@ namespace ZNAMED {
       });
 
       //
-      return std::get<0>(*this->buildStructure())->get();
+      //return std::get<0>(*this->buildStructure())->get();
+      return this->buildStructure();
     };
 
   protected:
