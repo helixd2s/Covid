@@ -32,6 +32,9 @@ namespace ZNAMED {
     friend SwapchainObj;
 
     //
+    //std::vector<ResourceObj> bindedResources = {};
+
+    //
     vk::PipelineCache cache = {};
     //vk::PipelineLayout layout = {};
     vk::DescriptorPool pool = {};

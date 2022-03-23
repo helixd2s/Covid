@@ -115,17 +115,16 @@ namespace ZNAMED {
       };
 
       //
-      this->destructors.insert(this->destructors.begin(), 1, [device, imageView, imvType, descriptorId, descriptors = this->cInfo->descriptors](BaseObj const* baseObj) {
-        decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(device);
-        decltype(auto) descriptorsObj = descriptors ? deviceObj->get<DescriptorsObj>(descriptors) : WrapShared<DescriptorsObj>{};
+      this->destructors.insert(this->destructors.begin(), 1, [device, imageView](BaseObj const* baseObj) {
         device.destroyImageView(imageView);
-        if (imvType == 1u) {
-          descriptorsObj->getImageDescriptors().removeByIndex(descriptorId);
-        } else
-        if (imvType == 2u) {
-          descriptorsObj->getTextureDescriptors().removeByIndex(descriptorId);
-        };
       });
+
+      //
+      if (descriptorsObj) {
+        this->destructors.insert(this->destructors.begin(), 1, [device, descriptorId, images = (imvType == 1u ? descriptorsObj->getImageDescriptors() : descriptorsObj->getTextureDescriptors())](BaseObj const* baseObj) {
+          const_cast<cpp21::bucket<vk::DescriptorImageInfo>&>(images).removeByIndex(descriptorId);
+        });
+      };
 
       // 
       return std::tuple{ imageView, descriptorId }; // don't return reference, may broke vector

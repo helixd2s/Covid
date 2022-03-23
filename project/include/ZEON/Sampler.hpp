@@ -88,14 +88,16 @@ namespace ZNAMED {
       };
 
       //
-      this->destructors.insert(this->destructors.begin(), 1, [device, sampler = this->handle.as<vk::Sampler>(), descriptorId=this->descriptorId, descriptors = this->cInfo->descriptors](BaseObj const* baseObj) {
-        decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(device);
-        decltype(auto) descriptorsObj = descriptors ? deviceObj->get<DescriptorsObj>(descriptors) : WrapShared<DescriptorsObj>{};
+      this->destructors.insert(this->destructors.begin(), 1, [device, sampler = this->handle.as<vk::Sampler>()](BaseObj const* baseObj) {
         device.destroySampler(sampler);
-        if (descriptorsObj) {
-          descriptorsObj->getSamplerDescriptors().removeByIndex(descriptorId);
-        };
       });
+
+      //
+      if (descriptorsObj) {
+        this->destructors.insert(this->destructors.begin(), 1, [descriptorId = this->descriptorId, samplers = descriptorsObj->getSamplerDescriptors()](BaseObj const* baseObj) {
+          const_cast<cpp21::bucket<vk::DescriptorImageInfo>&>(samplers).removeByIndex(descriptorId);
+        });
+      };
     };
 
   public:

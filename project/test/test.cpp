@@ -161,7 +161,7 @@ int main() {
   });
 
   //
-  robin_hood::unordered_map<vk::ShaderStageFlagBits, cpp21::shared_vector<uint32_t>> stageMaps = {};
+  UNORDER_MAP<vk::ShaderStageFlagBits, cpp21::shared_vector<uint32_t>> stageMaps = {};
   stageMaps[vk::ShaderStageFlagBits::eVertex] = cpp21::readBinaryU32("./opaque.vert.spv");
   stageMaps[vk::ShaderStageFlagBits::eFragment] = cpp21::readBinaryU32("./opaque.frag.spv");
 

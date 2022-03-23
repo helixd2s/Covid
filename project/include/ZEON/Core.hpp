@@ -66,6 +66,13 @@ namespace ZNAMED {
   CPP21_FN_ALIAS(opt_cref, cpp21::opt_cref);
 #endif
 
+//
+#ifdef USE_ROBIN_HOOD
+#define UNORDER_MAP robin_hood::unordered_map
+#else
+#define UNORDER_MAP std::unordered_map
+#endif
+
   //
   enum class MemoryUsage : uint32_t {
     eUnknown = 0u,
@@ -268,11 +275,11 @@ namespace ZNAMED {
 
 
   //
-  using MSS = cpp21::map_of_shared<vk::StructureType, vk::BaseInStructure, std::shared_ptr, robin_hood::unordered_map>;
-  using EXM = cpp21::map_of_shared<ExtensionName, uintptr_t, std::shared_ptr, robin_hood::unordered_map>;
-  using EXIF = cpp21::map_of_shared<ExtensionInfoName, std::shared_ptr<cpp21::void_t>, std::shared_ptr, robin_hood::unordered_map>;
-  using SMAP = cpp21::interval_map<uintptr_t, vk::Buffer, robin_hood::unordered_map>;
-  using EXIP = robin_hood::unordered_map<ExtensionInfoName, ExtensionName>;
+  using MSS = cpp21::map_of_shared<vk::StructureType, vk::BaseInStructure, std::shared_ptr, UNORDER_MAP>;
+  using EXM = cpp21::map_of_shared<ExtensionName, uintptr_t, std::shared_ptr, UNORDER_MAP>;
+  using EXIF = cpp21::map_of_shared<ExtensionInfoName, std::shared_ptr<cpp21::void_t>, std::shared_ptr, UNORDER_MAP>;
+  using SMAP = cpp21::interval_map<uintptr_t, vk::Buffer, UNORDER_MAP>;
+  using EXIP = UNORDER_MAP<ExtensionInfoName, ExtensionName>;
 
   //
   struct BaseCreateInfo {
@@ -1056,7 +1063,7 @@ namespace ZNAMED {
   //
   struct GraphicsPipelineCreateInfo : BaseCreateInfo {
     FramebufferType framebufferType = FramebufferType::eUnknown;
-    robin_hood::unordered_map<vk::ShaderStageFlagBits, cpp21::shared_vector<uint32_t>> stageCodes = {};
+    UNORDER_MAP<vk::ShaderStageFlagBits, cpp21::shared_vector<uint32_t>> stageCodes = {};
   };
 
   //
@@ -1173,7 +1180,7 @@ namespace ZNAMED {
   };
 
   //
-  inline extern robin_hood::unordered_map<std::type_index, HandleType> handleTypeMap = {};
+  inline extern UNORDER_MAP<std::type_index, HandleType> handleTypeMap = {};
 
   //
   inline static decltype(auto) registerTypes() {
@@ -1271,7 +1278,8 @@ namespace ZNAMED {
     operator Handle const& () const { return this->ptr->getHandle(); };
 
     //
-    operator cpp21::const_wrap_arg<Handle>() const { return this->ptr->getHandle(); };
+    inline operator cpp21::const_wrap_arg<Handle>() const { return this->ptr->getHandle(); };
+    inline operator bool() const { return !!this->ptr && this->ptr->isAlive(); };
 
     // 
     inline decltype(auto) getHandle() { return this->ptr->getHandle(); };
@@ -1362,6 +1370,12 @@ namespace ZNAMED {
   };
 
   //
+  class BaseObj;
+
+  //
+  using HMAP_T = UNORDER_MAP<HandleType, cpp21::map_of_shared<uintptr_t, BaseObj, std::shared_ptr, UNORDER_MAP>>;
+
+  //
   class BaseObj : public std::enable_shared_from_this<BaseObj> {
   protected:
     using SBP = std::shared_ptr<BaseObj>;
@@ -1376,7 +1390,7 @@ namespace ZNAMED {
     Handle handle = {}, base = {};
     ExtHandle extHandle = {};
     GLObject glObject = {};
-    robin_hood::unordered_map<HandleType, cpp21::map_of_shared<uintptr_t, BaseObj, std::shared_ptr, robin_hood::unordered_map>> handleObjectMap = {};
+    HMAP_T handleObjectMap = {};
 
     // 
     std::shared_ptr<MSS> infoMap = {};
@@ -1389,11 +1403,21 @@ namespace ZNAMED {
     friend WrapShared<BaseObj>;
     friend cpp21::wrap_shared_ptr<BaseObj>;
 
+    //
+    bool alive = true;
+
   public: //
-    
+
+    // temp solution
+    virtual bool isAlive() const { return alive; };
+
     // 
     inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
     inline decltype(auto) SFT() const { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::const_pointer_cast<T>(std::dynamic_pointer_cast<T const>(shared_from_this()))); };
+
+    //
+    inline auto& getHandleMap() { return handleObjectMap; };
+    inline auto const& getHandleMap() const { return handleObjectMap; };
 
     //
     virtual Handle& getHandle() { return this->handle; };
@@ -1402,28 +1426,7 @@ namespace ZNAMED {
     virtual Handle const& getBase() const { return this->base; };
 
     //
-    virtual void destroy(Handle const& parent) {
-      if (parent.value == this->base.value) {
-        //
-        this->tickProcessing();
-
-        // 
-        std::decay_t<decltype(handleObjectMap)>::iterator map = handleObjectMap.begin();
-        while (map != this->handleObjectMap.end()) {
-          std::decay_t<decltype(*(map->second))>& mapc = *(map->second);
-          std::decay_t<decltype(mapc)>::iterator pair = mapc.begin();
-          while (pair != mapc.end()) {
-            pair->second->destroy(this->handle);
-            pair = mapc.erase(pair);
-          };
-          map = handleObjectMap.erase(map);
-        };
-
-        // needs only before deleting main object...
-        for (decltype(auto) fn : this->destructors) { fn(this); };
-        this->destructors = {};
-      };
-    };
+    virtual std::optional<UNORDER_MAP<uintptr_t, std::shared_ptr<BaseObj>>::iterator> destroy(Handle const& parent, HMAP_T*parentMap = nullptr);
 
     //
     virtual void tickProcessing() {
