@@ -176,7 +176,7 @@ int main() {
   //
   decltype(auto) qfAndQueue = ZNAMED::QueueGetInfo{ 0u, 0u };
   //std::shared_ptr<std::array<ZNAMED::FenceType, 4>> fences = std::make_shared<std::array<ZNAMED::FenceType, 4>>();
-  decltype(auto) fences = std::make_shared<std::array<ZNAMED::FenceType, 4>>();
+  decltype(auto) fences = std::make_shared<std::array<ZNAMED::FenceType, 8>>();
 
   //
   glfwSetErrorCallback(error);

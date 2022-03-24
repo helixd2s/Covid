@@ -265,7 +265,7 @@ namespace ZNAMED {
       //
       this->handle = device.createSwapchainKHR(infoMap->set(vk::StructureType::eSwapchainCreateInfoKHR, vk::SwapchainCreateInfoKHR{
         .surface = cInfo->surface,
-        .minImageCount = capInfo.capabilities->minImageCount,
+        .minImageCount = std::max(capInfo.capabilities->minImageCount, capInfo.capabilities->maxImageCount),
         .imageFormat = surfaceFormat2.surfaceFormat.format,
         .imageColorSpace = surfaceFormat2.surfaceFormat.colorSpace,
         .imageExtent = capInfo.capabilities->currentExtent,

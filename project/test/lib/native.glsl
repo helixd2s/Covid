@@ -460,8 +460,23 @@ GeometryExtAttrib interpolate(in GeometryExtData data, in vec3 barycentric) {
   return result;
 };
 
+//
 GeometryExtAttrib interpolate(in GeometryExtData data, in vec2 barycentric) {
   return interpolate(data, vec3(1.f-barycentric.x-barycentric.y, barycentric));
+};
+
+
+// for metallic reflection (true-multiply)
+vec3 trueMultColor(in vec3 rayColor, in vec3 materialColor) {
+  float rfactor = dot(rayColor, vec3(0.3f, 0.59f, 0.11f));
+  float mfactor = dot(metallic, vec3(0.3f, 0.59f, 0.11f));
+  //return rfactor * materialColor + mfactor * rayColor;
+  return sqrt((rfactor * materialColor) * (mfactor * rayColor));
+};
+
+// for metallic reflection
+vec3 metallicFactor(in vec3 rayColor, in vec3 materialColor, in float factor) {
+  return mix(rayColor, trueMultColor(rayColor, materialColor), factor);
 };
 
 
