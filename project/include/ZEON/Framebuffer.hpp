@@ -59,12 +59,12 @@ namespace ZNAMED {
   public:
     // 
     FramebufferObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{}) : BaseObj(deviceObj), cInfo(cInfo) {
-      this->construct(deviceObj, cInfo);
+      //this->construct(deviceObj, cInfo);
     };
 
     // 
     FramebufferObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
-      this->construct(ZNAMED::context->get<DeviceObj>(this->base = handle), cInfo);
+      //this->construct(ZNAMED::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
     //
@@ -97,6 +97,7 @@ namespace ZNAMED {
     //
     inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{}) {
       auto shared = std::make_shared<FramebufferObj>(handle, cInfo);
+      shared->construct(ZNAMED::context->get<DeviceObj>(handle), cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
     };

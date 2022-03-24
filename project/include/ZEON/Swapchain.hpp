@@ -72,12 +72,12 @@ namespace ZNAMED {
   public:
     // 
     SwapchainObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) : BaseObj(deviceObj), cInfo(cInfo) {
-      this->construct(deviceObj, cInfo);
+      //this->construct(deviceObj, cInfo);
     };
 
     // 
     SwapchainObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
-      this->construct(ZNAMED::context->get<DeviceObj>(this->base), cInfo);
+      //this->construct(ZNAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
     //
@@ -101,6 +101,7 @@ namespace ZNAMED {
     //
     inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) {
       auto shared = std::make_shared<SwapchainObj>(handle, cInfo);
+      shared->construct(ZNAMED::context->get<DeviceObj>(handle), cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
     };

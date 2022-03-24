@@ -43,7 +43,7 @@ namespace ZNAMED {
     };
 
     // 
-    virtual std::type_info const& type_info() const override {
+     std::type_info const& type_info() const override {
       return typeid(std::decay_t<decltype(this)>);
     };
 
@@ -56,6 +56,7 @@ namespace ZNAMED {
     //
     inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<SemaphoreCreateInfo> cInfo = SemaphoreCreateInfo{}) {
       auto shared = std::make_shared<SemaphoreObj>(handle, cInfo);
+      shared->construct(ZNAMED::context->get<DeviceObj>(handle), cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
     };

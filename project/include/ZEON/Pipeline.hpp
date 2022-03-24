@@ -39,16 +39,16 @@ namespace ZNAMED {
   public:
     // 
     PipelineObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) : BaseObj(deviceObj), cInfo(cInfo) {
-      this->construct(deviceObj, cInfo);
+      //this->construct(deviceObj, cInfo);
     };
 
     // 
     PipelineObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
-      this->construct(ZNAMED::context->get<DeviceObj>(this->base), cInfo);
+      //this->construct(ZNAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
     // 
-    virtual std::type_info const& type_info() const override {
+     std::type_info const& type_info() const override {
       return typeid(std::decay_t<decltype(this)>);
     };
 
@@ -61,6 +61,7 @@ namespace ZNAMED {
     //
     inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) {
       auto shared = std::make_shared<PipelineObj>(handle, cInfo);
+      shared->construct(ZNAMED::context->get<DeviceObj>(handle), cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
     };

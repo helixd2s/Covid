@@ -46,12 +46,12 @@ namespace ZNAMED {
     // 
     MemoryAllocatorObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) : BaseObj(deviceObj), cInfo(cInfo) {
       this->base = deviceObj->getHandle();
-      this->construct(deviceObj, cInfo);
+      //this->construct(deviceObj, cInfo);
     };
 
     // 
     MemoryAllocatorObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
-      this->construct(ZNAMED::context->get<DeviceObj>(this->base = handle), cInfo);
+      //this->construct(ZNAMED::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
     //
@@ -62,13 +62,14 @@ namespace ZNAMED {
     };
 
     // 
-    virtual std::type_info const& type_info() const override {
+     std::type_info const& type_info() const override {
       return typeid(std::decay_t<decltype(this)>);
     };
     
     //
     inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) {
       auto shared = std::make_shared<MemoryAllocatorObj>(handle, cInfo);
+      shared->construct(ZNAMED::context->get<DeviceObj>(handle), cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
     };
@@ -124,13 +125,15 @@ namespace ZNAMED {
       };
 
       //
-      destructors.push_back([device, memory=allocated->memory, mapped](BaseObj const*) {
-        device.waitIdle();
-        if (mapped) {
-          device.unmapMemory(memory);
-        };
-        device.freeMemory(memory);
-      });
+      if (requirements->needsDestructor) {
+        destructors.push_back([device, memory=allocated->memory, mapped](BaseObj const*) {
+          device.waitIdle();
+          if (mapped) {
+            device.unmapMemory(memory);
+          };
+          device.freeMemory(memory);
+        });
+      };
 
       // 
       return allocated;

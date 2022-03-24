@@ -38,16 +38,16 @@ namespace ZNAMED {
   public: 
     // 
     InstanceObj(WrapShared<ContextObj> contextObj = {}, cpp21::const_wrap_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : BaseObj(contextObj), cInfo(cInfo) {
-      this->construct(contextObj, cInfo);
+      //this->construct(contextObj, cInfo);
     };
 
     // 
     InstanceObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
-      this->construct(ZNAMED::context, cInfo);
+      //this->construct(ZNAMED::context, cInfo);
     };
 
     // 
-    virtual std::type_info const& type_info() const override {
+     std::type_info const& type_info() const override {
       return typeid(std::decay_t<decltype(this)>);
     };
 
@@ -60,6 +60,7 @@ namespace ZNAMED {
     //
     inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
       auto shared = std::make_shared<InstanceObj>(handle, cInfo);
+      shared->construct(ZNAMED::context, cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
     };

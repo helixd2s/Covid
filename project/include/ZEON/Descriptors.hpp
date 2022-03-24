@@ -65,6 +65,10 @@ namespace ZNAMED {
     vk::Buffer cacheBuffer = {};
 
     //
+    WrapShared<ResourceObj> uniformBufferObj = {};
+    WrapShared<ResourceSparseObj> cacheBufferObj = {};
+
+    //
     std::vector<char8_t> initialData = {};
 
     //
@@ -85,16 +89,16 @@ namespace ZNAMED {
 
     // 
     DescriptorsObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) : BaseObj(deviceObj), cInfo(cInfo) {
-      this->construct(deviceObj, cInfo);
+      //this->construct(deviceObj, cInfo);
     };
 
     // 
     DescriptorsObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
-      this->construct(ZNAMED::context->get<DeviceObj>(this->base), cInfo);
+      //this->construct(ZNAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
     // 
-    virtual std::type_info const& type_info() const override {
+     std::type_info const& type_info() const override {
       return typeid(std::decay_t<decltype(this)>);
     };
 
@@ -131,6 +135,7 @@ namespace ZNAMED {
     //
     inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) {
       auto shared = std::make_shared<DescriptorsObj>(handle, cInfo);
+      shared->construct(ZNAMED::context->get<DeviceObj>(handle), cInfo);
       auto wrap = shared->registerSelf();
       wrap->createNullImages();
       return wrap;

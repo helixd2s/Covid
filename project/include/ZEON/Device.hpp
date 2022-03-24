@@ -253,7 +253,7 @@ namespace ZNAMED {
   public:
 
     //
-    virtual void tickProcessing() override {
+     void tickProcessing() override {
       std::decay_t<decltype(fences)>::iterator fenceIt = fences.begin();
       while(fenceIt != fences.end()) {
         decltype(auto) fence = *fenceIt;
@@ -269,6 +269,10 @@ namespace ZNAMED {
         this->callstack->process();
       };
     };
+
+    //
+    virtual std::vector<FenceType>& getFences() { return this->fences; };
+    virtual std::vector<FenceType> const& getFences() const { return this->fences; };
 
     //
     virtual FenceType executeCommandOnce(cpp21::const_wrap_arg<CommandOnceSubmission> submissionRef_ = {}) {
@@ -513,12 +517,12 @@ namespace ZNAMED {
 
     // 
     DeviceObj(WrapShared<InstanceObj> instanceObj = {}, cpp21::const_wrap_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) : BaseObj(instanceObj), cInfo(cInfo) {
-      this->construct(instanceObj, cInfo);
+      //this->construct(instanceObj, cInfo);
     };
 
     // 
     DeviceObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
-      this->construct(ZNAMED::context->get<InstanceObj>(this->base), cInfo);
+      //this->construct(ZNAMED::context->get<InstanceObj>(this->base), cInfo);
     };
 
     //
@@ -528,13 +532,14 @@ namespace ZNAMED {
     };
 
     // 
-    virtual std::type_info const& type_info() const override {
+     std::type_info const& type_info() const override {
       return typeid(std::decay_t<decltype(this)>);
     };
 
     //
     inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
       auto shared = std::make_shared<DeviceObj>(handle, cInfo);
+      shared->construct(ZNAMED::context->get<InstanceObj>(handle), cInfo);
       auto wrap = shared->registerSelf();
       wrap->createDefaultMemoryAllocator();
       return wrap;

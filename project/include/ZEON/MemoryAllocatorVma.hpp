@@ -44,14 +44,16 @@ namespace ZNAMED {
     inline decltype(auto) SFT() const { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::const_pointer_cast<T>(std::dynamic_pointer_cast<T const>(shared_from_this()))); };
 
     // 
-    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) override {
+     void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) override {
       //
-      if ((*this->cInfo->extInfoMap)->find(ExtensionInfoName::eMemoryAllocatorVma) != (*this->cInfo->extInfoMap)->end()) {
-        this->cInfo->extInfoMap->set(ExtensionInfoName::eMemoryAllocatorVma, VmaAllocatorExtension{});
-      };
+       if (this->cInfo->extInfoMap) {
+         if ((*this->cInfo->extInfoMap)->find(ExtensionInfoName::eMemoryAllocatorVma) != (*this->cInfo->extInfoMap)->end()) {
+           this->cInfo->extInfoMap->set(ExtensionInfoName::eMemoryAllocatorVma, VmaAllocatorExtension{});
+         };
+       };
 
       //
-      decltype(auto) alloc = this->cInfo->extInfoMap->get<VmaAllocatorExtension>(ExtensionInfoName::eMemoryAllocatorVma);
+       decltype(auto) alloc = this->cInfo->extInfoMap ? this->cInfo->extInfoMap->get<VmaAllocatorExtension>(ExtensionInfoName::eMemoryAllocatorVma) : VmaAllocatorExtension{};
 
       // 
       VmaVulkanFunctions vulkanFunctions = {};
@@ -89,20 +91,21 @@ namespace ZNAMED {
     };
 
     //
-    virtual WrapShared<MemoryAllocatorObj> registerSelf() override {
+     WrapShared<MemoryAllocatorObj> registerSelf() override {
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       deviceObj->registerExt(ExtensionName::eMemoryAllocatorVma, shared_from_this());
       return std::dynamic_pointer_cast<MemoryAllocatorObj>(shared_from_this());
     };
 
     // 
-    virtual std::type_info const& type_info() const override {
+     std::type_info const& type_info() const override {
       return typeid(std::decay_t<decltype(this)>);
     };
 
     //
     inline static WrapShared<MemoryAllocatorObj> make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) {
       auto shared = std::make_shared<MemoryAllocatorVma>(handle, cInfo);
+      shared->construct(ZNAMED::context->get<DeviceObj>(handle), cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
     };
@@ -110,7 +113,7 @@ namespace ZNAMED {
   public:
 
     //
-    virtual std::optional<AllocatedMemory>& allocateMemory(cpp21::const_wrap_arg<MemoryRequirements> requirements, std::optional<AllocatedMemory>& allocated, ExtHandle& extHandle, std::shared_ptr<EXIF> extInfoMap, void*& mapped, std::vector<std::function<void(BaseObj const*)>>& destructors) override {
+     std::optional<AllocatedMemory>& allocateMemory(cpp21::const_wrap_arg<MemoryRequirements> requirements, std::optional<AllocatedMemory>& allocated, ExtHandle& extHandle, std::shared_ptr<EXIF> extInfoMap, void*& mapped, std::vector<std::function<void(BaseObj const*)>>& destructors) override {
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       auto& device = this->base.as<vk::Device>();
       auto& physicalDevice = deviceObj->getPhysicalDevice();
@@ -147,10 +150,12 @@ namespace ZNAMED {
       };
 
       //
-      destructors.push_back([device, allocator=this->handle.as<VmaAllocator>(), allocation=vmaAllocExt->allocation](BaseObj const*) {
-        device.waitIdle();
-        vmaFreeMemory(allocator, allocation);
-      });
+      if (requirements->needsDestructor) {
+        destructors.push_back([device, allocator=this->handle.as<VmaAllocator>(), allocation=vmaAllocExt->allocation](BaseObj const*) {
+          device.waitIdle();
+          vmaFreeMemory(allocator, allocation);
+        });
+      };
 
       // 
       mapped = vmaAllocExt->allocationInfo.pMappedData;

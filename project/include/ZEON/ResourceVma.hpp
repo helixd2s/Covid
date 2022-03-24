@@ -44,12 +44,12 @@ namespace ZNAMED {
     };
 
     // 
-    virtual std::type_info const& type_info() const override {
+     std::type_info const& type_info() const override {
       return typeid(std::decay_t<decltype(this)>);
     };
 
     //
-    virtual WrapShared<ResourceObj> registerSelf() {
+     WrapShared<ResourceObj> registerSelf() override {
       ZNAMED::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
       return std::dynamic_pointer_cast<ResourceObj>(shared_from_this());
     };
@@ -57,6 +57,7 @@ namespace ZNAMED {
     //
     inline static WrapShared<ResourceObj> make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
       auto shared = std::make_shared<ResourceVma>(handle, cInfo);
+      shared->construct(ZNAMED::context->get<DeviceObj>(handle), cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
     };
@@ -64,7 +65,7 @@ namespace ZNAMED {
   protected:
 
     // 
-    virtual FenceType createImage(cpp21::const_wrap_arg<ImageCreateInfo> cInfo = {}) override {
+     FenceType createImage(cpp21::const_wrap_arg<ImageCreateInfo> cInfo = {}) override {
       // 
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
@@ -141,7 +142,7 @@ namespace ZNAMED {
     };
 
     // 
-    virtual void createBuffer(cpp21::const_wrap_arg<BufferCreateInfo> cInfo = {}) override {
+     void createBuffer(cpp21::const_wrap_arg<BufferCreateInfo> cInfo = {}) override {
       //
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();

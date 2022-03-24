@@ -264,6 +264,7 @@ namespace ZNAMED {
   class SemaphoreObj;
   class MemoryAllocatorObj;
   class SamplerObj;
+  class ResourceSparseObj;
 
   // 
   class GltfLoaderObj;
@@ -302,6 +303,7 @@ namespace ZNAMED {
     vk::MemoryRequirements requirements = {};
 
     bool hasDeviceAddress = false;
+    bool needsDestructor = true;
     std::optional<DedicatedMemory> dedicated = {};
   };
 

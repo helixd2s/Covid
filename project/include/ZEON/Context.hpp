@@ -25,17 +25,18 @@ namespace ZNAMED {
 
     // 
     ContextObj(cpp21::const_wrap_arg<Handle> handle = Handle(0ull, HandleType::eUnknown), cpp21::const_wrap_arg<ContextCreateInfo> cInfo = ContextCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
-      this->construct(cInfo);
+      //this->construct(cInfo);
     };
 
     // 
-    virtual std::type_info const& type_info() const override {
+     std::type_info const& type_info() const override {
       return typeid(std::decay_t<decltype(this)>);
     };
 
     //
     inline static tType make(cpp21::const_wrap_arg<Handle> handle = Handle(0ull, HandleType::eUnknown), cpp21::const_wrap_arg<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
       auto shared = std::make_shared<ContextObj>(handle, cInfo);
+      shared->construct(cInfo);
       auto wrap = shared->SFT();
       return wrap;
     };

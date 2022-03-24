@@ -15,6 +15,7 @@
 #include "./MemoryAllocator.hpp"
 #include "./QueueFamily.hpp"
 #include "./Resource.hpp"
+#include "./ResourceSparse.hpp"
 #include "./Sampler.hpp"
 #include "./Descriptors.hpp"
 #include "./Framebuffer.hpp"

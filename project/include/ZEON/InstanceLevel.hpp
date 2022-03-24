@@ -63,16 +63,16 @@ namespace ZNAMED {
 
     // 
     InstanceLevelObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) : BaseObj(deviceObj), cInfo(cInfo), instanceDraw(std::vector<InstanceDraw>{}), instanceInfo(std::vector<InstanceInfo>{}) {
-      this->construct(deviceObj, cInfo);
+      //this->construct(deviceObj, cInfo);
     };
 
     // 
     InstanceLevelObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) : BaseObj(handle), cInfo(cInfo), instanceDraw(std::vector<InstanceDraw>{}), instanceInfo(std::vector<InstanceInfo>{}) {
-      this->construct(ZNAMED::context->get<DeviceObj>(this->base), cInfo);
+      //this->construct(ZNAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
     // 
-    virtual std::type_info const& type_info() const override {
+     std::type_info const& type_info() const override {
       return typeid(std::decay_t<decltype(this)>);
     };
 
@@ -85,6 +85,7 @@ namespace ZNAMED {
     //
     inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) {
       auto shared = std::make_shared<InstanceLevelObj>(handle, cInfo);
+      shared->construct(ZNAMED::context->get<DeviceObj>(handle), cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
     };
