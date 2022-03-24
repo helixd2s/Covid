@@ -587,12 +587,14 @@ namespace ZNAMED {
 
   //
   inline vk::Buffer& DescriptorsObj::createUniformBuffer() {
-    return (this->uniformBuffer = (this->uniformBufferObj = ResourceObj::make(this->base, ResourceCreateInfo{
+    this->uniformBuffer = (this->uniformBufferObj = ResourceObj::make(this->base, ResourceCreateInfo{
       .bufferInfo = BufferCreateInfo{
         .size = uniformSize,
         .type = BufferType::eUniform
       }
-    })).as<vk::Buffer>());
+    })).as<vk::Buffer>();
+    this->uniformBufferDesc = vk::DescriptorBufferInfo{ this->uniformBuffer, 0ull, this->uniformSize };
+    return this->uniformBuffer;
   };
 
   // 

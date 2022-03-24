@@ -52,7 +52,7 @@ namespace ZNAMED {
     cpp21::bucket<vk::DescriptorImageInfo> samplers = std::vector<vk::DescriptorImageInfo>{};
     cpp21::bucket<vk::DescriptorImageInfo> images = std::vector<vk::DescriptorImageInfo>{};
     std::optional<vk::DescriptorBufferInfo> uniformBufferDesc = {};
-    std::optional<vk::DescriptorBufferInfo> cacheBufferDesc = {};
+    std::vector<vk::DescriptorBufferInfo> cacheBufferDescs = {};
 
     // 
     std::vector<vk::DescriptorPoolSize> DPC = {};
@@ -72,7 +72,8 @@ namespace ZNAMED {
     std::vector<char8_t> initialData = {};
 
     //
-    size_t cacheSize = 65536ull;
+    size_t cachePages = 16u;
+    size_t cachePageSize = 65536ull;
     size_t uniformSize = 65536ull;
 
     //
@@ -163,7 +164,7 @@ namespace ZNAMED {
     };
 
     // 
-    virtual void createDescriptorLayoutUniformStorage() {
+    virtual void createDescriptorLayoutUniformStorage(cpp21::const_wrap_arg<uint32_t> maxPageCount = 1u) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) last = this->layouts.size();
       this->layoutInfoMaps->push_back(std::make_shared<MSS>(MSS()));
@@ -171,9 +172,9 @@ namespace ZNAMED {
       decltype(auto) layoutInfoMap = this->layoutInfoMaps[last];
       decltype(auto) layoutBindingStack = this->layoutBindings[last];
       layoutBindingStack->bindings.push_back(vk::DescriptorSetLayoutBinding{ .binding = 0u, .descriptorType = vk::DescriptorType::eUniformBuffer, .descriptorCount = 1u, .stageFlags = vk::ShaderStageFlagBits::eAll });
-      layoutBindingStack->bindings.push_back(vk::DescriptorSetLayoutBinding{ .binding = 1u, .descriptorType = vk::DescriptorType::eStorageBuffer, .descriptorCount = 1u, .stageFlags = vk::ShaderStageFlagBits::eAll });
+      layoutBindingStack->bindings.push_back(vk::DescriptorSetLayoutBinding{ .binding = 1u, .descriptorType = vk::DescriptorType::eStorageBuffer, .descriptorCount = maxPageCount, .stageFlags = vk::ShaderStageFlagBits::eAll });
       layoutBindingStack->bindingFlags.push_back(vk::DescriptorBindingFlags{ vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind });
-      layoutBindingStack->bindingFlags.push_back(vk::DescriptorBindingFlags{ vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind });
+      layoutBindingStack->bindingFlags.push_back(vk::DescriptorBindingFlags{ vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind | vk::DescriptorBindingFlagBits::eVariableDescriptorCount });
       decltype(auto) layoutInfo = layoutInfoMap->set(vk::StructureType::eDescriptorSetLayoutCreateInfo, vk::DescriptorSetLayoutCreateInfo{
         .pNext = &(layoutInfoMap->set(vk::StructureType::eDescriptorSetLayoutBindingFlagsCreateInfo, vk::DescriptorSetLayoutBindingFlagsCreateInfo{
 
@@ -181,7 +182,7 @@ namespace ZNAMED {
         .flags = vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool
         })->setBindings(layoutBindingStack->bindings);
       this->layouts.push_back(device.createDescriptorSetLayout(layoutInfo));
-      this->descriptorCounts.push_back(0u);
+      this->descriptorCounts.push_back(maxPageCount);
     };
 
     // 
@@ -210,7 +211,7 @@ namespace ZNAMED {
       this->descriptorCounts = std::vector<uint32_t>{};
       //this->createDescriptorLayout(vk::DescriptorType::eUniformBuffer, 1u);
       //this->createDescriptorLayout(vk::DescriptorType::eStorageBuffer, 1u);
-      this->createDescriptorLayoutUniformStorage();
+      this->createDescriptorLayoutUniformStorage(16u);
       this->createDescriptorLayout(vk::DescriptorType::eSampledImage, 256u);
       this->createDescriptorLayout(vk::DescriptorType::eSampler, 64u);
       this->createDescriptorLayout(vk::DescriptorType::eStorageImage, 64u);
@@ -241,8 +242,8 @@ namespace ZNAMED {
       //ZNAMED::context->get(this->base)->registerObj(this->handle, shared_from_this());
 
       //
-      this->cacheBufferDesc = vk::DescriptorBufferInfo{ this->createCacheBuffer(), 0ull, this->cacheSize };
-      this->uniformBufferDesc = vk::DescriptorBufferInfo{ this->createUniformBuffer(), 0ull, this->uniformSize};
+      this->createUniformBuffer();
+      this->createCacheBuffer();
       this->updateDescriptors();
 
       // 
@@ -262,8 +263,12 @@ namespace ZNAMED {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) writes = std::vector<vk::WriteDescriptorSet>{};
       decltype(auto) temp = vk::WriteDescriptorSet{ .dstSet = this->sets[0u], .dstBinding = 0u, .dstArrayElement = 0u, .descriptorType = vk::DescriptorType::eUniformBuffer };
-      writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[0u]).setDstBinding(0u).setDescriptorType(vk::DescriptorType::eUniformBuffer).setPBufferInfo(&this->uniformBufferDesc.value()).setDescriptorCount(1u));
-      writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[0u]).setDstBinding(1u).setDescriptorType(vk::DescriptorType::eStorageBuffer).setPBufferInfo(&this->cacheBufferDesc.value()).setDescriptorCount(1u));
+      if (this->uniformBufferDesc) {
+        writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[0u]).setDstBinding(0u).setDescriptorType(vk::DescriptorType::eUniformBuffer).setPBufferInfo(&this->uniformBufferDesc.value()).setDescriptorCount(1u));
+      };
+      if (this->cacheBufferDescs.size() > 0) {
+        writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[0u]).setDstBinding(1u).setDescriptorType(vk::DescriptorType::eStorageBuffer).setBufferInfo(this->cacheBufferDescs));
+      };
       if (this->textures->size() > 0ull) { writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[1u]).setPImageInfo(this->textures.data()).setDescriptorCount(uint32_t(this->textures.size())).setDescriptorType(vk::DescriptorType::eSampledImage)); };
       if (this->samplers->size() > 0ull) { writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[2u]).setPImageInfo(this->samplers.data()).setDescriptorCount(uint32_t(this->samplers.size())).setDescriptorType(vk::DescriptorType::eSampler)); };
       if (this->images->size() > 0ull) { writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[3u]).setPImageInfo(this->images.data()).setDescriptorCount(uint32_t(this->images.size())).setDescriptorType(vk::DescriptorType::eStorageImage)); };

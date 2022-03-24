@@ -235,13 +235,18 @@ namespace ZNAMED {
   inline vk::Buffer& DescriptorsObj::createCacheBuffer() {
     this->cacheBuffer = (this->cacheBufferObj = ResourceSparseObj::make(this->base, ResourceCreateInfo{
       .bufferInfo = BufferCreateInfo{
-        .size = cacheSize,
+        .size = this->cachePages * this->cachePageSize,
         .type = BufferType::eStorage
       }
     })).as<vk::Buffer>();
 
     //
-    this->cacheBufferObj->allocatePage(0ull);
+    for (uint32_t i = 0; i < this->cachePages; i++) {
+      this->cacheBufferObj->allocatePage(i);
+      this->cacheBufferDescs.push_back(vk::DescriptorBufferInfo{ this->cacheBuffer, i * this->cachePageSize, this->cachePageSize });
+    };
+
+    //
     this->cacheBufferObj->bindSparseMemory(SubmissionInfo{
       .info = QueueGetInfo{0u, 0u}
     });
