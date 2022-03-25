@@ -46,7 +46,7 @@ RayData pathTrace(in RayData rayData) {
       //
       mat3x3 tbn = getTBN(attrib);
       MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), texcoord.xy, tbn);
-      const vec3 normals = fullTransformNormal(instanceInfo, attrib.data[VERTEX_NORMALS].xyz, intersection.geometryId);//materialPix.color[MATERIAL_NORMAL].xyz;
+      const vec3 normals = inRayNormal(rayData.direction, fullTransformNormal(instanceInfo, attrib.data[VERTEX_NORMALS].xyz, intersection.geometryId));//materialPix.color[MATERIAL_NORMAL].xyz;
 
       // 
       vec4 emissiveColor = toLinear(materialPix.color[MATERIAL_EMISSIVE]);
@@ -56,22 +56,23 @@ RayData pathTrace(in RayData rayData) {
 
       //
       if (luminance(materialPix.color[MATERIAL_EMISSIVE].xyz) > 0.001f) {
-        rayData.emission.xyz = f16vec3(trueMultColor(rayData.energy.xyz, emissiveColor.xyz));
+        rayData.emission.xyz += f16vec3(trueMultColor(rayData.energy.xyz, emissiveColor.xyz));
         rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, 1.f-emissiveColor.xyz));
       };
 
       //
       vec3 originSeedXYZ = vec3(random(rayData.origin.x), random(rayData.origin.y), random(rayData.origin.z));
-      rayData.origin.xyz = vertice.xyz + normals.xyz * 0.0001f;
       if (random(rayData.origin.xyz) <= (metallicFactor + fresnel_schlick(0.f, dot(-rayData.direction.xyz, normals)) * (1.f - metallicFactor))) { // I currently, have no time for fresnel
         rayData.direction.xyz = reflective(originSeedXYZ, rayData.direction.xyz, normals, roughnessFactor);
         rayData.energy.xyz = f16vec3(metallicMult(rayData.energy.xyz, diffuseColor.xyz, metallicFactor));
       } else {
         rayData.direction.xyz = randomCosineWeightedHemispherePoint(originSeedXYZ, normals);
         rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, diffuseColor.xyz));
-      }
+      };
+      rayData.origin.xyz = vertice.xyz + outRayNormal(rayData.direction.xyz, normals.xyz) * 0.0001f;
     } else {
-      rayData.emission.xyz = f16vec3(trueMultColor(rayData.energy.xyz, toLinear(skyColor.xyz)));
+      rayData.emission.xyz += f16vec3(trueMultColor(rayData.energy.xyz, toLinear(skyColor.xyz)));
+      rayData.energy.xyz *= f16vec3(0.f.xxx);
       break;
     }
   };
@@ -135,7 +136,7 @@ void main() {
   //
   mat3x3 tbn = getTBN(attrib);
   MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), texcoord.xy, tbn);
-  const vec3 normals = fullTransformNormal(instanceInfo, materialPix.color[MATERIAL_NORMAL].xyz, intersection.geometryId);
+  const vec3 normals = inRayNormal(rayDir, fullTransformNormal(instanceInfo, materialPix.color[MATERIAL_NORMAL].xyz, intersection.geometryId));
 
   // 
   bool hasHit = !all(lessThanEqual(intersection.barycentric, 0.f.xxx));
@@ -147,22 +148,22 @@ void main() {
 
   // 
   RayData diffRayData = rayData;
-  diffRayData.origin = rayOrigin.xyz + normals.xyz * 0.0001f;
   diffRayData.direction.xyz = normalize(randomCosineWeightedHemispherePoint(originSeedXYZ, normals));
+  diffRayData.origin = rayOrigin.xyz + outRayNormal(diffRayData.direction.xyz, normals.xyz) * 0.0001f;
   diffRayData.energy = f16vec4(1.f.xxx, 1.f);
   diffRayData.emission = f16vec4(0.f.xxx, 1.f);
   diffRayData = luminance(diffuseColor) >= 0.001f ? pathTrace(diffRayData) : diffRayData;
 
   // 
   RayData reflRayData = rayData;
-  reflRayData.origin = rayOrigin.xyz + normals.xyz * 0.0001f;
   reflRayData.direction.xyz = reflective(originSeedXYZ, rayDir.xyz, normals.xyz, roughnessFactor);
+  reflRayData.origin = rayOrigin.xyz + outRayNormal(reflRayData.direction.xyz, normals.xyz) * 0.0001f;
   reflRayData.energy = f16vec4(metallicMult(1.f.xxx, materialPix.color[MATERIAL_ALBEDO].xyz, metallicFactor), 1.f);;
   reflRayData.emission = f16vec4(0.f.xxx, 1.f);
   reflRayData = pathTrace(reflRayData);
 
   // I currently, have no time for fresnel
-  vec4 finalColor = vec4(mix(vec3(diffuseColor.xyz * diffRayData.emission.xyz + diffRayData.energy.xyz * emissiveColor), vec3(reflRayData.emission.xyz), hasHit ? (metallicFactor + fresnel_schlick(0.f, dot(-rayDir, normals)) * (1.f - metallicFactor)) : 0.f), 1.f);
+  vec4 finalColor = vec4(mix(vec3(diffuseColor.xyz * diffRayData.emission.xyz + emissiveColor), vec3(reflRayData.emission.xyz), hasHit ? (metallicFactor + fresnel_schlick(0.f, dot(-rayDir, normals)) * (1.f - metallicFactor)) : 0.f), 1.f);
   //finalColor.xyz = normals.xyz * 0.5f + 0.5f;//;
   imageStore(images[swapchain.image], ivec2(gcoord.x, extent.y-1-gcoord.y), fromLinear(finalColor));
 };
