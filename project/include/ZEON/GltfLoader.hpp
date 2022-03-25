@@ -174,7 +174,7 @@ namespace ZNAMED {
           };
 
           //
-          auto defFormat = ZNAMED::BufferViewFormat::eFloat3;
+          auto defFormat = ZNAMED::BufferViewFormat::eFloat4;
           if (accessor.componentType == 5126) {
             if (accessor.type == TINYGLTF_TYPE_VEC4) { defFormat = ZNAMED::BufferViewFormat::eFloat4; };
             if (accessor.type == TINYGLTF_TYPE_VEC3) { defFormat = ZNAMED::BufferViewFormat::eFloat3; };
@@ -450,6 +450,7 @@ namespace ZNAMED {
 
       //
       gltf->defaultScene = gltf->model.defaultScene;
+      device.waitIdle();
 
       //
       this->gltfModels.push_back(gltf);

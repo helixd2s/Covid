@@ -137,7 +137,7 @@ namespace ZNAMED {
         .depthClampEnable = true,
         .rasterizerDiscardEnable = false,
         .polygonMode = vk::PolygonMode::eFill,
-        .cullMode = vk::CullModeFlagBits::eBack,
+        .cullMode = vk::CullModeFlagBits::eNone,
         .frontFace = vk::FrontFace::eClockwise,
         .depthBiasEnable = false
       });

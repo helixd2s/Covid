@@ -16,16 +16,22 @@
 #extension GL_EXT_ray_tracing : enable
 #extension GL_ARB_gpu_shader_int64 : require
 #extension GL_EXT_debug_printf : require
+#extension  GL_EXT_control_flow_attributes : require
 
 //
 const uint32_t VERTEX_VERTICES = 0u;
 const uint32_t VERTEX_TEXCOORD = 1u;
 const uint32_t VERTEX_NORMALS = 2u;
 const uint32_t VERTEX_TANGENT = 3u;
+const uint32_t VERTEX_BITANGENT = 4u;
+const uint32_t MAX_VERTEX_DATA = 5u;
+
+// 
 const uint32_t VERTEX_EXT_TEXCOORD = 0u;
 const uint32_t VERTEX_EXT_NORMALS = 1u;
 const uint32_t VERTEX_EXT_TANGENT = 2u;
-const uint32_t MAX_VERTEX_DATA = 4u;
+const uint32_t MAX_EXT_VERTEX_DATA = 3u;
+
 
 //
 const uint32_t MATERIAL_ALBEDO = 0u;
@@ -42,6 +48,14 @@ struct Constants
   mat3x4 lookAt;
   mat3x4 lookAtInverse;
 };
+
+//
+const float HDR_GAMMA = 2.2f;
+vec3 fromLinear(in vec3 linearRGB) { return mix(vec3(1.055)*pow(linearRGB, vec3(1.0/2.4)) - vec3(0.055), linearRGB * vec3(12.92), lessThan(linearRGB, vec3(0.0031308))); }
+vec4 fromLinear(in vec4 linearRGB) { return vec4(fromLinear(linearRGB.xyz), linearRGB.w); }
+vec3 toLinear(in vec3 sRGB) { return mix(pow((sRGB + vec3(0.055))/vec3(1.055), vec3(2.4)), sRGB/vec3(12.92), lessThan(sRGB, vec3(0.04045))); }
+vec4 toLinear(in vec4 sRGB) { return vec4(toLinear(sRGB.xyz), sRGB.w); }
+
 
 // but may not to be...
 layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer TestVertices {
@@ -101,9 +115,9 @@ struct MaterialPixelInfo {
 //
 vec4 sampleTex(CTexture tex, in vec2 texcoord, int lod) {
   return textureLod(
-    nonuniformEXT(sampler2D(
-      nonuniformEXT(textures[nonuniformEXT(tex.textureId)]), 
-      nonuniformEXT(samplers[nonuniformEXT(tex.samplerId)]))
+    sampler2D(
+      textures[nonuniformEXT(tex.textureId)], 
+      samplers[nonuniformEXT(tex.samplerId)]
     ), vec2(texcoord.x,texcoord.y), float(lod)/float(textureQueryLevels(nonuniformEXT(textures[nonuniformEXT(tex.textureId)]))));
 };
 
@@ -121,11 +135,12 @@ vec4 handleTexture(in TexOrDef tex, in vec2 texcoord) {
 };
 
 // without parallax mapping or normal mapping
-MaterialPixelInfo handleMaterial(in MaterialInfo materialInfo, in vec2 texcoord) {
+MaterialPixelInfo handleMaterial(in MaterialInfo materialInfo, in vec2 texcoord, in mat3x3 tbn) {
   MaterialPixelInfo result;
-  for (uint32_t i=0;i<MAX_MATERIAL_BIND;i++) {
+  [[unroll]] for (uint32_t i=0;i<MAX_MATERIAL_BIND;i++) {
     result.color[i] = handleTexture(materialInfo.texCol[i], texcoord);
   };
+  result.color[MATERIAL_NORMAL].xyz = normalize(tbn * normalize(result.color[MATERIAL_NORMAL].xyz * 2.f - 1.f));
   return result;
 };
 
@@ -151,7 +166,7 @@ struct BufferViewInfo {
 
 // but may not to be...
 layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer GeometryExtension {
-  BufferViewInfo bufferViews[MAX_VERTEX_DATA-1u];
+  BufferViewInfo bufferViews[MAX_EXT_VERTEX_DATA];
 };
 
 //
@@ -459,12 +474,69 @@ vec3 fullTransformNormal(in InstanceAddressInfo info, in vec3 normals, in uint32
 //
 GeometryExtData getGeometryData(in GeometryInfo geometryInfo, in uvec3 indices) {
   GeometryExtData result;
-  result.triData[0u] = readTriangleVertices3One(geometryInfo.vertices, indices);
+
+  //
+  [[unroll]] for (uint i=0;i<3;i++) { 
+    result.triData[VERTEX_TEXCOORD][i] = vec4(0.f.xxxx);
+    result.triData[VERTEX_VERTICES][i] = vec4(0.f.xxx, 1.f);
+    result.triData[VERTEX_BITANGENT][i] = vec4(0.f.xxxx);
+    result.triData[VERTEX_NORMALS][i] = vec4(0.f.xxxx);
+    result.triData[VERTEX_TANGENT][i] = vec4(0.f.xxxx);
+  };
+
+  //
+  result.triData[VERTEX_VERTICES] = readTriangleVertices3One(geometryInfo.vertices, indices);
+
+  // 
   if (geometryInfo.extensionRef > 0u) {
     GeometryExtension extension = GeometryExtension(geometryInfo.extensionRef);
-    for (uint i=1u;i<MAX_VERTEX_DATA;i++) { result.triData[i] = readTriangleVertices(extension.bufferViews[i-1u], indices); };
+    [[unroll]] for (uint i=0u;i<MAX_EXT_VERTEX_DATA;i++) { result.triData[i+1u] = readTriangleVertices(extension.bufferViews[i], indices); };
   };
+
+  const mat3x4 vp = result.triData[VERTEX_VERTICES];
+  const mat3x4 tp = result.triData[VERTEX_TEXCOORD];
+  [[unroll]] for (uint32_t i=0;i<3;i++) {
+     vec3 T = result.triData[VERTEX_TANGENT][i].xyz;
+     vec3 B = result.triData[VERTEX_BITANGENT][i].xyz;
+     vec3 N = result.triData[VERTEX_NORMALS][i].xyz;
+     float W = result.triData[VERTEX_TANGENT][i].w;
+
+    const vec3 dp1 = vp[1].xyz - vp[0].xyz, dp2 = vp[2].xyz - vp[0].xyz;
+    const vec2 tx1 = tp[1].xy - tp[0].xy, tx2 = tp[2].xy - tp[0].xy;
+    const float coef = 1.f / (tx1.x * tx2.y - tx2.x * tx1.y);
+
+    //
+    if (length(N) < 0.001f) { // if N not defined
+      N = cross(dp1,dp2);//normalize(cross(dp1,dp2));
+    };
+    N = normalize(N);
+    if (length(T) < 0.001f) { // if T not defined
+      T = (dp1.xyz * tx2.yyy - dp2.xyz * tx1.yyy) * coef;
+      B = (dp1.xyz * tx2.xxx - dp2.xyz * tx1.xxx) * coef;
+    };
+    T = normalize(T - dot(T, N) * N);
+    if (length(B) < 0.001f) {  // if B not defined
+      B = cross(N,T) * W;
+    };
+    B = normalize(B - dot(B, N) * N);
+
+    // 
+    result.triData[VERTEX_TANGENT][i].xyz = T;
+    result.triData[VERTEX_BITANGENT][i].xyz = B;
+    result.triData[VERTEX_NORMALS][i].xyz = N;
+  };
+
+  // 
   return result;
+};
+
+// 
+mat3x3 getTBN(in GeometryExtAttrib attrib) {
+  return mat3(
+    attrib.data[VERTEX_TANGENT].xyz,
+    attrib.data[VERTEX_BITANGENT].xyz,
+    attrib.data[VERTEX_NORMALS].xyz
+  );
 };
 
 //
@@ -489,7 +561,12 @@ MaterialInfo getMaterialInfo(in GeometryInfo geometryInfo) {
 //
 GeometryExtAttrib interpolate(in GeometryExtData data, in vec3 barycentric) {
   GeometryExtAttrib result;
-  for (uint i=0u;i<4u;i++) { result.data[i] = interpolate(data.triData[i], barycentric); };
+  [[unroll]] for (uint i=0u;i<MAX_VERTEX_DATA;i++) { result.data[i] = interpolate(data.triData[i], barycentric); };
+
+  result.data[VERTEX_NORMALS].xyz = normalize(result.data[VERTEX_NORMALS].xyz);
+  result.data[VERTEX_TANGENT].xyz = normalize(result.data[VERTEX_TANGENT].xyz);
+  result.data[VERTEX_BITANGENT].xyz = normalize(result.data[VERTEX_BITANGENT].xyz);
+
   return result;
 };
 
@@ -505,10 +582,10 @@ float luminance(in vec3 color) {
 
 // for metallic reflection (true-multiply)
 vec3 trueMultColor(in vec3 rayColor, in vec3 material) {
-  float rfactor = luminance(rayColor);
-  float mfactor = luminance(material);
+  float rfactor = luminance(max(rayColor,0.f.xxx));
+  float mfactor = luminance(max(material,0.f.xxx));
   //return rfactor * materialColor + mfactor * rayColor;
-  return sqrt((rfactor * material) * (mfactor * rayColor));
+  return sqrt((rfactor * max(material,0.f.xxx)) * (mfactor * max(rayColor,0.f.xxx)));
 };
 
 // for metallic reflection

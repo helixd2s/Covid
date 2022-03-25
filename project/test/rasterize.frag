@@ -45,7 +45,8 @@ void main() {
   const vec4 texcoord = attrib.data[VERTEX_TEXCOORD];
 
   //
-  MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), texcoord.xy);
+  mat3x3 tbn = getTBN(attrib);
+  MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), texcoord.xy, tbn);
 
   // alpha test failure
 #ifdef TRANSLUCENT

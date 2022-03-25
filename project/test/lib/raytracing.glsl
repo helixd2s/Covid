@@ -71,7 +71,8 @@ IntersectionInfo traceRaysTransparent(in InstanceAddressInfo instance, in RayDat
             vec2 attribs = rayQueryGetIntersectionBarycentricsEXT(rayQuery, false);
             GeometryExtData geometry = getGeometryData(geometryInfo, primitiveId);
             GeometryExtAttrib interpol = interpolate(geometry, attribs);
-            MaterialPixelInfo material = handleMaterial(getMaterialInfo(geometryInfo), interpol.data[VERTEX_TEXCOORD].xy);
+            mat3x3 tbn = getTBN(interpol);
+            MaterialPixelInfo material = handleMaterial(getMaterialInfo(geometryInfo), interpol.data[VERTEX_TEXCOORD].xy, tbn);
 
             if (material.color[MATERIAL_ALBEDO].a < 0.0001f) {
                 isOpaque = false;

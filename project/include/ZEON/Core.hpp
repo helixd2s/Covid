@@ -396,14 +396,18 @@ namespace ZNAMED {
 
   //
   enum class BufferBind : uint32_t {
+    // 
     eVertices = 0u,
     eTexcoord = 1u,
     eNormals = 2u,
     eTangent = 3u,
+    eBitangent = 4u,
+
+    // 
     eExtTexcoord = 0u,
     eExtNormals = 1u,
     eExtTangent = 2u,
-    eMAX = 4u
+    eMAX = 3u
   };
 
   //
@@ -435,7 +439,7 @@ namespace ZNAMED {
 #pragma pack(1)
   __declspec(align(1))
   struct GeometryExtension {
-    BufferViewInfo bufferViews[std::to_underlying(BufferBind::eMAX)-1u];
+    BufferViewInfo bufferViews[std::to_underlying(BufferBind::eMAX)];
   };
 
   //

@@ -8,6 +8,7 @@
 #include "lib/raytracing.glsl"
 #include "lib/random.glsl"
 #include "lib/sphere.glsl"
+#include "lib/fresnel.glsl"
 
 //
 layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
@@ -38,35 +39,39 @@ RayData pathTrace(in RayData rayData) {
       GeometryExtAttrib attrib = interpolate(geometry, intersection.barycentric);
 
       //
-      const vec4 vertice = fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId);
       const vec4 texcoord = attrib.data[VERTEX_TEXCOORD];
-      const vec3 normals = fullTransformNormal(instanceInfo, normalize(attrib.data[VERTEX_NORMALS].xyz), intersection.geometryId);
-      const vec4 tangent = attrib.data[VERTEX_TANGENT];
+      const vec4 vertice = fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId);
+      //const vec3 normals = fullTransformNormal(instanceInfo, normalize(attrib.data[VERTEX_NORMALS].xyz), intersection.geometryId);
 
       //
-      MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), texcoord.xy);
-
-      //
-      if (luminance(materialPix.color[MATERIAL_EMISSIVE].xyz) > 0.001f) {
-        rayData.emission.xyz = f16vec3(trueMultColor(rayData.energy.xyz,materialPix.color[MATERIAL_EMISSIVE].xyz));
-      };
+      mat3x3 tbn = getTBN(attrib);
+      MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), texcoord.xy, tbn);
+      const vec3 normals = fullTransformNormal(instanceInfo, attrib.data[VERTEX_NORMALS].xyz, intersection.geometryId);//materialPix.color[MATERIAL_NORMAL].xyz;
 
       // 
+      vec4 emissiveColor = toLinear(materialPix.color[MATERIAL_EMISSIVE]);
+      vec4 diffuseColor = toLinear(materialPix.color[MATERIAL_ALBEDO]);
       float metallicFactor = materialPix.color[MATERIAL_PBR].b;
       float roughnessFactor = materialPix.color[MATERIAL_PBR].g;
 
       //
-      vec3 originSeedXYZ = vec3(random(rayData.origin.x), random(rayData.origin.x), random(rayData.origin.x));
-      rayData.origin.xyz = vertice.xyz + normals.xyz * 0.001f;
-      if (random(rayData.origin.xyz) <= metallicFactor) { // I currently, have no time for fresnel
+      if (luminance(materialPix.color[MATERIAL_EMISSIVE].xyz) > 0.001f) {
+        rayData.emission.xyz = f16vec3(trueMultColor(rayData.energy.xyz, emissiveColor.xyz));
+        rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, 1.f-emissiveColor.xyz));
+      };
+
+      //
+      vec3 originSeedXYZ = vec3(random(rayData.origin.x), random(rayData.origin.y), random(rayData.origin.z));
+      rayData.origin.xyz = vertice.xyz + normals.xyz * 0.0001f;
+      if (random(rayData.origin.xyz) <= (metallicFactor + fresnel_schlick(0.f, dot(-rayData.direction.xyz, normals)))) { // I currently, have no time for fresnel
         rayData.direction.xyz = reflective(originSeedXYZ, rayData.direction.xyz, normals, roughnessFactor);
-        rayData.energy.xyz = f16vec3(metallicMult(rayData.energy.xyz, materialPix.color[MATERIAL_ALBEDO].xyz, metallicFactor));
+        rayData.energy.xyz = f16vec3(metallicMult(rayData.energy.xyz, diffuseColor.xyz, metallicFactor));
       } else {
         rayData.direction.xyz = randomCosineWeightedHemispherePoint(originSeedXYZ, normals);
-        rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, materialPix.color[MATERIAL_ALBEDO].xyz));
+        rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, diffuseColor.xyz));
       }
     } else {
-      rayData.emission.xyz = f16vec3(trueMultColor(rayData.energy.xyz, skyColor.xyz));
+      rayData.emission.xyz = f16vec3(trueMultColor(rayData.energy.xyz, toLinear(skyColor.xyz)));
       break;
     }
   };
@@ -76,86 +81,88 @@ RayData pathTrace(in RayData rayData) {
 //
 #define USE_RASTERIZE_PASS
 
-// 
-void main() {
-  const uvec2 gcoord = gl_GlobalInvocationID.xy;
-  const uvec4 indices = texelFetch(texturesU[framebufferAttachments[1]], ivec2(gcoord), 0);
-  const vec3 bary = texelFetch(textures[framebufferAttachments[0]], ivec2(gcoord), 0).xyz;
+//
+IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayData, in float maxT) {
+  const uvec4 indices = texelFetch(texturesU[framebufferAttachments[1]], ivec2(rayData.launchId), 0);
+  const vec3 bary = texelFetch(textures[framebufferAttachments[0]], ivec2(rayData.launchId), 0).xyz;
 
-  const vec2 tCoord = vec2(gcoord)/vec2(extent);
-
-#ifndef USE_RASTERIZE_PASS
-  const vec3 rayOrigin = divW(vec4(vec3(tCoord, 0.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse;//fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId);
-  const vec3 rayEnd = divW(vec4(vec3(tCoord, 1.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse;
-  const vec3 rayDir = normalize(rayEnd.xyz - rayOrigin.xyz);
-
-  RayData rayData;
-  rayData.origin = rayOrigin.xyz;
-  rayData.direction = rayDir;
-  rayData.energy = f16vec4(1.f.xxx, 1.f);
-  rayData.emission = f16vec4(0.f.xxx, 1.f);
-#endif
-
-#ifdef USE_RASTERIZE_PASS
   IntersectionInfo intersection;
   intersection.barycentric = bary.xyz;
   intersection.instanceId = indices[0];
   intersection.geometryId = indices[1];
   intersection.primitiveId = indices[2];
+  return intersection;
+};
+
+// 
+void main() {
+  const uvec2 gcoord = gl_GlobalInvocationID.xy;
+  const uvec4 indices = texelFetch(texturesU[framebufferAttachments[1]], ivec2(gcoord), 0);
+  const vec3 bary = texelFetch(textures[framebufferAttachments[0]], ivec2(gcoord), 0).xyz;
+  const vec2 tCoord = vec2(gcoord)/vec2(extent);
+
+  //
+  const vec3 rayBegin = divW(vec4(vec3(tCoord, 0.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse;//fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId);
+  const vec3 rayEnd = divW(vec4(vec3(tCoord, 1.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse;
+  const vec3 rayDir = normalize(rayEnd.xyz - rayBegin.xyz);
+
+  //
+  RayData rayData;
+  rayData.launchId = u16vec2(gcoord.xy);
+  rayData.origin = rayBegin.xyz;
+  rayData.direction = rayDir;
+  rayData.energy = f16vec4(1.f.xxx, 1.f);
+  rayData.emission = f16vec4(0.f.xxx, 1.f);
+
+  //
+#ifdef USE_RASTERIZE_PASS
+  IntersectionInfo intersection = rasterize(instancedData.opaqueAddressInfo, rayData, 10000.f);
 #else
   IntersectionInfo intersection = traceRaysOpaque(instancedData.opaqueAddressInfo, rayData, 10000.f);
 #endif
+
+  // 
   InstanceInfo instanceInfo = getInstance(instancedData.opaqueAddressInfo, intersection.instanceId);
   GeometryInfo geometryInfo = getGeometry(instanceInfo, intersection.geometryId);
   GeometryExtData geometry = getGeometryData(geometryInfo, intersection.primitiveId);
   GeometryExtAttrib attrib = interpolate(geometry, intersection.barycentric);
 
   //
-#ifdef USE_RASTERIZE_PASS
   const vec3 rayOrigin = fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId).xyz;
-  const vec3 rayEnd = divW(vec4(vec3(tCoord, 1.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse;
-  const vec3 rayDir = normalize(rayEnd.xyz - rayOrigin.xyz);
-#endif
-
   const vec4 texcoord = attrib.data[VERTEX_TEXCOORD];
   const vec4 tangent = attrib.data[VERTEX_TANGENT];
-  const vec3 normals = fullTransformNormal(instanceInfo, normalize(attrib.data[VERTEX_NORMALS].xyz), intersection.geometryId);
 
   //
-  MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), texcoord.xy);
-
-  bool hasHit = !all(lessThanEqual(intersection.barycentric, 0.f.xxx));
-
-  //
-  vec3 diffuseColor = hasHit ? materialPix.color[MATERIAL_ALBEDO].xyz : 0.f.xxx;
-  vec3 emissiveColor = hasHit ? materialPix.color[MATERIAL_EMISSIVE].xyz : skyColor.xyz;
+  mat3x3 tbn = getTBN(attrib);
+  MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), texcoord.xy, tbn);
+  const vec3 normals = fullTransformNormal(instanceInfo, materialPix.color[MATERIAL_NORMAL].xyz, intersection.geometryId);
 
   // 
+  bool hasHit = !all(lessThanEqual(intersection.barycentric, 0.f.xxx));
+  vec3 diffuseColor = toLinear(hasHit ? materialPix.color[MATERIAL_ALBEDO].xyz : 0.f.xxx);
+  vec3 emissiveColor = toLinear(hasHit ? materialPix.color[MATERIAL_EMISSIVE].xyz : skyColor.xyz);
   float metallicFactor = hasHit ? materialPix.color[MATERIAL_PBR].b : 0.f;
   float roughnessFactor = hasHit ? materialPix.color[MATERIAL_PBR].g : 0.f;
-
-  //
-  vec3 originSeedXYZ = vec3(random(rayOrigin.x), random(rayOrigin.x), random(rayOrigin.x));
+  vec3 originSeedXYZ = vec3(random(rayOrigin.x), random(rayOrigin.y), random(rayOrigin.z));
 
   // 
-  RayData diffRayData;
-  diffRayData.origin = rayOrigin.xyz + normals.xyz * 0.001f;
-  diffRayData.direction.xyz = rayDir;
+  RayData diffRayData = rayData;
+  diffRayData.origin = rayOrigin.xyz + normals.xyz * 0.0001f;
+  diffRayData.direction.xyz = normalize(randomCosineWeightedHemispherePoint(originSeedXYZ, normals));
   diffRayData.energy = f16vec4(1.f.xxx, 1.f);
   diffRayData.emission = f16vec4(0.f.xxx, 1.f);
-  diffRayData.direction.xyz = normalize(randomCosineWeightedHemispherePoint(originSeedXYZ, normals));
-  diffRayData = dot(vec3(diffuseColor), vec3(0.3f, 0.59f, 0.11f)) >= 0.001f ? pathTrace(diffRayData) : diffRayData;
+  diffRayData = luminance(diffuseColor) >= 0.001f ? pathTrace(diffRayData) : diffRayData;
 
   // 
-  RayData reflRayData;
-  reflRayData.origin = rayOrigin.xyz + normals.xyz * 0.001f;
+  RayData reflRayData = rayData;
+  reflRayData.origin = rayOrigin.xyz + normals.xyz * 0.0001f;
   reflRayData.direction.xyz = reflective(originSeedXYZ, rayDir.xyz, normals.xyz, roughnessFactor);
   reflRayData.energy = f16vec4(metallicMult(1.f.xxx, materialPix.color[MATERIAL_ALBEDO].xyz, metallicFactor), 1.f);;
   reflRayData.emission = f16vec4(0.f.xxx, 1.f);
   reflRayData = pathTrace(reflRayData);
 
   // I currently, have no time for fresnel
-  vec4 finalColor = vec4(mix(vec3(diffuseColor.xyz * diffRayData.emission.xyz + diffRayData.energy.xyz * emissiveColor), vec3(reflRayData.emission.xyz), hasHit ? metallicFactor : 0.f), 1.f);
-  //finalColor.xyz = reflRayData.emission.xyz;
-  imageStore(images[swapchain.image], ivec2(gcoord.x, extent.y-1-gcoord.y), finalColor);
+  vec4 finalColor = vec4(mix(vec3(diffuseColor.xyz * diffRayData.emission.xyz + diffRayData.energy.xyz * emissiveColor), vec3(reflRayData.emission.xyz), hasHit ? (metallicFactor + fresnel_schlick(0.f, dot(-rayDir, normals))) : 0.f), 1.f);
+  //finalColor.xyz = normals.xyz * 0.5f + 0.5f;//;
+  imageStore(images[swapchain.image], ivec2(gcoord.x, extent.y-1-gcoord.y), fromLinear(finalColor));
 };
