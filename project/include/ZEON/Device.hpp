@@ -305,7 +305,7 @@ namespace ZNAMED {
       };
 
       // 
-      auto fence = std::make_shared<FenceStatus>(device, device.createFence(vk::FenceCreateInfo{ .flags = {} }));
+      auto fence = std::make_shared<FenceStatus>(device, dispatch, device.createFence(vk::FenceCreateInfo{ .flags = {} }));
       auto submits = std::vector<vk::SubmitInfo2>{
         submitInfo.setCommandBufferInfos(cmdInfos).setWaitSemaphoreInfos(*submission.waitSemaphores).setSignalSemaphoreInfos(*submission.signalSemaphores)
       };

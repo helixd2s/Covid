@@ -219,7 +219,7 @@ namespace ZNAMED {
 
       // 
       decltype(auto) fences = deviceObj->getFences();
-      fences.push_back(std::make_shared<FenceStatus>(device, device.createFence(vk::FenceCreateInfo{ .flags = {} })));
+      fences.push_back(std::make_shared<FenceStatus>(device, deviceObj->getDispatch(), device.createFence(vk::FenceCreateInfo{.flags = {}})));
       if (bindSparseInfo) {
         queue.bindSparse(std::vector<vk::BindSparseInfo>{bindSparseInfo}, fences.back()->fence);
       };

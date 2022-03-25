@@ -366,7 +366,8 @@ namespace ZNAMED {
       "VK_KHR_external_memory_win32",
       "VK_KHR_external_memory_fd",
       "VK_KHR_shader_subgroup_uniform_control_flow",
-      "VK_KHR_workgroup_memory_explicit_layout"
+      "VK_KHR_workgroup_memory_explicit_layout",
+      "VK_KHR_shared_presentable_image"
     };
     cpp21::shared_vector<std::string> layerList = std::vector<std::string>{
     };
@@ -1096,18 +1097,22 @@ namespace ZNAMED {
   struct FenceStatus {
     vk::Device device = {};
     vk::Fence fence = {};
+    vk::SwapchainKHR swapchain = {};
     vk::Result status = vk::Result::eNotReady;
+    vk::DispatchLoaderDynamic dispatch = {};
     std::function<void(vk::Result const&)> onDone = {};
     std::shared_ptr<std::future<vk::Result>> future = {};
 
     //
     bool checkStatus() {
+      if (this->swapchain && (this->status = this->device.getSwapchainStatusKHR(this->swapchain, this->dispatch)) != vk::Result::eSuboptimalKHR) { if (this->onDone) { this->onDone(this->status); }; this->onDone = {}; return true; } else
       if (!this->fence || (this->status = this->device.getFenceStatus(this->fence)) != vk::Result::eNotReady) { if (this->onDone) { this->onDone(this->status); }; this->onDone = {}; return true; };
       return false;
     };
 
     // 
-    FenceStatus(vk::Device const& device, vk::Fence const& fence, std::function<void(vk::Result const&)> onDone = {}, vk::Result const& status = vk::Result::eNotReady) : device(device), fence(fence), status(status), onDone(onDone) {};
+    FenceStatus(vk::Device const& device, vk::DispatchLoaderDynamic const& dispatch, vk::Fence const& fence, std::function<void(vk::Result const&)> onDone = {}, vk::Result const& status = vk::Result::eNotReady) : device(device), fence(fence), status(status), onDone(onDone) {};
+    FenceStatus(vk::Device const& device, vk::DispatchLoaderDynamic const& dispatch, vk::SwapchainKHR const& swapchain, std::function<void(vk::Result const&)> onDone = {}, vk::Result const& status = vk::Result::eSuboptimalKHR) : device(device), swapchain(swapchain), status(status), onDone(onDone) {};
     //~FenceStatus() { this->device.destroyFence(this->fence); };
 
     //
