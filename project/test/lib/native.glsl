@@ -501,6 +501,10 @@ GeometryExtData getGeometryData(in GeometryInfo geometryInfo, in uvec3 indices) 
      vec3 N = result.triData[VERTEX_NORMALS][i].xyz;
      float W = result.triData[VERTEX_TANGENT][i].w;
 
+     // if wrong value
+     W = W < 0.001 && W > -0.001 ? 1.f : W;
+
+    // 
     const vec3 dp1 = vp[1].xyz - vp[0].xyz, dp2 = vp[2].xyz - vp[0].xyz;
     const vec2 tx1 = tp[1].xy - tp[0].xy, tx2 = tp[2].xy - tp[0].xy;
     const float coef = 1.f / (tx1.x * tx2.y - tx2.x * tx1.y);

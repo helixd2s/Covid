@@ -63,7 +63,7 @@ RayData pathTrace(in RayData rayData) {
       //
       vec3 originSeedXYZ = vec3(random(rayData.origin.x), random(rayData.origin.y), random(rayData.origin.z));
       rayData.origin.xyz = vertice.xyz + normals.xyz * 0.0001f;
-      if (random(rayData.origin.xyz) <= (metallicFactor + fresnel_schlick(0.f, dot(-rayData.direction.xyz, normals)))) { // I currently, have no time for fresnel
+      if (random(rayData.origin.xyz) <= (metallicFactor + fresnel_schlick(0.f, dot(-rayData.direction.xyz, normals)) * (1.f - metallicFactor))) { // I currently, have no time for fresnel
         rayData.direction.xyz = reflective(originSeedXYZ, rayData.direction.xyz, normals, roughnessFactor);
         rayData.energy.xyz = f16vec3(metallicMult(rayData.energy.xyz, diffuseColor.xyz, metallicFactor));
       } else {
@@ -162,7 +162,7 @@ void main() {
   reflRayData = pathTrace(reflRayData);
 
   // I currently, have no time for fresnel
-  vec4 finalColor = vec4(mix(vec3(diffuseColor.xyz * diffRayData.emission.xyz + diffRayData.energy.xyz * emissiveColor), vec3(reflRayData.emission.xyz), hasHit ? (metallicFactor + fresnel_schlick(0.f, dot(-rayDir, normals))) : 0.f), 1.f);
+  vec4 finalColor = vec4(mix(vec3(diffuseColor.xyz * diffRayData.emission.xyz + diffRayData.energy.xyz * emissiveColor), vec3(reflRayData.emission.xyz), hasHit ? (metallicFactor + fresnel_schlick(0.f, dot(-rayDir, normals)) * (1.f - metallicFactor)) : 0.f), 1.f);
   //finalColor.xyz = normals.xyz * 0.5f + 0.5f;//;
   imageStore(images[swapchain.image], ivec2(gcoord.x, extent.y-1-gcoord.y), fromLinear(finalColor));
 };
