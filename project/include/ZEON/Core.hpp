@@ -846,6 +846,7 @@ namespace ZNAMED {
   struct SubmissionInfo : BaseCreateInfo {
     std::optional<QueueGetInfo> info = QueueGetInfo{};
     std::optional<vk::CommandBufferInheritanceInfo> inheritanceInfo = {};
+    std::vector<std::function<void(cpp21::const_wrap_arg<vk::Result>)>> onDone = {};
     cpp21::shared_vector<vk::SemaphoreSubmitInfo> waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
     cpp21::shared_vector<vk::SemaphoreSubmitInfo> signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
   };
@@ -981,7 +982,6 @@ namespace ZNAMED {
   //
   struct CommandOnceSubmission : BaseCreateInfo {
     std::vector<std::function<cpp21::const_wrap_arg<vk::CommandBuffer>(cpp21::const_wrap_arg<vk::CommandBuffer>)>> commandInits = {};
-    std::vector<std::function<void(cpp21::const_wrap_arg<vk::Result>)>> onDone = {};
     SubmissionInfo submission = {};
   };
 
@@ -1094,53 +1094,20 @@ namespace ZNAMED {
   };
 
   //
-  struct FenceStatus {
-    vk::Device device = {};
-    vk::Fence fence = {};
-    vk::SwapchainKHR swapchain = {};
-    vk::Result status = vk::Result::eNotReady;
-    vk::DispatchLoaderDynamic dispatch = {};
-    std::function<void(vk::Result const&)> onDone = {};
-    std::shared_ptr<std::future<vk::Result>> future = {};
+  class FenceStatus {
+  protected:
+    std::function<bool()> getStatus = {};
+    std::function<void()> onDone = {};
 
     //
+  public:
     bool checkStatus() {
-      if (this->swapchain && (this->status = this->device.getSwapchainStatusKHR(this->swapchain, this->dispatch)) != vk::Result::eSuboptimalKHR) { if (this->onDone) { this->onDone(this->status); }; this->onDone = {}; return true; } else
-      if (!this->fence || (this->status = this->device.getFenceStatus(this->fence)) != vk::Result::eNotReady) { if (this->onDone) { this->onDone(this->status); }; this->onDone = {}; return true; };
+      if (this->getStatus()) { if (this->onDone) { this->onDone(); }; this->onDone = {}; return true; };
       return false;
     };
 
     // 
-    FenceStatus(vk::Device const& device, vk::DispatchLoaderDynamic const& dispatch, vk::Fence const& fence, std::function<void(vk::Result const&)> onDone = {}, vk::Result const& status = vk::Result::eNotReady) : device(device), fence(fence), status(status), onDone(onDone) {};
-    FenceStatus(vk::Device const& device, vk::DispatchLoaderDynamic const& dispatch, vk::SwapchainKHR const& swapchain, std::function<void(vk::Result const&)> onDone = {}, vk::Result const& status = vk::Result::eSuboptimalKHR) : device(device), swapchain(swapchain), status(status), onDone(onDone) {};
-    //~FenceStatus() { this->device.destroyFence(this->fence); };
-
-    //
-    inline operator bool() const { return !!fence; };
-
-    //
-    inline auto& operator*() { return fence; };
-    inline auto const& operator*() const { return fence; };
-
-    //
-    inline operator vk::Fence&() { return fence; };
-    inline operator vk::Fence const&() const { return fence; };
-    inline decltype(auto) operator=(vk::Fence const& fence) { this->fence = fence; return *this; };
-
-    //
-    inline operator vk::Result& () { this->checkStatus(); return status; };
-    inline operator vk::Result const& () const { const_cast<FenceStatus*>(this)->checkStatus(); return status; };
-    inline decltype(auto) operator=(vk::Result const& status) { this->status = status; return *this; };
-
-    //
-    inline operator vk::Device& () { return device; };
-    inline operator vk::Device const& () const { return device; };
-    inline decltype(auto) operator=(vk::Device const& device) { this->device = device; return *this; };
-
-    //
-    inline operator std::shared_ptr<std::future<vk::Result>>& () { return future; };
-    inline operator std::shared_ptr<std::future<vk::Result>> const& () const { return future; };
-    inline decltype(auto) operator=(std::shared_ptr<std::future<vk::Result>> const& future) { this->future = future; return *this; };
+    FenceStatus(std::function<bool()> getStatus, std::function<void()> onDone = {}) : getStatus(getStatus), onDone(onDone) {};
   };
 
   //
@@ -1462,6 +1429,10 @@ namespace ZNAMED {
     bool alive = true;
 
   public: //
+
+    //
+    virtual std::shared_ptr<CallStack> getCallstack() { return callstack; };
+    virtual std::shared_ptr<CallStack> getCallstack() const { return callstack; };
 
     // temp solution
     virtual bool isAlive() const { return alive; };

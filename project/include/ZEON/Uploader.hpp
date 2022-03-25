@@ -431,7 +431,7 @@ namespace ZNAMED {
 
       //
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
-      submission.onDone.push_back([uploadBlock=this->uploadBlock, alloc](cpp21::const_wrap_arg<vk::Result> result) {
+      submission.submission.onDone.push_back([uploadBlock=this->uploadBlock, alloc](cpp21::const_wrap_arg<vk::Result> result) {
         vmaVirtualFree(uploadBlock, alloc);
       });
 #endif
@@ -464,14 +464,13 @@ namespace ZNAMED {
 
       //
       if (exec->host) {
-#ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
-        submission.onDone.push_back([offset, downloadBlock = this->downloadBlock, alloc, size, _host = exec->host, mapped = this->getDownloadMapped(offset)](cpp21::const_wrap_arg<vk::Result> result) {
+        submission.submission.onDone.push_back([offset, size, _host = exec->host, mapped = this->getDownloadMapped(offset)](cpp21::const_wrap_arg<vk::Result> result) {
           memcpy(_host->data(), cpp21::shift(mapped, offset), size);
-          vmaVirtualFree(downloadBlock, alloc);
         });
-#else
-        submission.onDone.push_back([offset, size, _host = exec->host, mapped = this->getDownloadMapped(offset)](cpp21::const_wrap_arg<vk::Result> result) {
-          memcpy(_host->data(), cpp21::shift(mapped, offset), size);
+
+#ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
+        submission.submission.onDone.push_back([downloadBlock = this->downloadBlock, alloc](cpp21::const_wrap_arg<vk::Result> result) {
+          vmaVirtualFree(downloadBlock, alloc);
         });
 #endif
       };

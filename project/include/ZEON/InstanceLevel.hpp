@@ -278,7 +278,7 @@ namespace ZNAMED {
 
       //
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
-      submission.onDone.push_back([uploadBlock, instanceDevAlloc, instanceAlloc](cpp21::const_wrap_arg<vk::Result> result) {
+      submission.submission.onDone.push_back([uploadBlock, instanceDevAlloc, instanceAlloc](cpp21::const_wrap_arg<vk::Result> result) {
         vmaVirtualFree(uploadBlock, instanceDevAlloc);
         vmaVirtualFree(uploadBlock, instanceAlloc);
       });

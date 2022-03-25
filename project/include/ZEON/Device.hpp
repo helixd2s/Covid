@@ -305,16 +305,20 @@ namespace ZNAMED {
       };
 
       // 
-      auto fence = std::make_shared<FenceStatus>(device, dispatch, device.createFence(vk::FenceCreateInfo{ .flags = {} }));
+      auto fence = std::make_shared<vk::Fence>(device.createFence(vk::FenceCreateInfo{ .flags = {} }));
       auto submits = std::vector<vk::SubmitInfo2>{
         submitInfo.setCommandBufferInfos(cmdInfos).setWaitSemaphoreInfos(*submission.waitSemaphores).setSignalSemaphoreInfos(*submission.signalSemaphores)
       };
       queue.submit2(submits, *fence);
 
-      
+      //
+      auto getStatus = [device, fence]() {
+        if (fence && *fence) { return device.getFenceStatus(*fence) != vk::Result::eNotReady; };
+        return true;
+      };
 
       // 
-      decltype(auto) deAllocation = [device, fence, commandPool, commandBuffers]() {
+      auto deAllocation = [device, fence, commandPool, commandBuffers]() {
         if (fence && *fence) {
           device.destroyFence(*fence);
           device.freeCommandBuffers(commandPool, commandBuffers);
@@ -323,39 +327,23 @@ namespace ZNAMED {
       };
 
       //
-      decltype(auto) onDone = [callstack = std::weak_ptr<CallStack>(this->callstack), device, fence, commandPool, submissionRef, commandBuffers, deAllocation](vk::Result const& result = vk::Result::eNotReady) {
-        //auto result = device.waitForFences(*fence, true, 1000 * 1000 * 1000);
-        //auto result = device.getFenceStatus(*fence);
-        //while (result == vk::Result::eNotReady) { result = device.getFenceStatus(*fence); };
+      auto onDone = [device, fence, callstack = std::weak_ptr<CallStack>(this->callstack), submissionRef, deAllocation]() {
         auto cl = callstack.lock();
-        for (auto& fn : submissionRef->onDone) {
-          cl->add(std::bind(fn, result));
+        for (auto& fn : submissionRef->submission.onDone) {
+          cl->add(std::bind(fn, device.getFenceStatus(*fence)));
         };
         cl->add(deAllocation);
-        return result;
       };
 
-      // 
-      fence->onDone = onDone;
-
       //
-      fences.push_back(fence);
+      fences.push_back(std::make_shared<FenceStatus>(getStatus, onDone));
+      auto status = fences.back();
 
       // clean and call events
       this->tickProcessing();
 
       // 
-      //decltype(auto) promise = std::make_shared<std::future<vk::Result>>(std::async(std::launch::async | std::launch::deferred, onDone));
-
-      //
-      //this->futures.push_back(promise);
-
-      //
-      //fence->future = promise;
-
-      // 
-      //return std::make_shared<FenceTypeRaw>(promise, fence);
-      return fence;
+      return status;
     };
 
     //

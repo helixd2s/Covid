@@ -219,12 +219,36 @@ namespace ZNAMED {
 
       // 
       decltype(auto) fences = deviceObj->getFences();
-      fences.push_back(std::make_shared<FenceStatus>(device, deviceObj->getDispatch(), device.createFence(vk::FenceCreateInfo{.flags = {}})));
+      decltype(auto) fence = std::make_shared<vk::Fence>(device.createFence(vk::FenceCreateInfo{ .flags = {} }));
+
+      // 
+      auto deAllocation = [device, fence]() {
+        if (fence && *fence) {
+          device.destroyFence(*fence);
+          *fence = vk::Fence{};
+        };
+      };
+
+      //
+      auto onDone = [device, fence, callstack = std::weak_ptr<CallStack>(deviceObj->getCallstack()), submission, deAllocation]() {
+        auto cl = callstack.lock();
+        for (auto& fn : submission->onDone) {
+          cl->add(std::bind(fn, device.getFenceStatus(*fence)));
+        };
+        cl->add(deAllocation);
+      };
+
+      //
+      fences.push_back(std::make_shared<FenceStatus>([device, fence]() {
+        if (fence && *fence) { return device.getFenceStatus(*fence) != vk::Result::eNotReady; };
+        return true;
+      }, onDone));
+      decltype(auto) status = fences.back();
       if (bindSparseInfo) {
-        queue.bindSparse(std::vector<vk::BindSparseInfo>{bindSparseInfo}, fences.back()->fence);
+        queue.bindSparse(std::vector<vk::BindSparseInfo>{bindSparseInfo}, *fence);
       };
       deviceObj->tickProcessing();
-      return fences.back();
+      return status;
     };
 
   public:
