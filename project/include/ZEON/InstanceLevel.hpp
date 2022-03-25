@@ -30,6 +30,7 @@ namespace ZNAMED {
     vk::Buffer instanceBuild = {};
     vk::Buffer instanceExtBuffer = {};
 
+    // 
     WrapShared<ResourceObj> bindInstanceBuffer = {};
     WrapShared<ResourceObj> bindInstanceScratch = {};
     WrapShared<ResourceObj> bindInstanceBuild = {};
@@ -41,6 +42,7 @@ namespace ZNAMED {
 
     //
     cpp21::shared_vector<InstanceDraw> instanceDraw = std::vector<InstanceDraw>{};
+    cpp21::shared_vector<InstanceDevInfo> instanceDevInfo = std::vector<InstanceDevInfo>{};
     cpp21::shared_vector<InstanceInfo> instanceInfo = std::vector<InstanceInfo>{};
 
     //
@@ -62,12 +64,12 @@ namespace ZNAMED {
   public:
 
     // 
-    InstanceLevelObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) : BaseObj(deviceObj), cInfo(cInfo), instanceDraw(std::vector<InstanceDraw>{}), instanceInfo(std::vector<InstanceInfo>{}) {
+    InstanceLevelObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) : BaseObj(deviceObj), cInfo(cInfo), instanceDraw(std::vector<InstanceDraw>{}), instanceDevInfo(std::vector<InstanceDevInfo>{}) {
       //this->construct(deviceObj, cInfo);
     };
 
     // 
-    InstanceLevelObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) : BaseObj(handle), cInfo(cInfo), instanceDraw(std::vector<InstanceDraw>{}), instanceInfo(std::vector<InstanceInfo>{}) {
+    InstanceLevelObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) : BaseObj(handle), cInfo(cInfo), instanceDraw(std::vector<InstanceDraw>{}), instanceDevInfo(std::vector<InstanceDevInfo>{}) {
       //this->construct(ZNAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
@@ -109,8 +111,8 @@ namespace ZNAMED {
     virtual vk::Buffer const& getInstancedBuffer() const { return this->instanceBuffer; };
 
     //
-    virtual std::vector<InstanceDevInfo>& getInstances() { return this->cInfo->instances; };
-    virtual std::vector<InstanceDevInfo> const& getInstances() const { return this->cInfo->instances; };
+    virtual std::vector<InstanceInfo>& getInstances() { return this->instanceInfo; };
+    virtual std::vector<InstanceInfo> const& getInstances() const { return this->instanceInfo; };
 
     //
     virtual cpp21::shared_vector<InstanceDraw>& getDrawInfo() { return this->instanceDraw; };
@@ -141,17 +143,23 @@ namespace ZNAMED {
         for (uintptr_t idx = this->instanceDraw->size(); idx < this->cInfo->instances.size(); idx++) {
           this->instanceDraw->push_back(InstanceDraw{});
           this->instanceInfo->push_back(InstanceInfo{});
+          this->instanceDevInfo->push_back(InstanceDevInfo{});
         };
       };
 
       // 
       for (uintptr_t idx = 0ull; idx < this->cInfo->instances.size(); idx++) {
         auto& instances = this->cInfo->instances[idx];
-        auto& instanceDraw = this->instanceDraw[idx];
         auto& instanceInfo = this->instanceInfo[idx];
+        auto& instanceDraw = this->instanceDraw[idx];
+        auto& instanceDevInfo = this->instanceDevInfo[idx];
+
+        //
+        instanceInfo = instances.instanceInfo;
+        instanceDevInfo = instances.instanceDevInfo;
 
         // 
-        decltype(auto) geometryLevel = deviceObj->get<GeometryLevelObj>(instances.accelerationStructureReference);
+        decltype(auto) geometryLevel = deviceObj->get<GeometryLevelObj>(instanceDevInfo.accelerationStructureReference);
 
         // 
         if (this->getInstanceInfoResource()) {
@@ -160,7 +168,8 @@ namespace ZNAMED {
         };
 
         // 
-        instanceInfo = InstanceInfo{ .transform = reinterpret_cast<glm::mat3x4&>(instances.transform), .reference = geometryLevel->getGeometryDeviceAddress() };
+        instanceInfo.transform = reinterpret_cast<glm::mat3x4&>(instanceDevInfo.transform);
+        instanceInfo.geometryReference = geometryLevel->getGeometryDeviceAddress();
       };
 
       {
@@ -268,7 +277,7 @@ namespace ZNAMED {
 #endif
 
       // 
-      memcpy(uploaderObj->getUploadMapped(instanceDevOffset), this->cInfo->instances.data(), this->cInfo->instances.size() * sizeof(InstanceDevInfo));
+      memcpy(uploaderObj->getUploadMapped(instanceDevOffset), this->instanceDevInfo->data(), this->instanceDevInfo->size() * sizeof(InstanceDevInfo));
       memcpy(uploaderObj->getUploadMapped(instanceOffset), this->instanceInfo->data(), this->instanceInfo->size() * sizeof(InstanceInfo));
 
       // TODO: Acceleration Structure Build Barriers per Buffers
@@ -300,13 +309,18 @@ namespace ZNAMED {
       //
       if (this->cInfo->instances.size() < this->cInfo->limit) {
         for (uintptr_t i = this->cInfo->instances.size(); i < this->cInfo->limit; i++) {
-          this->cInfo->instances.push_back(InstanceDevInfo{
-            .transform = reinterpret_cast<vk::TransformMatrixKHR&&>(glm::mat3x4(1.f)),
-            .instanceCustomIndex = 0u,
-            .mask = 0u,
-            .instanceShaderBindingTableRecordOffset = 0u,
-            .flags = 0u,
-            .accelerationStructureReference = 0u
+          this->cInfo->instances.push_back(InstanceDataInfo{
+            .instanceDevInfo = InstanceDevInfo{
+              .transform = reinterpret_cast<vk::TransformMatrixKHR&&>(glm::mat3x4(1.f)),
+              .instanceCustomIndex = 0u,
+              .mask = 0u,
+              .instanceShaderBindingTableRecordOffset = 0u,
+              .flags = 0u,
+              .accelerationStructureReference = 0u
+            },
+            .instanceInfo = InstanceInfo{
+
+            }
           });
         };
       };

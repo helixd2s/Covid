@@ -31,7 +31,8 @@ const uint32_t MAX_VERTEX_DATA = 4u;
 const uint32_t MATERIAL_ALBEDO = 0u;
 const uint32_t MATERIAL_NORMAL = 1u;
 const uint32_t MATERIAL_PBR = 2u;
-const uint32_t MAX_MATERIAL_BIND = 3u;
+const uint32_t MATERIAL_EMISSIVE = 3u;
+const uint32_t MAX_MATERIAL_BIND = 4u;
 
 //
 struct Constants
@@ -72,6 +73,7 @@ layout(set = 0, binding = 0, scalar) uniform MatrixBlock
 
 //
 layout(set = 1, binding = 0) uniform texture2D textures[];
+layout(set = 1, binding = 0) uniform utexture2D texturesU[];
 layout(set = 2, binding = 0) uniform sampler samplers[];
 layout(set = 3, binding = 0, rgb10_a2) uniform image2D images[];
 
@@ -97,9 +99,23 @@ struct MaterialPixelInfo {
 // TODO: Parallax Mapping Support...
 
 //
+vec4 sampleTex(CTexture tex, in vec2 texcoord, int lod) {
+  return textureLod(
+    nonuniformEXT(sampler2D(
+      nonuniformEXT(textures[nonuniformEXT(tex.textureId)]), 
+      nonuniformEXT(samplers[nonuniformEXT(tex.samplerId)]))
+    ), vec2(texcoord.x,texcoord.y), float(lod)/float(textureQueryLevels(nonuniformEXT(textures[nonuniformEXT(tex.textureId)]))));
+};
+
+//
+vec4 sampleTex(CTexture tex, in vec2 texcoord) {
+  return sampleTex(tex, texcoord, 0);
+};
+
+//
 vec4 handleTexture(in TexOrDef tex, in vec2 texcoord) {
   if (tex.texture.textureId > 0u && tex.texture.textureId != -1) {
-    return texture(sampler2D(textures[tex.texture.textureId], samplers[tex.texture.samplerId]), texcoord);
+    return sampleTex(tex.texture, texcoord);
   };
   return tex.defValue;
 };
@@ -170,14 +186,18 @@ layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer G
 
 //
 struct InstanceInfo {
-  mat3x4 transform;
   GeometryData data;
+  mat3x4 transform;
+  //mat3x3 normalTransform;
+  //uint32_t align;
 };
 
 //
 layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer InstanceData {
   InstanceInfo infos[];
 };
+
+
 
 //
 struct InstanceAddressInfo {
@@ -381,6 +401,18 @@ mat3x4 getGeometryTransform(in GeometryInfo info) {
 
 
 //
+mat3x4 inverse(in mat3x4 inmat) {
+  const mat4x4 temp = transpose(inverse(transpose(mat4x4(inmat))));
+  return mat3x4(temp[0],temp[1],temp[2]);
+};
+
+//
+mat3x3 toNormalMat(in mat3x4 inmat) {
+  return transpose(inverse(transpose(mat3x3(inmat))));
+};
+
+
+//
 vec4 fullTransform(in InstanceInfo instance, in vec4 vertices, in uint32_t geometryId) {
   GeometryInfo geometry = getGeometry(instance, geometryId);
   return vec4(vec4(vertices * getGeometryTransform(geometry), 1.f) * getInstanceTransform(instance), 1.f);
@@ -397,18 +429,6 @@ vec4 fullTransform(in InstanceData data, in vec3 vertices, in uint32_t instanceI
 };
 
 //
-vec3 fullTransformNormal(in InstanceInfo instance, in vec3 normals, in uint32_t geometryId) {
-  GeometryInfo geometry = getGeometry(instance, geometryId);
-  return vec4(vec4(normals, 0.f) * getGeometryTransform(geometry), 0.f) * getInstanceTransform(instance);
-};
-
-//
-vec3 fullTransformNormal(in InstanceData data, in vec3 normals, in uint32_t instanceId, in uint32_t geometryId) {
-  return fullTransformNormal(getInstance(data, instanceId), normals, geometryId);
-};
-
-
-//
 vec4 fullTransform(in InstanceAddressInfo info, in vec4 vertices, in uint32_t instanceId, in uint32_t geometryId) {
   return fullTransform(info.data, vertices, instanceId, geometryId);
 };
@@ -418,10 +438,23 @@ vec4 fullTransform(in InstanceAddressInfo info, in vec3 vertices, in uint32_t in
   return fullTransform(info, vec4(vertices, 1.f), instanceId, geometryId);
 };
 
+
+//
+vec3 fullTransformNormal(in InstanceInfo instance, in vec3 normals, in uint32_t geometryId) {
+  GeometryInfo geometry = getGeometry(instance, geometryId);
+  return normalize(toNormalMat(getInstanceTransform(instance)) * normalize(toNormalMat(getGeometryTransform(geometry)) * normalize(normals)));
+};
+
+//
+vec3 fullTransformNormal(in InstanceData data, in vec3 normals, in uint32_t instanceId, in uint32_t geometryId) {
+  return fullTransformNormal(getInstance(data, instanceId), normals, geometryId);
+};
+
 //
 vec3 fullTransformNormal(in InstanceAddressInfo info, in vec3 normals, in uint32_t instanceId, in uint32_t geometryId) {
   return fullTransformNormal(info.data, normals, instanceId, geometryId);
 };
+
 
 //
 GeometryExtData getGeometryData(in GeometryInfo geometryInfo, in uvec3 indices) {
@@ -465,17 +498,21 @@ GeometryExtAttrib interpolate(in GeometryExtData data, in vec2 barycentric) {
   return interpolate(data, vec3(1.f-barycentric.x-barycentric.y, barycentric));
 };
 
+//
+float luminance(in vec3 color) {
+  return dot(vec3(color), vec3(0.3f, 0.59f, 0.11f));
+};
 
 // for metallic reflection (true-multiply)
-vec3 trueMultColor(in vec3 rayColor, in vec3 materialColor) {
-  float rfactor = dot(rayColor, vec3(0.3f, 0.59f, 0.11f));
-  float mfactor = dot(metallic, vec3(0.3f, 0.59f, 0.11f));
+vec3 trueMultColor(in vec3 rayColor, in vec3 material) {
+  float rfactor = luminance(rayColor);
+  float mfactor = luminance(material);
   //return rfactor * materialColor + mfactor * rayColor;
-  return sqrt((rfactor * materialColor) * (mfactor * rayColor));
+  return sqrt((rfactor * material) * (mfactor * rayColor));
 };
 
 // for metallic reflection
-vec3 metallicFactor(in vec3 rayColor, in vec3 materialColor, in float factor) {
+vec3 metallicMult(in vec3 rayColor, in vec3 materialColor, in float factor) {
   return mix(rayColor, trueMultColor(rayColor, materialColor), factor);
 };
 

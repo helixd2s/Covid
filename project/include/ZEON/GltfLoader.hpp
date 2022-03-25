@@ -42,7 +42,7 @@ namespace ZNAMED {
 
   //
   struct GltfInstanced : std::enable_shared_from_this<GltfInstanced> {
-    std::vector<InstanceDevInfo> instances = {};
+    std::vector<InstanceDataInfo> instances = {};
     WrapShared<InstanceLevelObj> instanced = {};
   };
 
@@ -196,7 +196,7 @@ namespace ZNAMED {
 
       //
       decltype(auto) handleFactor = [=](auto const& factor) {
-        return glm::vec4(factor[0], factor[1], factor[2], factor[3]);
+        return glm::vec4(factor[0], factor[1], factor[2], factor.size() > 3 ? factor[3] : 1.f);
       };
 
       // 
@@ -295,6 +295,7 @@ namespace ZNAMED {
         materialInf.texCol[std::to_underlying(ZNAMED::TextureBind::eAlbedo)] = ZNAMED::TexOrDef{ .texture = material.pbrMetallicRoughness.baseColorTexture.index >= 0 ? gltf->textures[material.pbrMetallicRoughness.baseColorTexture.index] : CTexture{}, .defValue = handleFactor(material.pbrMetallicRoughness.baseColorFactor)};
         materialInf.texCol[std::to_underlying(ZNAMED::TextureBind::eNormal)] = ZNAMED::TexOrDef{ .texture = material.normalTexture.index >= 0 ? gltf->textures[material.normalTexture.index] : CTexture{}, .defValue = glm::vec4(0.5f, 0.5f, 1.f, 1.f) };
         materialInf.texCol[std::to_underlying(ZNAMED::TextureBind::ePBR)] = ZNAMED::TexOrDef{ .texture = material.pbrMetallicRoughness.metallicRoughnessTexture.index >= 0 ? gltf->textures[material.pbrMetallicRoughness.metallicRoughnessTexture.index] : CTexture{}, .defValue = glm::vec4(1.f, material.pbrMetallicRoughness.roughnessFactor, material.pbrMetallicRoughness.metallicFactor, 1.f) };
+        materialInf.texCol[std::to_underlying(ZNAMED::TextureBind::eEmissive)] = ZNAMED::TexOrDef{ .texture = material.emissiveTexture.index >= 0 ? gltf->textures[material.emissiveTexture.index] : CTexture{}, .defValue = handleFactor(material.emissiveFactor) };
         gltf->materials.push_back(materialInf);
       };
 
@@ -380,13 +381,18 @@ namespace ZNAMED {
       decltype(auto) useMesh = [=, this](std::shared_ptr<GltfInstanced> inst, tinygltf::Model& model, intptr_t const& meshId, glm::mat4x4 transform = glm::mat4x4()) {
         decltype(auto) mesh = model.meshes[meshId];
         decltype(auto) transposed = glm::transpose(transform);
-        inst->instances.push_back(InstanceDevInfo{
-          .transform = reinterpret_cast<vk::TransformMatrixKHR&>(transposed),
-          .instanceCustomIndex = 0u,
-          .mask = 0xFFu,
-          .instanceShaderBindingTableRecordOffset = 0u,
-          .flags = uint8_t(vk::GeometryInstanceFlagBitsKHR{}),
-          .accelerationStructureReference = gltf->meshes[meshId]->getDeviceAddress()
+        inst->instances.push_back(InstanceDataInfo{
+          .instanceDevInfo = InstanceDevInfo{
+            .transform = reinterpret_cast<vk::TransformMatrixKHR&>(transposed),
+            .instanceCustomIndex = 0u,
+            .mask = 0xFFu,
+            .instanceShaderBindingTableRecordOffset = 0u,
+            .flags = uint8_t(vk::GeometryInstanceFlagBitsKHR{}/*::eTriangleFrontCounterclockwise*/),
+            .accelerationStructureReference = gltf->meshes[meshId]->getDeviceAddress()
+          },
+          .instanceInfo {
+            //.normalTransform = glm::mat3x3(glm::inverse(transform))
+          }
         });
       };
 
@@ -395,22 +401,22 @@ namespace ZNAMED {
       handleNodes = [=, &handleNodes, this](std::shared_ptr<GltfInstanced> inst, tinygltf::Model& model, tinygltf::Node& node, glm::mat4x4 parentTransform = glm::mat4x4(1.f)) {
         //parentTransform;
         if (node.matrix.size() == 16) {
-          parentTransform = parentTransform * glm::mat4x4(reinterpret_cast<glm::dmat4x4&>(*node.matrix.data()));
+          parentTransform *= glm::mat4x4(reinterpret_cast<glm::dmat4x4&>(*node.matrix.data()));
         };
 
         // 
         if (node.translation.size() == 3) {
-          parentTransform = parentTransform * glm::translate(glm::mat4x4(1.f), glm::vec3(reinterpret_cast<glm::dvec3&>(*node.translation.data())));
+          parentTransform *= glm::translate(glm::mat4x4(1.f), glm::vec3(reinterpret_cast<glm::dvec3&>(*node.translation.data())));
         };
 
         // 
         if (node.rotation.size() == 4) {
-          parentTransform = parentTransform * glm::mat4_cast(glm::quat(reinterpret_cast<glm::dquat&>(*node.rotation.data())));
+          parentTransform *= glm::mat4_cast(glm::quat(reinterpret_cast<glm::dquat&>(*node.rotation.data())));
         };
 
         // 
         if (node.scale.size() == 3) {
-          parentTransform = parentTransform * glm::scale(glm::mat4x4(1.f), glm::vec3(reinterpret_cast<glm::dvec3&>(*node.scale.data())));
+          parentTransform *= glm::scale(glm::mat4x4(1.f), glm::vec3(reinterpret_cast<glm::dvec3&>(*node.scale.data())));
         };
 
         //
@@ -429,7 +435,7 @@ namespace ZNAMED {
       for (auto& scene : gltf->model.scenes) {
         decltype(auto) inst = std::make_shared<GltfInstanced>();
         for (decltype(auto) node : scene.nodes) {
-          handleNodes(inst, gltf->model, gltf->model.nodes[node], glm::mat4x4(1.f));
+          handleNodes(inst, gltf->model, gltf->model.nodes[node], glm::mat4x4(1.f) * glm::scale(glm::mat4x4(1.f), glm::vec3(-1.f,-1.f,1.f)));
         };
 
         //

@@ -390,7 +390,8 @@ namespace ZNAMED {
     eAlbedo = 0u,
     eNormal = 1u,
     ePBR = 2u,
-    eMAX = 3u
+    eEmissive = 3u,
+    eMAX = 4u
   };
 
   //
@@ -492,17 +493,32 @@ namespace ZNAMED {
   };
 
   //
+  using InstanceDevInfo = vk::AccelerationStructureInstanceKHR;
+
+  //
 #pragma pack(1)
   __declspec(align(1))
   struct InstanceInfo {
-    glm::mat3x4 transform = glm::mat3x4(1.f);
-    uint64_t reference = 0ull;
+    uint64_t geometryReference = 0ull;
+    glm::mat3x4 transform = {};
+    //glm::mat3x3 normalTransform = {};
+    //uint32_t align;
   };
+
+  //
+#pragma pack(1)
+  __declspec(align(1))
+  struct InstanceDataInfo {
+    InstanceDevInfo instanceDevInfo = {};
+    InstanceInfo instanceInfo = {};
+  };
+
+  
 
   //
 //#pragma pack(1)
   //__declspec(align(1))
-  using InstanceDevInfo = vk::AccelerationStructureInstanceKHR;
+  
 
 
 
@@ -586,7 +602,7 @@ namespace ZNAMED {
 
   //
   struct InstanceLevelCreateInfo : BaseCreateInfo {
-    std::vector<InstanceDevInfo> instances = {};
+    std::vector<InstanceDataInfo> instances = {};
     uint32_t limit = uint32_t(0u);
     //std::vector<uint32_t> limits = {};
     //size_t instanceCount = 1u;
