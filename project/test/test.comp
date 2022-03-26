@@ -80,7 +80,7 @@ RayData pathTrace(in RayData rayData) {
 };
 
 //
-//#define USE_RASTERIZE_PASS
+#define USE_RASTERIZE_PASS
 
 //
 IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayData, in float maxT) {

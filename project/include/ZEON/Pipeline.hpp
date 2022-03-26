@@ -329,7 +329,7 @@ namespace ZNAMED {
       //
       if (exec->instanceDraws.size() > 0) {
         for (decltype(auto) instInfo : exec->instanceDraws) {
-          decltype(auto) multiDrawDirect = supportMultiDraw ?
+          decltype(auto) multiDrawDirect = false ?
             fnTp([cmdBuf = exec->cmdBuf, dispatch = deviceObj->getDispatch()](cpp21::shared_vector<vk::MultiDrawInfoEXT> const& multiDraw) {
               cmdBuf.drawMultiEXT(*multiDraw, 1u, 0u, sizeof(vk::MultiDrawInfoEXT), dispatch);
             }) :

@@ -352,11 +352,11 @@ namespace ZNAMED {
       "VK_KHR_ray_query", 
       "VK_KHR_ray_tracing_pipeline", 
       "VK_KHR_swapchain", 
-      "VK_EXT_multi_draw", 
+      //"VK_EXT_multi_draw", 
       "VK_KHR_separate_depth_stencil_layouts", 
       "VK_EXT_depth_range_unrestricted", 
       "VK_EXT_depth_clip_enable", 
-      "VK_EXT_depth_clip_control", 
+      //"VK_EXT_depth_clip_control", 
       "VK_EXT_vertex_input_dynamic_state",
       "VK_EXT_conservative_rasterization", 
       "VK_EXT_blend_operation_advanced", 
@@ -366,8 +366,8 @@ namespace ZNAMED {
       "VK_KHR_external_semaphore_fd",
       "VK_KHR_external_memory_win32",
       "VK_KHR_external_memory_fd",
-      "VK_KHR_shader_subgroup_uniform_control_flow",
-      "VK_KHR_workgroup_memory_explicit_layout",
+      //"VK_KHR_shader_subgroup_uniform_control_flow",
+      //"VK_KHR_workgroup_memory_explicit_layout",
       "VK_KHR_shared_presentable_image",
       "VK_KHR_shader_clock"
     };
@@ -488,6 +488,8 @@ namespace ZNAMED {
   struct InstanceAddressInfo {
     uint64_t data = 0ull;
     uint64_t accelStruct = 0ull;
+    uint32_t instanceCount = 0u;
+    uint32_t reserved = 0u;
   };
 
   //
@@ -505,7 +507,9 @@ namespace ZNAMED {
 #pragma pack(1)
   __declspec(align(1))
   struct InstanceInfo {
-    uint64_t geometryReference = 0ull, reserved0 = 0ull;
+    uint64_t geometryReference = 0ull;
+    uint32_t geometryCount = 0u;
+    uint32_t reserved = 0u;
     glm::mat3x4 transform = {};
     //glm::mat3x3 normalTransform = {};
     //uint32_t align;

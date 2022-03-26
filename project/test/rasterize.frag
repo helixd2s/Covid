@@ -27,7 +27,7 @@ void main() {
   uint32_t geometryIndex = pIndices.y;
 
   // 
-  InstanceInfo instanceInfo = getInstance(instancedData.opaqueAddressInfo, instanceIndex); //getInstance(instanceDrawInfo.data, 0u);
+  InstanceInfo instanceInfo = getInstance(instanceDrawInfo.data, 0u);
   GeometryInfo geometryInfo = getGeometry(instanceInfo, geometryIndex);
 
   // if translucent - discard!

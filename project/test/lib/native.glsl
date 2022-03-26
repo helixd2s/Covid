@@ -202,7 +202,7 @@ layout(buffer_reference, scalar, buffer_reference_align = 1) buffer GeometryData
 
 //
 struct InstanceInfo {
-  uint64_t data; uint64_t reserved0;
+  uint64_t data; uint32_t geometryCount; uint32_t reserved;
   mat3x4 transform;
   //mat3x3 normalTransform;
   //uint32_t align;
@@ -220,6 +220,8 @@ struct InstanceAddressInfo {
   //InstanceData data;
   uint64_t data;
   uint64_t accelStruct;
+  uint32_t instanceCount;
+  uint32_t reserved;
 };
 
 // ALWAYS USE ZEON INDEX OF `InstanceDrawDatas`
@@ -370,8 +372,6 @@ vec4 interpolate(in mat3x4 vertices, in vec2 barycentric) {
 };
 
 
-//
-const vec3 bary[3] = { vec3(1.f,0.f,0.f), vec3(0.f,1.f,0.f), vec3(0.f,0.f,1.f) };
 
 //
 InstanceInfo getInstance(in InstanceData data, in uint32_t index) {
@@ -386,6 +386,22 @@ InstanceInfo getInstance(in uint64_t data, in uint32_t index) {
   if (data > 0) { info = getInstance(InstanceData(data), index); }; 
   return info;
 };
+
+//
+InstanceInfo getInstance(in InstanceAddressInfo addressInfo, in uint32_t index) {
+  InstanceInfo info;
+  info.data = 0u;
+  if (index >= 0 && index < addressInfo.instanceCount) {
+    info = getInstance(addressInfo.data, index);
+  };
+  return info;
+};
+
+// 
+InstanceInfo getInstance(in uint64_t data) { return getInstance(data, 0u); };
+InstanceInfo getInstance(in InstanceData data) { return getInstance(data, 0u); };
+
+
 
 //
 GeometryInfo getGeometry(in GeometryData data, in uint32_t index) {
@@ -413,27 +429,39 @@ GeometryInfo getGeometry(in uint64_t data, in uint32_t index) {
   info.transform = nullView;
   
   // 
-  if (data > 0) { info = getGeometry(GeometryData(data), index); }; 
+  if (data > 0) { info = getGeometry(GeometryData(data), index); };
+
+  // 
   return info;
 };
 
-
-
 //
-InstanceInfo getInstance(in InstanceAddressInfo info, in uint32_t index) {
-  return getInstance(info.data, index);
-};
+GeometryInfo getGeometry(in InstanceInfo instanceInfo, in uint32_t index) {
+  // 
+  BufferViewRegion nullViewRegion;
+  nullViewRegion.deviceAddress = 0u;
+  nullViewRegion.stride = 0u;
+  nullViewRegion.size = 0u;
 
+  //
+  BufferViewInfo nullView;
+  nullView.region = nullViewRegion;
 
+  //
+  GeometryInfo info;
+  info.extensionRef = 0u;
+  info.materialRef = 0u;
+  info.vertices = nullView;
+  info.indices = nullView;
+  info.transform = nullView;
 
-/*
-GeometryInfo getGeometry(in GeometryData data, in uint32_t index) {
-  return data.infos[index];
-};*/
+  //
+  if (index >= 0u && index < instanceInfo.geometryCount) {
+    info = getGeometry(instanceInfo.data, index); 
+  };
 
-//
-GeometryInfo getGeometry(in InstanceInfo info, in uint32_t index) {
-  return getGeometry(info.data, index);
+  // 
+  return info;
 };
 
 //
@@ -446,8 +474,10 @@ GeometryInfo getGeometry(in InstanceAddressInfo info, in uint32_t instanceId, in
   return getGeometry(getInstance(info, instanceId), index);
 };
 
-// 
-InstanceInfo getInstance(in InstanceData data) { return data.infos[0u]; };
+
+//
+const vec3 bary[3] = { vec3(1.f,0.f,0.f), vec3(0.f,1.f,0.f), vec3(0.f,0.f,1.f) };
+
 
 //
 mat3x4 getInstanceTransform(in InstanceInfo info) {

@@ -137,6 +137,7 @@ namespace ZNAMED {
       // 
       this->instances = {};
       this->instanceRanges = {};
+      this->addressInfo.instanceCount = this->cInfo->instances.size();
 
       //
       if (this->instanceDraw->size() < this->cInfo->instances.size()) {
@@ -169,6 +170,7 @@ namespace ZNAMED {
 
         // 
         instanceInfo.transform = reinterpret_cast<glm::mat3x4&>(instanceDevInfo.transform);
+        instanceInfo.geometryCount = geometryLevel->getGeometries().size();
         instanceInfo.geometryReference = geometryLevel->getGeometryDeviceAddress();
       };
 
@@ -188,6 +190,8 @@ namespace ZNAMED {
           .transformOffset = 0u
         };
       };
+
+      
     };
 
     //
@@ -378,7 +382,7 @@ namespace ZNAMED {
 
       //
       this->handle = device.getAccelerationStructureAddressKHR(vk::AccelerationStructureDeviceAddressInfoKHR{ .accelerationStructure = this->accelStruct }, deviceObj->getDispatch());
-      this->addressInfo = InstanceAddressInfo{ .data = this->getInstanceInfoDeviceAddress(), .accelStruct = this->handle.as<uintptr_t>() };
+      this->addressInfo = InstanceAddressInfo{ .data = this->getInstanceInfoDeviceAddress(), .accelStruct = this->handle.as<uintptr_t>(), .instanceCount = uint32_t(std::max(cInfo->instances.size(), size_t(cInfo->limit))) };
 
       //
       this->destructors.push_back([this, device, accellStruct = accelInstInfo->dstAccelerationStructure, dispatch = deviceObj->getDispatch()](BaseObj const* baseObj) {
