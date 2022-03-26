@@ -145,7 +145,7 @@ int main() {
   });
 
   // 
-  decltype(auto) modelObj = gltfLoader->load("./BoomBox.gltf");
+  decltype(auto) modelObj = gltfLoader->load("./BoomBoxWithAxes.gltf");
 
   //
   decltype(auto) instanceAddressBlock = ZNAMED::InstanceAddressBlock{
@@ -310,7 +310,7 @@ int main() {
       .submission = ZNAMED::SubmissionInfo{
         .info = qfAndQueue,
       }
-      });
+    });
 
     //
     decltype(auto) computeFence = compute->executePipelineOnce(ZNAMED::ExecutePipelineInfo{

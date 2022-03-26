@@ -21,13 +21,14 @@ layout(early_fragment_tests) in;
 
 // 
 void main() {
+
   //
   uint32_t instanceIndex = pIndices.x;
   uint32_t geometryIndex = pIndices.y;
 
   // 
-  InstanceInfo instanceInfo = instanceDrawInfo.data.infos[instanceIndex];
-  GeometryInfo geometryInfo = instanceInfo.data.infos[geometryIndex];
+  InstanceInfo instanceInfo = getInstance(instancedData.opaqueAddressInfo, instanceIndex); //getInstance(instanceDrawInfo.data, 0u);
+  GeometryInfo geometryInfo = getGeometry(instanceInfo, geometryIndex);
 
   // if translucent - discard!
 #ifdef TRANSLUCENT

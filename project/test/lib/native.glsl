@@ -59,7 +59,7 @@ vec4 toLinear(in vec4 sRGB) { return vec4(toLinear(sRGB.xyz), sRGB.w); }
 
 
 // but may not to be...
-layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer TestVertices {
+layout(buffer_reference, scalar, buffer_reference_align = 1) buffer TestVertices {
   mat3x4 data[];
 };
 
@@ -93,7 +93,7 @@ layout(set = 2, binding = 0) uniform sampler samplers[];
 layout(set = 3, binding = 0, rgb10_a2) uniform image2D images[];
 
 // but may not to be...
-layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer TransformBlock {
+layout(buffer_reference, scalar, buffer_reference_align = 1) buffer TransformBlock {
   mat3x4 transform[];
 };
 
@@ -116,10 +116,10 @@ struct MaterialPixelInfo {
 //
 vec4 sampleTex(CTexture tex, in vec2 texcoord, int lod) {
   return textureLod(
-    sampler2D(
-      textures[nonuniformEXT(tex.textureId)], 
-      samplers[nonuniformEXT(tex.samplerId)]
-    ), vec2(texcoord.x,texcoord.y), float(lod)/float(textureQueryLevels(nonuniformEXT(textures[nonuniformEXT(tex.textureId)]))));
+    nonuniformEXT(sampler2D(
+      nonuniformEXT(textures[nonuniformEXT(tex.textureId)]), 
+      nonuniformEXT(samplers[nonuniformEXT(tex.samplerId)])
+    )), vec2(texcoord.x,texcoord.y), float(lod)/float(textureQueryLevels(nonuniformEXT(textures[nonuniformEXT(tex.textureId)]))));
 };
 
 //
@@ -146,7 +146,7 @@ MaterialPixelInfo handleMaterial(in MaterialInfo materialInfo, in vec2 texcoord,
 };
 
 // but may not to be...
-layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer MaterialData {
+layout(buffer_reference, scalar, buffer_reference_align = 1) buffer MaterialData {
   MaterialInfo infos[];
 };
 
@@ -166,7 +166,7 @@ struct BufferViewInfo {
 };
 
 // but may not to be...
-layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer GeometryExtension {
+layout(buffer_reference, scalar, buffer_reference_align = 1) buffer GeometryExtension {
   BufferViewInfo bufferViews[MAX_EXT_VERTEX_DATA];
 };
 
@@ -196,20 +196,20 @@ struct GeometryInfo {
 };
 
 //
-layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer GeometryData {
+layout(buffer_reference, scalar, buffer_reference_align = 1) buffer GeometryData {
   GeometryInfo infos[];
 };
 
 //
 struct InstanceInfo {
-  GeometryData data;
+  GeometryData data; uint64_t reserved0;
   mat3x4 transform;
   //mat3x3 normalTransform;
   //uint32_t align;
 };
 
 //
-layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer InstanceData {
+layout(buffer_reference, scalar, buffer_reference_align = 1) buffer InstanceData {
   InstanceInfo infos[];
 };
 
@@ -217,13 +217,15 @@ layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer I
 
 //
 struct InstanceAddressInfo {
-  InstanceData data;
+  //InstanceData data;
+  uint64_t data;
   uint64_t accelStruct;
 };
 
 // ALWAYS USE ZEON INDEX OF `InstanceDrawDatas`
 struct PushConstantData {
-  InstanceData data;
+  //InstanceData data;
+  uint64_t data;
   uint32_t instanceIndex;
   uint32_t drawIndex;
 };
@@ -270,7 +272,7 @@ uvec4 readAsUint4(in BufferViewInfo bufferViewInfo, in uint32_t index) {
   const uint isHalf = (bufferViewInfo.format>>2)&1u;
   const uint isUint = (bufferViewInfo.format>>3)&1u;
   const uint local = index * (bufferViewInfo.region.stride > 0 ? bufferViewInfo.region.stride : (isHalf == 1u ? 2 : 4) * (cCnt + 1));
-  const uint realCnt = tiled(min(max(bufferViewInfo.region.stride, (isHalf == 1u ? 2 : 4) * (cCnt + 1)), bufferViewInfo.region.size-local), (isHalf == 1u ? 2 : 4)) - 1u;
+  const uint realCnt = tiled(min(max(bufferViewInfo.region.stride, (isHalf == 1u ? 2 : 4) * (cCnt + 1)), max(bufferViewInfo.region.size-local, 0u)), (isHalf == 1u ? 2 : 4)) - 1u;
 
   const uint64_t address = bufferViewInfo.region.deviceAddress + local;
 
@@ -335,7 +337,7 @@ vec2 readAsFloat2(in BufferViewInfo bufferViewInfo, in uint32_t index) { return 
 float readAsFloat(in BufferViewInfo bufferViewInfo, in uint32_t index) { return readAsFloat4(bufferViewInfo, index).x; };
 
 //
-layout(push_constant) uniform PConstBlock {
+layout(push_constant, scalar, buffer_reference_align = 1) uniform PConstBlock {
   InstanceAddressBlock instancedData;
   PushConstantData instanceDrawInfo;
   SwapchainStateInfo swapchain;
@@ -371,10 +373,14 @@ vec4 interpolate(in mat3x4 vertices, in vec2 barycentric) {
 //
 const vec3 bary[3] = { vec3(1.f,0.f,0.f), vec3(0.f,1.f,0.f), vec3(0.f,0.f,1.f) };
 
+//
+InstanceInfo getInstance(in uint64_t data, in uint32_t index) {
+  return InstanceData(data).infos[index];
+};
 
 //
 InstanceInfo getInstance(in InstanceData data, in uint32_t index) {
-  return data.infos[index];
+  return data.infos[0];
 };
 
 //
@@ -446,7 +452,7 @@ vec4 fullTransform(in InstanceData data, in vec3 vertices, in uint32_t instanceI
 
 //
 vec4 fullTransform(in InstanceAddressInfo info, in vec4 vertices, in uint32_t instanceId, in uint32_t geometryId) {
-  return fullTransform(info.data, vertices, instanceId, geometryId);
+  return fullTransform(getInstance(info, instanceId), vertices, geometryId);
 };
 
 //
@@ -468,7 +474,7 @@ vec3 fullTransformNormal(in InstanceData data, in vec3 normals, in uint32_t inst
 
 //
 vec3 fullTransformNormal(in InstanceAddressInfo info, in vec3 normals, in uint32_t instanceId, in uint32_t geometryId) {
-  return fullTransformNormal(info.data, normals, instanceId, geometryId);
+  return fullTransformNormal(getInstance(info, instanceId), normals, geometryId);
 };
 
 

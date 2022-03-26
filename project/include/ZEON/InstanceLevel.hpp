@@ -359,7 +359,7 @@ namespace ZNAMED {
       // 
       this->instanceExtBuffer = (this->bindInstanceExtBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
         .bufferInfo = BufferCreateInfo{
-          .size = cInfo->instances.size() * sizeof(InstanceInfo),
+          .size = std::max(cInfo->instances.size(), size_t(cInfo->limit)) * sizeof(InstanceInfo),
           .type = BufferType::eStorage
         }
       })).as<vk::Buffer>();

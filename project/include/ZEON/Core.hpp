@@ -504,7 +504,7 @@ namespace ZNAMED {
 #pragma pack(1)
   __declspec(align(1))
   struct InstanceInfo {
-    uint64_t geometryReference = 0ull;
+    uint64_t geometryReference = 0ull, reserved0 = 0ull;
     glm::mat3x4 transform = {};
     //glm::mat3x3 normalTransform = {};
     //uint32_t align;

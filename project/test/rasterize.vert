@@ -13,12 +13,12 @@ layout(location = 2) flat out uvec4 pIndices;
 
 // 
 void main() {
-  uint32_t instanceIndex = 0u;
+  uint32_t instanceIndex = instanceDrawInfo.instanceIndex;
   uint32_t geometryIndex = gl_DrawID+instanceDrawInfo.drawIndex;
 
   // 
-  InstanceInfo instanceInfo = instanceDrawInfo.data.infos[instanceIndex];
-  GeometryInfo geometryInfo = instanceInfo.data.infos[geometryIndex];
+  InstanceInfo instanceInfo = getInstance(instanceDrawInfo.data, 0u);//getInstance(instanceDrawInfo.data, 0u);
+  GeometryInfo geometryInfo = getGeometry(instanceInfo, geometryIndex);
   GeometryExtData geometry = getGeometryData(geometryInfo, uint(gl_VertexIndex/3u));
 
   //const vec4 vertice = vertices.data[gl_VertexIndex/3u][gl_VertexIndex%3];//geometry.triData[VERTEX_VERTICES][gl_VertexIndex%3];
@@ -44,4 +44,5 @@ void main() {
     pColor = vec4(texcoord.xyz, 1.f);
     pBary = bary[gl_VertexIndex%3u];
   };
+
 };
