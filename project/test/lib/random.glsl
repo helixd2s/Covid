@@ -27,7 +27,7 @@ float floatConstruct( uint m ) {
 }
 
 // Pseudo-random value in half-open range [0:1].
-float random( float x ) { return floatConstruct(hash(floatBitsToUint(x))); }
-float random( vec2  v ) { return floatConstruct(hash(floatBitsToUint(v))); }
-float random( vec3  v ) { return floatConstruct(hash(floatBitsToUint(v))); }
+float random( float x ) { return floatConstruct(hash(uvec4(floatBitsToUint(x), frameCounter, clockRealtime2x32EXT()))); }
+float random( vec2  v ) { return floatConstruct(hash(uvec4(floatBitsToUint(v), uvec2(frameCounter, 0u) + clockRealtime2x32EXT()))); }
+float random( vec3  v ) { return floatConstruct(hash(uvec4(floatBitsToUint(v), frameCounter + clockRealtime2x32EXT().x))); }
 float random( vec4  v ) { return floatConstruct(hash(floatBitsToUint(v))); }

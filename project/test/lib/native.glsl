@@ -16,7 +16,8 @@
 #extension GL_EXT_ray_tracing : enable
 #extension GL_ARB_gpu_shader_int64 : require
 #extension GL_EXT_debug_printf : require
-#extension  GL_EXT_control_flow_attributes : require
+#extension GL_EXT_control_flow_attributes : require
+#extension GL_EXT_shader_realtime_clock : require
 
 //
 const uint32_t VERTEX_VERTICES = 0u;
@@ -77,7 +78,7 @@ uint tiled(in uint sz, in uint gmaxtile) {
 layout(set = 0, binding = 0, scalar) uniform MatrixBlock
 {
   uint32_t framebufferAttachments[4]; // framebuffers
-  uvec2 extent; uint testTex, testSampler;
+  uvec2 extent; uint frameCounter, reserved0;
   Constants constants;
 
   //TestVertices vertices;

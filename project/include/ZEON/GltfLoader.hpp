@@ -218,6 +218,10 @@ namespace ZNAMED {
           }
         });
 
+        //
+        device.waitIdle();
+        deviceObj->tickProcessing();
+
         // 
         gltf->buffers.push_back(bufferObj);
       };
@@ -261,6 +265,10 @@ namespace ZNAMED {
 
         //
         decltype(auto) imgImageView = imageObj->createImageView(ZNAMED::ImageViewCreateInfo{ .viewType = vk::ImageViewType::e2D });
+
+        //
+        device.waitIdle();
+        deviceObj->tickProcessing();
 
         //
         gltf->images.push_back(imageObj);
@@ -450,7 +458,10 @@ namespace ZNAMED {
 
       //
       gltf->defaultScene = gltf->model.defaultScene;
+
+      //
       device.waitIdle();
+      deviceObj->tickProcessing();
 
       //
       this->gltfModels.push_back(gltf);

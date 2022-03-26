@@ -43,7 +43,7 @@ struct Constants
 //
 struct UniformData {
   uint32_t framebufferAttachments[4] = { 0u,0u,0u,0u };
-  glm::uvec2 extent = {}; uint32_t testTex, testSampler;
+  glm::uvec2 extent = {}; uint32_t frameCounter, reserved;
   Constants constants = {};
   //uint64_t verticesAddress = 0ull;
 };
@@ -219,12 +219,13 @@ int main() {
 
   // set perspective
   auto persp = glm::perspective(60.f / 180 * glm::pi<float>(), float(renderArea.extent.width) / float(renderArea.extent.height), 0.001f, 10000.f);
-  auto lkat = glm::lookAt(glm::vec3(0.f, 0.01f, 0.02f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f));
+  auto lkat = glm::lookAt(glm::vec3(0.0f, 0.02f, 0.02f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f));
   uniformData.constants.perspective = glm::transpose(persp);
   uniformData.constants.perspectiveInverse = glm::transpose(glm::inverse(persp));
   uniformData.constants.lookAt = glm::mat3x4(glm::transpose(lkat));
   uniformData.constants.lookAtInverse = glm::mat3x4(glm::transpose(glm::inverse(lkat)));
   uniformData.extent = glm::uvec2(renderArea.extent.width, renderArea.extent.height);
+  uniformData.frameCounter = 0u;
 
   //
   decltype(auto) framebuffer = ZNAMED::FramebufferObj::make(device.with(0u), ZNAMED::FramebufferCreateInfo{
@@ -249,7 +250,7 @@ int main() {
   int frameCount = 0;
 
   //
-  decltype(auto) renderGen = [=,&previousTime,&frameCount]() -> std::experimental::generator<bool> {
+  decltype(auto) renderGen = [=,&previousTime,&frameCount,&uniformData]() -> std::experimental::generator<bool> {
     co_yield false;
 
     //
@@ -279,6 +280,9 @@ int main() {
     decltype(auto) status = false;
     //if (fence) { decltype(auto) unleak = fence->future->get(); }; device->tickProcessing();
     if (fence) { while (!(status = fence->checkStatus())) { co_yield status; }; };
+
+    //
+    uniformData.frameCounter++;
 
     // 
     decltype(auto) uniformFence = descriptors->executeUniformUpdateOnce(ZNAMED::UniformDataSet{

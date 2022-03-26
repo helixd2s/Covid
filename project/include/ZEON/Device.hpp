@@ -398,7 +398,9 @@ namespace ZNAMED {
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceRayQueryFeaturesKHR, vk::PhysicalDeviceRayQueryFeaturesKHR{
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR, vk::PhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR{
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR, vk::PhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR{
+        .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceShaderClockFeaturesKHR, vk::PhysicalDeviceShaderClockFeaturesKHR{
         .pNext = nullptr
+        })
         })
         })
         })
