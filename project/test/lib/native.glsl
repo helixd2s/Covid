@@ -202,7 +202,7 @@ layout(buffer_reference, scalar, buffer_reference_align = 1) buffer GeometryData
 
 //
 struct InstanceInfo {
-  GeometryData data; uint64_t reserved0;
+  uint64_t data; uint64_t reserved0;
   mat3x4 transform;
   //mat3x3 normalTransform;
   //uint32_t align;
@@ -374,24 +374,62 @@ vec4 interpolate(in mat3x4 vertices, in vec2 barycentric) {
 const vec3 bary[3] = { vec3(1.f,0.f,0.f), vec3(0.f,1.f,0.f), vec3(0.f,0.f,1.f) };
 
 //
-InstanceInfo getInstance(in uint64_t data, in uint32_t index) {
-  return InstanceData(data).infos[index];
-};
-
-//
 InstanceInfo getInstance(in InstanceData data, in uint32_t index) {
-  return data.infos[0];
+  return data.infos[index];
 };
 
 //
-InstanceInfo getInstance(in InstanceAddressInfo info, in uint32_t index) {
-  return getInstance(info.data, index);
+InstanceInfo getInstance(in uint64_t data, in uint32_t index) {
+  InstanceInfo info;
+  info.data = 0u;
+
+  if (data > 0) { info = getInstance(InstanceData(data), index); }; 
+  return info;
 };
 
 //
 GeometryInfo getGeometry(in GeometryData data, in uint32_t index) {
   return data.infos[index];
 };
+
+//
+GeometryInfo getGeometry(in uint64_t data, in uint32_t index) {
+  // 
+  BufferViewRegion nullViewRegion;
+  nullViewRegion.deviceAddress = 0u;
+  nullViewRegion.stride = 0u;
+  nullViewRegion.size = 0u;
+
+  //
+  BufferViewInfo nullView;
+  nullView.region = nullViewRegion;
+
+  //
+  GeometryInfo info;
+  info.extensionRef = 0u;
+  info.materialRef = 0u;
+  info.vertices = nullView;
+  info.indices = nullView;
+  info.transform = nullView;
+  
+  // 
+  if (data > 0) { info = getGeometry(GeometryData(data), index); }; 
+  return info;
+};
+
+
+
+//
+InstanceInfo getInstance(in InstanceAddressInfo info, in uint32_t index) {
+  return getInstance(info.data, index);
+};
+
+
+
+/*
+GeometryInfo getGeometry(in GeometryData data, in uint32_t index) {
+  return data.infos[index];
+};*/
 
 //
 GeometryInfo getGeometry(in InstanceInfo info, in uint32_t index) {

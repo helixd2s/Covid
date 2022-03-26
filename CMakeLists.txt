@@ -149,6 +149,7 @@ target_precompile_headers(${PROJECT_NAME}
   <glm/glm.hpp>
   <glm/gtc/matrix_transform.hpp>
   <glm/gtc/quaternion.hpp>
+  <glm/gtc/type_ptr.hpp>
   <robin_hood.h>
   ${PLATFORM_HEAD}
 )

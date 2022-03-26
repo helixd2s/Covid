@@ -454,25 +454,12 @@ namespace ZNAMED {
       //
       std::function<void(std::shared_ptr<GltfInstanced>, tinygltf::Model&, tinygltf::Node&, glm::mat4x4 parentTransform)> handleNodes = {};
       handleNodes = [=, &handleNodes, this](std::shared_ptr<GltfInstanced> inst, tinygltf::Model& model, tinygltf::Node& node, glm::mat4x4 parentTransform = glm::mat4x4(1.f)) {
-        //parentTransform;
-        if (node.matrix.size() == 16) {
-          parentTransform *= glm::mat4x4(reinterpret_cast<glm::dmat4x4&>(*node.matrix.data()));
-        };
 
-        // 
-        if (node.translation.size() == 3) {
-          parentTransform *= glm::translate(glm::mat4x4(1.f), glm::vec3(reinterpret_cast<glm::dvec3&>(*node.translation.data())));
-        };
-
-        // 
-        if (node.rotation.size() == 4) {
-          parentTransform *= glm::mat4_cast(glm::quat(reinterpret_cast<glm::dquat&>(*node.rotation.data())));
-        };
-
-        // 
-        if (node.scale.size() == 3) {
-          parentTransform *= glm::scale(glm::mat4x4(1.f), glm::vec3(reinterpret_cast<glm::dvec3&>(*node.scale.data())));
-        };
+        auto localTransform = glm::dmat4(1.0);
+        localTransform *= glm::dmat4(node.matrix.size() >= 16 ? glm::make_mat4(node.matrix.data()) : glm::dmat4(1.0));
+        localTransform *= glm::dmat4(node.translation.size() >= 3 ? glm::translate(glm::dmat4(1.0), glm::make_vec3(node.translation.data())) : glm::dmat4(1.0));
+        localTransform *= glm::dmat4(node.scale.size() >= 3 ? glm::scale(glm::dmat4(1.0), glm::make_vec3(node.scale.data())) : glm::dmat4(1.0));
+        localTransform *= glm::dmat4((node.rotation.size() >= 4 ? glm::mat4_cast(glm::make_quat(node.rotation.data())) : glm::dmat4(1.0)));
 
         //
         if ((node.mesh >= 0) && (node.mesh < model.meshes.size())) {
@@ -482,7 +469,7 @@ namespace ZNAMED {
         //
         for (size_t i = 0; i < node.children.size(); i++) {
           assert((node.children[i] >= 0) && (node.children[i] < model.nodes.size()));
-          handleNodes(inst, model, model.nodes[node.children[i]], parentTransform);
+          handleNodes(inst, model, model.nodes[node.children[i]], parentTransform * glm::mat4x4(localTransform));
         };
       };
 
@@ -490,7 +477,7 @@ namespace ZNAMED {
       for (auto& scene : gltf->model.scenes) {
         decltype(auto) inst = std::make_shared<GltfInstanced>();
         for (decltype(auto) node : scene.nodes) {
-          handleNodes(inst, gltf->model, gltf->model.nodes[node], glm::mat4x4(1.f) * glm::scale(glm::mat4x4(1.f), glm::vec3(-1.f,-1.f,1.f)));
+          handleNodes(inst, gltf->model, gltf->model.nodes[node], glm::mat4x4(1.f));
         };
 
         //

@@ -80,7 +80,7 @@ RayData pathTrace(in RayData rayData) {
 };
 
 //
-#define USE_RASTERIZE_PASS
+//#define USE_RASTERIZE_PASS
 
 //
 IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayData, in float maxT) {
@@ -168,6 +168,8 @@ void main() {
     // I currently, have no time for fresnel
     finalColor = vec4(mix(vec3(diffuseColor.xyz * diffRayData.emission.xyz + emissiveColor), vec3(reflRayData.emission.xyz), hasHit ? (metallicFactor + fresnel_schlick(0.f, dot(-rayDir, normals)) * (1.f - metallicFactor)) : 0.f), 1.f);
   };
+
+  //vec4 finalColor = vec4(!all(lessThanEqual(intersection.barycentric, 0.f.xxx)) ? 1.f.xxx : 0.f.xxx, 1.f);
   
   // 
   imageStore(images[swapchain.image], ivec2(gcoord.x, extent.y-1-gcoord.y), fromLinear(finalColor));
