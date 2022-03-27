@@ -28,3 +28,6 @@
 [submodule "prebuild/include/tinygltf"]
 	path = prebuild/include/tinygltf
 	url = https://github.com/syoyo/tinygltf.git
+[submodule "submodules/generator"]
+	path = submodules/generator
+	url = https://github.com/TartanLlama/generator.git

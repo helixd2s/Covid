@@ -145,7 +145,7 @@ int main() {
   });
 
   // 
-  decltype(auto) modelObj = gltfLoader->load("./BoomBoxWithAxes.gltf");
+  decltype(auto) modelObj = gltfLoader->load("./BoomBox.gltf");
 
   //
   decltype(auto) instanceAddressBlock = ZNAMED::InstanceAddressBlock{
@@ -250,8 +250,14 @@ int main() {
   int frameCount = 0;
 
   //
-  decltype(auto) renderGen = [=,&previousTime,&frameCount,&uniformData]() -> std::experimental::generator<bool> {
-    co_yield false;
+  decltype(auto) rendering = renderGen();
+  decltype(auto) iterator = rendering.begin();
+
+  // 
+  while (!glfwWindowShouldClose(window)) { // 
+    glfwPollEvents();
+    device->tickProcessing();
+    _CrtDumpMemoryLeaks();
 
     //
 #ifdef ENABLE_RENDERDOC
@@ -279,7 +285,7 @@ int main() {
     auto& fence = (*fences)[acquired];
     decltype(auto) status = false;
     //if (fence) { decltype(auto) unleak = fence->future->get(); }; device->tickProcessing();
-    if (fence) { while (!(status = fence->checkStatus())) { co_yield status; }; };
+    if (fence) { while (!(status = fence->checkStatus())) { glfwPollEvents(); device->tickProcessing(); }; };
 
     //
     uniformData.frameCounter++;
@@ -310,7 +316,7 @@ int main() {
       .submission = ZNAMED::SubmissionInfo{
         .info = qfAndQueue,
       }
-    });
+      });
 
     //
     decltype(auto) computeFence = compute->executePipelineOnce(ZNAMED::ExecutePipelineInfo{
@@ -323,7 +329,7 @@ int main() {
       .submission = ZNAMED::SubmissionInfo{
         .info = qfAndQueue
       }
-    });
+      });
 
     //
     fence = std::get<0u>(swapchain->presentImage(qfAndQueue));
@@ -332,23 +338,6 @@ int main() {
 #ifdef ENABLE_RENDERDOC
     if (rdoc_api) rdoc_api->EndFrameCapture(NULL, NULL);
 #endif
-
-    // 
-    co_yield true;
-  };
-
-  //
-  decltype(auto) rendering = renderGen();
-  decltype(auto) iterator = rendering.begin();
-
-  // 
-  while (!glfwWindowShouldClose(window)) { // 
-    glfwPollEvents();
-    _CrtDumpMemoryLeaks();
-    // 
-
-    if (iterator == rendering.end()) { rendering = renderGen(), iterator = rendering.begin(); };
-    device->tickProcessing(); iterator++;
   };
 
   // 

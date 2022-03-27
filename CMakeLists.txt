@@ -99,6 +99,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   ${PROJECT_SOURCE_DIR}/submodules/include 
   ${PROJECT_SOURCE_DIR}/submodules/*/include 
   ${PROJECT_SOURCE_DIR}/submodules/*/src/include
+  ${PROJECT_SOURCE_DIR}/submodules/generator/include 
   ${PROJECT_SOURCE_DIR}/submodules/robin-hood-hashing/src/include
   ${PROJECT_SOURCE_DIR}/submodules/VulkanMemoryAllocator/include
   ${PROJECT_SOURCE_DIR}/submodules/glm
@@ -117,49 +118,14 @@ target_link_directories(${PROJECT_NAME} PUBLIC
 set (HSOURCES "prebuild/include/vk-utils/cpp21/core.hpp" "project/include/ZEON/Core.hpp")
 
 #
-ADD_MSVC_PRECOMPILED_HEADER("prebuild/include/cmake_pch.hxx" "prebuild/include/cmake_pch.cxx" HSOURCES)
-
-#
-target_precompile_headers(${PROJECT_NAME}
-  PUBLIC
-  <vector>
-  <string>
-  <memory>
-  <string_view>
-  <utility>
-  <map>
-  <future>
-  <iostream>
-  <optional>
-  <coroutine>
-  <tuple>
-  <type_traits>
-  <utility>
-  <unordered_map>
-  <iterator>
-  <fstream>
-  <typeindex>
-  <coroutine>
-  <experimental/generator>
-  <tinygltf/tiny_gltf.h>
-  <tinygltf/stb_image.h>
-  <vulkan/vulkan.h>
-  <vulkan/vulkan.hpp>
-  <vulkan/vulkan_raii.hpp>
-  <glm/glm.hpp>
-  <glm/gtc/matrix_transform.hpp>
-  <glm/gtc/quaternion.hpp>
-  <glm/gtc/type_ptr.hpp>
-  <robin_hood.h>
-  ${PLATFORM_HEAD}
-)
+#ADD_MSVC_PRECOMPILED_HEADER("prebuild/include/cmake_pch.hxx" "prebuild/include/cmake_pch.cxx" HSOURCES)
 
 #
 target_link_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS} ${Vulkan_LIBRARIES} glfw)
 
 # 
 if (MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest /bigobj /MP /EHa /Ot /Od /Oy /Ob0 /GT /GL /GR /Zc:threadSafeInit /arch:AVX2")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest /fsanitize=address /bigobj /MP /EHa /Ot /Od /Oy /Ob0 /GT /GL /GR /Zc:threadSafeInit /arch:AVX2")
     set(CMAKE_EXE_LINKER_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj /MP /MAP /incremental /debug:fastlink /experimental /errorReport")
 endif()
 
