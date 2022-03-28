@@ -53,18 +53,18 @@ set(CMAKE_CXX_STANDARD 23)
 set(_src_root_path "${PROJECT_SOURCE_DIR}/project")
 file(GLOB_RECURSE _source_list 
   LIST_DIRECTORIES false
-  "${_src_root_path}/../prebuild/include/vk-utils/*.inl"
-  "${_src_root_path}/../prebuild/include/vk-utils/*.hpp"
-  "${_src_root_path}/../prebuild/include/vk-utils/*.h"
-  "${_src_root_path}/../prebuild/include/vku/*.inl"
-  "${_src_root_path}/../prebuild/include/vku/*.hpp"
-  "${_src_root_path}/../prebuild/include/vku/*.h"
-  "${_src_root_path}/../prebuild/include/vk-utils/cpp21/*.inl"
-  "${_src_root_path}/../prebuild/include/vk-utils/cpp21/*.hpp"
-  "${_src_root_path}/../prebuild/include/vk-utils/cpp21/*.h"
-  "${_src_root_path}/../prebuild/include/vku/cpp21/*.inl"
-  "${_src_root_path}/../prebuild/include/vku/cpp21/*.hpp"
-  "${_src_root_path}/../prebuild/include/vku/cpp21/*.h"
+  "${_src_root_path}/../submodules/include/vk-utils/*.inl"
+  "${_src_root_path}/../submodules/include/vk-utils/*.hpp"
+  "${_src_root_path}/../submodules/include/vk-utils/*.h"
+  "${_src_root_path}/../submodules/include/vku/*.inl"
+  "${_src_root_path}/../submodules/include/vku/*.hpp"
+  "${_src_root_path}/../submodules/include/vku/*.h"
+  "${_src_root_path}/../submodules/include/vk-utils/cpp21/*.inl"
+  "${_src_root_path}/../submodules/include/vk-utils/cpp21/*.hpp"
+  "${_src_root_path}/../submodules/include/vk-utils/cpp21/*.h"
+  "${_src_root_path}/../submodules/include/vku/cpp21/*.inl"
+  "${_src_root_path}/../submodules/include/vku/cpp21/*.hpp"
+  "${_src_root_path}/../submodules/include/vku/cpp21/*.h"
 
   "${_src_root_path}/include/ZEON/*.inl"
   "${_src_root_path}/include/ZEON/*.hpp"
@@ -91,27 +91,20 @@ add_executable(${PROJECT_NAME} ${_source_list})
 target_compile_definitions(${PROJECT_NAME} PUBLIC UNICODE Z_USE_ROBIN_HOOD USE_CMAKE_PCH VULKAN_HPP_NO_CONSTRUCTORS NOMINMAX Z_ENABLE_VMA Z_ENABLE_GLTF CPP21_DEBUG_MEMORY TINYGLTF_USE_CPP14 ZNAMED=zeon ${PLATFORM_DEF})
 target_include_directories(${PROJECT_NAME} PUBLIC 
   ${PROJECT_SOURCE_DIR}/project/include 
-  ${PROJECT_SOURCE_DIR}/prebuild/include
-  ${PROJECT_SOURCE_DIR}/prebuild/include/*/include
-  ${PROJECT_SOURCE_DIR}/external/include 
-  ${PROJECT_SOURCE_DIR}/external/include/*/include
-  ${PROJECT_SOURCE_DIR}/external/include/*/src/include
   ${PROJECT_SOURCE_DIR}/submodules/include 
   ${PROJECT_SOURCE_DIR}/submodules/*/include 
   ${PROJECT_SOURCE_DIR}/submodules/*/src/include
-  ${PROJECT_SOURCE_DIR}/submodules/generator/include 
-  ${PROJECT_SOURCE_DIR}/submodules/robin-hood-hashing/src/include
-  ${PROJECT_SOURCE_DIR}/submodules/VulkanMemoryAllocator/include
-  ${PROJECT_SOURCE_DIR}/submodules/glm
-  ${PROJECT_SOURCE_DIR}/../external/include 
+  ${PROJECT_SOURCE_DIR}/generator/include 
+  ${PROJECT_SOURCE_DIR}/robin-hood-hashing/src/include
+  ${PROJECT_SOURCE_DIR}/VulkanMemoryAllocator/include
+  ${PROJECT_SOURCE_DIR}/glm/glm
   ${Vulkan_INCLUDE_DIRS}
 )
+
+#
 target_link_directories(${PROJECT_NAME} PUBLIC 
-  ${PROJECT_SOURCE_DIR}/project/lib 
-  ${PROJECT_SOURCE_DIR}/prebuild/lib 
-  ${PROJECT_SOURCE_DIR}/external/lib 
-  ${PROJECT_SOURCE_DIR}/submodules/*/lib/
-  ${PROJECT_SOURCE_DIR}/../external/lib
+  ${PROJECT_SOURCE_DIR}/project/lib
+  ${PROJECT_SOURCE_DIR}/submodules/lib
 )
 
 #
