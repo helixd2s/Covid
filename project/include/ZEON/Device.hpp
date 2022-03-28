@@ -203,7 +203,7 @@ namespace ZNAMED {
       // TODO: customize queue priorities
       auto& qfInfosVk = (this->queueFamilies.infos = {});
       auto& qfIndices = (this->queueFamilies.indices = {});
-      auto& qfInfoMaps = (this->queueFamilies.infoMaps = {});
+      auto& qfInfoMaps = (this->queueFamilies.infoMaps = std::vector<std::shared_ptr<MSS>>{});
       auto& qfCommandPools = (this->queueFamilies.commandPools = {});
       auto& qfQueuesStack = (this->queueFamilies.queues = {});
       for (auto& qfInfoIn : (*qfInfosIn)) {
@@ -507,7 +507,7 @@ namespace ZNAMED {
     };
 
     // 
-    DeviceObj(WrapShared<InstanceObj> instanceObj = {}, cpp21::const_wrap_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) : BaseObj(instanceObj), cInfo(cInfo) {
+    DeviceObj(WrapShared<InstanceObj> instanceObj = {}, cpp21::const_wrap_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) : BaseObj(std::move(instanceObj->getHandle())), cInfo(cInfo) {
       //this->construct(instanceObj, cInfo);
     };
 

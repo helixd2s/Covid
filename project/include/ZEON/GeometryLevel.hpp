@@ -51,7 +51,7 @@ namespace ZNAMED {
   public:
 
     // 
-    GeometryLevelObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<GeometryLevelCreateInfo> cInfo = GeometryLevelCreateInfo{}) : BaseObj(deviceObj), cInfo(cInfo) {
+    GeometryLevelObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<GeometryLevelCreateInfo> cInfo = GeometryLevelCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
       //this->construct(deviceObj, cInfo);
     };
 
@@ -312,7 +312,7 @@ namespace ZNAMED {
 
       //
       accelGeomInfo->type = accelInfo->type;
-      accelGeomInfo->scratchData = vk::DeviceOrHostAddressKHR(ZNAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->geometryScratch)->getDeviceAddress());
+      accelGeomInfo->scratchData = reinterpret_cast<vk::DeviceOrHostAddressKHR&>(ZNAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->geometryScratch)->getDeviceAddress());
       accelGeomInfo->srcAccelerationStructure = accelGeomInfo->dstAccelerationStructure;
       accelGeomInfo->dstAccelerationStructure = (this->accelStruct = device.createAccelerationStructureKHR(accelInfo.ref(), nullptr, deviceObj->getDispatch()));
 

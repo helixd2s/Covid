@@ -38,7 +38,7 @@ namespace ZNAMED {
 
   public:
     // 
-    SamplerObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<SamplerCreateInfo> cInfo = SamplerCreateInfo{}) : BaseObj(deviceObj), cInfo(cInfo) {
+    SamplerObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<SamplerCreateInfo> cInfo = SamplerCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
       //this->construct(deviceObj, cInfo);
     };
 

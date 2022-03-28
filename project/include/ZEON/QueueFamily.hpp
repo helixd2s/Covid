@@ -28,7 +28,7 @@ namespace ZNAMED {
 
     // 
   public:
-    QueueFamilyObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{}) : BaseObj(deviceObj), cInfo(cInfo) {
+    QueueFamilyObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
       //this->construct(deviceObj, cInfo);
     };
 

@@ -60,7 +60,7 @@ namespace ZNAMED {
 
   public:
     // 
-    ResourceObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : BaseObj(deviceObj), cInfo(cInfo) {
+    ResourceObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
       //this->construct(deviceObj, cInfo);
     };
 
@@ -340,7 +340,7 @@ namespace ZNAMED {
 
       //
       device.getImageMemoryRequirements2(infoMap->set(vk::StructureType::eImageMemoryRequirementsInfo2, vk::ImageMemoryRequirementsInfo2{
-        .image = (this->handle = this->cInfo->image ? this->cInfo->image.value() : device.createImage(imageInfo->setQueueFamilyIndices(deviceObj->getQueueFamilies().indices)))
+        .image = (this->handle = this->cInfo->image ? this->cInfo->image.value() : device.createImage(imageInfo->setQueueFamilyIndices(deviceObj->getQueueFamilies().indices))).as<vk::Image>()
       }).get(), memReqInfo2.get());
 
       //
@@ -364,7 +364,7 @@ namespace ZNAMED {
           .swapchain = cInfo->swapchain->swapchain,
           .imageIndex = cInfo->swapchain->index
          }).get() : nullptr,
-        .image = this->handle , .memory = cInfo->swapchain ? vk::DeviceMemory{} : this->allocated->memory, .memoryOffset = cInfo->swapchain ? 0ull : this->allocated->offset
+        .image = this->handle.as<vk::Image>(), .memory = cInfo->swapchain ? vk::DeviceMemory{} : this->allocated->memory, .memoryOffset = cInfo->swapchain ? 0ull : this->allocated->offset
       }) };
       device.bindImageMemory2(bindInfos);
 
@@ -408,7 +408,7 @@ namespace ZNAMED {
 
       //
       device.getBufferMemoryRequirements2(infoMap->set(vk::StructureType::eBufferMemoryRequirementsInfo2, vk::BufferMemoryRequirementsInfo2{
-        .buffer = (this->handle = this->cInfo->buffer ? this->cInfo->buffer.value() : device.createBuffer(bufferInfo->setQueueFamilyIndices(deviceObj->getQueueFamilies().indices)))
+        .buffer = (this->handle = this->cInfo->buffer ? this->cInfo->buffer.value() : device.createBuffer(bufferInfo->setQueueFamilyIndices(deviceObj->getQueueFamilies().indices))).as<vk::Buffer>()
       }).get(), memReqInfo2.get());
 
       //
@@ -427,7 +427,7 @@ namespace ZNAMED {
 
       //
       std::vector<vk::BindBufferMemoryInfo> bindInfos = { *infoMap->set(vk::StructureType::eBindBufferMemoryInfo, vk::BindBufferMemoryInfo{
-        .buffer = this->handle, .memory = this->allocated->memory, .memoryOffset = this->allocated->offset
+        .buffer = this->handle.as<vk::Buffer>(), .memory = this->allocated->memory, .memoryOffset = this->allocated->offset
       }) };
       device.bindBufferMemory2(bindInfos);
 
@@ -553,7 +553,7 @@ namespace ZNAMED {
 
     //
     decltype(auto) texture = ZNAMED::ResourceObj::make(deviceObj, ZNAMED::ResourceCreateInfo{
-      .descriptors = this->handle,
+      .descriptors = this->handle.as<vk::PipelineLayout>(),
       .imageInfo = ZNAMED::ImageCreateInfo{
         .format = vk::Format::eR8G8B8A8Unorm,
         .extent = vk::Extent3D{2u, 2u, 1u},
@@ -563,7 +563,7 @@ namespace ZNAMED {
 
     //
     decltype(auto) image = ZNAMED::ResourceObj::make(deviceObj, ZNAMED::ResourceCreateInfo{
-      .descriptors = this->handle,
+      .descriptors = this->handle.as<vk::PipelineLayout>(),
       .imageInfo = ZNAMED::ImageCreateInfo{
         .format = vk::Format::eR8G8B8A8Unorm,
         .extent = vk::Extent3D{2u, 2u, 1u},
@@ -575,7 +575,7 @@ namespace ZNAMED {
     decltype(auto) texImageView = texture->createImageView(ZNAMED::ImageViewCreateInfo{ .viewType = vk::ImageViewType::e2D });
     decltype(auto) imgImageView = image->createImageView(ZNAMED::ImageViewCreateInfo{ .viewType = vk::ImageViewType::e2D });
     decltype(auto) samplerObj = ZNAMED::SamplerObj::make(deviceObj, ZNAMED::SamplerCreateInfo{
-      .descriptors = this->handle,
+      .descriptors = this->handle.as<vk::PipelineLayout>(),
       .native = vk::SamplerCreateInfo {
         .magFilter = vk::Filter::eLinear,
         .minFilter = vk::Filter::eLinear,

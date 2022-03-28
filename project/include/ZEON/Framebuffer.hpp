@@ -59,7 +59,7 @@ namespace ZNAMED {
 
   public:
     // 
-    FramebufferObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{}) : BaseObj(deviceObj), cInfo(cInfo) {
+    FramebufferObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
       //this->construct(deviceObj, cInfo);
     };
 
@@ -126,7 +126,7 @@ namespace ZNAMED {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
-      decltype(auto) attachment = descriptorsObj->cInfo->attachments[std::to_underlying(this->cInfo->type)];
+      decltype(auto) attachment = descriptorsObj->cInfo->attachments[uint32_t(this->cInfo->type)];
 
       //
       std::vector<vk::ClearRect> clearRects = {};
@@ -215,7 +215,7 @@ namespace ZNAMED {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
-      decltype(auto) attachment = descriptorsObj->cInfo->attachments[std::to_underlying(this->cInfo->type)];
+      decltype(auto) attachment = descriptorsObj->cInfo->attachments[uint32_t(this->cInfo->type)];
       decltype(auto) lastDepthFormat = attachment.depthAttachmentFormat;
       decltype(auto) lastStencilFormat = attachment.stencilAttachmentFormat;
 
@@ -314,12 +314,12 @@ namespace ZNAMED {
 
       // 
       glm::vec4 color = glm::vec4(0.f,0.f,0.f,0.f);
-      for (auto& format : descriptorsObj->cInfo->attachments[std::to_underlying(this->cInfo->type)].colorAttachmentFormats) {
+      for (auto& format : descriptorsObj->cInfo->attachments[uint32_t(this->cInfo->type)].colorAttachmentFormats) {
         this->createImage(ImageType::eUniversal);
       };
 
       // 
-      if (descriptorsObj->cInfo->attachments[std::to_underlying(this->cInfo->type)].depthAttachmentFormat == descriptorsObj->cInfo->attachments[std::to_underlying(this->cInfo->type)].stencilAttachmentFormat) {
+      if (descriptorsObj->cInfo->attachments[uint32_t(this->cInfo->type)].depthAttachmentFormat == descriptorsObj->cInfo->attachments[uint32_t(this->cInfo->type)].stencilAttachmentFormat) {
         this->createImage(ImageType::eDepthStencilAttachment);
       } else {
         this->createImage(ImageType::eDepthAttachment);

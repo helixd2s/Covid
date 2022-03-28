@@ -53,7 +53,7 @@ namespace ZNAMED {
   public:
 
     // 
-    UploaderObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) : BaseObj(deviceObj), cInfo(cInfo) {
+    UploaderObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
       //this->construct(deviceObj, cInfo);
     };
 

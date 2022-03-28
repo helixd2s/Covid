@@ -45,7 +45,7 @@ namespace ZNAMED {
     };
 
     // 
-    MemoryAllocatorObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) : BaseObj(deviceObj), cInfo(cInfo) {
+    MemoryAllocatorObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
       this->base = deviceObj->getHandle();
       //this->construct(deviceObj, cInfo);
     };

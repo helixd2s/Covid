@@ -33,10 +33,10 @@
 #include <typeindex>
 #include <coroutine>
 
-#ifdef _MSC_VER 
-#include <experimental/generator>
-#else
+#ifdef __clang__
 #include <tl/generator.hpp>
+#else
+#include <experimental/generator>
 #endif
 
 #include <tinygltf/tiny_gltf.h>

@@ -38,7 +38,7 @@ namespace ZNAMED {
 
   public: 
     // 
-    InstanceObj(WrapShared<ContextObj> contextObj = {}, cpp21::const_wrap_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : BaseObj(contextObj), cInfo(cInfo) {
+    InstanceObj(WrapShared<ContextObj> contextObj = {}, cpp21::const_wrap_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : BaseObj(std::move(contextObj->getHandle())), cInfo(cInfo) {
       //this->construct(contextObj, cInfo);
     };
 

@@ -34,7 +34,7 @@ namespace ZNAMED {
   public:
 
     // 
-    SemaphoreObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<SemaphoreCreateInfo> cInfo = SemaphoreCreateInfo{}) : BaseObj(deviceObj), cInfo(cInfo) {
+    SemaphoreObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<SemaphoreCreateInfo> cInfo = SemaphoreCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
       this->construct(deviceObj, cInfo);
     };
 

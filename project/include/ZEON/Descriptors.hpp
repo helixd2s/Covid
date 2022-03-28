@@ -90,7 +90,7 @@ namespace ZNAMED {
   public:
 
     // 
-    DescriptorsObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) : BaseObj(deviceObj), cInfo(cInfo) {
+    DescriptorsObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
       //this->construct(deviceObj, cInfo);
     };
 

@@ -65,7 +65,7 @@ namespace ZNAMED {
   public:
 
     // 
-    InstanceLevelObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) : BaseObj(deviceObj), cInfo(cInfo), instanceDraw(std::vector<InstanceDraw>{}), instanceDevInfo(std::vector<InstanceDevInfo>{}) {
+    InstanceLevelObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo), instanceDraw(std::vector<InstanceDraw>{}), instanceDevInfo(std::vector<InstanceDevInfo>{}) {
       //this->construct(deviceObj, cInfo);
     };
 
@@ -180,7 +180,7 @@ namespace ZNAMED {
           .geometryType = vk::GeometryTypeKHR::eInstances,
           .geometry = vk::AccelerationStructureGeometryDataKHR{.instances = vk::AccelerationStructureGeometryInstancesDataKHR{
             .arrayOfPointers = false,
-            .data = vk::DeviceOrHostAddressConstKHR(this->getInstancedDeviceAddress()),
+            .data = reinterpret_cast<vk::DeviceOrHostAddressConstKHR&>(this->getInstancedDeviceAddress()),
           }},
           .flags = vk::GeometryFlagBitsKHR{}
         };
@@ -334,9 +334,10 @@ namespace ZNAMED {
       //
       if (this->cInfo->instances.size() < this->cInfo->limit) {
         for (uintptr_t i = this->cInfo->instances.size(); i < this->cInfo->limit; i++) {
+          decltype(auto) matrix = glm::mat3x4(1.f);
           this->cInfo->instances.push_back(InstanceDataInfo{
             .instanceDevInfo = InstanceDevInfo{
-              .transform = reinterpret_cast<vk::TransformMatrixKHR&&>(glm::mat3x4(1.f)),
+              .transform = reinterpret_cast<vk::TransformMatrixKHR&>(matrix),
               .instanceCustomIndex = 0u,
               .mask = 0u,
               .instanceShaderBindingTableRecordOffset = 0u,
@@ -397,7 +398,7 @@ namespace ZNAMED {
 
       //
       accelInstInfo->type = accelInfo->type;
-      accelInstInfo->scratchData = vk::DeviceOrHostAddressKHR(this->bindInstanceScratch->getDeviceAddress());
+      accelInstInfo->scratchData = reinterpret_cast<vk::DeviceOrHostAddressKHR&>(this->bindInstanceScratch->getDeviceAddress());
       accelInstInfo->srcAccelerationStructure = accelInstInfo->dstAccelerationStructure;
       accelInstInfo->dstAccelerationStructure = (this->accelStruct = device.createAccelerationStructureKHR(accelInfo.ref(), nullptr, deviceObj->getDispatch()));
 

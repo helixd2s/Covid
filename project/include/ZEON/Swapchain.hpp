@@ -72,7 +72,7 @@ namespace ZNAMED {
 
   public:
     // 
-    SwapchainObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) : BaseObj(deviceObj), cInfo(cInfo) {
+    SwapchainObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
       //this->construct(deviceObj, cInfo);
     };
 

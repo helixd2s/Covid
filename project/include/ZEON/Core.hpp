@@ -417,7 +417,7 @@ namespace ZNAMED {
 #pragma pack(1)
   __declspec(align(1))
   struct MaterialInfo {
-    TexOrDef texCol[std::to_underlying(TextureBind::eMAX)];
+    TexOrDef texCol[uint32_t(TextureBind::eMAX)];
   };
 
   // 
@@ -442,7 +442,7 @@ namespace ZNAMED {
 #pragma pack(1)
   __declspec(align(1))
   struct GeometryExtension {
-    BufferViewInfo bufferViews[std::to_underlying(BufferBind::eMAX)];
+    BufferViewInfo bufferViews[uint32_t(BufferBind::eMAX)];
   };
 
   //
@@ -1292,8 +1292,8 @@ namespace ZNAMED {
     inline decltype(auto) with(cpp21::const_wrap_arg<uint32_t> family = 0u) const { return Handle(this->value, this->type, family); };
 
     // 
-    template<class T = uintptr_t> inline operator T& () { return this->as<T>(); };
-    template<class T = uintptr_t> inline operator T const& () const { return this->as<T>(); };
+    //template<class T = uintptr_t> inline operator T& () { return this->as<T>(); };
+    //template<class T = uintptr_t> inline operator T const& () const { return this->as<T>(); };
 
     //
     operator bool() const { return !!value; };
@@ -1495,10 +1495,10 @@ namespace ZNAMED {
     };
 
     // 
-    BaseObj() : handleObjectMap(std::make_shared<HMAP_T>()), infoMap(std::make_shared<MSS>(MSS())), callstack(std::make_shared<CallStack>()) {};
-    BaseObj(cpp21::const_wrap_arg<Handle> base, cpp21::const_wrap_arg<Handle> handle = {}) : base(base), handle(handle), infoMap(std::make_shared<MSS>()), callstack(std::make_shared<CallStack>()), handleObjectMap(std::make_shared<HMAP_T>()) {
+    BaseObj(cpp21::const_wrap_arg<Handle> base = {}, cpp21::const_wrap_arg<Handle> handle = {}) : base(base.ref()), handle(handle.ref()), infoMap(std::make_shared<MSS>()), callstack(std::make_shared<CallStack>()), handleObjectMap(std::make_shared<HMAP_T>()) {
 
     };
+
 
     //
     virtual ExtHandle& getExtHandle() { return extHandle; };

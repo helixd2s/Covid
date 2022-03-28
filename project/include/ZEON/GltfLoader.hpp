@@ -275,10 +275,10 @@ namespace ZNAMED {
         });
 
         //
-        decltype(auto) imgImageView = imageObj->createImageView(ZNAMED::ImageViewCreateInfo{ .viewType = vk::ImageViewType::e2D });
+        while (!status->checkStatus()) { deviceObj->tickProcessing(); };
 
         //
-        while (!status->checkStatus()) { deviceObj->tickProcessing(); };
+        decltype(auto) imgImageView = imageObj->createImageView(ZNAMED::ImageViewCreateInfo{ .viewType = vk::ImageViewType::e2D });
 
         //
         device.waitIdle();
@@ -314,10 +314,10 @@ namespace ZNAMED {
       //
       for (auto& material : gltf->model.materials) {
         decltype(auto) materialInf = ZNAMED::MaterialInfo{};
-        materialInf.texCol[std::to_underlying(ZNAMED::TextureBind::eAlbedo)] = ZNAMED::TexOrDef{ .texture = material.pbrMetallicRoughness.baseColorTexture.index >= 0 ? gltf->textures[material.pbrMetallicRoughness.baseColorTexture.index] : CTexture{}, .defValue = handleFactor(material.pbrMetallicRoughness.baseColorFactor)};
-        materialInf.texCol[std::to_underlying(ZNAMED::TextureBind::eNormal)] = ZNAMED::TexOrDef{ .texture = material.normalTexture.index >= 0 ? gltf->textures[material.normalTexture.index] : CTexture{}, .defValue = glm::vec4(0.5f, 0.5f, 1.f, 1.f) };
-        materialInf.texCol[std::to_underlying(ZNAMED::TextureBind::ePBR)] = ZNAMED::TexOrDef{ .texture = material.pbrMetallicRoughness.metallicRoughnessTexture.index >= 0 ? gltf->textures[material.pbrMetallicRoughness.metallicRoughnessTexture.index] : CTexture{}, .defValue = glm::vec4(1.f, material.pbrMetallicRoughness.roughnessFactor, material.pbrMetallicRoughness.metallicFactor, 1.f) };
-        materialInf.texCol[std::to_underlying(ZNAMED::TextureBind::eEmissive)] = ZNAMED::TexOrDef{ .texture = material.emissiveTexture.index >= 0 ? gltf->textures[material.emissiveTexture.index] : CTexture{}, .defValue = handleFactor(material.emissiveFactor) };
+        materialInf.texCol[uint32_t(ZNAMED::TextureBind::eAlbedo)] = ZNAMED::TexOrDef{ .texture = material.pbrMetallicRoughness.baseColorTexture.index >= 0 ? gltf->textures[material.pbrMetallicRoughness.baseColorTexture.index] : CTexture{}, .defValue = handleFactor(material.pbrMetallicRoughness.baseColorFactor)};
+        materialInf.texCol[uint32_t(ZNAMED::TextureBind::eNormal)] = ZNAMED::TexOrDef{ .texture = material.normalTexture.index >= 0 ? gltf->textures[material.normalTexture.index] : CTexture{}, .defValue = glm::vec4(0.5f, 0.5f, 1.f, 1.f) };
+        materialInf.texCol[uint32_t(ZNAMED::TextureBind::ePBR)] = ZNAMED::TexOrDef{ .texture = material.pbrMetallicRoughness.metallicRoughnessTexture.index >= 0 ? gltf->textures[material.pbrMetallicRoughness.metallicRoughnessTexture.index] : CTexture{}, .defValue = glm::vec4(1.f, material.pbrMetallicRoughness.roughnessFactor, material.pbrMetallicRoughness.metallicFactor, 1.f) };
+        materialInf.texCol[uint32_t(ZNAMED::TextureBind::eEmissive)] = ZNAMED::TexOrDef{ .texture = material.emissiveTexture.index >= 0 ? gltf->textures[material.emissiveTexture.index] : CTexture{}, .defValue = handleFactor(material.emissiveFactor) };
         gltf->materials.push_back(materialInf);
       };
 
@@ -387,20 +387,20 @@ namespace ZNAMED {
           extensions->push_back(ZNAMED::GeometryExtension{});
 
           //
-          extensions->back().bufferViews[std::to_underlying(ZNAMED::BufferBind::eExtTexcoord)] = nullView;
-          extensions->back().bufferViews[std::to_underlying(ZNAMED::BufferBind::eExtNormals)] = nullView;
-          extensions->back().bufferViews[std::to_underlying(ZNAMED::BufferBind::eExtTangent)] = nullView;
+          extensions->back().bufferViews[uint32_t(ZNAMED::BufferBind::eExtTexcoord)] = nullView;
+          extensions->back().bufferViews[uint32_t(ZNAMED::BufferBind::eExtNormals)] = nullView;
+          extensions->back().bufferViews[uint32_t(ZNAMED::BufferBind::eExtTangent)] = nullView;
 
           //
           for (decltype(auto) attrib : primitive.attributes) {
             if (attrib.first == "TEXCOORD_0") {
-              extensions->back().bufferViews[std::to_underlying(ZNAMED::BufferBind::eExtTexcoord)] = handleAccessor(attrib.second);
+              extensions->back().bufferViews[uint32_t(ZNAMED::BufferBind::eExtTexcoord)] = handleAccessor(attrib.second);
             };
             if (attrib.first == "NORMAL") {
-              extensions->back().bufferViews[std::to_underlying(ZNAMED::BufferBind::eExtNormals)] = handleAccessor(attrib.second);
+              extensions->back().bufferViews[uint32_t(ZNAMED::BufferBind::eExtNormals)] = handleAccessor(attrib.second);
             };
             if (attrib.first == "TANGENT") {
-              extensions->back().bufferViews[std::to_underlying(ZNAMED::BufferBind::eExtTangent)] = handleAccessor(attrib.second);
+              extensions->back().bufferViews[uint32_t(ZNAMED::BufferBind::eExtTangent)] = handleAccessor(attrib.second);
             };
           };
         };
