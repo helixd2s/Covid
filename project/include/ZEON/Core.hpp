@@ -1,6 +1,7 @@
 #pragma once
 
 //
+#ifdef __cplusplus
 #ifndef USE_CMAKE_PCH
 #ifdef Z_ENABLE_GLTF
 #include <tinygltf/tiny_gltf.h>
@@ -68,11 +69,11 @@ namespace ZNAMED {
 #endif
 
 //
-#ifdef Z_USE_ROBIN_HOOD
-#define Z_UNORDERED_MAP robin_hood::unordered_map
-#else
-#define Z_UNORDERED_MAP std::unordered_map
-#endif
+//#ifdef Z_USE_ROBIN_HOOD
+//#define Z_UNORDERED_MAP robin_hood::unordered_map
+//#else
+//#define Z_UNORDERED_MAP std::unordered_map
+//#endif
 
   //
   enum class MemoryUsage : uint32_t {
@@ -274,11 +275,11 @@ namespace ZNAMED {
 
 
   //
-  using MSS = cpp21::map_of_shared<vk::StructureType, vk::BaseInStructure, std::shared_ptr, Z_UNORDERED_MAP>;
-  using EXM = cpp21::map_of_shared<ExtensionName, uintptr_t, std::shared_ptr, Z_UNORDERED_MAP>;
-  using EXIF = cpp21::map_of_shared<ExtensionInfoName, std::shared_ptr<cpp21::void_t>, std::shared_ptr, Z_UNORDERED_MAP>;
-  using SMAP = cpp21::interval_map<uintptr_t, vk::Buffer, Z_UNORDERED_MAP>;
-  using EXIP = Z_UNORDERED_MAP<ExtensionInfoName, ExtensionName>;
+  using MSS = cpp21::map_of_shared<vk::StructureType, vk::BaseInStructure>;
+  using EXM = cpp21::map_of_shared<ExtensionName, uintptr_t>;
+  using EXIF = cpp21::map_of_shared<ExtensionInfoName, cpp21::void_t>;
+  using SMAP = cpp21::interval_map<uintptr_t, vk::Buffer>;
+  using EXIP = std::unordered_map<ExtensionInfoName, ExtensionName>;
 
   //
   struct BaseCreateInfo {
@@ -1089,7 +1090,7 @@ namespace ZNAMED {
   //
   struct GraphicsPipelineCreateInfo : BaseCreateInfo {
     FramebufferType framebufferType = FramebufferType::eUnknown;
-    Z_UNORDERED_MAP<vk::ShaderStageFlagBits, cpp21::shared_vector<uint32_t>> stageCodes = {};
+    std::unordered_map<vk::ShaderStageFlagBits, cpp21::shared_vector<uint32_t>> stageCodes = {};
   };
 
   //
@@ -1224,7 +1225,7 @@ namespace ZNAMED {
   };
 
   //
-  inline extern Z_UNORDERED_MAP<std::type_index, HandleType> handleTypeMap = {};
+  inline extern std::unordered_map<std::type_index, HandleType> handleTypeMap = {};
 
   //
   inline static decltype(auto) registerTypes() {
@@ -1419,7 +1420,7 @@ namespace ZNAMED {
   class BaseObj;
 
   //
-  using HMAP_C = cpp21::map_of_shared<uintptr_t, BaseObj, std::shared_ptr, Z_UNORDERED_MAP>;
+  using HMAP_C = cpp21::map_of_shared<uintptr_t, BaseObj>;
   using HMAP_T = std::map<HandleType, std::shared_ptr<HMAP_C>>;
   using HMAP_S = std::shared_ptr<HMAP_T>;
 
@@ -1478,7 +1479,7 @@ namespace ZNAMED {
     virtual Handle const& getBase() const { return this->base; };
 
     //
-    virtual std::optional<Z_UNORDERED_MAP<uintptr_t, std::shared_ptr<BaseObj>>::iterator> destroy(Handle const& parent, HMAP_S parentMap = {});
+    virtual std::optional<std::unordered_map<uintptr_t, std::shared_ptr<BaseObj>>::iterator> destroy(Handle const& parent, HMAP_S parentMap = {});
 
     //
     virtual void tickProcessing() {
@@ -1610,3 +1611,5 @@ namespace ZNAMED {
 
 
 };
+
+#endif

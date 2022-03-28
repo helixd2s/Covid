@@ -1,6 +1,7 @@
 #pragma once
 
 //
+#ifdef __cplusplus
 #ifdef Z_ENABLE_GLTF
 #include <tinygltf/tiny_gltf.h>
 #include <tinygltf/stb_image.h>
@@ -41,3 +42,4 @@
 namespace ZNAMED {
   
 };
+#endif

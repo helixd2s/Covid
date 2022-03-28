@@ -1,6 +1,7 @@
 #pragma once
 
 // 
+#ifdef __cplusplus
 #include "./Core.hpp"
 
 // 
@@ -61,7 +62,7 @@ namespace ZNAMED {
   };
 
   //
-  inline std::optional<Z_UNORDERED_MAP<uintptr_t, std::shared_ptr<BaseObj>>::iterator> BaseObj::destroy(Handle const& parent, HMAP_S parentMap) {
+  inline std::optional<std::unordered_map<uintptr_t, std::shared_ptr<BaseObj>>::iterator> BaseObj::destroy(Handle const& parent, HMAP_S parentMap) {
     //
     if (parent.value == this->base.value && this->alive) {
       this->tickProcessing();
@@ -111,3 +112,5 @@ namespace ZNAMED {
   };
 
 };
+
+#endif

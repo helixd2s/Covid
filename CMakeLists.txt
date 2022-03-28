@@ -91,9 +91,10 @@ add_executable(${PROJECT_NAME} ${_source_list})
 target_compile_definitions(${PROJECT_NAME} PUBLIC UNICODE Z_USE_ROBIN_HOOD USE_CMAKE_PCH VULKAN_HPP_NO_CONSTRUCTORS NOMINMAX Z_ENABLE_VMA Z_ENABLE_GLTF CPP21_DEBUG_MEMORY TINYGLTF_USE_CPP14 ZNAMED=zeon ${PLATFORM_DEF})
 target_include_directories(${PROJECT_NAME} PUBLIC 
   ${PROJECT_SOURCE_DIR}/project/include 
+  ${PROJECT_SOURCE_DIR}/project/
+  ${PROJECT_SOURCE_DIR}/*/include 
+  ${PROJECT_SOURCE_DIR}/interval-tree/include
   ${PROJECT_SOURCE_DIR}/submodules/include 
-  ${PROJECT_SOURCE_DIR}/submodules/*/include 
-  ${PROJECT_SOURCE_DIR}/submodules/*/src/include
   ${PROJECT_SOURCE_DIR}/generator/include 
   ${PROJECT_SOURCE_DIR}/robin-hood-hashing/src/include
   ${PROJECT_SOURCE_DIR}/VulkanMemoryAllocator/include
@@ -108,17 +109,17 @@ target_link_directories(${PROJECT_NAME} PUBLIC
 )
 
 #
-set (HSOURCES "prebuild/include/vk-utils/cpp21/core.hpp" "project/include/ZEON/Core.hpp")
+set (HSOURCES "submodules/include/vk-utils/cpp21/core.hpp" "project/include/ZEON/Core.hpp")
 
 #
-#ADD_MSVC_PRECOMPILED_HEADER("prebuild/include/cmake_pch.hxx" "prebuild/include/cmake_pch.cxx" HSOURCES)
+ADD_MSVC_PRECOMPILED_HEADER("project/cmake_pch.hxx" "project/cmake_pch.cxx" HSOURCES)
 
 #
 target_link_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS} ${Vulkan_LIBRARIES} glfw)
 
 # 
 if (MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest /fsanitize=address /bigobj /MP /EHa /Ot /Od /Oy /Ob0 /GT /GL /GR /Zc:threadSafeInit /arch:AVX2")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c17 /std:c++latest /fsanitize=address /bigobj /MP /EHa /Ot /Od /Oy /Ob0 /GT /GL /GR /Zc:threadSafeInit /arch:AVX2")
     set(CMAKE_EXE_LINKER_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj /MP /MAP /incremental /debug:fastlink /experimental /errorReport")
 endif()
 

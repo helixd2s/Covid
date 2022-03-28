@@ -1,6 +1,7 @@
 #pragma once
 
 // 
+#ifdef __cplusplus
 #include "./Core.hpp"
 #include "./Device.hpp"
 #include "./MemoryAllocatorVma.hpp"
@@ -206,3 +207,4 @@ namespace ZNAMED {
 #endif
   
 };
+#endif

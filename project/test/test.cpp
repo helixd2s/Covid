@@ -1,5 +1,6 @@
 #pragma once
 
+#ifdef __cplusplus
 //
 #ifdef _WIN32
 #ifndef VK_USE_PLATFORM_WIN32_KHR
@@ -161,7 +162,7 @@ int main() {
   });
 
   //
-  Z_UNORDERED_MAP<vk::ShaderStageFlagBits, cpp21::shared_vector<uint32_t>> stageMaps = {};
+  std::unordered_map<vk::ShaderStageFlagBits, cpp21::shared_vector<uint32_t>> stageMaps = {};
   stageMaps[vk::ShaderStageFlagBits::eVertex] = cpp21::readBinaryU32("./opaque.vert.spv");
   stageMaps[vk::ShaderStageFlagBits::eFragment] = cpp21::readBinaryU32("./opaque.frag.spv");
 
@@ -249,15 +250,11 @@ int main() {
   double previousTime = glfwGetTime();
   int frameCount = 0;
 
-  //
-  decltype(auto) rendering = renderGen();
-  decltype(auto) iterator = rendering.begin();
 
-  // 
-  while (!glfwWindowShouldClose(window)) { // 
-    glfwPollEvents();
-    device->tickProcessing();
-    _CrtDumpMemoryLeaks();
+
+  //
+  decltype(auto) renderGen = [=, &previousTime, &frameCount, &uniformData]() -> std::experimental::generator<bool> {
+    co_yield false;
 
     //
 #ifdef ENABLE_RENDERDOC
@@ -285,7 +282,7 @@ int main() {
     auto& fence = (*fences)[acquired];
     decltype(auto) status = false;
     //if (fence) { decltype(auto) unleak = fence->future->get(); }; device->tickProcessing();
-    if (fence) { while (!(status = fence->checkStatus())) { glfwPollEvents(); device->tickProcessing(); }; };
+    if (fence) { while (!(status = fence->checkStatus())) { co_yield status; }; };
 
     //
     uniformData.frameCounter++;
@@ -338,9 +335,27 @@ int main() {
 #ifdef ENABLE_RENDERDOC
     if (rdoc_api) rdoc_api->EndFrameCapture(NULL, NULL);
 #endif
+
+    // 
+    co_yield true;
+  };
+
+  //
+  decltype(auto) rendering = renderGen();
+  decltype(auto) iterator = rendering.begin();
+
+  // 
+  while (!glfwWindowShouldClose(window)) { // 
+    glfwPollEvents();
+    device->tickProcessing();
+    _CrtDumpMemoryLeaks();
+
+    //
+    if (iterator == rendering.end()) { rendering = renderGen(), iterator = rendering.begin(); };
+    iterator++;
   };
 
   // 
   return 0;
 };
-
+#endif

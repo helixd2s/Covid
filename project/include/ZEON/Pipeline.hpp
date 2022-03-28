@@ -1,6 +1,7 @@
 #pragma once
 
 // 
+#ifdef __cplusplus
 #include "./Core.hpp"
 #include "./Device.hpp"
 #include "./Descriptors.hpp"
@@ -386,3 +387,4 @@ namespace ZNAMED {
   };
   
 };
+#endif

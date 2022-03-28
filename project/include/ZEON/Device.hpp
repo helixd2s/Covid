@@ -1,6 +1,7 @@
 #pragma once
 
 // 
+#ifdef __cplusplus
 #include "./Core.hpp"
 #include "./Instance.hpp"
 
@@ -539,3 +540,5 @@ namespace ZNAMED {
 
 
 };
+
+#endif

@@ -13,3 +13,9 @@
 [submodule "robin-hood-hashing"]
 	path = robin-hood-hashing
 	url = https://github.com/martinus/robin-hood-hashing.git
+[submodule "submodules/include/tinygltf"]
+	path = submodules/include/tinygltf
+	url = https://github.com/syoyo/tinygltf.git
+[submodule "interval-tree"]
+	path = interval-tree
+	url = https://github.com/5cript/interval-tree.git
