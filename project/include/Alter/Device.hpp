@@ -6,7 +6,7 @@
 #include "./Instance.hpp"
 
 // 
-namespace ZNAMED {
+namespace ANAMED {
 
   //
   struct QueueFamilies {
@@ -181,7 +181,7 @@ namespace ZNAMED {
     //
     virtual std::vector<vk::PhysicalDevice>& filterPhysicalDevices(cpp21::const_wrap_arg<uint32_t> groupIndex = 0u) {
       //this->physicalDevices = {};
-      decltype(auto) instanceObj = ZNAMED::context->get<InstanceObj>(this->base);
+      decltype(auto) instanceObj = ANAMED::context->get<InstanceObj>(this->base);
       decltype(auto) deviceGroups = instanceObj->enumeratePhysicalDeviceGroups();
       auto& physicalDevices = this->physicalDevices;
       if (deviceGroups.size() > 0) {
@@ -489,7 +489,7 @@ namespace ZNAMED {
     virtual FenceType copyBuffersOnce(cpp21::const_wrap_arg<CopyBuffersExecutionOnce> copyInfo) {
       decltype(auto) submission = CommandOnceSubmission{ .submission = copyInfo->submission };
       decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       
       // 
       submission.commandInits.push_back([copyInfo, this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
@@ -513,12 +513,12 @@ namespace ZNAMED {
 
     // 
     DeviceObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
-      //this->construct(ZNAMED::context->get<InstanceObj>(this->base), cInfo);
+      //this->construct(ANAMED::context->get<InstanceObj>(this->base), cInfo);
     };
 
     //
     virtual tType registerSelf() {
-      ZNAMED::context->registerObj(this->handle, shared_from_this());
+      ANAMED::context->registerObj(this->handle, shared_from_this());
       return SFT();
     };
 
@@ -530,7 +530,7 @@ namespace ZNAMED {
     //
     inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
       auto shared = std::make_shared<DeviceObj>(handle, cInfo);
-      shared->construct(ZNAMED::context->get<InstanceObj>(handle), cInfo);
+      shared->construct(ANAMED::context->get<InstanceObj>(handle), cInfo);
       auto wrap = shared->registerSelf();
       wrap->createDefaultMemoryAllocator();
       return wrap;

@@ -9,12 +9,12 @@
 #include "./GeometryLevel.hpp"
 
 //
-#ifdef Z_ENABLE_VMA
+#ifdef ALT_ENABLE_VMA
 #include "./MemoryAllocatorVma.hpp"
 #endif
 
 // 
-namespace ZNAMED {
+namespace ANAMED {
 
   // 
   class InstanceLevelObj : public BaseObj {
@@ -71,7 +71,7 @@ namespace ZNAMED {
 
     // 
     InstanceLevelObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) : BaseObj(handle), cInfo(cInfo), instanceDraw(std::vector<InstanceDraw>{}), instanceDevInfo(std::vector<InstanceDevInfo>{}) {
-      //this->construct(ZNAMED::context->get<DeviceObj>(this->base), cInfo);
+      //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
     // 
@@ -81,26 +81,26 @@ namespace ZNAMED {
 
     //
     virtual tType registerSelf() {
-      ZNAMED::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
+      ANAMED::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
       return SFT();
     };
 
     //
     inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) {
       auto shared = std::make_shared<InstanceLevelObj>(handle, cInfo);
-      shared->construct(ZNAMED::context->get<DeviceObj>(handle), cInfo);
+      shared->construct(ANAMED::context->get<DeviceObj>(handle), cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
     };
 
     //
     virtual WrapShared<ResourceObj> getInstancedResource() const {
-      return ZNAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->instanceBuffer);
+      return ANAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->instanceBuffer);
     };
 
     //
     virtual WrapShared<ResourceObj> getInstanceInfoResource() const {
-      return ZNAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->instanceExtBuffer);
+      return ANAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->instanceExtBuffer);
     };
 
     //
@@ -133,7 +133,7 @@ namespace ZNAMED {
 
     //
     virtual void updateInstances() {
-      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
 
       // 
       this->instances = {};
@@ -198,7 +198,7 @@ namespace ZNAMED {
     //
     virtual vk::CommandBuffer const& writeBuildStructureCmd(cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf = {}, uintptr_t const& instanceDevOffset = 0ull, uintptr_t const& instanceOffset = 0ull) {
       decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(Handle(this->cInfo->uploader, HandleType::eUploader));
 
       // 
@@ -287,7 +287,7 @@ namespace ZNAMED {
 
       //
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo {.info = info ? info.value() : this->cInfo->info } };
-      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(Handle(this->cInfo->uploader, HandleType::eUploader));
 
       //
@@ -319,7 +319,7 @@ namespace ZNAMED {
 #endif
 
       //
-      return ZNAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
+      return ANAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
     };
 
     //
@@ -353,7 +353,7 @@ namespace ZNAMED {
 
       // 
       decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) accelInstInfo = infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR);
       decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelInstInfo->setGeometries(this->instances), this->cInfo->limit, deviceObj->getDispatch()));
       decltype(auto) accelInfo = infoMap->get<vk::AccelerationStructureCreateInfoKHR>(vk::StructureType::eAccelerationStructureCreateInfoKHR);
@@ -428,7 +428,7 @@ namespace ZNAMED {
       //this->deviceObj = deviceObj;
       if (cInfo) { this->cInfo = cInfo; };
       decltype(auto) device = this->base.as<vk::Device>();
-      //decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+      //decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
 
       //
       decltype(auto) accelInfo = infoMap->set(vk::StructureType::eAccelerationStructureCreateInfoKHR, vk::AccelerationStructureCreateInfoKHR{

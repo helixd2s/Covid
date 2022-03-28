@@ -2,7 +2,7 @@
 
 //
 #ifdef __cplusplus
-#ifdef Z_ENABLE_GLTF
+#ifdef ALT_ENABLE_GLTF
 #include <tinygltf/tiny_gltf.h>
 #include <tinygltf/stb_image.h>
 #include <glm/gtc/matrix_transform.hpp>
@@ -28,18 +28,18 @@
 #include "./InstanceLevel.hpp"
 
 // 
-#ifdef Z_ENABLE_VMA
+#ifdef ALT_ENABLE_VMA
 #include "./MemoryAllocatorVma.hpp"
 #include "./ResourceVma.hpp"
 #endif
 
 //
-#ifdef Z_ENABLE_GLTF
+#ifdef ALT_ENABLE_GLTF
 #include "./GltfLoader.hpp"
 #endif
 
 // 
-namespace ZNAMED {
+namespace ANAMED {
   
 };
 #endif

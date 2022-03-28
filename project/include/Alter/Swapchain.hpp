@@ -10,7 +10,7 @@
 #include "./Semaphore.hpp"
 
 // 
-namespace ZNAMED {
+namespace ANAMED {
   
   //
   struct SurfaceCapabilitiesInfo {
@@ -78,7 +78,7 @@ namespace ZNAMED {
 
     // 
     SwapchainObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
-      //this->construct(ZNAMED::context->get<DeviceObj>(this->base), cInfo);
+      //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
     //
@@ -95,14 +95,14 @@ namespace ZNAMED {
 
     //
     virtual tType registerSelf() {
-      ZNAMED::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
+      ANAMED::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
       return SFT();
     };
 
     //
     inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) {
       auto shared = std::make_shared<SwapchainObj>(handle, cInfo);
-      shared->construct(ZNAMED::context->get<DeviceObj>(handle), cInfo);
+      shared->construct(ANAMED::context->get<DeviceObj>(handle), cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
     };
@@ -119,7 +119,7 @@ namespace ZNAMED {
       });
 
       //
-      return ZNAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
+      return ANAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
     };
 
     //
@@ -134,11 +134,11 @@ namespace ZNAMED {
       });
 
       //
-      return ZNAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
+      return ANAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
     };
 
     //
-    virtual uint32_t& acquireImage(cpp21::const_wrap_arg<ZNAMED::QueueGetInfo> qfAndQueue) {
+    virtual uint32_t& acquireImage(cpp21::const_wrap_arg<ANAMED::QueueGetInfo> qfAndQueue) {
       decltype(auto) semIndex = (this->currentState.index + 1u) % this->imageViewIndices.size();
       decltype(auto) acquired = (this->currentState.index = this->base.as<vk::Device>().acquireNextImage2KHR(vk::AcquireNextImageInfoKHR{ .swapchain = this->handle.as<vk::SwapchainKHR>(), .timeout = 0, .semaphore = this->presentSemaphoreInfos[semIndex].semaphore, .deviceMask = 0x1u }));
 
@@ -149,9 +149,9 @@ namespace ZNAMED {
     };
 
     //
-    virtual std::tuple<FenceType, vk::Result> presentImage(cpp21::const_wrap_arg<ZNAMED::QueueGetInfo> qfAndQueue) {
+    virtual std::tuple<FenceType, vk::Result> presentImage(cpp21::const_wrap_arg<ANAMED::QueueGetInfo> qfAndQueue) {
       decltype(auto) fence = this->switchToPresent(this->currentState.index, qfAndQueue);
-      decltype(auto) result = ZNAMED::context->get<DeviceObj>(this->base)->getQueue(qfAndQueue).presentKHR(vk::PresentInfoKHR{
+      decltype(auto) result = ANAMED::context->get<DeviceObj>(this->base)->getQueue(qfAndQueue).presentKHR(vk::PresentInfoKHR{
         .waitSemaphoreCount = 1u,
         .pWaitSemaphores = &this->readySemaphoreInfos[this->currentState.index].semaphore,
         .swapchainCount = 1u,
@@ -166,7 +166,7 @@ namespace ZNAMED {
     //
     virtual void createImage(cpp21::const_wrap_arg<vk::Image> image, cpp21::const_wrap_arg<ImageType> imageType = ImageType::eSwapchain, cpp21::const_wrap_arg<vk::SurfaceFormat2KHR> surfaceFormat2 = {}, cpp21::const_wrap_arg<ImageSwapchainInfo> swapchainInfo = {}) {
       decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
       decltype(auto) aspectMask = vk::ImageAspectFlagBits::eColor;
       decltype(auto) components = vk::ComponentMapping{ .r = vk::ComponentSwizzle::eR, .g = vk::ComponentSwizzle::eG, .b = vk::ComponentSwizzle::eB, .a = vk::ComponentSwizzle::eA };
@@ -239,7 +239,7 @@ namespace ZNAMED {
       //
       this->readySemaphoreInfos.push_back(readySemaphore->infoMap->get<vk::SemaphoreSubmitInfo>(vk::StructureType::eSemaphoreSubmitInfo));
       this->presentSemaphoreInfos.push_back(presentSemaphore->infoMap->get<vk::SemaphoreSubmitInfo>(vk::StructureType::eSemaphoreSubmitInfo));
-      //ZNAMED::context->get<DeviceObj>(this->base)
+      //ANAMED::context->get<DeviceObj>(this->base)
     };
 
     
@@ -247,7 +247,7 @@ namespace ZNAMED {
     // 
     virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) {
       if (cInfo) { this->cInfo = cInfo; };
-      //decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+      //decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
       auto& device = this->base.as<vk::Device>();
 

@@ -8,7 +8,7 @@
 #include "./Descriptors.hpp"
 
 // 
-namespace ZNAMED {
+namespace ANAMED {
 
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
   
@@ -26,7 +26,7 @@ namespace ZNAMED {
 
     //
     virtual std::optional<AllocatedMemory>& allocateMemory(cpp21::const_wrap_arg<MemoryRequirements> requirements) {
-      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) memoryAllocatorObj = deviceObj->getExt<MemoryAllocatorVma>(this->cInfo->extUsed && this->cInfo->extUsed->find(ExtensionInfoName::eMemoryAllocator) != this->cInfo->extUsed->end() ? this->cInfo->extUsed->at(ExtensionInfoName::eMemoryAllocator) : ExtensionName::eMemoryAllocatorVma);
       return memoryAllocatorObj->allocateMemory(requirements, this->allocated, this->extHandle, this->cInfo->extInfoMap, this->mappedMemory, this->destructors);
     };
@@ -51,14 +51,14 @@ namespace ZNAMED {
 
     //
      WrapShared<ResourceObj> registerSelf() override {
-      ZNAMED::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
+      ANAMED::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
       return std::dynamic_pointer_cast<ResourceObj>(shared_from_this());
     };
 
     //
     inline static WrapShared<ResourceObj> make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
       auto shared = std::make_shared<ResourceVma>(handle, cInfo);
-      shared->construct(ZNAMED::context->get<DeviceObj>(handle), cInfo);
+      shared->construct(ANAMED::context->get<DeviceObj>(handle), cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
     };
@@ -68,7 +68,7 @@ namespace ZNAMED {
     // 
      FenceType createImage(cpp21::const_wrap_arg<ImageCreateInfo> cInfo = {}) override {
       // 
-      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) memoryAllocatorObj = deviceObj->getExt<MemoryAllocatorVma>(this->cInfo->extUsed && this->cInfo->extUsed->find(ExtensionInfoName::eMemoryAllocator) != this->cInfo->extUsed->end() ? this->cInfo->extUsed->at(ExtensionInfoName::eMemoryAllocator) : ExtensionName::eMemoryAllocatorVma);
 
@@ -145,7 +145,7 @@ namespace ZNAMED {
     // 
      void createBuffer(cpp21::const_wrap_arg<BufferCreateInfo> cInfo = {}) override {
       //
-      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) memoryAllocatorObj = deviceObj->getExt<MemoryAllocatorVma>(this->cInfo->extUsed && this->cInfo->extUsed->find(ExtensionInfoName::eMemoryAllocator) != this->cInfo->extUsed->end() ? this->cInfo->extUsed->at(ExtensionInfoName::eMemoryAllocator) : ExtensionName::eMemoryAllocatorVma);
 

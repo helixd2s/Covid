@@ -15,7 +15,7 @@ struct DescriptorBindings {
 };
 
 // 
-namespace ZNAMED {
+namespace ANAMED {
   
   // 
   class DescriptorsObj : public BaseObj {
@@ -96,7 +96,7 @@ namespace ZNAMED {
 
     // 
     DescriptorsObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
-      //this->construct(ZNAMED::context->get<DeviceObj>(this->base), cInfo);
+      //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
     // 
@@ -106,7 +106,7 @@ namespace ZNAMED {
 
     //
     virtual tType registerSelf() {
-      ZNAMED::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
+      ANAMED::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
       return SFT();
     };
 
@@ -137,7 +137,7 @@ namespace ZNAMED {
     //
     inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) {
       auto shared = std::make_shared<DescriptorsObj>(handle, cInfo);
-      shared->construct(ZNAMED::context->get<DeviceObj>(handle), cInfo);
+      shared->construct(ANAMED::context->get<DeviceObj>(handle), cInfo);
       auto wrap = shared->registerSelf();
       wrap->createNullImages();
       return wrap;
@@ -240,7 +240,7 @@ namespace ZNAMED {
       })->setInitialData<char8_t>(this->initialData));
 
       //
-      //ZNAMED::context->get(this->base)->registerObj(this->handle, shared_from_this());
+      //ANAMED::context->get(this->base)->registerObj(this->handle, shared_from_this());
 
       //
       this->createUniformBuffer();
@@ -376,7 +376,7 @@ namespace ZNAMED {
       });
 
       //
-      return ZNAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
+      return ANAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
     };
 
     //
@@ -390,7 +390,7 @@ namespace ZNAMED {
       });
 
       //
-      return ZNAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
+      return ANAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
     };
     
   };

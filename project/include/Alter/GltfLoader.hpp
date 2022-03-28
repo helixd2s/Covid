@@ -20,13 +20,13 @@
 #include "./InstanceLevel.hpp"
 
 // 
-#ifdef Z_ENABLE_VMA
+#ifdef ALT_ENABLE_VMA
 #include "./MemoryAllocatorVma.hpp"
 #include "./ResourceVma.hpp"
 #endif
 
 //
-namespace ZNAMED {
+namespace ANAMED {
 
   //
   enum class FilterType : uint32_t {
@@ -134,7 +134,7 @@ namespace ZNAMED {
       //decltype(auto) handle = Handle(cInfo->device, HandleType::eDevice);
       decltype(auto) handle = this->base;
       decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(handle);
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(handle);
       decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(Handle(this->cInfo->uploader, HandleType::eUploader));
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->descriptors);
 
@@ -157,10 +157,10 @@ namespace ZNAMED {
 
       //
       decltype(auto) handleAccessor = [=,this](intptr_t const& accessorIndex, bool const& isIndice = false) {
-        auto bresult = ZNAMED::BufferViewInfo{ .region = ZNAMED::BufferViewRegion{.deviceAddress = 0ull, .stride = 0ull, .size = 0ull}, .format = ZNAMED::BufferViewFormat::eNone };;
+        auto bresult = ANAMED::BufferViewInfo{ .region = ANAMED::BufferViewRegion{.deviceAddress = 0ull, .stride = 0ull, .size = 0ull}, .format = ANAMED::BufferViewFormat::eNone };;
 
         if (accessorIndex >= 0) {
-          //decltype(auto) bufferView = ZNAMED::BufferViewInfo{ .region = ZNAMED::BufferViewRegion{} };
+          //decltype(auto) bufferView = ANAMED::BufferViewInfo{ .region = ANAMED::BufferViewRegion{} };
           auto accessor = gltf->model.accessors[accessorIndex];
           auto bv = gltf->regions[accessor.bufferView];
           auto bufferView = gltf->model.bufferViews[accessor.bufferView];
@@ -168,12 +168,12 @@ namespace ZNAMED {
           auto address = bufferObj->getDeviceAddress();
 
           //
-          auto defFormat = ZNAMED::BufferViewFormat::eFloat4;
+          auto defFormat = ANAMED::BufferViewFormat::eFloat4;
           if (accessor.componentType == 5126) {
-            if (accessor.type == TINYGLTF_TYPE_VEC4) { defFormat = ZNAMED::BufferViewFormat::eFloat4; };
-            if (accessor.type == TINYGLTF_TYPE_VEC3) { defFormat = ZNAMED::BufferViewFormat::eFloat3; };
-            if (accessor.type == TINYGLTF_TYPE_VEC2) { defFormat = ZNAMED::BufferViewFormat::eFloat2; };
-            if (accessor.type == TINYGLTF_TYPE_SCALAR) { defFormat = ZNAMED::BufferViewFormat::eFloat; };
+            if (accessor.type == TINYGLTF_TYPE_VEC4) { defFormat = ANAMED::BufferViewFormat::eFloat4; };
+            if (accessor.type == TINYGLTF_TYPE_VEC3) { defFormat = ANAMED::BufferViewFormat::eFloat3; };
+            if (accessor.type == TINYGLTF_TYPE_VEC2) { defFormat = ANAMED::BufferViewFormat::eFloat2; };
+            if (accessor.type == TINYGLTF_TYPE_SCALAR) { defFormat = ANAMED::BufferViewFormat::eFloat; };
           };
 
           //
@@ -183,8 +183,8 @@ namespace ZNAMED {
 
           //
           if (isIndice) {
-            auto defFormat = ZNAMED::BufferViewFormat::eUint3;
-            if (accessor.componentType == 5123) { defFormat = ZNAMED::BufferViewFormat::eShort3; };
+            auto defFormat = ANAMED::BufferViewFormat::eUint3;
+            if (accessor.componentType == 5123) { defFormat = ANAMED::BufferViewFormat::eShort3; };
 
             //
             auto decomposeFormat = BufferViewFormatBitSet(defFormat);
@@ -192,11 +192,11 @@ namespace ZNAMED {
             auto realStride = std::max(uint32_t(bufferView.byteStride), ((decomposeFormat.countMinusOne + 1u) * (decomposeFormat.is16bit ? 2u : 4u)) / 3u);
 
             //
-            return (bresult = ZNAMED::BufferViewInfo{ .region = ZNAMED::BufferViewRegion{.deviceAddress = address + bv.region.offset + accessor.byteOffset, .stride = defFormat == ZNAMED::BufferViewFormat::eUint3 ? 4u : 2u, .size = uint32_t(bv.region.size - accessor.byteOffset)}, .format = defFormat });
+            return (bresult = ANAMED::BufferViewInfo{ .region = ANAMED::BufferViewRegion{.deviceAddress = address + bv.region.offset + accessor.byteOffset, .stride = defFormat == ANAMED::BufferViewFormat::eUint3 ? 4u : 2u, .size = uint32_t(bv.region.size - accessor.byteOffset)}, .format = defFormat });
           };
 
           //
-          return (bresult = ZNAMED::BufferViewInfo{ .region = ZNAMED::BufferViewRegion{.deviceAddress = address + bv.region.offset + accessor.byteOffset, .stride = uint32_t(virtualStride), .size = std::min(uint32_t(bv.region.size - accessor.byteOffset), uint32_t(virtualStride * accessor.count))}, .format = defFormat });
+          return (bresult = ANAMED::BufferViewInfo{ .region = ANAMED::BufferViewRegion{.deviceAddress = address + bv.region.offset + accessor.byteOffset, .stride = uint32_t(virtualStride), .size = std::min(uint32_t(bv.region.size - accessor.byteOffset), uint32_t(virtualStride * accessor.count))}, .format = defFormat });
         };
 
         return bresult;
@@ -210,19 +210,19 @@ namespace ZNAMED {
       // 
       for (decltype(auto) buffer : gltf->model.buffers) {
         //
-        decltype(auto) bufferObj = ZNAMED::ResourceObj::make(handle, ZNAMED::ResourceCreateInfo{
+        decltype(auto) bufferObj = ANAMED::ResourceObj::make(handle, ANAMED::ResourceCreateInfo{
           .descriptors = cInfo->descriptors,
-          .bufferInfo = ZNAMED::BufferCreateInfo{
+          .bufferInfo = ANAMED::BufferCreateInfo{
             .size = cpp21::bytesize(buffer.data),
-            .type = ZNAMED::BufferType::eUniversal,
+            .type = ANAMED::BufferType::eUniversal,
           }
-        }.use(ZNAMED::ExtensionName::eMemoryAllocatorVma));
+        }.use(ANAMED::ExtensionName::eMemoryAllocatorVma));
 
         // complete loader
-        decltype(auto) status = uploaderObj->executeUploadToResourceOnce(ZNAMED::UploadExecutionOnce{
+        decltype(auto) status = uploaderObj->executeUploadToResourceOnce(ANAMED::UploadExecutionOnce{
           .host = cpp21::data_view<char8_t>((char8_t*)buffer.data.data(), 0ull, cpp21::bytesize(buffer.data)),
-          .writeInfo = ZNAMED::UploadCommandWriteInfo{
-            .dstBuffer = ZNAMED::BufferRegion{bufferObj.as<vk::Buffer>(), ZNAMED::DataRegion{0ull, 1ull, cpp21::bytesize(buffer.data)}},
+          .writeInfo = ANAMED::UploadCommandWriteInfo{
+            .dstBuffer = ANAMED::BufferRegion{bufferObj.as<vk::Buffer>(), ANAMED::DataRegion{0ull, 1ull, cpp21::bytesize(buffer.data)}},
           }
         });
 
@@ -243,13 +243,13 @@ namespace ZNAMED {
       };
 
       //
-      decltype(auto) materialBuffer = ZNAMED::ResourceObj::make(handle, ZNAMED::ResourceCreateInfo{
+      decltype(auto) materialBuffer = ANAMED::ResourceObj::make(handle, ANAMED::ResourceCreateInfo{
         .descriptors = cInfo->descriptors,
-        .bufferInfo = ZNAMED::BufferCreateInfo{
-          .size = gltf->model.materials.size() * sizeof(ZNAMED::MaterialInfo),
-          .type = ZNAMED::BufferType::eUniversal,
+        .bufferInfo = ANAMED::BufferCreateInfo{
+          .size = gltf->model.materials.size() * sizeof(ANAMED::MaterialInfo),
+          .type = ANAMED::BufferType::eUniversal,
         }
-      }.use(ZNAMED::ExtensionName::eMemoryAllocatorVma));
+      }.use(ANAMED::ExtensionName::eMemoryAllocatorVma));
 
       //
       uint64_t materialAddress = materialBuffer->getDeviceAddress();
@@ -257,20 +257,20 @@ namespace ZNAMED {
       //
       for (decltype(auto) image : gltf->model.images) {
         //
-        decltype(auto) imageObj = ZNAMED::ResourceObj::make(deviceObj, ZNAMED::ResourceCreateInfo{
+        decltype(auto) imageObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
           .descriptors = cInfo->descriptors,
-          .imageInfo = ZNAMED::ImageCreateInfo{
+          .imageInfo = ANAMED::ImageCreateInfo{
             .format = vk::Format::eR8G8B8A8Unorm,
             .extent = vk::Extent3D{uint32_t(image.width), uint32_t(image.height), 1u},
-            .type = ZNAMED::ImageType::eTexture
+            .type = ANAMED::ImageType::eTexture
           }
-        }.use(ZNAMED::ExtensionName::eMemoryAllocatorVma));
+        }.use(ANAMED::ExtensionName::eMemoryAllocatorVma));
 
         //
-        decltype(auto) status = uploaderObj->executeUploadToResourceOnce(ZNAMED::UploadExecutionOnce{
+        decltype(auto) status = uploaderObj->executeUploadToResourceOnce(ANAMED::UploadExecutionOnce{
           .host = cpp21::data_view<char8_t>((char8_t*)image.image.data(), 0ull, cpp21::bytesize(image.image)),
-          .writeInfo = ZNAMED::UploadCommandWriteInfo{
-            .dstImage = ZNAMED::ImageRegion{.image = imageObj.as<vk::Image>(), .region = ZNAMED::ImageDataRegion{.extent = vk::Extent3D{uint32_t(image.width), uint32_t(image.height), 1u}}},
+          .writeInfo = ANAMED::UploadCommandWriteInfo{
+            .dstImage = ANAMED::ImageRegion{.image = imageObj.as<vk::Image>(), .region = ANAMED::ImageDataRegion{.extent = vk::Extent3D{uint32_t(image.width), uint32_t(image.height), 1u}}},
           }
         });
 
@@ -278,7 +278,7 @@ namespace ZNAMED {
         while (!status->checkStatus()) { deviceObj->tickProcessing(); };
 
         //
-        decltype(auto) imgImageView = imageObj->createImageView(ZNAMED::ImageViewCreateInfo{ .viewType = vk::ImageViewType::e2D });
+        decltype(auto) imgImageView = imageObj->createImageView(ANAMED::ImageViewCreateInfo{ .viewType = vk::ImageViewType::e2D });
 
         //
         device.waitIdle();
@@ -292,7 +292,7 @@ namespace ZNAMED {
 
       //
       for (decltype(auto) sampler : gltf->model.samplers) {
-        decltype(auto) samplerObj = ZNAMED::SamplerObj::make(deviceObj, ZNAMED::SamplerCreateInfo{
+        decltype(auto) samplerObj = ANAMED::SamplerObj::make(deviceObj, ANAMED::SamplerCreateInfo{
           .descriptors = cInfo->descriptors,
           .native = vk::SamplerCreateInfo {
             .magFilter = vk::Filter::eLinear,
@@ -313,20 +313,20 @@ namespace ZNAMED {
 
       //
       for (auto& material : gltf->model.materials) {
-        decltype(auto) materialInf = ZNAMED::MaterialInfo{};
-        materialInf.texCol[uint32_t(ZNAMED::TextureBind::eAlbedo)] = ZNAMED::TexOrDef{ .texture = material.pbrMetallicRoughness.baseColorTexture.index >= 0 ? gltf->textures[material.pbrMetallicRoughness.baseColorTexture.index] : CTexture{}, .defValue = handleFactor(material.pbrMetallicRoughness.baseColorFactor)};
-        materialInf.texCol[uint32_t(ZNAMED::TextureBind::eNormal)] = ZNAMED::TexOrDef{ .texture = material.normalTexture.index >= 0 ? gltf->textures[material.normalTexture.index] : CTexture{}, .defValue = glm::vec4(0.5f, 0.5f, 1.f, 1.f) };
-        materialInf.texCol[uint32_t(ZNAMED::TextureBind::ePBR)] = ZNAMED::TexOrDef{ .texture = material.pbrMetallicRoughness.metallicRoughnessTexture.index >= 0 ? gltf->textures[material.pbrMetallicRoughness.metallicRoughnessTexture.index] : CTexture{}, .defValue = glm::vec4(1.f, material.pbrMetallicRoughness.roughnessFactor, material.pbrMetallicRoughness.metallicFactor, 1.f) };
-        materialInf.texCol[uint32_t(ZNAMED::TextureBind::eEmissive)] = ZNAMED::TexOrDef{ .texture = material.emissiveTexture.index >= 0 ? gltf->textures[material.emissiveTexture.index] : CTexture{}, .defValue = handleFactor(material.emissiveFactor) };
+        decltype(auto) materialInf = ANAMED::MaterialInfo{};
+        materialInf.texCol[uint32_t(ANAMED::TextureBind::eAlbedo)] = ANAMED::TexOrDef{ .texture = material.pbrMetallicRoughness.baseColorTexture.index >= 0 ? gltf->textures[material.pbrMetallicRoughness.baseColorTexture.index] : CTexture{}, .defValue = handleFactor(material.pbrMetallicRoughness.baseColorFactor)};
+        materialInf.texCol[uint32_t(ANAMED::TextureBind::eNormal)] = ANAMED::TexOrDef{ .texture = material.normalTexture.index >= 0 ? gltf->textures[material.normalTexture.index] : CTexture{}, .defValue = glm::vec4(0.5f, 0.5f, 1.f, 1.f) };
+        materialInf.texCol[uint32_t(ANAMED::TextureBind::ePBR)] = ANAMED::TexOrDef{ .texture = material.pbrMetallicRoughness.metallicRoughnessTexture.index >= 0 ? gltf->textures[material.pbrMetallicRoughness.metallicRoughnessTexture.index] : CTexture{}, .defValue = glm::vec4(1.f, material.pbrMetallicRoughness.roughnessFactor, material.pbrMetallicRoughness.metallicFactor, 1.f) };
+        materialInf.texCol[uint32_t(ANAMED::TextureBind::eEmissive)] = ANAMED::TexOrDef{ .texture = material.emissiveTexture.index >= 0 ? gltf->textures[material.emissiveTexture.index] : CTexture{}, .defValue = handleFactor(material.emissiveFactor) };
         gltf->materials.push_back(materialInf);
       };
 
       {
         //
-        decltype(auto) status = uploaderObj->executeUploadToResourceOnce(ZNAMED::UploadExecutionOnce{
+        decltype(auto) status = uploaderObj->executeUploadToResourceOnce(ANAMED::UploadExecutionOnce{
           .host = cpp21::data_view<char8_t>((char8_t*)gltf->materials.data(), 0ull, cpp21::bytesize(gltf->materials)),
-          .writeInfo = ZNAMED::UploadCommandWriteInfo{
-            .dstBuffer = ZNAMED::BufferRegion{materialBuffer.as<vk::Buffer>(), ZNAMED::DataRegion{0ull, sizeof(ZNAMED::MaterialInfo), cpp21::bytesize(gltf->materials)}},
+          .writeInfo = ANAMED::UploadCommandWriteInfo{
+            .dstBuffer = ANAMED::BufferRegion{materialBuffer.as<vk::Buffer>(), ANAMED::DataRegion{0ull, sizeof(ANAMED::MaterialInfo), cpp21::bytesize(gltf->materials)}},
           }
         });
 
@@ -344,20 +344,20 @@ namespace ZNAMED {
       //
       for (decltype(auto) mesh : gltf->model.meshes) {
         //
-        decltype(auto) extensionBuffer = ZNAMED::ResourceObj::make(handle, ZNAMED::ResourceCreateInfo{
+        decltype(auto) extensionBuffer = ANAMED::ResourceObj::make(handle, ANAMED::ResourceCreateInfo{
           .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
-          .bufferInfo = ZNAMED::BufferCreateInfo{
+          .bufferInfo = ANAMED::BufferCreateInfo{
             .size = mesh.primitives.size() * sizeof(GeometryExtension),
-            .type = ZNAMED::BufferType::eUniversal,
+            .type = ANAMED::BufferType::eUniversal,
           }
-        }.use(ZNAMED::ExtensionName::eMemoryAllocatorVma));
+        }.use(ANAMED::ExtensionName::eMemoryAllocatorVma));
 
         //
         uint64_t extensionAddress = extensionBuffer->getDeviceAddress();
 
         //
-        gltf->extensions.push_back(std::vector<ZNAMED::GeometryExtension>{});
-        gltf->geometries.push_back(std::vector<ZNAMED::GeometryInfo>{});
+        gltf->extensions.push_back(std::vector<ANAMED::GeometryExtension>{});
+        gltf->geometries.push_back(std::vector<ANAMED::GeometryInfo>{});
 
         //
         auto extensions = gltf->extensions.back();
@@ -372,45 +372,45 @@ namespace ZNAMED {
           // 
           decltype(auto) vertices = handleAccessor(primitive.attributes.at("POSITION"));
           decltype(auto) indices = handleAccessor(primitive.indices, true);
-          decltype(auto) nullView = ZNAMED::BufferViewInfo{ .region = ZNAMED::BufferViewRegion{.deviceAddress = 0ull, .stride = 0ull, .size = 0ull}, .format = ZNAMED::BufferViewFormat::eNone };
+          decltype(auto) nullView = ANAMED::BufferViewInfo{ .region = ANAMED::BufferViewRegion{.deviceAddress = 0ull, .stride = 0ull, .size = 0ull}, .format = ANAMED::BufferViewFormat::eNone };
 
           //
-          geometries->push_back(ZNAMED::GeometryInfo{
+          geometries->push_back(ANAMED::GeometryInfo{
             .vertices = vertices,
             .indices = primitive.indices >= 0 ? indices : nullView,
-            .extensionRef = extensionAddress + pId * sizeof(ZNAMED::GeometryExtension),
-            .materialRef = materialAddress + std::min(std::max(uintptr_t(primitive.material), 0ull), uintptr_t(gltf->materials.size()-1u)) * sizeof(ZNAMED::MaterialInfo),
+            .extensionRef = extensionAddress + pId * sizeof(ANAMED::GeometryExtension),
+            .materialRef = materialAddress + std::min(std::max(uintptr_t(primitive.material), 0ull), uintptr_t(gltf->materials.size()-1u)) * sizeof(ANAMED::MaterialInfo),
             .primitiveCount = uint32_t(gltf->model.accessors[primitive.indices >= 0 ? primitive.indices : primitive.attributes.at("POSITION")].count) / 3u
           });
 
           //
-          extensions->push_back(ZNAMED::GeometryExtension{});
+          extensions->push_back(ANAMED::GeometryExtension{});
 
           //
-          extensions->back().bufferViews[uint32_t(ZNAMED::BufferBind::eExtTexcoord)] = nullView;
-          extensions->back().bufferViews[uint32_t(ZNAMED::BufferBind::eExtNormals)] = nullView;
-          extensions->back().bufferViews[uint32_t(ZNAMED::BufferBind::eExtTangent)] = nullView;
+          extensions->back().bufferViews[uint32_t(ANAMED::BufferBind::eExtTexcoord)] = nullView;
+          extensions->back().bufferViews[uint32_t(ANAMED::BufferBind::eExtNormals)] = nullView;
+          extensions->back().bufferViews[uint32_t(ANAMED::BufferBind::eExtTangent)] = nullView;
 
           //
           for (decltype(auto) attrib : primitive.attributes) {
             if (attrib.first == "TEXCOORD_0") {
-              extensions->back().bufferViews[uint32_t(ZNAMED::BufferBind::eExtTexcoord)] = handleAccessor(attrib.second);
+              extensions->back().bufferViews[uint32_t(ANAMED::BufferBind::eExtTexcoord)] = handleAccessor(attrib.second);
             };
             if (attrib.first == "NORMAL") {
-              extensions->back().bufferViews[uint32_t(ZNAMED::BufferBind::eExtNormals)] = handleAccessor(attrib.second);
+              extensions->back().bufferViews[uint32_t(ANAMED::BufferBind::eExtNormals)] = handleAccessor(attrib.second);
             };
             if (attrib.first == "TANGENT") {
-              extensions->back().bufferViews[uint32_t(ZNAMED::BufferBind::eExtTangent)] = handleAccessor(attrib.second);
+              extensions->back().bufferViews[uint32_t(ANAMED::BufferBind::eExtTangent)] = handleAccessor(attrib.second);
             };
           };
         };
 
         {
           //
-          decltype(auto) status = uploaderObj->executeUploadToResourceOnce(ZNAMED::UploadExecutionOnce{
+          decltype(auto) status = uploaderObj->executeUploadToResourceOnce(ANAMED::UploadExecutionOnce{
             .host = cpp21::data_view<char8_t>((char8_t*)extensions->data(), 0ull, cpp21::bytesize(*extensions)),
-            .writeInfo = ZNAMED::UploadCommandWriteInfo{
-              .dstBuffer = ZNAMED::BufferRegion{extensionBuffer.as<vk::Buffer>(), ZNAMED::DataRegion{0ull, sizeof(ZNAMED::GeometryExtension), cpp21::bytesize(*extensions)}},
+            .writeInfo = ANAMED::UploadCommandWriteInfo{
+              .dstBuffer = ANAMED::BufferRegion{extensionBuffer.as<vk::Buffer>(), ANAMED::DataRegion{0ull, sizeof(ANAMED::GeometryExtension), cpp21::bytesize(*extensions)}},
             }
           });
 
@@ -422,7 +422,7 @@ namespace ZNAMED {
           deviceObj->tickProcessing();
 
           //
-          gltf->meshes.push_back(ZNAMED::GeometryLevelObj::make(handle, ZNAMED::GeometryLevelCreateInfo{
+          gltf->meshes.push_back(ANAMED::GeometryLevelObj::make(handle, ANAMED::GeometryLevelCreateInfo{
             .geometries = geometries,
             .uploader = uploaderObj.as<uintptr_t>(),
           }));
@@ -482,7 +482,7 @@ namespace ZNAMED {
         };
 
         //
-        inst->instanced = ZNAMED::InstanceLevelObj::make(handle, ZNAMED::InstanceLevelCreateInfo{
+        inst->instanced = ANAMED::InstanceLevelObj::make(handle, ANAMED::InstanceLevelCreateInfo{
           .instances = inst->instances,
           .uploader = this->cInfo->uploader,
           });
@@ -522,7 +522,7 @@ namespace ZNAMED {
 
     //
     virtual tType registerSelf() {
-      ZNAMED::context->registerObj(this->handle, shared_from_this());
+      ANAMED::context->registerObj(this->handle, shared_from_this());
       return SFT();
     };
 

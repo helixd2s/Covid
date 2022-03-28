@@ -8,7 +8,7 @@
 #include "./Resource.hpp"
 
 // 
-namespace ZNAMED {
+namespace ANAMED {
 
   // 
   class GeometryLevelObj : public BaseObj {
@@ -57,7 +57,7 @@ namespace ZNAMED {
 
     // 
     GeometryLevelObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<GeometryLevelCreateInfo> cInfo = GeometryLevelCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
-      //this->construct(ZNAMED::context->get<DeviceObj>(this->base), cInfo);
+      //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
     // 
@@ -67,21 +67,21 @@ namespace ZNAMED {
 
     //
     virtual tType registerSelf() {
-      ZNAMED::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
+      ANAMED::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
       return SFT();
     };
 
     //
     inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<GeometryLevelCreateInfo> cInfo = GeometryLevelCreateInfo{}) {
       auto shared = std::make_shared<GeometryLevelObj>(handle, cInfo);
-      shared->construct(ZNAMED::context->get<DeviceObj>(handle), cInfo);
+      shared->construct(ANAMED::context->get<DeviceObj>(handle), cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
     };
 
     //
     virtual WrapShared<ResourceObj> getGeometryResource() const {
-      return ZNAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->geometryBuffer);
+      return ANAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->geometryBuffer);
     };
 
     //
@@ -142,7 +142,7 @@ namespace ZNAMED {
     //
     virtual vk::CommandBuffer const& writeBuildStructureCmd(cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf = {}, uintptr_t const& geometryOffset = 0ull) {
       decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(Handle(this->cInfo->uploader, HandleType::eUploader));
 
       // 
@@ -224,7 +224,7 @@ namespace ZNAMED {
 
       //
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo {.info = info ? info.value() : this->cInfo->info } };
-      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(Handle(this->cInfo->uploader, HandleType::eUploader));
 
       //
@@ -252,7 +252,7 @@ namespace ZNAMED {
 #endif
 
       //
-      return ZNAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
+      return ANAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
     };
 
     //
@@ -275,7 +275,7 @@ namespace ZNAMED {
 
       // 
       decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) accelGeomInfo = infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR);
       decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelGeomInfo->setGeometries(this->geometryInfos), this->cInfo->limits, deviceObj->getDispatch()));
       decltype(auto) accelInfo = infoMap->get<vk::AccelerationStructureCreateInfoKHR>(vk::StructureType::eAccelerationStructureCreateInfoKHR);
@@ -312,7 +312,7 @@ namespace ZNAMED {
 
       //
       accelGeomInfo->type = accelInfo->type;
-      accelGeomInfo->scratchData = reinterpret_cast<vk::DeviceOrHostAddressKHR&>(ZNAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->geometryScratch)->getDeviceAddress());
+      accelGeomInfo->scratchData = reinterpret_cast<vk::DeviceOrHostAddressKHR&>(ANAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->geometryScratch)->getDeviceAddress());
       accelGeomInfo->srcAccelerationStructure = accelGeomInfo->dstAccelerationStructure;
       accelGeomInfo->dstAccelerationStructure = (this->accelStruct = device.createAccelerationStructureKHR(accelInfo.ref(), nullptr, deviceObj->getDispatch()));
 

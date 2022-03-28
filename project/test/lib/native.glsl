@@ -97,7 +97,7 @@ layout(buffer_reference, scalar, buffer_reference_align = 1) buffer TransformBlo
   mat3x4 transform[];
 };
 
-// starts from 1u, count as Id-1u, zeon  are Null
+// starts from 1u, count as Id-1u, alter  are Null
 struct CTexture { uint32_t textureId, samplerId; };
 struct TexOrDef { CTexture texture; vec4 defValue; };
 
@@ -224,7 +224,7 @@ struct InstanceAddressInfo {
   uint32_t reserved;
 };
 
-// ALWAYS USE ZEON INDEX OF `InstanceDrawDatas`
+// ALWAYS USE Alter INDEX OF `InstanceDrawDatas`
 struct PushConstantData {
   //InstanceData data;
   uint64_t data;

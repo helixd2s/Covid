@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
-project(ZEON VERSION 0.1.0)
-set(PROJECT_NAME ZEON)
+project(Alter VERSION 0.1.0)
+set(PROJECT_NAME Alter)
 
 #
 MACRO(ADD_MSVC_PRECOMPILED_HEADER PrecompiledHeader PrecompiledSource SourcesVar)
@@ -66,12 +66,12 @@ file(GLOB_RECURSE _source_list
   "${_src_root_path}/../submodules/include/vku/cpp21/*.hpp"
   "${_src_root_path}/../submodules/include/vku/cpp21/*.h"
 
-  "${_src_root_path}/include/ZEON/*.inl"
-  "${_src_root_path}/include/ZEON/*.hpp"
-  "${_src_root_path}/include/ZEON/*.h"
-  "${_src_root_path}/src/ZEON/*.inl"
-  "${_src_root_path}/src/ZEON/*.cpp"
-  "${_src_root_path}/src/ZEON/*.c"
+  "${_src_root_path}/include/Alter/*.inl"
+  "${_src_root_path}/include/Alter/*.hpp"
+  "${_src_root_path}/include/Alter/*.h"
+  "${_src_root_path}/src/Alter/*.inl"
+  "${_src_root_path}/src/Alter/*.cpp"
+  "${_src_root_path}/src/Alter/*.c"
   "${_src_root_path}/test/test.cpp"
   "${_src_root_path}/test/*"
 )
@@ -88,7 +88,7 @@ ENDIF()
 
 # 
 add_executable(${PROJECT_NAME} ${_source_list})
-target_compile_definitions(${PROJECT_NAME} PUBLIC UNICODE Z_USE_ROBIN_HOOD USE_CMAKE_PCH VULKAN_HPP_NO_CONSTRUCTORS NOMINMAX Z_ENABLE_VMA Z_ENABLE_GLTF CPP21_DEBUG_MEMORY TINYGLTF_USE_CPP14 ZNAMED=zeon ${PLATFORM_DEF})
+target_compile_definitions(${PROJECT_NAME} PUBLIC UNICODE ALT_USE_ROBIN_HOOD USE_CMAKE_PCH VULKAN_HPP_NO_CONSTRUCTORS NOMINMAX ALT_ENABLE_VMA ALT_ENABLE_GLTF CPP21_DEBUG_MEMORY TINYGLTF_USE_CPP14 ANAMED=alter ${PLATFORM_DEF})
 target_include_directories(${PROJECT_NAME} PUBLIC 
   ${PROJECT_SOURCE_DIR}/project/include 
   ${PROJECT_SOURCE_DIR}/project/
@@ -109,7 +109,7 @@ target_link_directories(${PROJECT_NAME} PUBLIC
 )
 
 #
-set (HSOURCES "submodules/include/vk-utils/cpp21/core.hpp" "project/include/ZEON/Core.hpp")
+set (HSOURCES "submodules/include/vk-utils/cpp21/core.hpp" "project/include/Alter/Core.hpp")
 
 #
 ADD_MSVC_PRECOMPILED_HEADER("project/cmake_pch.hxx" "project/cmake_pch.cxx" HSOURCES)

@@ -8,7 +8,7 @@
 #include "./Descriptors.hpp"
 
 // 
-namespace ZNAMED {
+namespace ANAMED {
 
   // 
   class SamplerObj : public BaseObj {
@@ -44,7 +44,7 @@ namespace ZNAMED {
 
     // 
     SamplerObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<SamplerCreateInfo> cInfo = SamplerCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
-      //this->construct(ZNAMED::context->get<DeviceObj>(this->base), cInfo);
+      //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
     // 
@@ -54,14 +54,14 @@ namespace ZNAMED {
 
     //
     virtual tType registerSelf() {
-      ZNAMED::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
+      ANAMED::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
       return SFT();
     };
 
     //
     inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<SamplerCreateInfo> cInfo = SamplerCreateInfo{}) {
       auto shared = std::make_shared<SamplerObj>(handle, cInfo);
-      shared->construct(ZNAMED::context->get<DeviceObj>(handle), cInfo);
+      shared->construct(ANAMED::context->get<DeviceObj>(handle), cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
     };

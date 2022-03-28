@@ -9,7 +9,7 @@
 #include "./Swapchain.hpp"
 
 // 
-namespace ZNAMED {
+namespace ANAMED {
 
   // 
   class PipelineObj : public BaseObj {
@@ -45,7 +45,7 @@ namespace ZNAMED {
 
     // 
     PipelineObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
-      //this->construct(ZNAMED::context->get<DeviceObj>(this->base), cInfo);
+      //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
     // 
@@ -55,14 +55,14 @@ namespace ZNAMED {
 
     //
     virtual tType registerSelf() {
-      ZNAMED::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
+      ANAMED::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
       return SFT();
     };
 
     //
     inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) {
       auto shared = std::make_shared<PipelineObj>(handle, cInfo);
-      shared->construct(ZNAMED::context->get<DeviceObj>(handle), cInfo);
+      shared->construct(ANAMED::context->get<DeviceObj>(handle), cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
     };
@@ -71,7 +71,7 @@ namespace ZNAMED {
     
     //
     virtual void createCompute(cpp21::const_wrap_arg<ComputePipelineCreateInfo> compute = {}) {
-      decltype(auto) descriptors = ZNAMED::context->get<DeviceObj>(this->base)->get<DescriptorsObj>(this->cInfo->layout);
+      decltype(auto) descriptors = ANAMED::context->get<DeviceObj>(this->base)->get<DescriptorsObj>(this->cInfo->layout);
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) crInfo = makeComputePipelineStageInfo(device, *compute->code); this->pipelineStages.push_back(crInfo);
       decltype(auto) cmInfo = infoMap->set(vk::StructureType::eComputePipelineCreateInfo, vk::ComputePipelineCreateInfo{
@@ -83,7 +83,7 @@ namespace ZNAMED {
       
       this->handle = std::move<vk::Pipeline>(device.createComputePipeline(descriptors->cache, cmInfo.ref()));
       //
-      //ZNAMED::context->get(this->base)->registerObj(this->handle, shared_from_this());
+      //ANAMED::context->get(this->base)->registerObj(this->handle, shared_from_this());
       //return this->SFT();
     };
 
@@ -91,9 +91,9 @@ namespace ZNAMED {
     virtual void createGraphics(cpp21::const_wrap_arg<GraphicsPipelineCreateInfo> graphics = {}) {
       //this->pipeline = makeComputePipelineStageInfo(this->deviceObj->device, compute->code);
       //
-      //ZNAMED::context->get(this->base)->registerObj(this->handle, shared_from_this());
+      //ANAMED::context->get(this->base)->registerObj(this->handle, shared_from_this());
       //return this->SFT();
-      decltype(auto) descriptors = ZNAMED::context->get<DeviceObj>(this->base)->get<DescriptorsObj>(this->cInfo->layout);
+      decltype(auto) descriptors = ANAMED::context->get<DeviceObj>(this->base)->get<DescriptorsObj>(this->cInfo->layout);
       decltype(auto) device = this->base.as<vk::Device>();
 
       //
@@ -224,7 +224,7 @@ namespace ZNAMED {
     // TODO: using multiple-command
     virtual tType writeComputeCommand(cpp21::const_wrap_arg<WriteComputeInfo> exec = WriteComputeInfo{}) {
       decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(exec->layout ? exec->layout : this->cInfo->layout);
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
 
@@ -271,7 +271,7 @@ namespace ZNAMED {
     // TODO: using multiple-command
     virtual tType writeGraphicsCommand(cpp21::const_wrap_arg<WriteGraphicsInfo> exec = WriteGraphicsInfo{}) {
       decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) pipelineLayout = exec->layout ? exec->layout : this->cInfo->layout;
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(pipelineLayout);
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
@@ -369,7 +369,7 @@ namespace ZNAMED {
     // TODO: using multiple-command
     virtual FenceType executePipelineOnce(cpp21::const_wrap_arg<ExecutePipelineInfo> exec = ExecutePipelineInfo{}) {
       decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) submission = CommandOnceSubmission{ .submission = exec->submission };
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
 

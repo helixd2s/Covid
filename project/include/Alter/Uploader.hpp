@@ -8,12 +8,12 @@
 #include "./Resource.hpp"
 
 //
-#ifdef Z_ENABLE_VMA
+#ifdef ALT_ENABLE_VMA
 #include "./MemoryAllocatorVma.hpp"
 #endif
 
 // 
-namespace ZNAMED {
+namespace ANAMED {
   
   // 
   class UploaderObj : public BaseObj {
@@ -59,7 +59,7 @@ namespace ZNAMED {
 
     // 
     UploaderObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
-      //this->construct(ZNAMED::context->get<DeviceObj>(this->base), cInfo);
+      //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
     // 
@@ -69,21 +69,21 @@ namespace ZNAMED {
 
     //
     virtual tType registerSelf() {
-      ZNAMED::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
+      ANAMED::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
       return SFT();
     };
 
     //
     inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) {
       auto shared = std::make_shared<UploaderObj>(handle, cInfo);
-      shared->construct(ZNAMED::context->get<DeviceObj>(handle), cInfo);
+      shared->construct(ANAMED::context->get<DeviceObj>(handle), cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
     };
 
     //
-    virtual void* getUploadMapped(uintptr_t const& offset = 0ull) { return cpp21::shift(ZNAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(uploadBuffer)->mappedMemory, offset); };
-    virtual void* getDownloadMapped(uintptr_t const& offset = 0ull) { return cpp21::shift(ZNAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(downloadBuffer)->mappedMemory, offset); };
+    virtual void* getUploadMapped(uintptr_t const& offset = 0ull) { return cpp21::shift(ANAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(uploadBuffer)->mappedMemory, offset); };
+    virtual void* getDownloadMapped(uintptr_t const& offset = 0ull) { return cpp21::shift(ANAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(downloadBuffer)->mappedMemory, offset); };
 
     // you can copy from host to device Buffer and Image together!
     // TODO: per-type role based barriers...
@@ -91,7 +91,7 @@ namespace ZNAMED {
       //decltype(auto) submission = CommandOnceSubmission{ .info = this->cInfo->info };
       decltype(auto) uploadBuffer = this->uploadBuffer;
       decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) size = copyRegionInfo->dstBuffer ? copyRegionInfo->dstBuffer->region.size : VK_WHOLE_SIZE;
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
       decltype(auto) hostMapOffset = /*hostMapOffset_ ? (*hostMapOffset_) :*/ copyRegionInfo->hostMapOffset;
@@ -264,7 +264,7 @@ namespace ZNAMED {
       decltype(auto) copyInfo = vk::CopyBufferInfo2{};
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
       decltype(auto) size = info->srcBuffer ? info->srcBuffer->region.size : VK_WHOLE_SIZE;
-      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) hostMapOffset = /*hostMapOffset_ ? (*hostMapOffset_) :*/ info->hostMapOffset;
 
       //
@@ -397,7 +397,7 @@ namespace ZNAMED {
     virtual FenceType executeUploadToResourceOnce(cpp21::const_wrap_arg<UploadExecutionOnce> exec) {
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo {.info = this->cInfo->info } };
       decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) size = exec->host ? (exec->writeInfo.dstBuffer ? std::min(exec->host->size(), exec->writeInfo.dstBuffer->region.size) : exec->host->size()) : (exec->writeInfo.dstBuffer ? exec->writeInfo.dstBuffer->region.size : VK_WHOLE_SIZE);
       decltype(auto) uploadBuffer = this->uploadBuffer;
 
@@ -438,7 +438,7 @@ namespace ZNAMED {
 #endif
 
       //
-      return ZNAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
+      return ANAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
     };
 
     //
@@ -477,7 +477,7 @@ namespace ZNAMED {
       };
 
       //
-      return ZNAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
+      return ANAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
     };
 
 

@@ -7,7 +7,7 @@
 #include "./Device.hpp"
 
 // 
-namespace ZNAMED {
+namespace ANAMED {
 
   // 
   class MemoryAllocatorObj : public BaseObj {
@@ -52,12 +52,12 @@ namespace ZNAMED {
 
     // 
     MemoryAllocatorObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
-      //this->construct(ZNAMED::context->get<DeviceObj>(this->base = handle), cInfo);
+      //this->construct(ANAMED::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
     //
     virtual tType registerSelf() {
-      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       deviceObj->registerExt(ExtensionName::eMemoryAllocator, shared_from_this());
       return SFT();
     };
@@ -70,7 +70,7 @@ namespace ZNAMED {
     //
     inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) {
       auto shared = std::make_shared<MemoryAllocatorObj>(handle, cInfo);
-      shared->construct(ZNAMED::context->get<DeviceObj>(handle), cInfo);
+      shared->construct(ANAMED::context->get<DeviceObj>(handle), cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
     };
@@ -79,7 +79,7 @@ namespace ZNAMED {
 
     //
     virtual std::optional<AllocatedMemory>& allocateMemory(cpp21::const_wrap_arg<MemoryRequirements> requirements, std::optional<AllocatedMemory>& allocated, ExtHandle& extHandle, std::shared_ptr<EXIF> extInfoMap, void*& mapped, std::vector<std::function<void(BaseObj const*)>>& destructors) {
-      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       auto& device = this->base.as<vk::Device>();
       auto& physicalDevice = deviceObj->getPhysicalDevice();
       auto PDInfoMap = deviceObj->getPhysicalDeviceInfoMap();

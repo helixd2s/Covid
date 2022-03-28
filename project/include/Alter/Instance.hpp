@@ -6,7 +6,7 @@
 #include "./Context.hpp"
 
 // 
-namespace ZNAMED {
+namespace ANAMED {
 
   // 
   inline VkBool32 callbackFn(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageTypes, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
@@ -44,7 +44,7 @@ namespace ZNAMED {
 
     // 
     InstanceObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
-      //this->construct(ZNAMED::context, cInfo);
+      //this->construct(ANAMED::context, cInfo);
     };
 
     // 
@@ -54,14 +54,14 @@ namespace ZNAMED {
 
     //
     virtual tType registerSelf() {
-      ZNAMED::context->registerObj(this->handle, shared_from_this());
+      ANAMED::context->registerObj(this->handle, shared_from_this());
       return SFT();
     };
 
     //
     inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
       auto shared = std::make_shared<InstanceObj>(handle, cInfo);
-      shared->construct(ZNAMED::context, cInfo);
+      shared->construct(ANAMED::context, cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
     };
@@ -187,7 +187,7 @@ namespace ZNAMED {
           .applicationVersion = this->cInfo->appVersion,
 
           // TODO: updating this data before commit
-          .pEngineName = "ZEON",
+          .pEngineName = "Alter",
           .engineVersion = VK_MAKE_VERSION(1,0,0),
 
           // 

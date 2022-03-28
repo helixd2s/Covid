@@ -9,7 +9,7 @@
 #include "./Sampler.hpp"
 
 // 
-namespace ZNAMED {
+namespace ANAMED {
 
   // 
   class ResourceObj : public BaseObj {
@@ -66,13 +66,13 @@ namespace ZNAMED {
 
     // 
     ResourceObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
-      //this->construct(ZNAMED::context->get<DeviceObj>(this->base), cInfo);
+      //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
     //
     std::tuple<vk::ImageView, uint32_t> createImageView(cpp21::const_wrap_arg<ImageViewCreateInfo> info = {}) {
       decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = this->cInfo->descriptors ? deviceObj->get<DescriptorsObj>(this->cInfo->descriptors) : WrapShared<DescriptorsObj>{};
 
       // 
@@ -138,14 +138,14 @@ namespace ZNAMED {
 
     //
     virtual tType registerSelf() {
-      ZNAMED::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
+      ANAMED::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
       return SFT();
     };
 
     //
     inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
       auto shared = std::make_shared<ResourceObj>(handle, cInfo);
-      shared->construct(ZNAMED::context->get<DeviceObj>(handle), cInfo);
+      shared->construct(ANAMED::context->get<DeviceObj>(handle), cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
     };
@@ -170,7 +170,7 @@ namespace ZNAMED {
 
     //
     virtual std::optional<AllocatedMemory>& allocateMemory(cpp21::const_wrap_arg<MemoryRequirements> requirements) {
-      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) memoryAllocatorObj = deviceObj->getExt<MemoryAllocatorObj>(this->cInfo->extUsed && this->cInfo->extUsed->find(ExtensionInfoName::eMemoryAllocator) != this->cInfo->extUsed->end() ? this->cInfo->extUsed->at(ExtensionInfoName::eMemoryAllocator) : ExtensionName::eMemoryAllocator);
       return memoryAllocatorObj->allocateMemory(requirements, this->allocated, this->extHandle, this->cInfo->extInfoMap, this->mappedMemory, this->destructors);
     };
@@ -306,7 +306,7 @@ namespace ZNAMED {
     // 
     virtual FenceType createImage(cpp21::const_wrap_arg<ImageCreateInfo> cInfo = {}) {
       // 
-      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
 
       //
@@ -384,7 +384,7 @@ namespace ZNAMED {
 
     // 
     virtual void createBuffer(cpp21::const_wrap_arg<BufferCreateInfo> cInfo = {}) {
-      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
 
       //
@@ -446,7 +446,7 @@ namespace ZNAMED {
     virtual void writeClearCommand(cpp21::const_wrap_arg<ImageClearWriteInfo> clearInfo) {
       if (this->cInfo->imageInfo && this->handle.type == HandleType::eImage) {
         //decltype(auto) info = switchInfo.info ? switchInfo.info : this->cInfo->imageInfo->info;
-        decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+        decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
         decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
         decltype(auto) imageLayout = this->cInfo->imageInfo->layout;
         decltype(auto) subresourceRange = clearInfo->subresourceRange ? clearInfo->subresourceRange.value() : vk::ImageSubresourceRange{
@@ -478,7 +478,7 @@ namespace ZNAMED {
     virtual void writeSwitchLayoutCommand(cpp21::const_wrap_arg<ImageLayoutSwitchWriteInfo> switchInfo) {
       if (this->cInfo->imageInfo && this->handle.type == HandleType::eImage) {
         //decltype(auto) info = switchInfo.info ? switchInfo.info : this->cInfo->imageInfo->info;
-        decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+        decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
         decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
         decltype(auto) oldImageLayout = switchInfo->oldImageLayout ? switchInfo->oldImageLayout.value() : this->cInfo->imageInfo->layout;
         //decltype(auto) submission = CommandOnceSubmission{ .info = switchInfo.info };
@@ -521,7 +521,7 @@ namespace ZNAMED {
       // 
       decltype(auto) switchInfo = execInfo->switchInfo.value();
       decltype(auto) info = execInfo->info ? execInfo->info : this->cInfo->imageInfo->info;
-      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
       decltype(auto) oldImageLayout = switchInfo.oldImageLayout ? switchInfo.oldImageLayout.value() : this->cInfo->imageInfo->layout;
       decltype(auto) submission = CommandOnceSubmission{ .submission = execInfo->submission };
@@ -549,32 +549,32 @@ namespace ZNAMED {
   //
   inline void DescriptorsObj::createNullImages() {
     //
-    decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+    decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
 
     //
-    decltype(auto) texture = ZNAMED::ResourceObj::make(deviceObj, ZNAMED::ResourceCreateInfo{
+    decltype(auto) texture = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
       .descriptors = this->handle.as<vk::PipelineLayout>(),
-      .imageInfo = ZNAMED::ImageCreateInfo{
+      .imageInfo = ANAMED::ImageCreateInfo{
         .format = vk::Format::eR8G8B8A8Unorm,
         .extent = vk::Extent3D{2u, 2u, 1u},
-        .type = ZNAMED::ImageType::eTexture
+        .type = ANAMED::ImageType::eTexture
       }
     });
 
     //
-    decltype(auto) image = ZNAMED::ResourceObj::make(deviceObj, ZNAMED::ResourceCreateInfo{
+    decltype(auto) image = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
       .descriptors = this->handle.as<vk::PipelineLayout>(),
-      .imageInfo = ZNAMED::ImageCreateInfo{
+      .imageInfo = ANAMED::ImageCreateInfo{
         .format = vk::Format::eR8G8B8A8Unorm,
         .extent = vk::Extent3D{2u, 2u, 1u},
-        .type = ZNAMED::ImageType::eStorage
+        .type = ANAMED::ImageType::eStorage
       }
     });
 
     //
-    decltype(auto) texImageView = texture->createImageView(ZNAMED::ImageViewCreateInfo{ .viewType = vk::ImageViewType::e2D });
-    decltype(auto) imgImageView = image->createImageView(ZNAMED::ImageViewCreateInfo{ .viewType = vk::ImageViewType::e2D });
-    decltype(auto) samplerObj = ZNAMED::SamplerObj::make(deviceObj, ZNAMED::SamplerCreateInfo{
+    decltype(auto) texImageView = texture->createImageView(ANAMED::ImageViewCreateInfo{ .viewType = vk::ImageViewType::e2D });
+    decltype(auto) imgImageView = image->createImageView(ANAMED::ImageViewCreateInfo{ .viewType = vk::ImageViewType::e2D });
+    decltype(auto) samplerObj = ANAMED::SamplerObj::make(deviceObj, ANAMED::SamplerCreateInfo{
       .descriptors = this->handle.as<vk::PipelineLayout>(),
       .native = vk::SamplerCreateInfo {
         .magFilter = vk::Filter::eLinear,
@@ -602,7 +602,7 @@ namespace ZNAMED {
   inline WrapShared<DeviceObj> DeviceObj::writeCopyBuffersCommand(cpp21::const_wrap_arg<CopyBufferWriteInfo> copyInfoRaw) {
     //decltype(auto) submission = CommandOnceSubmission{ .info = QueueGetInfo {.queueFamilyIndex = copyInfoRaw.dst->queueFamilyIndex } };
     decltype(auto) device = this->base.as<vk::Device>();
-    decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+    decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
     decltype(auto) size = std::min(copyInfoRaw->src->region.size, copyInfoRaw->dst->region.size);
     decltype(auto) copyInfo = vk::CopyBufferInfo2{ .srcBuffer = copyInfoRaw->src->buffer, .dstBuffer = copyInfoRaw->dst->buffer };
     decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };

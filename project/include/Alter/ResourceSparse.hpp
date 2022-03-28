@@ -7,7 +7,7 @@
 #include "./Resource.hpp"
 
 // 
-namespace ZNAMED {
+namespace ANAMED {
 
   //
   struct SparseMemoryPage {
@@ -63,7 +63,7 @@ namespace ZNAMED {
 
     // 
     void createBuffer(cpp21::const_wrap_arg<BufferCreateInfo> cInfo = {}) override {
-      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
 
       //
@@ -119,7 +119,7 @@ namespace ZNAMED {
 
     // 
     ResourceSparseObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : ResourceObj(handle, cInfo) {
-      //this->construct(ZNAMED::context->get<DeviceObj>(this->base), cInfo);
+      //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
     // 
@@ -129,14 +129,14 @@ namespace ZNAMED {
 
     //
      WrapShared<ResourceObj> registerSelf() override {
-      ZNAMED::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
+      ANAMED::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
       return std::dynamic_pointer_cast<ResourceObj>(shared_from_this());
     };
 
     //
     inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
       auto shared = std::make_shared<ResourceSparseObj>(handle, cInfo);
-      shared->construct(ZNAMED::context->get<DeviceObj>(handle), cInfo);
+      shared->construct(ANAMED::context->get<DeviceObj>(handle), cInfo);
       auto wrap = shared->registerSelf();
       return tType(shared);
     };
@@ -146,7 +146,7 @@ namespace ZNAMED {
     //
     virtual std::shared_ptr<SparseMemoryPage> allocatePage(uintptr_t pageOffsetId) {
       //
-      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
 
       // 
@@ -187,7 +187,7 @@ namespace ZNAMED {
 
     // 
     virtual FenceType bindSparseMemory(cpp21::const_wrap_arg<SubmissionInfo> submission = {}){
-      decltype(auto) deviceObj = ZNAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) queue = deviceObj->getQueue(submission->info);
       decltype(auto) bindSparseInfo = infoMap->get<vk::BindSparseInfo>(vk::StructureType::eBindSparseInfo);

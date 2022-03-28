@@ -3,7 +3,7 @@
 //
 #ifdef __cplusplus
 #ifndef USE_CMAKE_PCH
-#ifdef Z_ENABLE_GLTF
+#ifdef ALT_ENABLE_GLTF
 #include <tinygltf/tiny_gltf.h>
 #include <tinygltf/stb_image.h>
 #endif
@@ -34,8 +34,8 @@
 #endif
 
 //
-#ifndef ZNAMED
-#define ZNAMED zeon 
+#ifndef ANAMED
+#define ANAMED alter 
 #endif
 
 //
@@ -49,7 +49,7 @@
 #include <vk-utils/chain.hpp>
 
 // 
-namespace ZNAMED {
+namespace ANAMED {
 
   // 
 #ifdef VKU_ENABLE_TYPE_SAFE
@@ -69,10 +69,10 @@ namespace ZNAMED {
 #endif
 
 //
-//#ifdef Z_USE_ROBIN_HOOD
-//#define Z_UNORDERED_MAP robin_hood::unordered_map
+//#ifdef ALT_USE_ROBIN_HOOD
+//#define ALT_UNORDERED_MAP robin_hood::unordered_map
 //#else
-//#define Z_UNORDERED_MAP std::unordered_map
+//#define ALT_UNORDERED_MAP std::unordered_map
 //#endif
 
   //
@@ -311,7 +311,7 @@ namespace ZNAMED {
 
   // 
   struct InstanceCreateInfo : BaseCreateInfo {
-    std::string appName = "ZEON_APP";
+    std::string appName = "Alter_APP";
     uint32_t appVersion = VK_MAKE_VERSION(1, 0, 0);
     cpp21::shared_vector<std::string> extensionList = std::vector<std::string>{ 
       "VK_KHR_surface", 
@@ -1229,30 +1229,30 @@ namespace ZNAMED {
 
   //
   inline static decltype(auto) registerTypes() {
-    ZNAMED::handleTypeMap = {};
+    ANAMED::handleTypeMap = {};
 
     //
-    ZNAMED::handleTypeMap[std::type_index(typeid(uintptr_t))] = HandleType::eUnknown;
+    ANAMED::handleTypeMap[std::type_index(typeid(uintptr_t))] = HandleType::eUnknown;
 
     // 
-    ZNAMED::handleTypeMap[std::type_index(typeid(vk::Instance))] = HandleType::eInstance;
-    ZNAMED::handleTypeMap[std::type_index(typeid(vk::PhysicalDevice))] = HandleType::ePhysicalDevice;
-    ZNAMED::handleTypeMap[std::type_index(typeid(vk::Device))] = HandleType::eDevice;
-    ZNAMED::handleTypeMap[std::type_index(typeid(vk::Queue))] = HandleType::eQueue;
-    ZNAMED::handleTypeMap[std::type_index(typeid(vk::CommandBuffer))] = HandleType::eCommandBuffer;
+    ANAMED::handleTypeMap[std::type_index(typeid(vk::Instance))] = HandleType::eInstance;
+    ANAMED::handleTypeMap[std::type_index(typeid(vk::PhysicalDevice))] = HandleType::ePhysicalDevice;
+    ANAMED::handleTypeMap[std::type_index(typeid(vk::Device))] = HandleType::eDevice;
+    ANAMED::handleTypeMap[std::type_index(typeid(vk::Queue))] = HandleType::eQueue;
+    ANAMED::handleTypeMap[std::type_index(typeid(vk::CommandBuffer))] = HandleType::eCommandBuffer;
 
     // 
-    ZNAMED::handleTypeMap[std::type_index(typeid(vk::SwapchainKHR))] = HandleType::eSwapchain;
-    ZNAMED::handleTypeMap[std::type_index(typeid(vk::SurfaceKHR))] = HandleType::eSurface;
-    ZNAMED::handleTypeMap[std::type_index(typeid(vk::Buffer))] = HandleType::eBuffer;
-    ZNAMED::handleTypeMap[std::type_index(typeid(vk::Image))] = HandleType::eImage;
-    ZNAMED::handleTypeMap[std::type_index(typeid(vk::Pipeline))] = HandleType::ePipeline;
-    ZNAMED::handleTypeMap[std::type_index(typeid(vk::PipelineLayout))] = HandleType::eDescriptors;
-    ZNAMED::handleTypeMap[std::type_index(typeid(vk::AccelerationStructureKHR))] = HandleType::eAccelerationStructure;
-    ZNAMED::handleTypeMap[std::type_index(typeid(vk::Framebuffer))] = HandleType::eFramebuffer;
-    ZNAMED::handleTypeMap[std::type_index(typeid(vk::Semaphore))] = HandleType::eSemaphore;
-    ZNAMED::handleTypeMap[std::type_index(typeid(vk::DeviceMemory))] = HandleType::eDeviceMemory;
-    ZNAMED::handleTypeMap[std::type_index(typeid(vk::Sampler))] = HandleType::eSampler;
+    ANAMED::handleTypeMap[std::type_index(typeid(vk::SwapchainKHR))] = HandleType::eSwapchain;
+    ANAMED::handleTypeMap[std::type_index(typeid(vk::SurfaceKHR))] = HandleType::eSurface;
+    ANAMED::handleTypeMap[std::type_index(typeid(vk::Buffer))] = HandleType::eBuffer;
+    ANAMED::handleTypeMap[std::type_index(typeid(vk::Image))] = HandleType::eImage;
+    ANAMED::handleTypeMap[std::type_index(typeid(vk::Pipeline))] = HandleType::ePipeline;
+    ANAMED::handleTypeMap[std::type_index(typeid(vk::PipelineLayout))] = HandleType::eDescriptors;
+    ANAMED::handleTypeMap[std::type_index(typeid(vk::AccelerationStructureKHR))] = HandleType::eAccelerationStructure;
+    ANAMED::handleTypeMap[std::type_index(typeid(vk::Framebuffer))] = HandleType::eFramebuffer;
+    ANAMED::handleTypeMap[std::type_index(typeid(vk::Semaphore))] = HandleType::eSemaphore;
+    ANAMED::handleTypeMap[std::type_index(typeid(vk::DeviceMemory))] = HandleType::eDeviceMemory;
+    ANAMED::handleTypeMap[std::type_index(typeid(vk::Sampler))] = HandleType::eSampler;
 
     //
     return handleTypeMap;

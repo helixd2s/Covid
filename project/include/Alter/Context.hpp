@@ -5,7 +5,7 @@
 #include "./Core.hpp"
 
 // 
-namespace ZNAMED {
+namespace ANAMED {
   
   //
   class ContextObj : public BaseObj {
@@ -56,9 +56,9 @@ namespace ZNAMED {
 
   // 
   inline static decltype(auto) initialize(cpp21::const_wrap_arg<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
-    ZNAMED::registerTypes();
-    ZNAMED::context = ContextObj::make(Handle(0ull, HandleType::eUnknown), cInfo);
-    return ZNAMED::context;
+    ANAMED::registerTypes();
+    ANAMED::context = ContextObj::make(Handle(0ull, HandleType::eUnknown), cInfo);
+    return ANAMED::context;
   };
 
   //
@@ -89,8 +89,8 @@ namespace ZNAMED {
 
       // erase from parent element
       HMAP_S handleMap = parentMap;
-      if (!handleMap && ZNAMED::context && ZNAMED::context->isAlive()) {
-        decltype(auto) baseObj = ZNAMED::context->get(this->base);
+      if (!handleMap && ANAMED::context && ANAMED::context->isAlive()) {
+        decltype(auto) baseObj = ANAMED::context->get(this->base);
         if (baseObj) {
           handleMap = baseObj->getHandleMap();
         };
