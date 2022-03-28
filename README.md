@@ -1,4 +1,4 @@
-# ♠ DIED ♠
+# ♠ Alter ♠
 
 Some functionality still WIP, but almost ready to ***MVP***...
 
