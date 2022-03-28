@@ -104,8 +104,6 @@ namespace ANAMED {
   public:
     using BaseObj::BaseObj;
     using tType = WrapShared<GltfLoaderObj>;
-    using cType = const char const*;
-    //using BaseObj;
 
     //
     std::optional<GltfLoaderCreateInfo> cInfo = GltfLoaderCreateInfo{};

@@ -32,7 +32,6 @@ namespace ANAMED {
   public:
     using MemoryAllocatorObj::MemoryAllocatorObj;
     using tType = WrapShared<MemoryAllocatorVma>;
-    using cType = const char const*;
 
   protected:
     vk::DispatchLoaderDynamic dispatch = {};

@@ -15,7 +15,6 @@ namespace ANAMED {
   class InstanceObj : public BaseObj {
   public:
     using tType = WrapShared<InstanceObj>;
-    using cType = const char const*;
     using BaseObj::BaseObj;
 
   protected:
@@ -98,7 +97,7 @@ namespace ANAMED {
     };
 
     //
-    virtual std::vector<vk::PhysicalDeviceGroupProperties> const& enumeratePhysicalDeviceGroups() const {
+    virtual std::vector<vk::PhysicalDeviceGroupProperties> enumeratePhysicalDeviceGroups() const {
       //try {
         return (this->physicalDeviceGroups.size() > 0 ? this->physicalDeviceGroups : this->handle.as<vk::Instance>().enumeratePhysicalDeviceGroups());
       //}
@@ -115,12 +114,12 @@ namespace ANAMED {
     };
 
     //
-    virtual std::vector<vk::PhysicalDevice> const& enumeratePhysicalDevices() const {
+    virtual std::vector<vk::PhysicalDevice>  enumeratePhysicalDevices() const {
       return (this->physicalDevices.size() > 0 ? this->physicalDevices : this->handle.as<vk::Instance>().enumeratePhysicalDevices());
     };
 
     //
-    virtual std::vector<cType>& filterExtensions(cpp21::const_wrap_arg<std::vector<std::string>> names) {
+    virtual std::vector<char const*>& filterExtensions(cpp21::const_wrap_arg<std::vector<std::string>> names) {
       //std::vector<vk::ExtensionProperties> props(1024u); uint32_t size = 0ull;
       //vk::enumerateInstanceExtensionProperties("", &size, props.data()); props.resize(size);
       decltype(auto) props = vk::enumerateInstanceExtensionProperties(std::string(""));
@@ -146,7 +145,7 @@ namespace ANAMED {
     };
 
     //
-    virtual std::vector<cType>& filterLayers(cpp21::const_wrap_arg<std::vector<std::string>> names) {
+    virtual std::vector<char const*>& filterLayers(cpp21::const_wrap_arg<std::vector<std::string>> names) {
       //std::vector<vk::LayerProperties> props(1024u); uint32_t size = 0ull;
       //vk::enumerateInstanceLayerProperties(&size, props.data()); props.resize(size);
       decltype(auto) props = vk::enumerateInstanceLayerProperties();

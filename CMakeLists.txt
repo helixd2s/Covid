@@ -56,15 +56,9 @@ file(GLOB_RECURSE _source_list
   "${_src_root_path}/../submodules/include/vk-utils/*.inl"
   "${_src_root_path}/../submodules/include/vk-utils/*.hpp"
   "${_src_root_path}/../submodules/include/vk-utils/*.h"
-  "${_src_root_path}/../submodules/include/vku/*.inl"
-  "${_src_root_path}/../submodules/include/vku/*.hpp"
-  "${_src_root_path}/../submodules/include/vku/*.h"
   "${_src_root_path}/../submodules/include/vk-utils/cpp21/*.inl"
   "${_src_root_path}/../submodules/include/vk-utils/cpp21/*.hpp"
   "${_src_root_path}/../submodules/include/vk-utils/cpp21/*.h"
-  "${_src_root_path}/../submodules/include/vku/cpp21/*.inl"
-  "${_src_root_path}/../submodules/include/vku/cpp21/*.hpp"
-  "${_src_root_path}/../submodules/include/vku/cpp21/*.h"
 
   "${_src_root_path}/include/Alter/*.inl"
   "${_src_root_path}/include/Alter/*.hpp"
@@ -119,7 +113,7 @@ target_link_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS} ${Vulkan_LIBRARIES} glfw)
 
 # 
 if (MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++2b /std:c17 /std:c++latest /fsanitize=address /bigobj /MD /MP /EHa /O0 /Od /Ob0 /Zc:threadSafeInit /errorReport /arch:AVX2")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++2b /d1FastFail /std:c17 /std:c++latest /fsanitize=address /bigobj /MD /MP /EHa /O0 /Od /Ob0 /Zc:threadSafeInit /errorReport /arch:AVX2")
     set(CMAKE_EXE_LINKER_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj /MD /MP /MAP /incremental /debug:fastlink /experimental /errorReport /LTCG:PGInstrument")
 endif()
 

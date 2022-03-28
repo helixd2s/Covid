@@ -22,8 +22,6 @@ namespace ANAMED {
   public:
     using BaseObj::BaseObj;
     using tType = WrapShared<DeviceObj>;
-    using cType = const char const*;
-    //using BaseObj;
 
   protected:
     // 
@@ -40,8 +38,8 @@ namespace ANAMED {
     cpp21::vector_of_shared<MSS> PDInfoMaps = {};
 
     //
-    std::vector<cType> extensionNames = {};
-    std::vector<cType> layerNames = {};
+    std::vector<char const*> extensionNames = {};
+    std::vector<char const*> layerNames = {};
 
     //
     QueueFamilies queueFamilies = {};
@@ -131,7 +129,7 @@ namespace ANAMED {
   protected: 
 
     //
-    virtual std::vector<cType>& filterLayers(cpp21::const_wrap_arg<vk::PhysicalDevice> physicalDevice, cpp21::const_wrap_arg<std::vector<std::string>> names) {
+    virtual std::vector<char const*>& filterLayers(cpp21::const_wrap_arg<vk::PhysicalDevice> physicalDevice, cpp21::const_wrap_arg<std::vector<std::string>> names) {
       decltype(auto) props = physicalDevice->enumerateDeviceLayerProperties();
       auto& selected = this->layerNames;
 
@@ -155,7 +153,7 @@ namespace ANAMED {
     };
 
     //
-    virtual std::vector<cType>& filterExtensions(cpp21::const_wrap_arg<vk::PhysicalDevice> physicalDevice, cpp21::const_wrap_arg<std::vector<std::string>> names) {
+    virtual std::vector<char const*>& filterExtensions(cpp21::const_wrap_arg<vk::PhysicalDevice> physicalDevice, cpp21::const_wrap_arg<std::vector<std::string>> names) {
       decltype(auto) props = physicalDevice->enumerateDeviceExtensionProperties(std::string(""));
       auto& selected = (this->extensionNames);
 

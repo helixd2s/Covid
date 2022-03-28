@@ -185,7 +185,7 @@ namespace ANAMED {
   };
 
   //
-#pragma pack(1)
+#pragma pack(push, 1)
   __declspec(align(1))
   struct BufferViewFormatBitSet {
     uint32_t countMinusOne : 2;
@@ -220,6 +220,7 @@ namespace ANAMED {
     operator BufferViewFormatBitSet& () { return reinterpret_cast<BufferViewFormatBitSet&>(*this); };
     operator BufferViewFormatBitSet const& () const { return reinterpret_cast<BufferViewFormatBitSet const&>(*this); };
   };
+#pragma pack(pop)
 
   //
   enum class AccessFlagBitsSet : VkAccessFlagBits2 {
@@ -380,13 +381,15 @@ namespace ANAMED {
   };
 
   //
-#pragma pack(1)
+#pragma pack(push, 1)
   __declspec(align(1))
   struct CTexture { uint32_t textureId = 0u, samplerId = 0u; };
+#pragma pack(pop)
 
-#pragma pack(1)
+#pragma pack(push, 1)
   __declspec(align(1))
   struct TexOrDef { CTexture texture = {}; glm::vec4 defValue = {0.f,0.f,0.f,0.f}; };
+#pragma pack(pop)
 
   //
   enum class TextureBind : uint32_t {
@@ -414,39 +417,43 @@ namespace ANAMED {
   };
 
   //
-#pragma pack(1)
+#pragma pack(push, 1)
   __declspec(align(1))
   struct MaterialInfo {
     TexOrDef texCol[uint32_t(TextureBind::eMAX)];
   };
+#pragma pack(pop)
 
   // 
-#pragma pack(1)
+#pragma pack(push, 1)
   __declspec(align(1))
   struct BufferViewRegion {
     uint64_t deviceAddress = 0ull;
     uint32_t stride = 0u;
     uint32_t size = uint32_t(VK_WHOLE_SIZE);
   };
+#pragma pack(pop)
 
   //
-#pragma pack(1)
+#pragma pack(push, 1)
   __declspec(align(1))
   struct BufferViewInfo {
     BufferViewRegion region = { .deviceAddress = 0ull, .stride = 0u, .size = 0u };
     BufferViewFormat format = BufferViewFormat::eNone;
     uint32_t flags = 0u;
   };
+#pragma pack(pop)
 
   // but may not to be...
-#pragma pack(1)
+#pragma pack(push, 1)
   __declspec(align(1))
   struct GeometryExtension {
     BufferViewInfo bufferViews[uint32_t(BufferBind::eMAX)];
   };
+#pragma pack(pop)
 
   //
-#pragma pack(1)
+#pragma pack(push, 1)
   __declspec(align(1))
   struct GeometryInfo {
     BufferViewInfo vertices = {};
@@ -461,19 +468,21 @@ namespace ANAMED {
     uint32_t primitiveCount = 0u;
     vk::GeometryFlagsKHR flags = vk::GeometryFlagBitsKHR::eOpaque;
   };
+#pragma pack(pop)
 
 
 
   //
-#pragma pack(1)
+#pragma pack(push, 1)
   __declspec(align(1))
   struct SwapchainStateInfo {
     uint32_t image = 0u;
     uint32_t index = uint32_t(-1);
   };
+#pragma pack(pop)
 
   //
-#pragma pack(1)
+#pragma pack(push, 1)
   __declspec(align(1))
   struct PushConstantData {
     uint64_t dataAddress = 0ull;
@@ -482,9 +491,10 @@ namespace ANAMED {
 
     decltype(auto) with(uint32_t const& drawIndex) const { auto copy = *this; copy.drawIndex = drawIndex; return copy; };
   };
+#pragma pack(pop)
 
   //
-#pragma pack(1)
+#pragma pack(push, 1)
   __declspec(align(1))
   struct InstanceAddressInfo {
     uint64_t data = 0ull;
@@ -492,20 +502,22 @@ namespace ANAMED {
     uint32_t instanceCount = 0u;
     uint32_t reserved = 0u;
   };
+#pragma pack(pop)
 
   //
-#pragma pack(1)
+#pragma pack(push, 1)
   __declspec(align(1))
   struct InstanceAddressBlock {
     InstanceAddressInfo opaqueAddressInfo = {};
     InstanceAddressInfo transparentAddressInfo = {};
   };
+#pragma pack(pop)
 
   //
   using InstanceDevInfo = vk::AccelerationStructureInstanceKHR;
 
   //
-#pragma pack(1)
+#pragma pack(push, 1)
   __declspec(align(1))
   struct InstanceInfo {
     uint64_t geometryReference = 0ull;
@@ -515,22 +527,18 @@ namespace ANAMED {
     //glm::mat3x3 normalTransform = {};
     //uint32_t align;
   };
+#pragma pack(pop)
 
   //
-#pragma pack(1)
+#pragma pack(push, 1)
   __declspec(align(1))
   struct InstanceDataInfo {
     InstanceDevInfo instanceDevInfo = {};
     InstanceInfo instanceInfo = {};
   };
+#pragma pack(pop)
 
   
-
-  //
-//#pragma pack(1)
-  //__declspec(align(1))
-  
-
 
 
 

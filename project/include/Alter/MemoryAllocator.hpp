@@ -14,8 +14,6 @@ namespace ANAMED {
   public:
     using BaseObj::BaseObj;
     using tType = WrapShared<MemoryAllocatorObj>;
-    using cType = const char const*;
-    //using BaseObj;
 
   protected:
     vk::DispatchLoaderDynamic dispatch = {};
