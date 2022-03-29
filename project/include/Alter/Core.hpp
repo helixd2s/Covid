@@ -1609,8 +1609,8 @@ namespace ANAMED {
     };
 
     //
-    template<class T = BaseObj> inline WrapShared<T> get(auto const& handle) { return this->get<T>(cpp21::const_wrap_arg(Handle(handle))); };
-    template<class T = BaseObj> inline WrapShared<T> get(auto const& handle) const { return this->get<T>(cpp21::const_wrap_arg(Handle(handle))); };
+    template<class T = BaseObj> inline WrapShared<T> get(auto const& handle) { return this->get<T>(cpp21::const_wrap_arg<Handle>(Handle(handle))); };
+    template<class T = BaseObj> inline WrapShared<T> get(auto const& handle) const { return this->get<T>(cpp21::const_wrap_arg<Handle>(Handle(handle))); };
   };
 
 
