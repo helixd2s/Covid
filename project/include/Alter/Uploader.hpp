@@ -35,16 +35,11 @@ namespace ANAMED {
     
     //
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
-    VmaVirtualBlock uploadBlock;
-    VmaVirtualBlock downloadBlock;
+    VmaVirtualBlock mappedBlock;
 #endif
 
     //
-    //std::shared_ptr<DeviceObj> deviceObj = {};
-    //std::shared_ptr<ResourceObj> uploadBuffer = {};
-    //std::shared_ptr<ResourceObj> downloadBuffer = {};
-    vk::Buffer uploadBuffer = {};
-    vk::Buffer downloadBuffer = {};
+    vk::Buffer mappedBuffer = {};
 
     // 
     inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
@@ -82,14 +77,13 @@ namespace ANAMED {
     };
 
     //
-    virtual void* getUploadMapped(uintptr_t const& offset = 0ull) { return cpp21::shift(ANAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(uploadBuffer)->mappedMemory, offset); };
-    virtual void* getDownloadMapped(uintptr_t const& offset = 0ull) { return cpp21::shift(ANAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(downloadBuffer)->mappedMemory, offset); };
+    virtual void* getMappedMemory(uintptr_t const& offset = 0ull) { return cpp21::shift(ANAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(mappedBuffer)->mappedMemory, offset); };
 
     // you can copy from host to device Buffer and Image together!
     // TODO: per-type role based barriers...
     virtual tType writeUploadToResourceCmd(cpp21::const_wrap_arg<UploadCommandWriteInfo> copyRegionInfo) {
       //decltype(auto) submission = CommandOnceSubmission{ .info = this->cInfo->info };
-      decltype(auto) uploadBuffer = this->uploadBuffer;
+      decltype(auto) mappedBuffer = this->mappedBuffer;
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) size = copyRegionInfo->dstBuffer ? copyRegionInfo->dstBuffer->region.size : VK_WHOLE_SIZE;
@@ -119,7 +113,7 @@ namespace ANAMED {
           .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eHostMapRead),
           .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
           .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
-          .buffer = uploadBuffer,
+          .buffer = mappedBuffer,
           .offset = hostMapOffset,
           .size = size
         }
@@ -134,7 +128,7 @@ namespace ANAMED {
           .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eHostMapWrite),
           .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
           .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
-          .buffer = uploadBuffer,
+          .buffer = mappedBuffer,
           .offset = hostMapOffset,
           .size = size
         }
@@ -171,7 +165,7 @@ namespace ANAMED {
         BtIRegions.push_back(vk::BufferImageCopy2{
           .bufferOffset = hostMapOffset, .imageSubresource = subresourceLayers, .imageOffset = imageRegion.region.offset, .imageExtent = imageRegion.region.extent
         });
-        BtI = vk::CopyBufferToImageInfo2{ .srcBuffer = uploadBuffer, .dstImage = imageRegion.image, .dstImageLayout = vk::ImageLayout::eTransferDstOptimal };
+        BtI = vk::CopyBufferToImageInfo2{ .srcBuffer = mappedBuffer, .dstImage = imageRegion.image, .dstImageLayout = vk::ImageLayout::eTransferDstOptimal };
 
         //
         decltype(auto) accessMask = vk::AccessFlagBits2(vku::getAccessMaskByImageUsage(imageObj->getImageUsage()));
@@ -215,7 +209,7 @@ namespace ANAMED {
 
         //
         BtBRegions.push_back(vk::BufferCopy2{ .srcOffset = hostMapOffset, .dstOffset = bufferRegion.region.offset, .size = size });
-        BtB = vk::CopyBufferInfo2{ .srcBuffer = uploadBuffer, .dstBuffer = bufferRegion.buffer };
+        BtB = vk::CopyBufferInfo2{ .srcBuffer = mappedBuffer, .dstBuffer = bufferRegion.buffer };
 
         //
         bufferBarriersBegin.push_back(vk::BufferMemoryBarrier2{
@@ -258,7 +252,7 @@ namespace ANAMED {
     // TODO: per-type role based barriers...
     // TODO: image, imageType and imageLayout supports...
     virtual tType writeDownloadToResourceCmd(cpp21::const_wrap_arg<DownloadCommandWriteInfo> info) {
-      decltype(auto) downloadBuffer = this->downloadBuffer;
+      decltype(auto) mappedBuffer = this->mappedBuffer;
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) regions = std::vector<vk::BufferCopy2>{  };
       decltype(auto) copyInfo = vk::CopyBufferInfo2{};
@@ -276,7 +270,7 @@ namespace ANAMED {
           .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eHostMapWrite),
           .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
           .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
-          .buffer = downloadBuffer,
+          .buffer = mappedBuffer,
           .offset = hostMapOffset,
           .size = size
         },
@@ -291,7 +285,7 @@ namespace ANAMED {
           .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eHostMapRead),
           .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
           .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
-          .buffer = downloadBuffer,
+          .buffer = mappedBuffer,
           .offset = hostMapOffset,
           .size = size
         }
@@ -304,7 +298,7 @@ namespace ANAMED {
         decltype(auto) accessMask = vk::AccessFlagBits2(vku::getAccessMaskByImageUsage(bufferObj->getBufferUsage()));
 
         //
-        copyInfo = vk::CopyBufferInfo2{ .srcBuffer = info->srcBuffer->buffer, .dstBuffer = downloadBuffer };
+        copyInfo = vk::CopyBufferInfo2{ .srcBuffer = info->srcBuffer->buffer, .dstBuffer = mappedBuffer };
         regions.push_back(vk::BufferCopy2{ .srcOffset = info->srcBuffer->region.offset, .dstOffset = hostMapOffset, .size = size });
 
         //
@@ -345,13 +339,11 @@ namespace ANAMED {
 
     //
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
-    virtual VmaVirtualBlock& getUploadBlock() { return uploadBlock; };
-    virtual VmaVirtualBlock const& getUploadBlock() const { return uploadBlock; };
-    virtual VmaVirtualBlock& getDownloadBlock() { return downloadBlock; };
-    virtual VmaVirtualBlock const& getDownloadBlock() const { return downloadBlock; };
+    virtual VmaVirtualBlock& getMappedBlock() { return mappedBlock; };
+    virtual VmaVirtualBlock const& getMappedBlock() const { return mappedBlock; };
 
     //
-    virtual VmaVirtualAllocation allocateUploadTemp(size_t const& size, uintptr_t& offset) {
+    virtual VmaVirtualAllocation allocateMappedTemp(size_t const& size, uintptr_t& offset) {
       // 
       VmaVirtualAllocationCreateInfo allocCreateInfo = {};
       allocCreateInfo.size = size; // 4 KB
@@ -359,37 +351,16 @@ namespace ANAMED {
 
       //
       VmaVirtualAllocation alloc;
-      VkResult upRes = vmaVirtualAllocate(uploadBlock, &allocCreateInfo, &alloc, &offset);
+      VkResult upRes = vmaVirtualAllocate(mappedBlock, &allocCreateInfo, &alloc, &offset);
 
       //
       return alloc;
     };
 
     //
-    virtual VmaVirtualAllocation allocateDownloadTemp(size_t const& size, uintptr_t& offset) {
-      // 
-      VmaVirtualAllocationCreateInfo allocCreateInfo = {};
-      allocCreateInfo.size = size; // 4 KB
-      allocCreateInfo.flags = VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT;
-
-      //
-      VmaVirtualAllocation alloc;
-      VkResult upRes = vmaVirtualAllocate(uploadBlock, &allocCreateInfo, &alloc, &offset);
-
-      //
-      return alloc;
-    };
-
-    //
-    virtual std::tuple<VkDeviceSize, VmaVirtualAllocation> allocateUploadTemp(size_t const& size) {
+    virtual std::tuple<VkDeviceSize, VmaVirtualAllocation> allocateMappedTemp(size_t const& size) {
       VkDeviceSize offset = 0ull;
-      return std::make_tuple(offset, allocateUploadTemp(size, offset));
-    };
-
-    //
-    virtual std::tuple<VkDeviceSize, VmaVirtualAllocation> allocateDownloadTemp(size_t const& size) {
-      VkDeviceSize offset = 0ull;
-      return std::make_tuple(offset, allocateDownloadTemp(size, offset));
+      return std::make_tuple(offset, allocateMappedTemp(size, offset));
     };
 #endif
 
@@ -399,7 +370,7 @@ namespace ANAMED {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) size = exec->host ? (exec->writeInfo.dstBuffer ? std::min(exec->host->size(), exec->writeInfo.dstBuffer->region.size) : exec->host->size()) : (exec->writeInfo.dstBuffer ? exec->writeInfo.dstBuffer->region.size : VK_WHOLE_SIZE);
-      decltype(auto) uploadBuffer = this->uploadBuffer;
+      decltype(auto) mappedBuffer = this->mappedBuffer;
 
       //
       if (exec->writeInfo.dstImage) {
@@ -416,12 +387,12 @@ namespace ANAMED {
 
       // 
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
-      decltype(auto) alloc = allocateUploadTemp(size, offset);
+      decltype(auto) alloc = allocateMappedTemp(size, offset);
 #endif
 
       // 
       if (exec->host) {
-        memcpy(this->getUploadMapped(offset), exec->host->data(), size);
+        memcpy(this->getMappedMemory(offset), exec->host->data(), size);
       };
 
       // 
@@ -432,8 +403,8 @@ namespace ANAMED {
 
       //
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
-      submission.submission.onDone.push_back([uploadBlock=this->uploadBlock, alloc](cpp21::const_wrap_arg<vk::Result> result) {
-        vmaVirtualFree(uploadBlock, alloc);
+      submission.submission.onDone.push_back([mappedBlock=this->mappedBlock, alloc](cpp21::const_wrap_arg<vk::Result> result) {
+        vmaVirtualFree(mappedBlock, alloc);
       });
 #endif
 
@@ -444,7 +415,7 @@ namespace ANAMED {
     //
     virtual FenceType executeDownloadToResourceOnce(cpp21::const_wrap_arg<DownloadExecutionOnce> exec) {
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = this->cInfo->info } };
-      decltype(auto) downloadBuffer = this->downloadBuffer;
+      decltype(auto) mappedBuffer = this->mappedBuffer;
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) size = exec->host ? (exec->writeInfo.srcBuffer ? std::min(exec->host->size(), exec->writeInfo.srcBuffer->region.size) : exec->host->size()) : (exec->writeInfo.srcBuffer ? exec->writeInfo.srcBuffer->region.size : VK_WHOLE_SIZE);
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
@@ -454,7 +425,7 @@ namespace ANAMED {
 
       // 
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
-      decltype(auto) alloc = allocateDownloadTemp(size, offset);
+      decltype(auto) alloc = allocateMappedTemp(size, offset);
 #endif
 
       // 
@@ -465,13 +436,13 @@ namespace ANAMED {
 
       //
       if (exec->host) {
-        submission.submission.onDone.push_back([offset, size, _host = exec->host, mapped = this->getDownloadMapped(offset)](cpp21::const_wrap_arg<vk::Result> result) {
+        submission.submission.onDone.push_back([offset, size, _host = exec->host, mapped = this->getMappedMemory(offset)](cpp21::const_wrap_arg<vk::Result> result) {
           memcpy(_host->data(), cpp21::shift(mapped, offset), size);
         });
 
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
-        submission.submission.onDone.push_back([downloadBlock = this->downloadBlock, alloc](cpp21::const_wrap_arg<vk::Result> result) {
-          vmaVirtualFree(downloadBlock, alloc);
+        submission.submission.onDone.push_back([mappedBlock = this->mappedBlock, alloc](cpp21::const_wrap_arg<vk::Result> result) {
+          vmaVirtualFree(mappedBlock, alloc);
         });
 #endif
       };
@@ -488,14 +459,7 @@ namespace ANAMED {
       if (cInfo) { this->cInfo = cInfo; };
       //this->deviceObj = deviceObj;
 
-      this->uploadBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
-        .bufferInfo = BufferCreateInfo{
-          .size = this->cInfo->cacheSize,
-          .type = BufferType::eHostMap,
-        }
-      }).as<vk::Buffer>();
-
-      this->downloadBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
+      this->mappedBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
         .bufferInfo = BufferCreateInfo{
           .size = this->cInfo->cacheSize,
           .type = BufferType::eHostMap,
@@ -509,8 +473,7 @@ namespace ANAMED {
       //blockCreateInfo.flags = VMA_VIRTUAL_BLOCK_CREATE_LINEAR_ALGORITHM_BIT;
 
       // 
-      VkResult upRes = vmaCreateVirtualBlock(&blockCreateInfo, &uploadBlock);
-      VkResult downRes = vmaCreateVirtualBlock(&blockCreateInfo, &downloadBlock);
+      VkResult result = vmaCreateVirtualBlock(&blockCreateInfo, &mappedBlock);
 #endif
 
       // 

@@ -296,14 +296,14 @@ namespace ANAMED {
 
       //
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
-      decltype(auto) instanceDevAlloc = uploaderObj->allocateUploadTemp(this->cInfo->instances->size() * sizeof(InstanceDevInfo), instanceDevOffset);
-      decltype(auto) instanceAlloc = uploaderObj->allocateUploadTemp(this->cInfo->instances->size() * sizeof(InstanceInfo), instanceOffset);
-      decltype(auto) uploadBlock = uploaderObj->getUploadBlock();
+      decltype(auto) instanceDevAlloc = uploaderObj->allocateMappedTemp(this->cInfo->instances->size() * sizeof(InstanceDevInfo), instanceDevOffset);
+      decltype(auto) instanceAlloc = uploaderObj->allocateMappedTemp(this->cInfo->instances->size() * sizeof(InstanceInfo), instanceOffset);
+      decltype(auto) mappedBlock = uploaderObj->getMappedBlock();
 #endif
 
       // 
-      memcpy(uploaderObj->getUploadMapped(instanceDevOffset), this->instanceDevInfo->data(), this->instanceDevInfo->size() * sizeof(InstanceDevInfo));
-      memcpy(uploaderObj->getUploadMapped(instanceOffset), this->instanceInfo->data(), this->instanceInfo->size() * sizeof(InstanceInfo));
+      memcpy(uploaderObj->getMappedMemory(instanceDevOffset), this->instanceDevInfo->data(), this->instanceDevInfo->size() * sizeof(InstanceDevInfo));
+      memcpy(uploaderObj->getMappedMemory(instanceOffset), this->instanceInfo->data(), this->instanceInfo->size() * sizeof(InstanceInfo));
 
       // TODO: Acceleration Structure Build Barriers per Buffers
       submission.commandInits.push_back([instanceDevOffset, instanceOffset, dispatch = deviceObj->getDispatch(), this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
@@ -312,9 +312,9 @@ namespace ANAMED {
 
       //
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
-      submission.submission.onDone.push_back([uploadBlock, instanceDevAlloc, instanceAlloc](cpp21::const_wrap_arg<vk::Result> result) {
-        vmaVirtualFree(uploadBlock, instanceDevAlloc);
-        vmaVirtualFree(uploadBlock, instanceAlloc);
+      submission.submission.onDone.push_back([mappedBlock, instanceDevAlloc, instanceAlloc](cpp21::const_wrap_arg<vk::Result> result) {
+        vmaVirtualFree(mappedBlock, instanceDevAlloc);
+        vmaVirtualFree(mappedBlock, instanceAlloc);
       });
 #endif
 

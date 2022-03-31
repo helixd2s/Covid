@@ -233,12 +233,12 @@ namespace ANAMED {
 
       //
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
-      decltype(auto) geometryAlloc = uploaderObj->allocateUploadTemp(this->cInfo->geometries->size() * sizeof(InstanceDevInfo), geometryOffset);
-      decltype(auto) uploadBlock = uploaderObj->getUploadBlock();
+      decltype(auto) geometryAlloc = uploaderObj->allocateMappedTemp(this->cInfo->geometries->size() * sizeof(InstanceDevInfo), geometryOffset);
+      decltype(auto) mappedBlock = uploaderObj->getMappedBlock();
 #endif
 
       // 
-      memcpy(uploaderObj->getUploadMapped(geometryOffset), this->cInfo->geometries->data(), this->cInfo->geometries->size()*sizeof(GeometryInfo));
+      memcpy(uploaderObj->getMappedMemory(geometryOffset), this->cInfo->geometries->data(), this->cInfo->geometries->size()*sizeof(GeometryInfo));
 
       // TODO: Acceleration Structure Build Barriers per Buffers
       submission.commandInits.push_back([geometryOffset,dispatch=deviceObj->getDispatch(), this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
@@ -247,8 +247,8 @@ namespace ANAMED {
 
       //
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
-      submission.submission.onDone.push_back([uploadBlock, geometryAlloc](cpp21::const_wrap_arg<vk::Result> result) {
-        vmaVirtualFree(uploadBlock, geometryAlloc);
+      submission.submission.onDone.push_back([mappedBlock, geometryAlloc](cpp21::const_wrap_arg<vk::Result> result) {
+        vmaVirtualFree(mappedBlock, geometryAlloc);
       });
 #endif
 
