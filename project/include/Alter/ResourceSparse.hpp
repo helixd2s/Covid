@@ -272,7 +272,7 @@ namespace ANAMED {
     };
 
     //
-    this->cacheBufferObj->bindSparseMemory(SubmissionInfo{
+    auto status = this->cacheBufferObj->bindSparseMemory(SubmissionInfo{
       .info = QueueGetInfo{0u, 0u}
     });
 

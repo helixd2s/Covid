@@ -27,8 +27,9 @@ namespace ANAMED {
 
     // 
     virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) {
-      this->handle = Handle(uintptr_t(this), HandleType::eMemoryAllocator);
-
+      //this->handle = Handle(uintptr_t(this), HandleType::eMemoryAllocator);
+      this->handle = Handle(uintptr_t(this), HandleType::eExtension);
+      
       // 
       if (!this->cInfo->extInfoMap) {
         this->cInfo->extInfoMap = std::make_shared<EXIF>();
@@ -143,7 +144,7 @@ namespace ANAMED {
   // 
   inline std::shared_ptr<MemoryAllocatorObj> DeviceObj::createDefaultMemoryAllocator() {
     decltype(auto) allocator = MemoryAllocatorObj::make(this->handle, MemoryAllocatorCreateInfo{});
-    this->registerExt<MemoryAllocatorObj>(ExtensionName::eMemoryAllocator, allocator);
+    //this->registerExt<MemoryAllocatorObj>(ExtensionName::eMemoryAllocator, allocator);
     return allocator;
   };
 

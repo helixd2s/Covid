@@ -138,11 +138,11 @@ namespace ANAMED {
       // 
       this->instances = {};
       this->instanceRanges = {};
-      this->addressInfo.instanceCount = this->cInfo->instances.size();
+      this->addressInfo.instanceCount = this->cInfo->instances->size();
 
       //
-      if (this->instanceDraw->size() < this->cInfo->instances.size()) {
-        for (uintptr_t idx = this->instanceDraw->size(); idx < this->cInfo->instances.size(); idx++) {
+      if (this->instanceDraw->size() < this->cInfo->instances->size()) {
+        for (uintptr_t idx = this->instanceDraw->size(); idx < this->cInfo->instances->size(); idx++) {
           this->instanceDraw->push_back(InstanceDraw{});
           this->instanceInfo->push_back(InstanceInfo{});
           this->instanceDevInfo->push_back(InstanceDevInfo{});
@@ -150,7 +150,7 @@ namespace ANAMED {
       };
 
       // 
-      for (uintptr_t idx = 0ull; idx < this->cInfo->instances.size(); idx++) {
+      for (uintptr_t idx = 0ull; idx < this->cInfo->instances->size(); idx++) {
         auto& instances = this->cInfo->instances[idx];
         auto& instanceInfo = this->instanceInfo[idx];
         auto& instanceDraw = this->instanceDraw[idx];
@@ -164,7 +164,7 @@ namespace ANAMED {
         decltype(auto) geometryLevel = deviceObj->get<GeometryLevelObj>(instanceDevInfo.accelerationStructureReference);
 
         // 
-        if (this->getInstanceInfoResource()) {
+        if (this->instanceExtBuffer && this->getInstanceInfoResource()) {
           instanceDraw.drawInfos = geometryLevel->getDrawInfo();
           instanceDraw.drawConst = PushConstantData{ .dataAddress = this->getInstanceInfoDeviceAddress() + sizeof(InstanceInfo) * idx, .instanceIndex = uint32_t(idx), .drawIndex = 0u };
         };
@@ -185,7 +185,7 @@ namespace ANAMED {
           .flags = vk::GeometryFlagBitsKHR{}
         };
         instanceRanges[0] = vk::AccelerationStructureBuildRangeInfoKHR{
-          .primitiveCount = uint32_t(this->cInfo->instances.size()),
+          .primitiveCount = uint32_t(this->cInfo->instances->size()),
           .primitiveOffset = 0u,
           .firstVertex = 0u,
           .transformOffset = 0u
@@ -205,14 +205,14 @@ namespace ANAMED {
       uploaderObj->writeUploadToResourceCmd(UploadCommandWriteInfo{
         .cmdBuf = cmdBuf,
         .hostMapOffset = instanceDevOffset,
-        .dstBuffer = BufferRegion{this->instanceBuffer, DataRegion{ 0ull, sizeof(InstanceDevInfo), this->cInfo->instances.size() * sizeof(InstanceDevInfo) }}
+        .dstBuffer = BufferRegion{this->instanceBuffer, DataRegion{ 0ull, sizeof(InstanceDevInfo), this->cInfo->instances->size() * sizeof(InstanceDevInfo) }}
       });
 
       // parallelize by offset
       uploaderObj->writeUploadToResourceCmd(UploadCommandWriteInfo{
         .cmdBuf = cmdBuf,
         .hostMapOffset = instanceOffset,
-        .dstBuffer = BufferRegion{this->instanceExtBuffer, DataRegion{ 0ull, sizeof(InstanceInfo), this->cInfo->instances.size() * sizeof(InstanceInfo) }}
+        .dstBuffer = BufferRegion{this->instanceExtBuffer, DataRegion{ 0ull, sizeof(InstanceInfo), this->cInfo->instances->size() * sizeof(InstanceInfo) }}
       });
 
       //
@@ -292,12 +292,12 @@ namespace ANAMED {
 
       //
       uintptr_t instanceDevOffset = 0ull;
-      uintptr_t instanceOffset = this->cInfo->instances.size() * sizeof(InstanceDevInfo);
+      uintptr_t instanceOffset = this->cInfo->instances->size() * sizeof(InstanceDevInfo);
 
       //
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
-      decltype(auto) instanceDevAlloc = uploaderObj->allocateUploadTemp(this->cInfo->instances.size() * sizeof(InstanceDevInfo), instanceDevOffset);
-      decltype(auto) instanceAlloc = uploaderObj->allocateUploadTemp(this->cInfo->instances.size() * sizeof(InstanceInfo), instanceOffset);
+      decltype(auto) instanceDevAlloc = uploaderObj->allocateUploadTemp(this->cInfo->instances->size() * sizeof(InstanceDevInfo), instanceDevOffset);
+      decltype(auto) instanceAlloc = uploaderObj->allocateUploadTemp(this->cInfo->instances->size() * sizeof(InstanceInfo), instanceOffset);
       decltype(auto) uploadBlock = uploaderObj->getUploadBlock();
 #endif
 
@@ -328,14 +328,14 @@ namespace ANAMED {
 
       //
       if (this->cInfo->limit <= 0u) {
-        this->cInfo->limit = this->cInfo->instances.size();
+        this->cInfo->limit = this->cInfo->instances->size();
       };
 
       //
-      if (this->cInfo->instances.size() < this->cInfo->limit) {
-        for (uintptr_t i = this->cInfo->instances.size(); i < this->cInfo->limit; i++) {
+      if (this->cInfo->instances->size() < this->cInfo->limit) {
+        for (uintptr_t i = this->cInfo->instances->size(); i < this->cInfo->limit; i++) {
           decltype(auto) matrix = glm::mat3x4(1.f);
-          this->cInfo->instances.push_back(InstanceDataInfo{
+          this->cInfo->instances->push_back(InstanceDataInfo{
             .instanceDevInfo = InstanceDevInfo{
               .transform = reinterpret_cast<vk::TransformMatrixKHR&>(matrix),
               .instanceCustomIndex = 0u,
@@ -361,7 +361,7 @@ namespace ANAMED {
       // 
       this->instanceBuffer = (this->bindInstanceBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
         .bufferInfo = BufferCreateInfo{
-          .size = std::max(cInfo->instances.size(), size_t(cInfo->limit)) * sizeof(InstanceDevInfo),
+          .size = std::max(cInfo->instances->size(), size_t(cInfo->limit)) * sizeof(InstanceDevInfo),
           .type = BufferType::eStorage
         }
       })).as<vk::Buffer>();
@@ -385,7 +385,7 @@ namespace ANAMED {
       // 
       this->instanceExtBuffer = (this->bindInstanceExtBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
         .bufferInfo = BufferCreateInfo{
-          .size = std::max(cInfo->instances.size(), size_t(cInfo->limit)) * sizeof(InstanceInfo),
+          .size = std::max(cInfo->instances->size(), size_t(cInfo->limit)) * sizeof(InstanceInfo),
           .type = BufferType::eStorage
         }
       })).as<vk::Buffer>();
@@ -404,7 +404,7 @@ namespace ANAMED {
 
       //
       this->handle = device.getAccelerationStructureAddressKHR(vk::AccelerationStructureDeviceAddressInfoKHR{ .accelerationStructure = this->accelStruct }, deviceObj->getDispatch());
-      this->addressInfo = InstanceAddressInfo{ .data = this->getInstanceInfoDeviceAddress(), .accelStruct = this->handle.as<uintptr_t>(), .instanceCount = uint32_t(std::max(cInfo->instances.size(), size_t(cInfo->limit))) };
+      this->addressInfo = InstanceAddressInfo{ .data = this->getInstanceInfoDeviceAddress(), .accelStruct = this->handle.as<uintptr_t>(), .instanceCount = uint32_t(std::max(cInfo->instances->size(), size_t(cInfo->limit))) };
 
       //
       this->destructors.push_back([this, device, accellStruct = accelInstInfo->dstAccelerationStructure, dispatch = deviceObj->getDispatch()](BaseObj const* baseObj) {
@@ -444,7 +444,7 @@ namespace ANAMED {
       });
 
       //
-      if (this->cInfo->instances.size() > 0 && !this->handle) {
+      if (this->cInfo->instances->size() > 0 && !this->handle) {
         this->createStructure();
       };
 

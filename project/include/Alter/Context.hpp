@@ -78,7 +78,7 @@ namespace ANAMED {
           //if (pair != mapc->end()) { pair++; };
           //pair = mapc.erase(pair);
         };
-        if (map != this->handleObjectMap->end()) { map = this->handleObjectMap->erase(map); };
+        //map = this->handleObjectMap->erase(map);
         //if (map != this->handleObjectMap->end()) { map++; };
       };
 

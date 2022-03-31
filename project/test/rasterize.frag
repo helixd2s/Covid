@@ -32,9 +32,9 @@ void main() {
 
   // if translucent - discard!
 #ifdef TRANSLUCENT
-  if ((geometryInfo.flags&1u) == 0u) { discard; };
+  if ((geometryInfo.flags&1u) != 0u) { discard; };
 #else
-  if ((geometryInfo.flags&1u) <= 0u) { discard; };
+  if ((geometryInfo.flags&1u) == 0u) { discard; };
 #endif
 
   //

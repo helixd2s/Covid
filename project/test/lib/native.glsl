@@ -141,6 +141,8 @@ MaterialPixelInfo handleMaterial(in MaterialInfo materialInfo, in vec2 texcoord,
   [[unroll]] for (uint32_t i=0;i<MAX_MATERIAL_BIND;i++) {
     result.color[i] = handleTexture(materialInfo.texCol[i], texcoord);
   };
+  //result.color[MATERIAL_ALBEDO] = vec4(1.f); // for debug
+  //result.color[MATERIAL_NORMAL].xyz = tbn[2];
   result.color[MATERIAL_NORMAL].xyz = normalize(tbn * normalize(result.color[MATERIAL_NORMAL].xyz * 2.f - 1.f));
   return result;
 };
@@ -585,16 +587,16 @@ GeometryExtData getGeometryData(in GeometryInfo geometryInfo, in uvec3 indices) 
     const float coef = 1.f / (tx1.x * tx2.y - tx2.x * tx1.y);
 
     //
-    if (length(N) < 0.001f) { // if N not defined
-      N = cross(dp1,dp2);//normalize(cross(dp1,dp2));
+    if (length(N.xyz) < 0.001f) { // if N not defined
+      N = cross(dp2,dp1);
     };
     N = normalize(N);
-    if (length(T) < 0.001f) { // if T not defined
+    if (length(T.xyz) < 0.001f) { // if T not defined
       T = (dp1.xyz * tx2.yyy - dp2.xyz * tx1.yyy) * coef;
       B = (dp1.xyz * tx2.xxx - dp2.xyz * tx1.xxx) * coef;
     };
     T = normalize(T - dot(T, N) * N);
-    if (length(B) < 0.001f) {  // if B not defined
+    if (length(B.xyz) < 0.001f) {  // if B not defined
       B = cross(N,T) * W;
     };
     B = normalize(B - dot(B, N) * N);

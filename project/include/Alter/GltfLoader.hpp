@@ -214,7 +214,7 @@ namespace ANAMED {
             .size = cpp21::bytesize(buffer.data),
             .type = ANAMED::BufferType::eUniversal,
           }
-        }.use(ANAMED::ExtensionName::eMemoryAllocatorVma));
+        });
 
         // complete loader
         decltype(auto) status = uploaderObj->executeUploadToResourceOnce(ANAMED::UploadExecutionOnce{
@@ -241,16 +241,16 @@ namespace ANAMED {
       };
 
       //
-      decltype(auto) materialBuffer = ANAMED::ResourceObj::make(handle, ANAMED::ResourceCreateInfo{
+      gltf->materialBuffer = ANAMED::ResourceObj::make(handle, ANAMED::ResourceCreateInfo{
         .descriptors = cInfo->descriptors,
         .bufferInfo = ANAMED::BufferCreateInfo{
           .size = gltf->model.materials.size() * sizeof(ANAMED::MaterialInfo),
           .type = ANAMED::BufferType::eUniversal,
         }
-      }.use(ANAMED::ExtensionName::eMemoryAllocatorVma));
+      });
 
       //
-      uint64_t materialAddress = materialBuffer->getDeviceAddress();
+      uint64_t materialAddress = gltf->materialBuffer->getDeviceAddress();
 
       //
       for (decltype(auto) image : gltf->model.images) {
@@ -262,7 +262,7 @@ namespace ANAMED {
             .extent = vk::Extent3D{uint32_t(image.width), uint32_t(image.height), 1u},
             .type = ANAMED::ImageType::eTexture
           }
-        }.use(ANAMED::ExtensionName::eMemoryAllocatorVma));
+        });
 
         //
         decltype(auto) status = uploaderObj->executeUploadToResourceOnce(ANAMED::UploadExecutionOnce{
@@ -311,9 +311,10 @@ namespace ANAMED {
       };
 
       //
-      for (auto& material : gltf->model.materials) {
+      for (decltype(auto) material : gltf->model.materials) {
         decltype(auto) materialInf = ANAMED::MaterialInfo{};
         materialInf.texCol[uint32_t(ANAMED::TextureBind::eAlbedo)] = ANAMED::TexOrDef{ .texture = material.pbrMetallicRoughness.baseColorTexture.index >= 0 ? gltf->textures[material.pbrMetallicRoughness.baseColorTexture.index] : CTexture{}, .defValue = handleFactor(material.pbrMetallicRoughness.baseColorFactor)};
+        //materialInf.texCol[uint32_t(ANAMED::TextureBind::eAlbedo)] = ANAMED::TexOrDef{ .texture = CTexture{}, .defValue = /*handleFactor(material.pbrMetallicRoughness.baseColorFactor)*/ glm::vec4(1.f)};
         materialInf.texCol[uint32_t(ANAMED::TextureBind::eNormal)] = ANAMED::TexOrDef{ .texture = material.normalTexture.index >= 0 ? gltf->textures[material.normalTexture.index] : CTexture{}, .defValue = glm::vec4(0.5f, 0.5f, 1.f, 1.f) };
         materialInf.texCol[uint32_t(ANAMED::TextureBind::ePBR)] = ANAMED::TexOrDef{ .texture = material.pbrMetallicRoughness.metallicRoughnessTexture.index >= 0 ? gltf->textures[material.pbrMetallicRoughness.metallicRoughnessTexture.index] : CTexture{}, .defValue = glm::vec4(1.f, material.pbrMetallicRoughness.roughnessFactor, material.pbrMetallicRoughness.metallicFactor, 1.f) };
         materialInf.texCol[uint32_t(ANAMED::TextureBind::eEmissive)] = ANAMED::TexOrDef{ .texture = material.emissiveTexture.index >= 0 ? gltf->textures[material.emissiveTexture.index] : CTexture{}, .defValue = handleFactor(material.emissiveFactor) };
@@ -325,7 +326,7 @@ namespace ANAMED {
         decltype(auto) status = uploaderObj->executeUploadToResourceOnce(ANAMED::UploadExecutionOnce{
           .host = cpp21::data_view<char8_t>((char8_t*)gltf->materials.data(), 0ull, cpp21::bytesize(gltf->materials)),
           .writeInfo = ANAMED::UploadCommandWriteInfo{
-            .dstBuffer = ANAMED::BufferRegion{materialBuffer.as<vk::Buffer>(), ANAMED::DataRegion{0ull, sizeof(ANAMED::MaterialInfo), cpp21::bytesize(gltf->materials)}},
+            .dstBuffer = ANAMED::BufferRegion{gltf->materialBuffer.as<vk::Buffer>(), ANAMED::DataRegion{0ull, sizeof(ANAMED::MaterialInfo), cpp21::bytesize(gltf->materials)}},
           }
         });
 
@@ -337,7 +338,7 @@ namespace ANAMED {
         deviceObj->tickProcessing();
 
         //
-        gltf->materialBuffer = materialBuffer;
+        
       };
 
       //
@@ -349,7 +350,7 @@ namespace ANAMED {
             .size = mesh.primitives.size() * sizeof(GeometryExtension),
             .type = ANAMED::BufferType::eUniversal,
           }
-        }.use(ANAMED::ExtensionName::eMemoryAllocatorVma));
+        });
 
         //
         uint64_t extensionAddress = extensionBuffer->getDeviceAddress();
@@ -357,8 +358,9 @@ namespace ANAMED {
         //
         gltf->extensions.push_back(std::vector<ANAMED::GeometryExtension>{});
         gltf->geometries.push_back(std::vector<ANAMED::GeometryInfo>{});
+        gltf->extensionBuffers.push_back(extensionBuffer);
 
-        //
+        // GEOMETRIES BUFFER BROKEN FOR NO "/fsanitize=address"
         auto extensions = gltf->extensions.back();
         auto geometries = gltf->geometries.back();
 
@@ -374,18 +376,17 @@ namespace ANAMED {
           decltype(auto) nullView = ANAMED::BufferViewInfo{ .region = ANAMED::BufferViewRegion{.deviceAddress = 0ull, .stride = 0ull, .size = 0ull}, .format = ANAMED::BufferViewFormat::eNone };
 
           //
+          decltype(auto) materialId = std::min(std::max(uintptr_t(primitive.material), 0ull), uintptr_t(gltf->materials.size() - 1u));
           geometries->push_back(ANAMED::GeometryInfo{
             .vertices = vertices,
             .indices = primitive.indices >= 0 ? indices : nullView,
             .extensionRef = extensionAddress + pId * sizeof(ANAMED::GeometryExtension),
-            .materialRef = materialAddress + std::min(std::max(uintptr_t(primitive.material), 0ull), uintptr_t(gltf->materials.size()-1u)) * sizeof(ANAMED::MaterialInfo),
+            .materialRef = materialAddress + materialId * sizeof(ANAMED::MaterialInfo),
             .primitiveCount = uint32_t(gltf->model.accessors[primitive.indices >= 0 ? primitive.indices : primitive.attributes.at("POSITION")].count) / 3u
           });
 
           //
           extensions->push_back(ANAMED::GeometryExtension{});
-
-          //
           extensions->back().bufferViews[uint32_t(ANAMED::BufferBind::eExtTexcoord)] = nullView;
           extensions->back().bufferViews[uint32_t(ANAMED::BufferBind::eExtNormals)] = nullView;
           extensions->back().bufferViews[uint32_t(ANAMED::BufferBind::eExtTangent)] = nullView;
@@ -421,14 +422,11 @@ namespace ANAMED {
           deviceObj->tickProcessing();
 
           //
+          // GEOMETRIES BUFFER BROKEN FOR NO "/fsanitize=address"
           gltf->meshes.push_back(ANAMED::GeometryLevelObj::make(handle, ANAMED::GeometryLevelCreateInfo{
             .geometries = geometries,
             .uploader = uploaderObj.as<uintptr_t>(),
           }));
-
-          //
-          gltf->extensionBuffers.push_back(extensionBuffer);
-
         };
       };
 
@@ -474,7 +472,7 @@ namespace ANAMED {
       };
 
       //
-      for (auto& scene : gltf->model.scenes) {
+      for (decltype(auto) scene : gltf->model.scenes) {
         decltype(auto) inst = std::make_shared<GltfInstanced>();
         for (decltype(auto) node : scene.nodes) {
           handleNodes(inst, gltf->model, gltf->model.nodes[node], glm::mat4x4(1.f));

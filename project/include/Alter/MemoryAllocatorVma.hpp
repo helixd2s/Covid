@@ -70,7 +70,9 @@ namespace ANAMED {
 
       // 
       vmaCreateAllocator(&vmaCreateInfo, &this->handle.as<VmaAllocator>());
-      this->handle.type = HandleType::eMemoryAllocator; // Unable to Map without specific type
+      //this->handle.type = HandleType::eMemoryAllocator; // Unable to Map without specific type
+      this->handle.type = HandleType::eExtension;
+      //this->handle = Handle(uintptr_t(this), HandleType::eMemoryAllocator);
     };
 
   public:

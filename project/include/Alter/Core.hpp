@@ -323,12 +323,12 @@ namespace ANAMED {
 #endif
     };
     cpp21::shared_vector<std::string> layerList = std::vector<std::string>{ 
-      "VK_LAYER_KHRONOS_synchronization2",
+      //"VK_LAYER_KHRONOS_synchronization2",
       "VK_LAYER_KHRONOS_validation",
-      "VK_LAYER_KHRONOS_profiles",
-      "VK_LAYER_LUNARG_parameter_validation",
-      "VK_LAYER_LUNARG_core_validation",
-      "VK_LAYER_LUNARG_object_tracker",
+      //"VK_LAYER_KHRONOS_profiles",
+      //"VK_LAYER_LUNARG_parameter_validation",
+      //"VK_LAYER_LUNARG_core_validation",
+      //"VK_LAYER_LUNARG_object_tracker",
       //"VK_LAYER_LUNARG_api_dump"
     };
   };
@@ -610,7 +610,7 @@ namespace ANAMED {
 
   //
   struct GeometryLevelCreateInfo : BaseCreateInfo {
-    std::vector<GeometryInfo> geometries = {};
+    cpp21::shared_vector<GeometryInfo> geometries = {};
     std::vector<uint32_t> limits = {};
     //size_t geometryCount = 1u;
     uintptr_t uploader = 0ull;
@@ -621,7 +621,7 @@ namespace ANAMED {
 
   //
   struct InstanceLevelCreateInfo : BaseCreateInfo {
-    std::vector<InstanceDataInfo> instances = {};
+    cpp21::shared_vector<InstanceDataInfo> instances = {};
     uint32_t limit = uint32_t(0u);
     //std::vector<uint32_t> limits = {};
     //size_t instanceCount = 1u;
@@ -1092,7 +1092,7 @@ namespace ANAMED {
   //
   struct UploaderCreateInfo : BaseCreateInfo {
     std::optional<QueueGetInfo> info = QueueGetInfo{};
-    size_t cacheSize = 4096ull * 4096ull * 4ull;
+    size_t cacheSize = 2048ull * 2048ull * 4ull;
   };
 
   //
@@ -1503,7 +1503,7 @@ namespace ANAMED {
     };
 
     // 
-    BaseObj(cpp21::const_wrap_arg<Handle> base = {}, cpp21::const_wrap_arg<Handle> handle = {}) : base(base.ref()), handle(handle.ref()), infoMap(std::make_shared<MSS>()), callstack(std::make_shared<CallStack>()), handleObjectMap(std::make_shared<HMAP_T>()) {
+    BaseObj(cpp21::const_wrap_arg<Handle> base = {}, cpp21::const_wrap_arg<Handle> handle = {}) : base(base ? base.ref() : Handle{}), handle(handle ? handle.ref() : Handle{}), infoMap(std::make_shared<MSS>()), callstack(std::make_shared<CallStack>()), handleObjectMap(std::make_shared<HMAP_T>()) {
 
     };
 
@@ -1609,8 +1609,8 @@ namespace ANAMED {
     };
 
     //
-    template<class T = BaseObj> inline WrapShared<T> get(auto const& handle) { return this->get<T>(cpp21::const_wrap_arg<Handle>(Handle(handle))); };
-    template<class T = BaseObj> inline WrapShared<T> get(auto const& handle) const { return this->get<T>(cpp21::const_wrap_arg<Handle>(Handle(handle))); };
+    template<class T = BaseObj> inline WrapShared<T> get(Handle const& handle) { return this->get<T>(cpp21::const_wrap_arg<Handle>(handle)); };
+    template<class T = BaseObj> inline WrapShared<T> get(Handle const& handle) const { return this->get<T>(cpp21::const_wrap_arg<Handle>(handle)); };
   };
 
 

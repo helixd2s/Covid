@@ -11,6 +11,7 @@
 namespace ANAMED {
 
   // 
+  // GEOMETRIES BUFFER BROKEN FOR NO "/fsanitize=address"
   class GeometryLevelObj : public BaseObj {
   public: 
     using tType = WrapShared<GeometryLevelObj>;
@@ -112,7 +113,7 @@ namespace ANAMED {
       this->geometryInfos = {};
       this->geometryRanges = {};
       this->multiDraw = std::vector<vk::MultiDrawInfoEXT>{};
-      for (decltype(auto) geometry : this->cInfo->geometries) {
+      for (decltype(auto) geometry : (*this->cInfo->geometries)) {
         geometryInfos.push_back(vk::AccelerationStructureGeometryKHR{
           .geometryType = vk::GeometryTypeKHR::eTriangles,
           .geometry = vk::AccelerationStructureGeometryDataKHR{.triangles = vk::AccelerationStructureGeometryTrianglesDataKHR{
@@ -149,7 +150,7 @@ namespace ANAMED {
       uploaderObj->writeUploadToResourceCmd(UploadCommandWriteInfo{
         .cmdBuf = cmdBuf,
         .hostMapOffset = geometryOffset,
-        .dstBuffer = BufferRegion{this->geometryBuffer, DataRegion{ 0ull, sizeof(GeometryInfo), this->cInfo->geometries.size() * sizeof(GeometryInfo) }}
+        .dstBuffer = BufferRegion{this->geometryBuffer, DataRegion{ 0ull, sizeof(GeometryInfo), this->cInfo->geometries->size() * sizeof(GeometryInfo) }}
       });
 
       //
@@ -232,12 +233,12 @@ namespace ANAMED {
 
       //
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
-      decltype(auto) geometryAlloc = uploaderObj->allocateUploadTemp(this->cInfo->geometries.size() * sizeof(InstanceDevInfo), geometryOffset);
+      decltype(auto) geometryAlloc = uploaderObj->allocateUploadTemp(this->cInfo->geometries->size() * sizeof(InstanceDevInfo), geometryOffset);
       decltype(auto) uploadBlock = uploaderObj->getUploadBlock();
 #endif
 
       // 
-      memcpy(uploaderObj->getUploadMapped(geometryOffset), this->cInfo->geometries.data(), this->cInfo->geometries.size()*sizeof(GeometryInfo));
+      memcpy(uploaderObj->getUploadMapped(geometryOffset), this->cInfo->geometries->data(), this->cInfo->geometries->size()*sizeof(GeometryInfo));
 
       // TODO: Acceleration Structure Build Barriers per Buffers
       submission.commandInits.push_back([geometryOffset,dispatch=deviceObj->getDispatch(), this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
@@ -261,15 +262,15 @@ namespace ANAMED {
 
       //
       if (this->cInfo->limits.size() <= 0) {
-        for (decltype(auto) geometry : this->cInfo->geometries) {
+        for (decltype(auto) geometry : (*this->cInfo->geometries)) {
           this->cInfo->limits.push_back(geometry.primitiveCount);
         };
       };
 
       //
-      if (this->cInfo->geometries.size() < this->cInfo->limits.size()) {
-        for (uintptr_t i = this->cInfo->geometries.size(); i < this->cInfo->limits.size(); i++) {
-          this->cInfo->geometries.push_back(GeometryInfo{});
+      if (this->cInfo->geometries->size() < this->cInfo->limits.size()) {
+        for (uintptr_t i = this->cInfo->geometries->size(); i < this->cInfo->limits.size(); i++) {
+          this->cInfo->geometries->push_back(GeometryInfo{});
         };
       };
 
@@ -283,7 +284,7 @@ namespace ANAMED {
       // 
       this->geometryBuffer = (this->bindGeometryBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
         .bufferInfo = BufferCreateInfo{
-          .size = std::max(cInfo->geometries.size(), cInfo->limits.size()) * sizeof(GeometryInfo),
+          .size = std::max(cInfo->geometries->size(), cInfo->limits.size()) * sizeof(GeometryInfo),
           .type = BufferType::eStorage
         }
       })).as<vk::Buffer>();
@@ -352,7 +353,7 @@ namespace ANAMED {
       });
 
       //
-      if (this->cInfo->geometries.size() > 0 && !this->handle) {
+      if (this->cInfo->geometries->size() > 0 && !this->handle) {
         this->createStructure();
       };
 

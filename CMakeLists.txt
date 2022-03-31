@@ -113,7 +113,7 @@ target_link_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS} ${Vulkan_LIBRARIES} glfw)
 
 # 
 if (MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++2b /d1FastFail /std:c17 /std:c++latest /fsanitize=address /bigobj /MD /MP /EHa /O0 /Od /Ob0 /Zc:threadSafeInit /errorReport /arch:AVX2")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++2b /d1FastFail /std:c17 /fsanitize=address /std:c++latest /bigobj /MD /MP /EHa /O0 /Od /Ob0 /Zc:threadSafeInit /errorReport /arch:AVX2")
     set(CMAKE_EXE_LINKER_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj /MD /MP /MAP /incremental /debug:fastlink /experimental /errorReport /LTCG:PGInstrument")
 endif()
 
