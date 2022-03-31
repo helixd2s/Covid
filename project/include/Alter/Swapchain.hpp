@@ -186,9 +186,10 @@ namespace ANAMED {
         .image = image,
         .imageInfo = ImageCreateInfo{
           .format = format,
-          .extent = { capInfo.capabilities->currentExtent.width, capInfo.capabilities->currentExtent.height, 1u },
+          .extent = vk::Extent3D{ capInfo.capabilities->currentExtent.width, capInfo.capabilities->currentExtent.height, 1u },
           .layout = imageLayout,
-          .swapchain = swapchainInfo,
+          // # first reason of internal error (if use implicit cast, mostly with std::optional)
+          .swapchain = std::optional<ImageSwapchainInfo>(swapchainInfo),
           .info = this->cInfo->info ? this->cInfo->info : QueueGetInfo{0u, 0u},
           .type = imageType
         }

@@ -289,10 +289,11 @@ int main() {
 
     // 
     decltype(auto) uniformFence = descriptors->executeUniformUpdateOnce(ANAMED::UniformDataSet{
-      .writeInfo = ANAMED::UniformDataWriteSet{
+      // # yet another std::optional problem (implicit)
+      .writeInfo = std::optional<ANAMED::UniformDataWriteSet>(ANAMED::UniformDataWriteSet{
         .region = ANAMED::DataRegion{0ull, 4ull, sizeof(UniformData)},
         .data = cpp21::data_view<char8_t>((char8_t*)&uniformData, 0ull, sizeof(UniformData)),
-      },
+      }),
       .submission = ANAMED::SubmissionInfo{
         .info = qfAndQueue,
       }
@@ -303,13 +304,15 @@ int main() {
 
     //
     decltype(auto) graphicsFence = graphics->executePipelineOnce(ANAMED::ExecutePipelineInfo{
-      .graphics = ANAMED::WriteGraphicsInfo{
+      // # yet another std::optional problem (implicit)
+      .graphics = std::optional<ANAMED::WriteGraphicsInfo>(ANAMED::WriteGraphicsInfo{
         .layout = descriptors.as<vk::PipelineLayout>(),
         .framebuffer = framebuffer.as<uintptr_t>(),
         .swapchain = swapchain.as<vk::SwapchainKHR>(),
         .instanceDraws = modelObj->getDefaultScene()->instanced->getDrawInfo(),
-        .instanceAddressBlock = instanceAddressBlock
-      },
+        // # yet another std::optional problem (implicit)
+        .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
+      }),
       .submission = ANAMED::SubmissionInfo{
         .info = qfAndQueue,
       }
@@ -317,12 +320,14 @@ int main() {
 
     //
     decltype(auto) computeFence = compute->executePipelineOnce(ANAMED::ExecutePipelineInfo{
-      .compute = ANAMED::WriteComputeInfo{
+      // # yet another std::optional problem (implicit)
+      .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
         .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 256u), renderArea.extent.height, 1u},
         .layout = descriptors.as<vk::PipelineLayout>(),
         .swapchain = swapchain.as<vk::SwapchainKHR>(),
-        .instanceAddressBlock = instanceAddressBlock
-      },
+        // # yet another std::optional problem (implicit)
+        .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
+      }),
       .submission = ANAMED::SubmissionInfo{
         .info = qfAndQueue
       }

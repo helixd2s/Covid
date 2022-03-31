@@ -370,11 +370,12 @@ namespace ANAMED {
 
       // 
       if (cInfo->info) {
+        // # another reason of internal error (mostly with std::optional)
         return this->executeSwitchLayoutOnce(ImageLayoutSwitchInfo{
           .info = cInfo->info,
           .switchInfo = ImageLayoutSwitchWriteInfo{
             .newImageLayout = cInfo->layout,
-            .oldImageLayout = imageInfo->initialLayout,
+            .oldImageLayout = std::optional<vk::ImageLayout>(imageInfo->initialLayout),
           },
         });
       };

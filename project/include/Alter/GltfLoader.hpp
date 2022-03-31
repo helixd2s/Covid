@@ -268,7 +268,8 @@ namespace ANAMED {
         decltype(auto) status = uploaderObj->executeUploadToResourceOnce(ANAMED::UploadExecutionOnce{
           .host = cpp21::data_view<char8_t>((char8_t*)image.image.data(), 0ull, cpp21::bytesize(image.image)),
           .writeInfo = ANAMED::UploadCommandWriteInfo{
-            .dstImage = ANAMED::ImageRegion{.image = imageObj.as<vk::Image>(), .region = ANAMED::ImageDataRegion{.extent = vk::Extent3D{uint32_t(image.width), uint32_t(image.height), 1u}}},
+            // # yet another std::optional problem (implicit)
+            .dstImage = std::optional<ANAMED::ImageRegion>(ANAMED::ImageRegion{.image = imageObj.as<vk::Image>(), .region = ANAMED::ImageDataRegion{.extent = vk::Extent3D{uint32_t(image.width), uint32_t(image.height), 1u}}}),
           }
         });
 
