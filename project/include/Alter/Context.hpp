@@ -72,13 +72,13 @@ namespace ANAMED {
       while (map != this->handleObjectMap->end()) {
         std::decay_t<decltype(*(map->second))>& mapc = *(map->second);
         std::decay_t<decltype(*mapc)>::iterator pair = (*mapc).begin();
-        while (pair != mapc->end() && pair->second && pair->second->isAlive()) {
+        while (pair != mapc->end() && pair->second && pair->second->alive) {
           decltype(auto) optPair = pair->second->destroy(this->handle, this->handleObjectMap);
           if (optPair) { pair = optPair.value(); } else { pair++; };
           //if (pair != mapc->end()) { pair++; };
           //pair = mapc.erase(pair);
         };
-        //map = this->handleObjectMap->erase(map);
+        map = this->handleObjectMap->erase(map);
         //if (map != this->handleObjectMap->end()) { map++; };
       };
 

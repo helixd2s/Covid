@@ -146,7 +146,7 @@ int main() {
   });
 
   // 
-  decltype(auto) modelObj = gltfLoader->load("./BoomBox.gltf");
+  decltype(auto) modelObj = gltfLoader->load("./BoomBoxWithAxes.gltf");
 
   //
   decltype(auto) instanceAddressBlock = ANAMED::InstanceAddressBlock{

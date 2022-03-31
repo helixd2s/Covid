@@ -461,7 +461,7 @@ namespace ANAMED {
 
         //
         if ((node.mesh >= 0) && (node.mesh < model.meshes.size())) {
-          useMesh(inst, model, node.mesh, parentTransform);
+          useMesh(inst, model, node.mesh, parentTransform * glm::mat4x4(localTransform));
         };
 
         //
@@ -475,7 +475,7 @@ namespace ANAMED {
       for (decltype(auto) scene : gltf->model.scenes) {
         decltype(auto) inst = std::make_shared<GltfInstanced>();
         for (decltype(auto) node : scene.nodes) {
-          handleNodes(inst, gltf->model, gltf->model.nodes[node], glm::mat4x4(1.f));
+          handleNodes(inst, gltf->model, gltf->model.nodes[node], glm::mat4x4(1.f) * glm::scale(glm::mat4(1.0f), glm::vec3(1.f, -1.f, -1.f)));
         };
 
         //
