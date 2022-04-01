@@ -178,6 +178,7 @@ namespace ANAMED {
           auto decomposeFormat = BufferViewFormatBitSet(defFormat);
           auto virtualStride = bufferView.byteStride > 0 ? bufferView.byteStride : (decomposeFormat.countMinusOne + 1u) * (decomposeFormat.is16bit ? 2u : 4u);
           auto realStride = std::max(uint32_t(bufferView.byteStride), (decomposeFormat.countMinusOne + 1u) * (decomposeFormat.is16bit ? 2u : 4u));
+          auto realSize = std::max({uint32_t(std::max(intptr_t(bufferView.byteStride * accessor.count) /* - intptr_t(accessor.byteOffset)*/,0ll)), uint32_t((decomposeFormat.countMinusOne + 1u) * (decomposeFormat.is16bit ? 2u : 4u) * accessor.count), uint32_t(bv.region.size - accessor.byteOffset)});
 
           //
           if (isIndice) {
@@ -188,13 +189,14 @@ namespace ANAMED {
             auto decomposeFormat = BufferViewFormatBitSet(defFormat);
             auto virtualStride = bufferView.byteStride > 0 ? bufferView.byteStride : ((decomposeFormat.countMinusOne + 1u) * (decomposeFormat.is16bit ? 2u : 4u) / 3u);
             auto realStride = std::max(uint32_t(bufferView.byteStride), ((decomposeFormat.countMinusOne + 1u) * (decomposeFormat.is16bit ? 2u : 4u)) / 3u);
+            auto realSize = std::max({ uint32_t(std::max(intptr_t(bufferView.byteStride * accessor.count) /*- intptr_t(accessor.byteOffset)*/,0ll)), uint32_t((decomposeFormat.countMinusOne + 1u) * (decomposeFormat.is16bit ? 2u : 4u) * accessor.count / 3), uint32_t(bv.region.size - accessor.byteOffset)});
 
             //
-            return (bresult = ANAMED::BufferViewInfo{ .region = ANAMED::BufferViewRegion{.deviceAddress = address + bv.region.offset + accessor.byteOffset, .stride = defFormat == ANAMED::BufferViewFormat::eUint3 ? 4u : 2u, .size = std::max(uint32_t(bv.region.size), uint32_t(realStride * accessor.count)) - uint32_t(accessor.byteOffset)}, .format = defFormat });
+            return (bresult = ANAMED::BufferViewInfo{ .region = ANAMED::BufferViewRegion{.deviceAddress = address + bv.region.offset + accessor.byteOffset, .stride = defFormat == ANAMED::BufferViewFormat::eUint3 ? 4u : 2u, .size = realSize}, .format = defFormat });
           };
 
           //
-          return (bresult = ANAMED::BufferViewInfo{ .region = ANAMED::BufferViewRegion{.deviceAddress = address + bv.region.offset + accessor.byteOffset, .stride = uint32_t(virtualStride), .size = std::max(uint32_t(bv.region.size), uint32_t(realStride * accessor.count)) - uint32_t(accessor.byteOffset)}, .format = defFormat });
+          return (bresult = ANAMED::BufferViewInfo{ .region = ANAMED::BufferViewRegion{.deviceAddress = address + bv.region.offset + accessor.byteOffset, .stride = uint32_t(virtualStride), .size = realSize}, .format = defFormat });
         };
 
         return bresult;

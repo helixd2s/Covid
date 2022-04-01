@@ -146,7 +146,7 @@ int main() {
   });
 
   // 
-  decltype(auto) modelObj = gltfLoader->load("./BoomBoxWithAxes.gltf");
+  decltype(auto) modelObj = gltfLoader->load("./Chess_Set.gltf");
 
   //
   decltype(auto) instanceAddressBlock = ANAMED::InstanceAddressBlock{
@@ -220,7 +220,7 @@ int main() {
 
   // set perspective
   auto persp = glm::perspective(60.f / 180 * glm::pi<float>(), float(renderArea.extent.width) / float(renderArea.extent.height), 0.001f, 10000.f);
-  auto lkat = glm::lookAt(glm::vec3(0.0f, 0.02f, -0.02f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f));
+  auto lkat = glm::lookAt(glm::vec3(0.0f, -20.02f, -10.02f), glm::vec3(0.f, -10.f, 0.f), glm::vec3(0.f, 1.f, 0.f));
   uniformData.constants.perspective = glm::transpose(persp);
   uniformData.constants.perspectiveInverse = glm::transpose(glm::inverse(persp));
   uniformData.constants.lookAt = glm::mat3x4(glm::transpose(lkat));

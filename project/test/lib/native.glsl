@@ -276,7 +276,7 @@ uvec4 readAsUint4(in BufferViewInfo bufferViewInfo, in uint32_t index) {
   const uint isHalf = (bufferViewInfo.format>>2)&1u;
   const uint isUint = (bufferViewInfo.format>>3)&1u;
   const uint local = index * (bufferViewInfo.region.stride > 0 ? bufferViewInfo.region.stride : (isHalf == 1u ? 2 : 4) * (cCnt + 1));
-  const uint realCnt = tiled(min(max(bufferViewInfo.region.stride, (isHalf == 1u ? 2 : 4) * (cCnt + 1)), max(bufferViewInfo.region.size-local, 0u)), (isHalf == 1u ? 2 : 4)) - 1u;
+  const uint realCnt = tiled(min(max(bufferViewInfo.region.stride, (isHalf == 1u ? 2 : 4) * (cCnt + 1)), max(bufferViewInfo.region.size, 0u)), (isHalf == 1u ? 2 : 4)) - 1u;
 
   const uint64_t address = bufferViewInfo.region.deviceAddress + local;
 
