@@ -190,11 +190,11 @@ namespace ANAMED {
             auto realStride = std::max(uint32_t(bufferView.byteStride), ((decomposeFormat.countMinusOne + 1u) * (decomposeFormat.is16bit ? 2u : 4u)) / 3u);
 
             //
-            return (bresult = ANAMED::BufferViewInfo{ .region = ANAMED::BufferViewRegion{.deviceAddress = address + bv.region.offset + accessor.byteOffset, .stride = defFormat == ANAMED::BufferViewFormat::eUint3 ? 4u : 2u, .size = uint32_t(bv.region.size - accessor.byteOffset)}, .format = defFormat });
+            return (bresult = ANAMED::BufferViewInfo{ .region = ANAMED::BufferViewRegion{.deviceAddress = address + bv.region.offset + accessor.byteOffset, .stride = defFormat == ANAMED::BufferViewFormat::eUint3 ? 4u : 2u, .size = std::max(uint32_t(bv.region.size), uint32_t(realStride * accessor.count)) - uint32_t(accessor.byteOffset)}, .format = defFormat });
           };
 
           //
-          return (bresult = ANAMED::BufferViewInfo{ .region = ANAMED::BufferViewRegion{.deviceAddress = address + bv.region.offset + accessor.byteOffset, .stride = uint32_t(virtualStride), .size = std::min(uint32_t(bv.region.size - accessor.byteOffset), uint32_t(virtualStride * accessor.count))}, .format = defFormat });
+          return (bresult = ANAMED::BufferViewInfo{ .region = ANAMED::BufferViewRegion{.deviceAddress = address + bv.region.offset + accessor.byteOffset, .stride = uint32_t(virtualStride), .size = std::max(uint32_t(bv.region.size), uint32_t(realStride * accessor.count)) - uint32_t(accessor.byteOffset)}, .format = defFormat });
         };
 
         return bresult;
