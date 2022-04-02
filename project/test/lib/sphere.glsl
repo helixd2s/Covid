@@ -110,5 +110,6 @@ vec3 randomCosineWeightedHemispherePoint(vec3 rand, vec3 n) {
   tangent = cross(bitangent, n);
   
   /* Make our hemisphere orient around the normal. */
-  return tangent * ph.x + bitangent * ph.y + n * ph.z;
+  vec3 dir = normalize(tangent * ph.x + bitangent * ph.y + n * ph.z);
+  return normalize(faceforward(dir,-n,dir));
 }
