@@ -675,11 +675,11 @@ vec3 metallicMult(in vec3 rayColor, in vec3 materialColor, in float factor) {
 };
 
 vec3 inRayNormal(in vec3 dir, in vec3 normal) {
-  return faceforward(normal, dir, normal);
+  return normalize(faceforward(normal, dir, normal));
 };
 
 vec3 outRayNormal(in vec3 dir, in vec3 normal) {
-  return faceforward(normal, dir, normal);
+  return normalize(faceforward(normal, dir, normal));
 };
 
 #endif

@@ -39,6 +39,7 @@
 #include <experimental/generator>
 #endif
 
+#define GLM_FORCE_SWIZZLE
 #include <tinygltf/tiny_gltf.h>
 #include <tinygltf/stb_image.h>
 #include <vulkan/vulkan.h>

@@ -14,6 +14,7 @@
 #endif
 
 //
+#define GLM_FORCE_SWIZZLE
 #include <tinygltf/tiny_gltf.h>
 #include <tinygltf/stb_image.h>
 #include <glm/gtc/matrix_transform.hpp>
@@ -61,9 +62,16 @@ inline void CtlMouseKeyCallback(GLFWwindow* window, int button, int action, int 
 class Controller {
 public:
   glm::vec3 viewPos = glm::vec3(0.f, 0.f, 0.f);
-  glm::vec3 viewCnt = glm::vec3(0.f, 0.f, 0.f);
+  glm::vec3 viewCnt = glm::vec3(0.f, 0.f, 1.f);
+  glm::vec3 viewDir = glm::vec3(0.f, 0.f, 1.f);
+  glm::vec3 viewUp = glm::vec3(0.f, 1.f, 0.f);
+
+  //
+  double moveSpeed = 0.1f;
+  double viewSpeed = 0.005f;
 
   // 
+  bool hasEscPressed = false;
   GLFWwindow* window = nullptr;
 
   //
@@ -83,11 +91,14 @@ public:
 
   // 
   Controller(GLFWwindow* window = nullptr) : window(window) {
-    glfwGetCursorPos(window, &mx, &my);
-    glfwSetKeyCallback(window, CtlKeyCallback);
-    glfwSetCursorPosCallback(window, CtlMouseMoveCallback);
-    glfwSetMouseButtonCallback(window, CtlMouseKeyCallback);
+    if (window) {
+      glfwGetCursorPos(window, &mx, &my);
+      glfwSetKeyCallback(window, CtlKeyCallback);
+      glfwSetCursorPosCallback(window, CtlMouseMoveCallback);
+      glfwSetMouseButtonCallback(window, CtlMouseKeyCallback);
+    };
     time = glfwGetTime();
+    viewCnt = viewPos + viewDir;
   };
 
   // 
@@ -99,7 +110,7 @@ public:
 
   // 
   static void handleMousePos(double mx, double my) {
-    ctl::dx = mx - ctl::mx, ctl::dy = my - ctl::my, ctl::mx = mx, ctl::my = my;
+    //ctl::dx = mx - ctl::mx, ctl::dy = my - ctl::my, ctl::mx = mx, ctl::my = my;
     //this->handleAction();
   };
 
@@ -132,7 +143,64 @@ public:
 
   //
   void handleAction() {
+    using ctl = Controller;
 
+    //
+    if (ctl::keys[GLFW_KEY_ESCAPE] == GLFW_PRESS && !hasEscPressed) { hasEscPressed = true; };
+    if (ctl::keys[GLFW_KEY_ESCAPE] == GLFW_RELEASE && hasEscPressed) { glfwTerminate(); exit(0); };
+
+    // 
+    glm::mat4 lkt = glm::lookAt(viewPos, viewPos + viewDir, viewUp);
+    glm::mat4 xrot = glm::rotate(glm::mat4x4(1.f), float(ctl::dx * viewSpeed), glm::vec3(0.0, -1.0, 0.0));
+    glm::mat4 yrot = glm::rotate(glm::mat4x4(1.f), float(ctl::dy * viewSpeed), glm::vec3(-1.0, 0.0, 0.0));
+
+    //
+    glm::vec3 viewPosLocal = (lkt * glm::vec4(viewPos, 1.f)).xyz();
+    glm::vec3 viewDirLocal = (glm::vec4(viewDir, 1.f) * glm::inverse(lkt)).xyz();
+    glm::vec3 moveDir = glm::vec3(0.f);
+
+    //
+    if (ctl::mouse[GLFW_MOUSE_BUTTON_1] == GLFW_PRESS) {
+      viewDirLocal = (xrot * glm::vec4(viewDirLocal, 1.0)).xyz();
+      viewDirLocal = (yrot * glm::vec4(viewDirLocal, 1.0)).xyz();
+    };
+
+    // Z, forward should be correct
+    bool doMove = false;
+
+    // 
+    if (ctl::keys[GLFW_KEY_UP] == GLFW_PRESS || ctl::keys[GLFW_KEY_W] == GLFW_PRESS) {
+      moveDir.z -= 1.f, doMove = true;
+    };
+    if (ctl::keys[GLFW_KEY_DOWN] == GLFW_PRESS || ctl::keys[GLFW_KEY_S] == GLFW_PRESS) {
+      moveDir.z += 1.f, doMove = true;
+    };
+
+    // X, right should be right i.e. positive x, left is left i.e. negative x
+    if (ctl::keys[GLFW_KEY_LEFT] == GLFW_PRESS || ctl::keys[GLFW_KEY_A] == GLFW_PRESS) {
+      moveDir.x -= 1.f, doMove = true;
+    };
+    if (ctl::keys[GLFW_KEY_RIGHT] == GLFW_PRESS || ctl::keys[GLFW_KEY_D] == GLFW_PRESS) {
+      moveDir.x += 1.f, doMove = true;
+    };
+
+    // Y, up should be right i.e. positive y or negative y relative vulkan coordinate system
+    if (ctl::keys[GLFW_KEY_SPACE] == GLFW_PRESS) {
+      moveDir.y += 1.f, doMove = true;
+    };
+    if (ctl::keys[GLFW_KEY_LEFT_SHIFT] == GLFW_PRESS) {
+      moveDir.y -= 1.f, doMove = true;
+    };
+
+    //
+    if (doMove && glm::length(moveDir) > 0.f) {
+      viewPosLocal += float(ctl::dt * this->moveSpeed) * glm::normalize(moveDir);
+    };
+
+    //
+    viewPos = (glm::inverse(lkt) * glm::vec4(viewPosLocal, 1.f)).xyz();
+    viewDir = glm::normalize((glm::vec4(viewDirLocal, 1.f) * lkt).xyz());
+    viewCnt = viewPos + viewDir;
   };
 };
 
@@ -322,17 +390,8 @@ int main() {
   //
   decltype(auto) renderArea = swapchain->getRenderArea();
 
-
-  // set perspective
-  auto persp = glm::perspective(60.f / 180 * glm::pi<float>(), float(renderArea.extent.width) / float(renderArea.extent.height), 0.001f, 10000.f);
-  //auto lkat = glm::scale(glm::lookAt(glm::vec3(0.0f, -0.02f, 0.02f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f)), glm::vec3(1.f, -1.f, 1.f));
-  auto lkat = glm::lookAt(glm::vec3(0.0f, 0.02f, 0.02f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f));
-  uniformData.constants.perspective = glm::transpose(persp);
-  uniformData.constants.perspectiveInverse = glm::transpose(glm::inverse(persp));
-  uniformData.constants.lookAt = glm::mat3x4(glm::transpose(lkat));
-  uniformData.constants.lookAtInverse = glm::mat3x4(glm::transpose(glm::inverse(lkat)));
-  uniformData.extent = glm::uvec2(renderArea.extent.width, renderArea.extent.height);
-  uniformData.frameCounter = 0u;
+  //
+  Controller controller(window);
 
   //
   decltype(auto) framebuffer = ANAMED::FramebufferObj::make(device.with(0u), ANAMED::FramebufferCreateInfo{
@@ -359,8 +418,19 @@ int main() {
 
 
   //
-  decltype(auto) renderGen = [=, &previousTime, &frameCount, &uniformData]() -> std::experimental::generator<bool> {
+  decltype(auto) renderGen = [=, &previousTime, &frameCount, &uniformData, &controller]() -> std::experimental::generator<bool> {
     co_yield false;
+
+    // set perspective
+    controller.handleFrame();
+    auto persp = glm::perspective(60.f / 180 * glm::pi<float>(), float(renderArea.extent.width) / float(renderArea.extent.height), 0.001f, 10000.f);
+    auto lkat = glm::lookAt(controller.viewPos, controller.viewCnt, controller.viewUp);
+    uniformData.constants.perspective = glm::transpose(persp);
+    uniformData.constants.perspectiveInverse = glm::transpose(glm::inverse(persp));
+    uniformData.constants.lookAt = glm::mat3x4(glm::transpose(lkat));
+    uniformData.constants.lookAtInverse = glm::mat3x4(glm::transpose(glm::inverse(lkat)));
+    uniformData.extent = glm::uvec2(renderArea.extent.width, renderArea.extent.height);
+    uniformData.frameCounter = 0u;
 
     //
 #ifdef ENABLE_RENDERDOC
