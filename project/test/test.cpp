@@ -49,6 +49,111 @@ struct UniformData {
   //uint64_t verticesAddress = 0ull;
 };
 
+//
+class Controller;
+
+//
+inline void CtlKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+inline void CtlMouseMoveCallback(GLFWwindow* window, double xpos, double ypos);
+inline void CtlMouseKeyCallback(GLFWwindow* window, int button, int action, int mods);
+
+//
+class Controller {
+public:
+  glm::vec3 viewPos = glm::vec3(0.f, 0.f, 0.f);
+  glm::vec3 viewCnt = glm::vec3(0.f, 0.f, 0.f);
+
+  // 
+  GLFWwindow* window = nullptr;
+
+  //
+  using ctl = Controller;
+
+  //
+  inline static int keys[350];
+  inline static int mouse[16];
+
+  // 
+  inline static double dx = 0.f, dy = 0.f;
+  inline static double mx = 0.f, my = 0.f;
+
+  //
+  inline static double time = 0.f;
+  inline static double dt = 0.f;
+
+  // 
+  Controller(GLFWwindow* window = nullptr) : window(window) {
+    glfwGetCursorPos(window, &mx, &my);
+    glfwSetKeyCallback(window, CtlKeyCallback);
+    glfwSetCursorPosCallback(window, CtlMouseMoveCallback);
+    glfwSetMouseButtonCallback(window, CtlMouseKeyCallback);
+    time = glfwGetTime();
+  };
+
+  // 
+  void handleMousePos() {
+    double mx = 0.f, my = 0.f; glfwGetCursorPos(window, &mx, &my);
+    ctl::dx = mx - ctl::mx, ctl::dy = my - ctl::my, ctl::mx = mx, ctl::my = my;
+    //this->handleAction();
+  };
+
+  // 
+  static void handleMousePos(double mx, double my) {
+    ctl::dx = mx - ctl::mx, ctl::dy = my - ctl::my, ctl::mx = mx, ctl::my = my;
+    //this->handleAction();
+  };
+
+  //
+  static void handleKey(int key, int action) {
+    ctl::keys[key] = action;
+    //this->handleAction();
+  };
+
+  //
+  static void handleMouseKey(int key, int action) {
+    ctl::mouse[key] = action;
+    //this->handleAction();
+  };
+
+  //
+  static void handleTime() {
+    double time = glfwGetTime();
+    ctl::dt = time - ctl::time;
+    ctl::time = time;
+    //this->handleAction();
+  };
+
+  //
+  void handleFrame() {
+    this->handleTime();
+    this->handleMousePos();
+    this->handleAction();
+  };
+
+  //
+  void handleAction() {
+
+  };
+};
+
+//
+inline void CtlKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+  Controller::handleKey(key, action);
+  //Controller::handleTime();
+};
+
+//
+inline void CtlMouseMoveCallback(GLFWwindow* window, double xpos, double ypos) {
+  Controller::handleMousePos(xpos, ypos);
+  //Controller::handleTime();
+};
+
+// 
+inline void CtlMouseKeyCallback(GLFWwindow* window, int button, int action, int mods) {
+  Controller::handleMouseKey(button, action);
+  //Controller::handleTime();
+};
+
 
 
 // 
