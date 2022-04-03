@@ -71,7 +71,7 @@ public:
 
   //
   double moveSpeed = 0.1f;
-  double viewSpeed = 0.005f;
+  double viewSpeed = 1.f;
 
   // 
   bool hasEscPressed = false;
@@ -92,6 +92,10 @@ public:
   inline static double time = 0.f;
   inline static double dt = 0.f;
 
+  //
+  inline static int width = 1u;
+  inline static int height = 1u;
+
   // 
   Controller(GLFWwindow* window = nullptr) : window(window) {
     if (window) {
@@ -99,6 +103,7 @@ public:
       glfwSetKeyCallback(window, CtlKeyCallback);
       glfwSetCursorPosCallback(window, CtlMouseMoveCallback);
       glfwSetMouseButtonCallback(window, CtlMouseKeyCallback);
+      glfwGetWindowSize(window, &ctl::width, &ctl::height);
     };
     time = glfwGetTime();
     viewCnt = viewPos + viewDir;
@@ -154,8 +159,8 @@ public:
 
     // 
     glm::mat4 lkt = glm::lookAt(viewPos, viewPos + viewDir, viewUp);
-    glm::mat4 xrot = glm::rotate(glm::mat4x4(1.f), float(ctl::dx * viewSpeed), glm::vec3(0.0, -1.0, 0.0));
-    glm::mat4 yrot = glm::rotate(glm::mat4x4(1.f), float(ctl::dy * viewSpeed), glm::vec3(-1.0, 0.0, 0.0));
+    glm::mat4 xrot = glm::rotate(glm::mat4x4(1.f), float(ctl::dx / double(ctl::height) * viewSpeed), glm::vec3(0.0, -1.0, 0.0));
+    glm::mat4 yrot = glm::rotate(glm::mat4x4(1.f), float(ctl::dy / double(ctl::height) * viewSpeed), glm::vec3(-1.0, 0.0, 0.0));
 
     //
     glm::vec3 viewPosLocal = (lkt * glm::vec4(viewPos, 1.f)).xyz();
