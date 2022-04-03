@@ -126,7 +126,7 @@ namespace ANAMED {
     };
 
     // 
-    virtual std::shared_ptr<GltfModel> load(std::string const& filename = "./BoomBox.gltf", FilterType const& filter = FilterType::eOpaque) {
+    virtual std::shared_ptr<GltfModel> load(std::string const& filename = "./BoomBox.gltf", float scale = 1.f, FilterType const& filter = FilterType::eOpaque) {
       decltype(auto) gltf = std::make_shared<GltfModel>();
 
       //decltype(auto) handle = Handle(cInfo->device, HandleType::eDevice);
@@ -477,7 +477,7 @@ namespace ANAMED {
       for (decltype(auto) scene : gltf->model.scenes) {
         decltype(auto) inst = std::make_shared<GltfInstanced>();
         for (decltype(auto) node : scene.nodes) {
-          handleNodes(inst, gltf->model, gltf->model.nodes[node], glm::mat4x4(1.f) * glm::scale(glm::mat4(1.0f), glm::vec3(-1.f, -1.f, 1.f)));
+          handleNodes(inst, gltf->model, gltf->model.nodes[node], glm::mat4x4(1.f) * glm::scale(glm::mat4(1.0f), glm::vec3(-1.f * scale, -1.f * scale, 1.f * scale)));
         };
 
         //

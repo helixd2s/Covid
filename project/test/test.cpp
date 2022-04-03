@@ -27,6 +27,9 @@
 #include <eh.h>
 #endif
 
+//
+#include <args/args.hxx>
+
 // 
 void error(int errnum, const char* errmsg)
 {
@@ -78,8 +81,8 @@ public:
   using ctl = Controller;
 
   //
-  inline static int keys[350];
-  inline static int mouse[16];
+  inline static bool keys[350];
+  inline static bool mouse[16];
 
   // 
   inline static double dx = 0.f, dy = 0.f;
@@ -116,13 +119,13 @@ public:
 
   //
   static void handleKey(int key, int action) {
-    ctl::keys[key] = action;
+    ctl::keys[key] = action == GLFW_PRESS ? true : (action == GLFW_RELEASE ? false : ctl::keys[key]);
     //this->handleAction();
   };
 
   //
   static void handleMouseKey(int key, int action) {
-    ctl::mouse[key] = action;
+    ctl::mouse[key] = action == GLFW_PRESS ? true : (action == GLFW_RELEASE ? false : ctl::mouse[key]);
     //this->handleAction();
   };
 
@@ -146,8 +149,8 @@ public:
     using ctl = Controller;
 
     //
-    if (ctl::keys[GLFW_KEY_ESCAPE] == GLFW_PRESS && !hasEscPressed) { hasEscPressed = true; };
-    if (ctl::keys[GLFW_KEY_ESCAPE] == GLFW_RELEASE && hasEscPressed) { glfwTerminate(); exit(0); };
+    if (ctl::keys[GLFW_KEY_ESCAPE] && !hasEscPressed) { hasEscPressed = true; };
+    if (ctl::keys[GLFW_KEY_ESCAPE] && hasEscPressed) { glfwTerminate(); exit(0); };
 
     // 
     glm::mat4 lkt = glm::lookAt(viewPos, viewPos + viewDir, viewUp);
@@ -160,7 +163,7 @@ public:
     glm::vec3 moveDir = glm::vec3(0.f);
 
     //
-    if (ctl::mouse[GLFW_MOUSE_BUTTON_1] == GLFW_PRESS) {
+    if (ctl::mouse[GLFW_MOUSE_BUTTON_1]) {
       viewDirLocal = (xrot * glm::vec4(viewDirLocal, 1.0)).xyz();
       viewDirLocal = (yrot * glm::vec4(viewDirLocal, 1.0)).xyz();
     };
@@ -169,26 +172,26 @@ public:
     bool doMove = false;
 
     // 
-    if (ctl::keys[GLFW_KEY_UP] == GLFW_PRESS || ctl::keys[GLFW_KEY_W] == GLFW_PRESS) {
+    if (ctl::keys[GLFW_KEY_UP] || ctl::keys[GLFW_KEY_W]) {
       moveDir.z -= 1.f, doMove = true;
     };
-    if (ctl::keys[GLFW_KEY_DOWN] == GLFW_PRESS || ctl::keys[GLFW_KEY_S] == GLFW_PRESS) {
+    if (ctl::keys[GLFW_KEY_DOWN] || ctl::keys[GLFW_KEY_S]) {
       moveDir.z += 1.f, doMove = true;
     };
 
     // X, right should be right i.e. positive x, left is left i.e. negative x
-    if (ctl::keys[GLFW_KEY_LEFT] == GLFW_PRESS || ctl::keys[GLFW_KEY_A] == GLFW_PRESS) {
+    if (ctl::keys[GLFW_KEY_LEFT] || ctl::keys[GLFW_KEY_A]) {
       moveDir.x -= 1.f, doMove = true;
     };
-    if (ctl::keys[GLFW_KEY_RIGHT] == GLFW_PRESS || ctl::keys[GLFW_KEY_D] == GLFW_PRESS) {
+    if (ctl::keys[GLFW_KEY_RIGHT] || ctl::keys[GLFW_KEY_D]) {
       moveDir.x += 1.f, doMove = true;
     };
 
     // Y, up should be right i.e. positive y or negative y relative vulkan coordinate system
-    if (ctl::keys[GLFW_KEY_SPACE] == GLFW_PRESS) {
+    if (ctl::keys[GLFW_KEY_SPACE]) {
       moveDir.y += 1.f, doMove = true;
     };
-    if (ctl::keys[GLFW_KEY_LEFT_SHIFT] == GLFW_PRESS) {
+    if (ctl::keys[GLFW_KEY_LEFT_SHIFT]) {
       moveDir.y -= 1.f, doMove = true;
     };
 
@@ -225,7 +228,16 @@ inline void CtlMouseKeyCallback(GLFWwindow* window, int button, int action, int 
 
 
 // 
-int main() {
+int main(int argc, char** argv) {
+  //
+  args::ArgumentParser parser("This is a test rendering program.", "");
+  args::HelpFlag help(parser, "help", "Available flags", { 'h', "help" });
+  args::ValueFlag<float> scaleflag(parser, "scale", "Scaling of model object", { 's' }, 1.f);
+  args::ValueFlag<std::string> modelflag(parser, "model", "Model to view", { 'm' }, "BoomBoxWithAxes.gltf");
+
+  //
+  try { parser.ParseCLI(argc, argv); }
+  catch (args::Help) { std::cout << parser; glfwTerminate(); exit(1); };
 
   // Be sure to enable "Yes with SEH Exceptions (/EHa)" in C++ / Code Generation;
   _set_se_translator([](unsigned int u, EXCEPTION_POINTERS* pExp) {
@@ -319,7 +331,7 @@ int main() {
   });
 
   // 
-  decltype(auto) modelObj = gltfLoader->load("./BoomBoxWithAxes.gltf");
+  decltype(auto) modelObj = gltfLoader->load(args::get(modelflag), args::get(scaleflag));
 
   //
   decltype(auto) instanceAddressBlock = ANAMED::InstanceAddressBlock{

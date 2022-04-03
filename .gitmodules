@@ -19,3 +19,6 @@
 [submodule "interval-tree"]
 	path = interval-tree
 	url = https://github.com/5cript/interval-tree.git
+[submodule "submodules/include/args"]
+	path = submodules/include/args
+	url = https://github.com/Taywee/args.git
