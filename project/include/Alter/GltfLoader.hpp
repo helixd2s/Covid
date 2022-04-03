@@ -453,23 +453,24 @@ namespace ANAMED {
 
       //
       std::function<void(std::shared_ptr<GltfInstanced>, tinygltf::Model&, tinygltf::Node&, glm::mat4x4 parentTransform)> handleNodes = {};
-      handleNodes = [=, &handleNodes, this](std::shared_ptr<GltfInstanced> inst, tinygltf::Model& model, tinygltf::Node& node, glm::mat4x4 parentTransform = glm::mat4x4(1.f)) {
-
+      handleNodes = [=, &handleNodes, this](std::shared_ptr<GltfInstanced> inst, tinygltf::Model& model, tinygltf::Node& node, glm::mat4x4 transform = glm::mat4x4(1.f)) {
+        // 
         auto localTransform = glm::dmat4(1.0);
         localTransform *= glm::dmat4(node.matrix.size() >= 16 ? glm::make_mat4(node.matrix.data()) : glm::dmat4(1.0));
         localTransform *= glm::dmat4(node.translation.size() >= 3 ? glm::translate(glm::dmat4(1.0), glm::make_vec3(node.translation.data())) : glm::dmat4(1.0));
         localTransform *= glm::dmat4(node.scale.size() >= 3 ? glm::scale(glm::dmat4(1.0), glm::make_vec3(node.scale.data())) : glm::dmat4(1.0));
         localTransform *= glm::dmat4((node.rotation.size() >= 4 ? glm::mat4_cast(glm::make_quat(node.rotation.data())) : glm::dmat4(1.0)));
+        transform *= glm::mat4x4(localTransform);
 
         //
         if ((node.mesh >= 0) && (node.mesh < model.meshes.size())) {
-          useMesh(inst, model, node.mesh, parentTransform * glm::mat4x4(localTransform));
+          useMesh(inst, model, node.mesh, transform);
         };
 
         //
         for (size_t i = 0; i < node.children.size(); i++) {
           assert((node.children[i] >= 0) && (node.children[i] < model.nodes.size()));
-          handleNodes(inst, model, model.nodes[node.children[i]], parentTransform * glm::mat4x4(localTransform));
+          handleNodes(inst, model, model.nodes[node.children[i]], transform);
         };
       };
 
