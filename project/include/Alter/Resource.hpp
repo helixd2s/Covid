@@ -84,8 +84,8 @@ namespace ANAMED {
         (imageInfo->type == ImageType::eDepthAttachment ? vk::ImageAspectFlagBits::eDepth :
         (imageInfo->type == ImageType::eStencilAttachment ? vk::ImageAspectFlagBits::eStencil : vk::ImageAspectFlagBits::eColor));
       decltype(auto) components = imageInfo->type == ImageType::eDepthStencilAttachment || imageInfo->type == ImageType::eDepthAttachment || imageInfo->type == ImageType::eStencilAttachment
-        ? vk::ComponentMapping{ .r = vk::ComponentSwizzle::eZero, .g = vk::ComponentSwizzle::eZero, .b = vk::ComponentSwizzle::eZero, .a = vk::ComponentSwizzle::eZero }
-        : vk::ComponentMapping{ .r = vk::ComponentSwizzle::eR, .g = vk::ComponentSwizzle::eG, .b = vk::ComponentSwizzle::eB, .a = vk::ComponentSwizzle::eA };
+        ? vk::ComponentMapping{ .r = vk::ComponentSwizzle::eR, .g = vk::ComponentSwizzle::eZero, .b = vk::ComponentSwizzle::eZero, .a = vk::ComponentSwizzle::eZero }
+        : info->componentMapping;
       decltype(auto) imageLayout =
          imageInfo->type == ImageType::eDepthStencilAttachment ? vk::ImageLayout::eDepthStencilAttachmentOptimal :
         (imageInfo->type == ImageType::eDepthAttachment ? vk::ImageLayout::eDepthAttachmentOptimal :
@@ -553,7 +553,7 @@ namespace ANAMED {
     decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
 
     //
-    decltype(auto) texture = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
+    decltype(auto) textureObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
       .descriptors = this->handle.as<vk::PipelineLayout>(),
       .imageInfo = ANAMED::ImageCreateInfo{
         .format = vk::Format::eR8G8B8A8Unorm,
@@ -563,7 +563,7 @@ namespace ANAMED {
     });
 
     //
-    decltype(auto) image = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
+    decltype(auto) imageObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
       .descriptors = this->handle.as<vk::PipelineLayout>(),
       .imageInfo = ANAMED::ImageCreateInfo{
         .format = vk::Format::eR8G8B8A8Unorm,
@@ -573,8 +573,8 @@ namespace ANAMED {
     });
 
     //
-    decltype(auto) texImageView = texture->createImageView(ANAMED::ImageViewCreateInfo{ .viewType = vk::ImageViewType::e2D });
-    decltype(auto) imgImageView = image->createImageView(ANAMED::ImageViewCreateInfo{ .viewType = vk::ImageViewType::e2D });
+    decltype(auto) texImageView = textureObj->createImageView(ANAMED::ImageViewCreateInfo{ .viewType = vk::ImageViewType::e2D });
+    decltype(auto) imgImageView = imageObj->createImageView(ANAMED::ImageViewCreateInfo{ .viewType = vk::ImageViewType::e2D });
     decltype(auto) samplerObj = ANAMED::SamplerObj::make(deviceObj, ANAMED::SamplerCreateInfo{
       .descriptors = this->handle.as<vk::PipelineLayout>(),
       .native = vk::SamplerCreateInfo {
@@ -585,6 +585,10 @@ namespace ANAMED {
       }
     });
 
+    //
+    this->nullImage = imageObj.as<vk::Image>();
+    this->nullSampler = samplerObj.as<vk::Sampler>();
+    this->nullTexture = textureObj.as<vk::Image>();
   };
 
   //

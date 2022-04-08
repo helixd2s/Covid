@@ -208,9 +208,13 @@ namespace ANAMED {
         qfInfoMaps.push_back(std::make_shared<MSS>(MSS()));
         qfQueuesStack.push_back(std::vector<vk::Queue>{});
         auto& qfInfoMap = qfInfoMaps->back();
+        //auto qfPriorityVk = qfInfoMap->set(vk::StructureType::eDeviceQueueGlobalPriorityCreateInfo, vk::DeviceQueueGlobalPriorityCreateInfo{
+        //  .globalPriority = vk::GlobalPriority::eRealtime
+        //});
         auto qfInfoVk = qfInfoMap->set(vk::StructureType::eDeviceQueueCreateInfo, vk::DeviceQueueCreateInfo{
           .queueFamilyIndex = qfInfoIn.queueFamilyIndex,
         });
+        //qfPriorityVk.pNext = qfInfoVk.get();
         qfIndices.push_back(qfInfoIn.queueFamilyIndex);
         qfInfosVk.push_back(qfInfoVk->setQueuePriorities(*qfInfoIn.queuePriorities));
       };

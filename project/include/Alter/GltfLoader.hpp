@@ -99,6 +99,66 @@ namespace ANAMED {
     };
   };
 
+  //
+  inline vk::Filter convertFilter(uint32_t filter) {
+    switch (filter) {
+      case TINYGLTF_TEXTURE_FILTER_NEAREST: return vk::Filter::eNearest;
+      case TINYGLTF_TEXTURE_FILTER_LINEAR: return vk::Filter::eLinear;
+    };
+    return vk::Filter::eLinear;
+  };
+
+  //
+  inline vk::SamplerAddressMode convertAddressMode(uint32_t mode) {
+    switch (mode) {
+    case TINYGLTF_TEXTURE_WRAP_REPEAT: return vk::SamplerAddressMode::eRepeat;
+    case TINYGLTF_TEXTURE_WRAP_CLAMP_TO_EDGE: return vk::SamplerAddressMode::eClampToEdge;
+    case TINYGLTF_TEXTURE_WRAP_MIRRORED_REPEAT: return vk::SamplerAddressMode::eMirroredRepeat;
+    };
+    return vk::SamplerAddressMode::eRepeat;
+  };
+
+  //
+  inline vk::Format convertFormat(uint32_t comp, uint32_t bits, uint32_t type = TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE) {
+    if (bits == 8) {
+      if (comp == 1) { return vk::Format::eR8Unorm; }; //break;
+      if (comp == 2) { return vk::Format::eR8G8Unorm; }; //break;
+      if (comp == 3) { return vk::Format::eR8G8B8Unorm; }; //break;
+      if (comp == 4) { return vk::Format::eR8G8B8A8Unorm; }; //break;
+    } else 
+    if (bits == 16) {
+      if (type == TINYGLTF_COMPONENT_TYPE_FLOAT) {
+        if (comp == 1) { return vk::Format::eR16Sfloat; }; //break;
+        if (comp == 2) { return vk::Format::eR16G16Sfloat; }; //break;
+        if (comp == 3) { return vk::Format::eR16G16B16Sfloat; }; //break;
+        if (comp == 4) { return vk::Format::eR16G16B16A16Sfloat; }; //break;
+      } else {
+        if (comp == 1) { return vk::Format::eR16Unorm; }; //break;
+        if (comp == 2) { return vk::Format::eR16G16Unorm; }; //break;
+        if (comp == 3) { return vk::Format::eR16G16B16Unorm; }; //break;
+        if (comp == 4) { return vk::Format::eR16G16B16A16Unorm; }; //break;
+      }
+    } else
+    if (bits == 32) {
+      if (comp == 1) { return vk::Format::eR32Sfloat; }; //break;
+      if (comp == 2) { return vk::Format::eR32G32Sfloat; }; //break;
+      if (comp == 3) { return vk::Format::eR32G32B32Sfloat; }; //break;
+      if (comp == 4) { return vk::Format::eR32G32B32A32Sfloat; }; //break;
+    };
+    return vk::Format::eR8G8B8A8Unorm;
+  };
+
+  //
+  inline vk::ComponentMapping convertComponentMap(uint32_t comp, uint32_t bits, uint32_t type = TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE) {
+    switch (comp) {
+      case 4: return vk::ComponentMapping{ .r = vk::ComponentSwizzle::eR, .g = vk::ComponentSwizzle::eG, .b = vk::ComponentSwizzle::eB, .a = vk::ComponentSwizzle::eA }; break;
+      case 3: return vk::ComponentMapping{ .r = vk::ComponentSwizzle::eR, .g = vk::ComponentSwizzle::eG, .b = vk::ComponentSwizzle::eB, .a = vk::ComponentSwizzle::eOne }; break;
+      case 2: return vk::ComponentMapping{ .r = vk::ComponentSwizzle::eR, .g = vk::ComponentSwizzle::eR, .b = vk::ComponentSwizzle::eR, .a = vk::ComponentSwizzle::eG }; break;
+      case 1: return vk::ComponentMapping{ .r = vk::ComponentSwizzle::eR, .g = vk::ComponentSwizzle::eR, .b = vk::ComponentSwizzle::eR, .a = vk::ComponentSwizzle::eOne }; break;
+    };
+    return vk::ComponentMapping{ .r = vk::ComponentSwizzle::eR, .g = vk::ComponentSwizzle::eG, .b = vk::ComponentSwizzle::eB, .a = vk::ComponentSwizzle::eA };
+  };
+
   // 
   class GltfLoaderObj : public BaseObj {
   public:
@@ -227,10 +287,11 @@ namespace ANAMED {
         });
 
         //
-        while (!status->checkStatus()) { deviceObj->tickProcessing(); };
+        device.waitIdle();
+        deviceObj->tickProcessing();
 
         //
-        device.waitIdle();
+        while (!status->checkStatus()) { deviceObj->tickProcessing(); };
         deviceObj->tickProcessing();
 
         // 
@@ -260,7 +321,7 @@ namespace ANAMED {
         decltype(auto) imageObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
           .descriptors = cInfo->descriptors,
           .imageInfo = ANAMED::ImageCreateInfo{
-            .format = vk::Format::eR8G8B8A8Unorm,
+            .format = convertFormat(image.component, image.bits, image.pixel_type),
             .extent = vk::Extent3D{uint32_t(image.width), uint32_t(image.height), 1u},
             .type = ANAMED::ImageType::eTexture
           }
@@ -275,14 +336,18 @@ namespace ANAMED {
           }
         });
 
-        //
-        while (!status->checkStatus()) { deviceObj->tickProcessing(); };
-
-        //
-        decltype(auto) imgImageView = imageObj->createImageView(ANAMED::ImageViewCreateInfo{ .viewType = vk::ImageViewType::e2D });
+        //vk::ComponentMapping componentMapping = vk::ComponentMapping{ .r = vk::ComponentSwizzle::eR, .r = vk::ComponentSwizzle::eG, .r = vk::ComponentSwizzle::eB, .r = vk::ComponentSwizzle::eA };
+        decltype(auto) imgImageView = imageObj->createImageView(ANAMED::ImageViewCreateInfo{ 
+          .viewType = vk::ImageViewType::e2D,
+          .componentMapping = convertComponentMap(image.component, image.bits, image.pixel_type)
+        });
 
         //
         device.waitIdle();
+        deviceObj->tickProcessing();
+
+        //
+        while (!status->checkStatus()) { deviceObj->tickProcessing(); };
         deviceObj->tickProcessing();
 
         //
@@ -290,22 +355,20 @@ namespace ANAMED {
         gltf->imageIndices.push_back(std::get<1u>(imgImageView));
       };
 
-
       //
       for (decltype(auto) sampler : gltf->model.samplers) {
         decltype(auto) samplerObj = ANAMED::SamplerObj::make(deviceObj, ANAMED::SamplerCreateInfo{
           .descriptors = cInfo->descriptors,
           .native = vk::SamplerCreateInfo {
-            .magFilter = vk::Filter::eLinear,
-            .minFilter = vk::Filter::eLinear,
-            .addressModeU = vk::SamplerAddressMode::eRepeat,
-            .addressModeV = vk::SamplerAddressMode::eRepeat
+            .magFilter = convertFilter(sampler.magFilter),
+            .minFilter = convertFilter(sampler.minFilter),
+            .addressModeU = convertAddressMode(sampler.wrapS),
+            .addressModeV = convertAddressMode(sampler.wrapT)
           }
         });
         gltf->samplers.push_back(samplerObj);
         gltf->samplerIndices.push_back(samplerObj->getId());
       };
-
 
       //
       for (decltype(auto) texture : gltf->model.textures) {
@@ -333,13 +396,12 @@ namespace ANAMED {
         });
 
         //
-        while (!status->checkStatus()) { deviceObj->tickProcessing(); };
-
-        //
         device.waitIdle();
         deviceObj->tickProcessing();
 
         //
+        while (!status->checkStatus()) { deviceObj->tickProcessing(); };
+        deviceObj->tickProcessing();
         
       };
 
@@ -417,12 +479,13 @@ namespace ANAMED {
           });
 
           //
-          while (!status->checkStatus()) { deviceObj->tickProcessing(); };
-
-          //
           device.waitIdle();
           deviceObj->tickProcessing();
 
+          //
+          while (!status->checkStatus()) { deviceObj->tickProcessing(); };
+          deviceObj->tickProcessing();
+          
           //
           // GEOMETRIES BUFFER BROKEN FOR NO "/fsanitize=address"
           gltf->meshes.push_back(ANAMED::GeometryLevelObj::make(handle, ANAMED::GeometryLevelCreateInfo{

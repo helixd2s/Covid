@@ -801,6 +801,7 @@ namespace ANAMED {
   struct ImageViewCreateInfo : BaseCreateInfo {
     vk::ImageViewType viewType = vk::ImageViewType::e2D;
     vk::ImageSubresourceRange subresourceRange = { vk::ImageAspectFlagBits::eColor, 0u, 1u, 0u, 1u };
+    vk::ComponentMapping componentMapping = vk::ComponentMapping{ .r = vk::ComponentSwizzle::eR, .g = vk::ComponentSwizzle::eG, .b = vk::ComponentSwizzle::eB, .a = vk::ComponentSwizzle::eA };
     ImageViewPreference preference = ImageViewPreference::eSampled;
   };
 
