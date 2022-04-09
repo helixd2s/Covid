@@ -611,7 +611,7 @@ namespace ANAMED {
 
   //
   struct GeometryLevelCreateInfo : BaseCreateInfo {
-    cpp21::shared_vector<GeometryInfo> geometries = {};
+    cpp21::bucket<GeometryInfo> geometries = std::vector<GeometryInfo>{};
     std::vector<uint32_t> limits = {};
     //size_t geometryCount = 1u;
     uintptr_t uploader = 0ull;
@@ -622,7 +622,7 @@ namespace ANAMED {
 
   //
   struct InstanceLevelCreateInfo : BaseCreateInfo {
-    cpp21::shared_vector<InstanceDataInfo> instances = {};
+    cpp21::bucket<InstanceDataInfo> instances = std::vector<InstanceDataInfo>{};
     uint32_t limit = uint32_t(0u);
     //std::vector<uint32_t> limits = {};
     //size_t instanceCount = 1u;
