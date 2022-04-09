@@ -214,6 +214,66 @@ namespace ANAMED {
       };
 
       //
+      for (decltype(auto) image : gltf->model.images) {
+        //
+        decltype(auto) imageObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
+          .descriptors = cInfo->descriptors,
+          .imageInfo = ANAMED::ImageCreateInfo{
+            .format = convertFormat(image.component, image.bits, image.pixel_type),
+            .extent = vk::Extent3D{uint32_t(image.width), uint32_t(image.height), 1u},
+            .type = ANAMED::ImageType::eTexture
+          }
+          });
+
+        //
+        decltype(auto) status = uploaderObj->executeUploadToResourceOnce(ANAMED::UploadExecutionOnce{
+          .host = cpp21::data_view<char8_t>((char8_t*)image.image.data(), 0ull, cpp21::bytesize(image.image)),
+          .writeInfo = ANAMED::UploadCommandWriteInfo{
+            // # yet another std::optional problem (implicit)
+            .dstImage = std::optional<ANAMED::ImageRegion>(ANAMED::ImageRegion{.image = imageObj.as<vk::Image>(), .region = ANAMED::ImageDataRegion{.extent = vk::Extent3D{uint32_t(image.width), uint32_t(image.height), 1u}}}),
+          }
+          });
+
+        //vk::ComponentMapping componentMapping = vk::ComponentMapping{ .r = vk::ComponentSwizzle::eR, .r = vk::ComponentSwizzle::eG, .r = vk::ComponentSwizzle::eB, .r = vk::ComponentSwizzle::eA };
+        decltype(auto) imgImageView = imageObj->createImageView(ANAMED::ImageViewCreateInfo{
+          .viewType = vk::ImageViewType::e2D,
+          .componentMapping = convertComponentMap(image.component, image.bits, image.pixel_type)
+          });
+
+        //
+        device.waitIdle();
+        deviceObj->tickProcessing();
+
+        //
+        while (!status->checkStatus()) { deviceObj->tickProcessing(); };
+        deviceObj->tickProcessing();
+
+        //
+        gltf->images.push_back(imageObj);
+        gltf->imageIndices.push_back(std::get<1u>(imgImageView));
+      };
+
+      //
+      for (decltype(auto) sampler : gltf->model.samplers) {
+        decltype(auto) samplerObj = ANAMED::SamplerObj::make(deviceObj, ANAMED::SamplerCreateInfo{
+          .descriptors = cInfo->descriptors,
+          .native = vk::SamplerCreateInfo {
+            .magFilter = convertFilter(sampler.magFilter),
+            .minFilter = convertFilter(sampler.minFilter),
+            .addressModeU = convertAddressMode(sampler.wrapS),
+            .addressModeV = convertAddressMode(sampler.wrapT)
+          }
+          });
+        gltf->samplers.push_back(samplerObj);
+        gltf->samplerIndices.push_back(samplerObj->getId());
+      };
+
+      //
+      for (decltype(auto) texture : gltf->model.textures) {
+        gltf->textures.push_back(CTexture{ gltf->imageIndices[texture.source], texture.sampler >= 0 ? gltf->samplerIndices[texture.sampler] : 0u });
+      };
+
+      //
       decltype(auto) handleAccessor = [=,this](intptr_t const& accessorIndex, bool const& isIndice = false) {
         auto bresult = ANAMED::BufferViewInfo{ .region = ANAMED::BufferViewRegion{.deviceAddress = 0ull, .stride = 0ull, .size = 0ull}, .format = ANAMED::BufferViewFormat::eNone };;
 
@@ -314,66 +374,6 @@ namespace ANAMED {
 
       //
       uint64_t materialAddress = gltf->materialBuffer->getDeviceAddress();
-
-      //
-      for (decltype(auto) image : gltf->model.images) {
-        //
-        decltype(auto) imageObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
-          .descriptors = cInfo->descriptors,
-          .imageInfo = ANAMED::ImageCreateInfo{
-            .format = convertFormat(image.component, image.bits, image.pixel_type),
-            .extent = vk::Extent3D{uint32_t(image.width), uint32_t(image.height), 1u},
-            .type = ANAMED::ImageType::eTexture
-          }
-        });
-
-        //
-        decltype(auto) status = uploaderObj->executeUploadToResourceOnce(ANAMED::UploadExecutionOnce{
-          .host = cpp21::data_view<char8_t>((char8_t*)image.image.data(), 0ull, cpp21::bytesize(image.image)),
-          .writeInfo = ANAMED::UploadCommandWriteInfo{
-            // # yet another std::optional problem (implicit)
-            .dstImage = std::optional<ANAMED::ImageRegion>(ANAMED::ImageRegion{.image = imageObj.as<vk::Image>(), .region = ANAMED::ImageDataRegion{.extent = vk::Extent3D{uint32_t(image.width), uint32_t(image.height), 1u}}}),
-          }
-        });
-
-        //vk::ComponentMapping componentMapping = vk::ComponentMapping{ .r = vk::ComponentSwizzle::eR, .r = vk::ComponentSwizzle::eG, .r = vk::ComponentSwizzle::eB, .r = vk::ComponentSwizzle::eA };
-        decltype(auto) imgImageView = imageObj->createImageView(ANAMED::ImageViewCreateInfo{ 
-          .viewType = vk::ImageViewType::e2D,
-          .componentMapping = convertComponentMap(image.component, image.bits, image.pixel_type)
-        });
-
-        //
-        device.waitIdle();
-        deviceObj->tickProcessing();
-
-        //
-        while (!status->checkStatus()) { deviceObj->tickProcessing(); };
-        deviceObj->tickProcessing();
-
-        //
-        gltf->images.push_back(imageObj);
-        gltf->imageIndices.push_back(std::get<1u>(imgImageView));
-      };
-
-      //
-      for (decltype(auto) sampler : gltf->model.samplers) {
-        decltype(auto) samplerObj = ANAMED::SamplerObj::make(deviceObj, ANAMED::SamplerCreateInfo{
-          .descriptors = cInfo->descriptors,
-          .native = vk::SamplerCreateInfo {
-            .magFilter = convertFilter(sampler.magFilter),
-            .minFilter = convertFilter(sampler.minFilter),
-            .addressModeU = convertAddressMode(sampler.wrapS),
-            .addressModeV = convertAddressMode(sampler.wrapT)
-          }
-        });
-        gltf->samplers.push_back(samplerObj);
-        gltf->samplerIndices.push_back(samplerObj->getId());
-      };
-
-      //
-      for (decltype(auto) texture : gltf->model.textures) {
-        gltf->textures.push_back(CTexture{ gltf->imageIndices[texture.source], texture.sampler >= 0 ? gltf->samplerIndices[texture.sampler] : 0u});
-      };
 
       //
       for (decltype(auto) material : gltf->model.materials) {

@@ -1,4 +1,5 @@
 #pragma once
+#define GLM_FORCE_SWIZZLE
 
 //
 #ifdef __cplusplus
@@ -21,7 +22,6 @@
 #endif
 
 //
-#define GLM_FORCE_SWIZZLE
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_raii.hpp>
@@ -1094,7 +1094,7 @@ namespace ANAMED {
   //
   struct UploaderCreateInfo : BaseCreateInfo {
     std::optional<QueueGetInfo> info = QueueGetInfo{};
-    size_t cacheSize = 4096ull * 4096ull * 4ull;
+    size_t cacheSize = 8192ull * 8192ull * 4ull;
   };
 
   //

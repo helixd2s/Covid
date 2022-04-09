@@ -66,7 +66,10 @@ file(GLOB_RECURSE _source_list
   "${_src_root_path}/src/Alter/*.inl"
   "${_src_root_path}/src/Alter/*.cpp"
   "${_src_root_path}/src/Alter/*.c"
+  
   "${_src_root_path}/test/test.cpp"
+  "${_src_root_path}/test/*.hpp"
+  "${_src_root_path}/test/*.h"
   "${_src_root_path}/test/*"
 )
 
