@@ -92,16 +92,16 @@ namespace ANAMED {
         (imageInfo->type == ImageType::eStencilAttachment ? vk::ImageLayout::eStencilAttachmentOptimal : vk::ImageLayout::eColorAttachmentOptimal));
 
       //
-      this->imageViews.push_back(device.createImageView(vk::ImageViewCreateInfo{
+      decltype(auto) imageView = device.createImageView(vk::ImageViewCreateInfo{
         .image = this->handle.as<vk::Image>(),
         .viewType = info->viewType,
         .format = imageInfo->format,
         .components = components,
         .subresourceRange = vk::ImageSubresourceRange(info->subresourceRange).setAspectMask(aspectMask)
-      }));
+      });
 
-      // 
-      decltype(auto) imageView = this->imageViews.back();
+      //
+      this->imageViews.push_back(imageView);
       uint32_t descriptorId = 0xFFFFFFFFu;
 
       // 
@@ -113,19 +113,17 @@ namespace ANAMED {
         if ((this->imageUsage & vk::ImageUsageFlagBits::eSampled) && info->preference == ImageViewPreference::eSampled || !(this->imageUsage & vk::ImageUsageFlagBits::eStorage)) {
           descriptorId = descriptorsObj->textures.add(vk::DescriptorImageInfo{ .imageView = imageView, .imageLayout = this->cInfo->imageInfo->layout }); imvType = 2u;
         };
+
+        // 
+        this->destructors.insert(this->destructors.begin(), 1, [device, descriptorId, images = (imvType == 1u ? descriptorsObj->getImageDescriptors() : descriptorsObj->getTextureDescriptors())](BaseObj const* baseObj) {
+          const_cast<cpp21::bucket<vk::DescriptorImageInfo>&>(images).removeByIndex(descriptorId);
+        });
       };
 
       //
       this->destructors.insert(this->destructors.begin(), 1, [device, imageView](BaseObj const* baseObj) {
         device.destroyImageView(imageView);
       });
-
-      //
-      if (descriptorsObj) {
-        this->destructors.insert(this->destructors.begin(), 1, [device, descriptorId, images = (imvType == 1u ? descriptorsObj->getImageDescriptors() : descriptorsObj->getTextureDescriptors())](BaseObj const* baseObj) {
-          const_cast<cpp21::bucket<vk::DescriptorImageInfo>&>(images).removeByIndex(descriptorId);
-        });
-      };
 
       // 
       return std::tuple{ imageView, descriptorId }; // don't return reference, may broke vector
