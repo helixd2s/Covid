@@ -169,7 +169,7 @@ void main() {
     finalColor = vec4(mix(vec3(diffuseColor.xyz * diffRayData.emission.xyz + emissiveColor), vec3(reflRayData.emission.xyz), hasHit ? (metallicFactor + fresnel_schlick(0.f, dot(-rayDir, normals)) * (1.f - metallicFactor)) : 0.f), 1.f);
   };
 
-  //vec4 finalColor = vec4(!all(lessThanEqual(intersection.barycentric, 0.f.xxx)) ? 1.f.xxx : 0.f.xxx, 1.f);
+  //finalColor = vec4(toLinear(normals.xyz * 0.5f + 0.5f), 1.f);//vec4(!all(lessThanEqual(intersection.barycentric, 0.f.xxx)) ? 1.f.xxx : 0.f.xxx, 1.f);
   
   // 
   imageStore(images[swapchain.image], ivec2(gcoord.x, extent.y-1-gcoord.y), fromLinear(finalColor));
