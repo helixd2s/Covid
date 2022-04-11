@@ -128,6 +128,7 @@ namespace ANAMED {
     virtual uint32_t& acquireImage(cpp21::const_wrap_arg<ANAMED::QueueGetInfo> qfAndQueue) {
       this->currentState.previous = this->currentState.index;
       this->currentState.index = (++this->currentState.index) % this->sets.size();
+      decltype(auto) fence = this->switchToReady(this->currentState.index, qfAndQueue);
       memcpy(this->currentState.images, this->sets[this->currentState.index].imageViewIndices.data(), std::min(uint32_t(this->sets[this->currentState.index].imageViewIndices.size()), 4u)*4u);
       return this->currentState.index;
     };
@@ -135,6 +136,38 @@ namespace ANAMED {
     //
     virtual FenceType presentImage(cpp21::const_wrap_arg<ANAMED::QueueGetInfo> qfAndQueue) {
       return this->switchToPresent(this->currentState.index, qfAndQueue);
+    };
+
+    //
+    virtual FenceType clearImages(cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}, std::vector<glm::vec4> const& clearColors = {}) {
+      decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo {.info = info ? info.value() : this->cInfo->info } };
+
+      // 
+      //submission.submission.waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{ sets[*imageIndex].presentSemaphoreInfo };
+      submission.commandInits.push_back([this, clearColors, queueFamilyIndex= info->queueFamilyIndex](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+        //for (auto& switchFn : this->sets[*imageIndex].switchToReadyFns) { switchFn(cmdBuf); };
+        this->writeClearImages(cmdBuf, clearColors, queueFamilyIndex);
+        return cmdBuf;
+      });
+
+      //
+      return ANAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
+    };
+
+    //
+    virtual void writeClearImages(cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf, std::vector<glm::vec4> const& clearColors, uint32_t const& queueFamilyIndex = 0u) {
+      decltype(auto) device = this->base.as<vk::Device>();
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
+
+      uint32_t setIndex = this->currentState.index;
+      uint32_t J=0u; for (auto& image : this->sets[setIndex].images) { uint32_t j = J++;
+        decltype(auto) imageObj = deviceObj->get<ResourceObj>(image);
+        imageObj->writeClearCommand(ImageClearWriteInfo{
+          .cmdBuf = cmdBuf,
+          .clearColor = clearColors[j],
+          .queueFamilyIndex = queueFamilyIndex
+        });
+      };
     };
 
   protected:
@@ -153,7 +186,7 @@ namespace ANAMED {
       //
       set->readySemaphoreInfo = readySemaphore->infoMap->get<vk::SemaphoreSubmitInfo>(vk::StructureType::eSemaphoreSubmitInfo);
       set->presentSemaphoreInfo = presentSemaphore->infoMap->get<vk::SemaphoreSubmitInfo>(vk::StructureType::eSemaphoreSubmitInfo);
-    }
+    };
 
     //
     virtual SwapchainSet createSet(uint32_t index = 0u) {
