@@ -24,8 +24,10 @@
 #include "./Uploader.hpp"
 #include "./Semaphore.hpp"
 #include "./Swapchain.hpp"
+#include "./VirtualSwapchain.hpp"
 #include "./GeometryLevel.hpp"
 #include "./InstanceLevel.hpp"
+
 
 // 
 #ifdef ALT_ENABLE_VMA

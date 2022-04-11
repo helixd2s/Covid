@@ -122,6 +122,7 @@ namespace ANAMED {
     ePipeline,
     eFramebuffer,
     eSwapchain,
+    eVirtualSwapchain,
     eSurface,
     eSemaphore,
     eDescriptors,
@@ -269,6 +270,7 @@ namespace ANAMED {
   class MemoryAllocatorObj;
   class SamplerObj;
   class ResourceSparseObj;
+  class VirtualSwapchainObj;
 
   // 
   class GltfLoaderObj;
@@ -478,6 +480,16 @@ namespace ANAMED {
   __declspec(align(1))
   struct SwapchainStateInfo {
     uint32_t image = 0u;
+    uint32_t index = uint32_t(-1);
+  };
+#pragma pack(pop)
+
+  //
+#pragma pack(push, 1)
+  __declspec(align(1))
+  struct VirtualSwapchainStateInfo {
+    uint32_t images[4u] = { 0u };
+    uint32_t previous = uint32_t(-1);
     uint32_t index = uint32_t(-1);
   };
 #pragma pack(pop)
@@ -1127,6 +1139,16 @@ namespace ANAMED {
   struct SwapchainCreateInfo : BaseCreateInfo {
     vk::PipelineLayout layout = {};
     vk::SurfaceKHR surface = {};
+    std::optional<QueueGetInfo> info = {};
+  };
+
+  //
+  struct VirtualSwapchainCreateInfo : BaseCreateInfo {
+    vk::PipelineLayout layout = {};
+    vk::SurfaceKHR surface = {};
+    uint32_t minImageCount = 1u;
+    vk::Extent2D extent = {1u, 1u};
+    std::vector<vk::Format> formats = {};
     std::optional<QueueGetInfo> info = {};
   };
 

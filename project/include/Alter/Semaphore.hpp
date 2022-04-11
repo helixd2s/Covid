@@ -23,6 +23,7 @@ namespace ANAMED {
     friend ResourceObj;
     friend FramebufferObj;
     friend SwapchainObj;
+    friend VirtualSwapchainObj;
 
     // 
     inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };

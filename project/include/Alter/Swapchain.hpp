@@ -52,18 +52,16 @@ namespace ANAMED {
     std::vector<vk::SemaphoreSubmitInfo> presentSemaphoreInfos = {};
 
     //
-    std::vector<std::function<void(cpp21::const_wrap_arg<vk::CommandBuffer>, cpp21::const_wrap_arg<SwapchainState>)>> switchToPresentFn = {};
-    std::vector<std::function<void(cpp21::const_wrap_arg<vk::CommandBuffer>, cpp21::const_wrap_arg<SwapchainState>)>> switchToReadyFn = {};
-
-    //
-    SwapchainState state = SwapchainState::eReady;
-    SurfaceCapabilitiesInfo capInfo = {};
+    std::vector<std::function<void(cpp21::const_wrap_arg<vk::CommandBuffer>)>> switchToPresentFn = {};
+    std::vector<std::function<void(cpp21::const_wrap_arg<vk::CommandBuffer>)>> switchToReadyFn = {};
 
     //
     vk::Rect2D renderArea = {};
 
     //
+    SurfaceCapabilitiesInfo capInfo = {};
     SwapchainStateInfo currentState = {};
+    //SwapchainState state = SwapchainState::eReady;
 
     // 
     inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
@@ -114,7 +112,7 @@ namespace ANAMED {
       // 
       submission.submission.signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{ readySemaphoreInfos[*imageIndex] };
       submission.commandInits.push_back([this, imageIndex](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
-        this->switchToPresentFn[*imageIndex](cmdBuf, state);
+        this->switchToPresentFn[*imageIndex](cmdBuf);
         return cmdBuf;
       });
 
@@ -129,7 +127,7 @@ namespace ANAMED {
       // 
       submission.submission.waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{ presentSemaphoreInfos[*imageIndex] };
       submission.commandInits.push_back([this, imageIndex](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
-        this->switchToReadyFn[*imageIndex](cmdBuf, state);
+        this->switchToReadyFn[*imageIndex](cmdBuf);
         return cmdBuf;
       });
 

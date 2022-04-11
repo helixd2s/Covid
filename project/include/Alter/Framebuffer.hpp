@@ -242,6 +242,7 @@ namespace ANAMED {
 
       //
       auto imageObj = ResourceObj::make(this->base, ResourceCreateInfo{
+        .descriptors = this->cInfo->layout,
         .imageInfo = ImageCreateInfo{
           .flags = this->cInfo->type == FramebufferType::eCubemap ? vk::ImageCreateFlagBits::eCubeCompatible : vk::ImageCreateFlagBits{},
           .imageType = vk::ImageType::e2D,//this->cInfo->type == FramebufferType::eCubemap ? vk::ImageType::e3D : vk::ImageType::e2D,
@@ -254,19 +255,20 @@ namespace ANAMED {
       });
 
       //
-      this->images.push_back(imageObj.as<vk::Image>());
-      this->imageViews.push_back(std::get<0>(imageObj->createImageView(ImageViewCreateInfo{
+      decltype(auto) pair = imageObj->createImageView(ImageViewCreateInfo{
         .viewType = this->cInfo->type == FramebufferType::eCubemap ? vk::ImageViewType::eCube : vk::ImageViewType::e2D,
         .subresourceRange = subresourceRange,
         .preference = ImageViewPreference::eSampled
-      })));
+      });
 
       //
-      decltype(auto) imageView = this->imageViews.back();
+      this->images.push_back(imageObj.as<vk::Image>());
+      this->imageViews.push_back(std::get<0>(pair));
+      this->imageViewIndices.push_back(std::get<1>(pair));
 
-      // 
-      this->imageViewIndices.push_back(descriptorsObj->textures.add(vk::DescriptorImageInfo{ .imageView = imageView,.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal }));
-
+      //
+      decltype(auto) imageView = std::get<0>(pair);
+      
       // TODO: use pre-built command buffer
       this->switchToAttachmentFn.push_back([imageLayout, subresourceRange, imageObj](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf, cpp21::const_wrap_arg<FramebufferState> previousState = {}) {
         imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
