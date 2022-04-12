@@ -185,6 +185,58 @@ namespace ANAMED {
       };
     };
 
+    //
+    virtual void updateSwapchain() {
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
+      auto& device = this->base.as<vk::Device>();
+
+      { //
+        this->firstWait = true;
+        decltype(auto) it = sets.begin();
+        for (it = sets.begin(); it != sets.end();) {
+          it->imageViews = {};
+          it->imageViewIndices = {};
+
+          // 
+          deviceObj->get<SemaphoreObj>(it->readySemaphoreInfo->semaphore)->destroy(deviceObj.get());
+          deviceObj->get<SemaphoreObj>(it->presentSemaphoreInfo->semaphore)->destroy(deviceObj.get());
+          deviceObj->get<SemaphoreObj>(it->copySemaphoreInfo->semaphore)->destroy(deviceObj.get());
+
+          // 
+          decltype(auto) it2 = it->images.begin();
+          for (it2 = it->images.begin(); it2 != it->images.end();) {
+            deviceObj->get<ResourceObj>(*it2)->destroy(deviceObj.get());
+            it2 = it->images.erase(it2);
+          };
+
+          // 
+          it = sets.erase(it);
+        };
+      };
+
+      //
+      for (uint32_t i = 0; i < this->cInfo->minImageCount; i++) {
+        this->sets.push_back(this->createSet(i));
+      };
+
+      // 
+      uint32_t imageIndex = 0u;
+      for (uint32_t i = 0; i < this->cInfo->minImageCount; i++) {
+        uint32_t J = 0u; for (decltype(auto) image : this->cInfo->formats) {
+          uint32_t j = J++;
+          this->createImage(&this->sets[i], j, i, ImageType::eStorage); // 
+        };
+      };
+
+      // 
+      descriptorsObj->updateDescriptors();
+
+      //
+      this->currentState.index = this->sets.size() - 1u;
+      memcpy(this->currentState.images, this->sets[this->currentState.index].imageViewIndices.data(), std::min(uint32_t(this->sets[this->currentState.index].imageViewIndices.size()), 4u) * 4u);
+    };
+
   protected:
 
     //
@@ -357,35 +409,9 @@ namespace ANAMED {
     // 
     virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<VirtualSwapchainCreateInfo> cInfo = VirtualSwapchainCreateInfo{}) {
       if (cInfo) { this->cInfo = cInfo; };
-      //decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
-      decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
-      auto& device = this->base.as<vk::Device>();
-
-      //
       this->handle = uintptr_t(this);
-
-      //
-      for (uint32_t i=0;i<this->cInfo->minImageCount;i++) {
-        this->sets.push_back(this->createSet(i));
-      };
-
-      // 
-      uint32_t imageIndex = 0u;
-      for (uint32_t i=0;i<this->cInfo->minImageCount;i++) {
-        uint32_t J = 0u; for (decltype(auto) image : this->cInfo->formats) { uint32_t j = J++;
-          this->createImage(&this->sets[i], j, i, ImageType::eStorage); // 
-        };
-      };
-
-      // 
-      descriptorsObj->updateDescriptors();
-
-      //
-      this->currentState.index = this->sets.size()-1u;
-      memcpy(this->currentState.images, this->sets[this->currentState.index].imageViewIndices.data(), std::min(uint32_t(this->sets[this->currentState.index].imageViewIndices.size()), 4u)*4u);
+      this->updateSwapchain();
     };
-
-
 
   public:
 

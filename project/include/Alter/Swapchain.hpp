@@ -57,6 +57,7 @@ namespace ANAMED {
 
     //
     vk::Rect2D renderArea = {};
+    vk::SwapchainKHR swapchain = {};
 
     //
     SurfaceCapabilitiesInfo capInfo = {};
@@ -138,7 +139,7 @@ namespace ANAMED {
     //
     virtual uint32_t& acquireImage(cpp21::const_wrap_arg<ANAMED::QueueGetInfo> qfAndQueue) {
       decltype(auto) semIndex = (this->currentState.index + 1u) % this->imageViewIndices.size();
-      decltype(auto) acquired = (this->currentState.index = this->base.as<vk::Device>().acquireNextImage2KHR(vk::AcquireNextImageInfoKHR{ .swapchain = this->handle.as<vk::SwapchainKHR>(), .timeout = 0, .semaphore = this->presentSemaphoreInfos[semIndex].semaphore, .deviceMask = 0x1u }));
+      decltype(auto) acquired = (this->currentState.index = this->base.as<vk::Device>().acquireNextImage2KHR(vk::AcquireNextImageInfoKHR{ .swapchain = this->swapchain, .timeout = 0, .semaphore = this->presentSemaphoreInfos[semIndex].semaphore, .deviceMask = 0x1u }));
 
       //
       this->switchToReady(acquired, qfAndQueue);
@@ -153,10 +154,94 @@ namespace ANAMED {
         .waitSemaphoreCount = 1u,
         .pWaitSemaphores = &this->readySemaphoreInfos[this->currentState.index].semaphore,
         .swapchainCount = 1u,
-        .pSwapchains = &this->handle.as<vk::SwapchainKHR>(),
+        .pSwapchains = &this->swapchain,
         .pImageIndices = &this->currentState.index
         });
       return std::make_tuple(fence, result);
+    };
+
+    //
+    virtual vk::SwapchainKHR& getTrueSwapchain() { return this->swapchain; };
+    virtual vk::SwapchainKHR const& getTrueSwapchain() const { return this->swapchain; };
+
+    //
+    virtual vk::SwapchainKHR& updateSwapchain() {
+      //decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
+      auto& device = this->base.as<vk::Device>();
+
+      //
+      auto& physicalDevice = deviceObj->getPhysicalDevice();
+      auto PDInfoMap = deviceObj->getPhysicalDeviceInfoMap();
+      capInfo.capabilities2 = physicalDevice.getSurfaceCapabilities2KHR(vk::PhysicalDeviceSurfaceInfo2KHR{ .surface = cInfo->surface });
+      capInfo.capabilities = capInfo.capabilities2.surfaceCapabilities;
+      capInfo.formats2 = physicalDevice.getSurfaceFormats2KHR(vk::PhysicalDeviceSurfaceInfo2KHR{ .surface = cInfo->surface });
+      capInfo.presentModes = physicalDevice.getSurfacePresentModesKHR(cInfo->surface);
+
+      // TODO: search needed surface format
+      decltype(auto) surfaceFormat2 = capInfo.formats2.back();
+      decltype(auto) presentMode = capInfo.presentModes.front();
+
+      //
+      imageViews = {};
+      imageViewIndices = {};
+
+      { //
+        decltype(auto) it = images.begin();
+        for (it = images.begin(); it != images.end();) {
+          deviceObj->get<ResourceObj>(*it)->destroy(deviceObj.get());
+          it = images.erase(it);
+        };
+      };
+
+      { //
+        decltype(auto) it = readySemaphores.begin();
+        for (it = readySemaphores.begin(); it != readySemaphores.end();) {
+          deviceObj->get<SemaphoreObj>(*it)->destroy(deviceObj.get());
+          it = readySemaphores.erase(it);
+        };
+      };
+
+      { //
+        decltype(auto) it = presentSemaphores.begin();
+        for (it = presentSemaphores.begin(); it != presentSemaphores.end();) {
+          deviceObj->get<SemaphoreObj>(*it)->destroy(deviceObj.get());
+          it = presentSemaphores.erase(it);
+        };
+      };
+
+      //
+      images = device.getSwapchainImagesKHR(this->swapchain = device.createSwapchainKHR(infoMap->set(vk::StructureType::eSwapchainCreateInfoKHR, vk::SwapchainCreateInfoKHR{
+        .surface = cInfo->surface,
+        .minImageCount = std::max(capInfo.capabilities->minImageCount, capInfo.capabilities->maxImageCount),
+        .imageFormat = surfaceFormat2.surfaceFormat.format,
+        .imageColorSpace = surfaceFormat2.surfaceFormat.colorSpace,
+        .imageExtent = capInfo.capabilities->currentExtent,
+        .imageArrayLayers = std::min(capInfo.capabilities->maxImageArrayLayers, 1u),
+        .imageUsage = capInfo.capabilities->supportedUsageFlags,
+        .preTransform = capInfo.capabilities->currentTransform,
+        .compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque,
+        .presentMode = presentMode,
+        .clipped = true
+      })->setQueueFamilyIndices(deviceObj->getQueueFamilies().indices)));
+
+      // 
+      uint32_t imageIndex = 0u;
+      for (decltype(auto) image : images) {
+        this->createImage(image, ImageType::eSwapchain, surfaceFormat2, ImageSwapchainInfo{
+          .swapchain = this->swapchain,
+          .index = imageIndex++
+        }); // 
+      };
+
+      // 
+      descriptorsObj->updateDescriptors();
+
+      //
+      this->currentState.index = this->images.size() - 1u;
+      this->currentState.image = this->imageViewIndices[this->currentState.index];
+      return this->swapchain;
     };
 
   protected:
@@ -238,63 +323,12 @@ namespace ANAMED {
       //ANAMED::context->get<DeviceObj>(this->base)
     };
 
-    
-
     // 
     virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) {
       if (cInfo) { this->cInfo = cInfo; };
-      //decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
-      decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
-      auto& device = this->base.as<vk::Device>();
-
-      //
-      auto& physicalDevice = deviceObj->getPhysicalDevice();
-      auto PDInfoMap = deviceObj->getPhysicalDeviceInfoMap();
-      capInfo.capabilities2 = physicalDevice.getSurfaceCapabilities2KHR(vk::PhysicalDeviceSurfaceInfo2KHR{ .surface = cInfo->surface });
-      capInfo.capabilities = capInfo.capabilities2.surfaceCapabilities;
-      capInfo.formats2 = physicalDevice.getSurfaceFormats2KHR(vk::PhysicalDeviceSurfaceInfo2KHR{ .surface = cInfo->surface });
-      capInfo.presentModes = physicalDevice.getSurfacePresentModesKHR(cInfo->surface);
-
-      // TODO: search needed surface format
-      decltype(auto) surfaceFormat2 = capInfo.formats2.back();
-      decltype(auto) presentMode = capInfo.presentModes.front();
-
-      //
-      this->handle = device.createSwapchainKHR(infoMap->set(vk::StructureType::eSwapchainCreateInfoKHR, vk::SwapchainCreateInfoKHR{
-        .surface = cInfo->surface,
-        .minImageCount = std::max(capInfo.capabilities->minImageCount, capInfo.capabilities->maxImageCount),
-        .imageFormat = surfaceFormat2.surfaceFormat.format,
-        .imageColorSpace = surfaceFormat2.surfaceFormat.colorSpace,
-        .imageExtent = capInfo.capabilities->currentExtent,
-        .imageArrayLayers = std::min(capInfo.capabilities->maxImageArrayLayers, 1u),
-        .imageUsage = capInfo.capabilities->supportedUsageFlags,
-        .preTransform = capInfo.capabilities->currentTransform,
-        .compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque,
-        .presentMode = presentMode,
-        .clipped = true
-      })->setQueueFamilyIndices(deviceObj->getQueueFamilies().indices));
-
-      //
-      images = device.getSwapchainImagesKHR(this->handle.as<vk::SwapchainKHR>());
-
-      // 
-      uint32_t imageIndex = 0u;
-      for (decltype(auto) image : images) {
-        this->createImage(image, ImageType::eSwapchain, surfaceFormat2, ImageSwapchainInfo{
-          .swapchain = this->handle.as<vk::SwapchainKHR>(),
-          .index = imageIndex++
-        }); // 
-      };
-
-      // 
-      descriptorsObj->updateDescriptors();
-
-      //
-      this->currentState.index = this->images.size()-1u;
-      this->currentState.image = this->imageViewIndices[this->currentState.index];
+      this->handle = Handle(uintptr_t(this), HandleType::eSwapchain);
+      this->updateSwapchain();
     };
-
-
 
   public:
 
