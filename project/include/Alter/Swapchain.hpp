@@ -205,7 +205,9 @@ namespace ANAMED {
       this->imageViewIndices.push_back(descriptorsObj->images.add(vk::DescriptorImageInfo{ .imageView = this->imageViews.back(), .imageLayout = vk::ImageLayout::eGeneral }));
 
       // TODO: use pre-built command buffer
-      this->switchToReadyFn.push_back([=](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf, cpp21::const_wrap_arg<SwapchainState> previousState = {}) {
+      this->switchToReadyFn.push_back([device, imageLayout, subresourceRange, image=imageObj.as<vk::Image>()](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+        decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(device);
+        decltype(auto) imageObj = deviceObj->get<ResourceObj>(image);
         imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
           .cmdBuf = cmdBuf,
           .newImageLayout = imageLayout,
@@ -214,7 +216,9 @@ namespace ANAMED {
       });
 
       //
-      this->switchToPresentFn.push_back([=](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf, cpp21::const_wrap_arg<SwapchainState> previousState = {}) {
+      this->switchToPresentFn.push_back([device, imageLayout, subresourceRange, image=imageObj.as<vk::Image>()](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+        decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(device);
+        decltype(auto) imageObj = deviceObj->get<ResourceObj>(image);
         imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
           .cmdBuf = cmdBuf,
           .newImageLayout = vk::ImageLayout::ePresentSrcKHR,

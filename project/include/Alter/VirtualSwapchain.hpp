@@ -196,7 +196,7 @@ namespace ANAMED {
     };
 
     //
-    virtual void createImage(SwapchainSet* set, uint32_t index, cpp21::const_wrap_arg<ImageType> imageType = ImageType::eStorage) {
+    virtual void createImage(SwapchainSet* set, uint32_t index, uint32_t setIndex, cpp21::const_wrap_arg<ImageType> imageType = ImageType::eStorage) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
@@ -213,12 +213,21 @@ namespace ANAMED {
           .layerCount = 1u
         };
 
+      decltype(auto) subresourceLayers =
+        vk::ImageSubresourceLayers{
+          .aspectMask = subresourceRange.aspectMask,
+          .mipLevel = subresourceRange.baseMipLevel,
+          .baseArrayLayer = subresourceRange.baseArrayLayer,
+          .layerCount = subresourceRange.layerCount
+        };
+
       //
+      decltype(auto) extent3D = vk::Extent3D{ this->cInfo->extent.width, this->cInfo->extent.height, 1u };
       decltype(auto) imageObj = ResourceObj::make(this->base, ResourceCreateInfo{
         .descriptors = this->cInfo->layout,
         .imageInfo = ImageCreateInfo{
           .format = format,
-          .extent = vk::Extent3D{ this->cInfo->extent.width, this->cInfo->extent.height, 1u },
+          .extent = extent3D,
           .layout = imageLayout,
           .info = this->cInfo->info ? this->cInfo->info : QueueGetInfo{0u, 0u},
           .type = imageType
@@ -233,25 +242,107 @@ namespace ANAMED {
       });
 
       //
+      intptr_t prevSetIndex = intptr_t(setIndex)-1;
+      if (prevSetIndex < 0) { prevSetIndex += this->sets.size(); };
+
+      //
+      decltype(auto) nextSetIndex = (setIndex+1u) % uint32_t(this->sets.size());
+
+      //
       set->imageViews.push_back(std::get<0>(pair));
       set->imageViewIndices.push_back(std::get<1>(pair));
 
       // TODO: use pre-built command buffer
-      set->switchToReadyFns.push_back([=](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf, cpp21::const_wrap_arg<SwapchainState> previousState = {}) {
-        imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
-          .cmdBuf = cmdBuf,
-          .newImageLayout = imageLayout,
-          .subresourceRange = subresourceRange,
-        });
+      set->switchToReadyFns.push_back([](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
       });
 
       //
-      set->switchToPresentFns.push_back([=](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf, cpp21::const_wrap_arg<SwapchainState> previousState = {}) {
-        imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
-          .cmdBuf = cmdBuf,
-          .newImageLayout = vk::ImageLayout::ePresentSrcKHR,
-          .subresourceRange = subresourceRange,
+      std::vector<vk::ImageCopy2> copyRegions = {vk::ImageCopy2{
+        .srcSubresource = subresourceLayers,
+        .srcOffset = vk::Offset3D{0u,0u,0u},
+        .dstSubresource = subresourceLayers,
+        .dstOffset = vk::Offset3D{0u,0u,0u},
+        .extent = extent3D
+      }};
+
+      // copy into next image in chain (i.e. use ping-pong alike Optifine)
+      set->switchToPresentFns.push_back([this,device,subresourceRange,copyRegions,index,nextSetIndex,image=imageObj.as<vk::Image>()](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+        // use next index of
+        decltype(auto) nextImage = this->sets[nextSetIndex].images[index];
+        decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(device);
+        decltype(auto) imageObj = deviceObj->get<ResourceObj>(image);
+        decltype(auto) nextImageObj = deviceObj->get<ResourceObj>(nextImage);
+        decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
+        decltype(auto) accessMask = vk::AccessFlagBits2(vku::getAccessMaskByImageUsage(imageObj->getImageUsage()));
+
+        // 
+        std::vector<vk::ImageMemoryBarrier2> imageBarriersBegin = {};
+        std::vector<vk::ImageMemoryBarrier2> imageBarriersEnd = {};
+
+        //
+        imageBarriersBegin.push_back(vk::ImageMemoryBarrier2{
+          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(accessMask) | (accessMask & vk::AccessFlagBits2(AccessFlagBitsSet::eShaderReadWrite) ? vk::PipelineStageFlagBits2::eAllCommands : vk::PipelineStageFlagBits2{}),
+          .srcAccessMask = vk::AccessFlagBits2(accessMask),
+          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferRead),
+          .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferRead),
+          .oldLayout = imageObj->cInfo->imageInfo->layout,
+          .newLayout = vk::ImageLayout::eTransferSrcOptimal,
+          .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
+          .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
+          .image = image,
+          .subresourceRange = subresourceRange
         });
+        imageBarriersBegin.push_back(vk::ImageMemoryBarrier2{
+          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(accessMask) | (accessMask & vk::AccessFlagBits2(AccessFlagBitsSet::eShaderReadWrite) ? vk::PipelineStageFlagBits2::eAllCommands : vk::PipelineStageFlagBits2{}),
+          .srcAccessMask = vk::AccessFlagBits2(accessMask),
+          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferWrite),
+          .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
+          .oldLayout = nextImageObj->cInfo->imageInfo->layout,
+          .newLayout = vk::ImageLayout::eTransferDstOptimal,
+          .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
+          .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
+          .image = nextImage,
+          .subresourceRange = subresourceRange
+        });
+
+        //
+        imageBarriersEnd.push_back(vk::ImageMemoryBarrier2{
+          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferRead),
+          .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferRead),
+          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(accessMask) | (accessMask & vk::AccessFlagBits2(AccessFlagBitsSet::eShaderReadWrite) ? vk::PipelineStageFlagBits2::eAllCommands : vk::PipelineStageFlagBits2{}),
+          .dstAccessMask = vk::AccessFlagBits2(accessMask),
+          .oldLayout = vk::ImageLayout::eTransferSrcOptimal,
+          .newLayout = imageObj->cInfo->imageInfo->layout,
+          .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
+          .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
+          .image = image,
+          .subresourceRange = subresourceRange
+        });
+        imageBarriersEnd.push_back(vk::ImageMemoryBarrier2{
+          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferWrite),
+          .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
+          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(accessMask) | (accessMask & vk::AccessFlagBits2(AccessFlagBitsSet::eShaderReadWrite) ? vk::PipelineStageFlagBits2::eAllCommands : vk::PipelineStageFlagBits2{}),
+          .dstAccessMask = vk::AccessFlagBits2(accessMask),
+          .oldLayout = vk::ImageLayout::eTransferDstOptimal,
+          .newLayout = nextImageObj->cInfo->imageInfo->layout,
+          .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
+          .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
+          .image = nextImage,
+          .subresourceRange = subresourceRange
+        });
+
+        // 
+        decltype(auto) copyImageInfo = vk::CopyImageInfo2{ 
+          .srcImage = image, 
+          .srcImageLayout = vk::ImageLayout::eTransferSrcOptimal, 
+          .dstImage = nextImage, 
+          .dstImageLayout = vk::ImageLayout::eTransferDstOptimal 
+        };
+
+        // 
+        cmdBuf->pipelineBarrier2(depInfo.setImageMemoryBarriers(imageBarriersBegin));
+        cmdBuf->copyImage2(copyImageInfo.setRegions(copyRegions));
+        cmdBuf->pipelineBarrier2(depInfo.setImageMemoryBarriers(imageBarriersEnd));
       });
     };
 
@@ -274,7 +365,7 @@ namespace ANAMED {
       uint32_t imageIndex = 0u;
       for (uint32_t i=0;i<this->cInfo->minImageCount;i++) {
         uint32_t J = 0u; for (decltype(auto) image : this->cInfo->formats) { uint32_t j = J++;
-          this->createImage(&this->sets[i], j, ImageType::eStorage); // 
+          this->createImage(&this->sets[i], j, i, ImageType::eStorage); // 
         };
       };
 

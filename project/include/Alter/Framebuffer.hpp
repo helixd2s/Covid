@@ -268,9 +268,11 @@ namespace ANAMED {
 
       //
       decltype(auto) imageView = std::get<0>(pair);
-      
+
       // TODO: use pre-built command buffer
-      this->switchToAttachmentFn.push_back([imageLayout, subresourceRange, imageObj](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf, cpp21::const_wrap_arg<FramebufferState> previousState = {}) {
+      this->switchToAttachmentFn.push_back([device, imageLayout, subresourceRange, image=imageObj.as<vk::Image>()](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf, cpp21::const_wrap_arg<FramebufferState> previousState = {}) {
+        decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(device);
+        decltype(auto) imageObj = deviceObj->get<ResourceObj>(image);
         imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
           .cmdBuf = cmdBuf,
           .newImageLayout = imageLayout,
@@ -279,7 +281,9 @@ namespace ANAMED {
       });
 
       //
-      this->switchToShaderReadFn.push_back([subresourceRange, imageObj](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf, cpp21::const_wrap_arg<FramebufferState> previousState = {}) {
+      this->switchToShaderReadFn.push_back([device, subresourceRange, image = imageObj.as<vk::Image>()](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf, cpp21::const_wrap_arg<FramebufferState> previousState = {}) {
+        decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(device);
+        decltype(auto) imageObj = deviceObj->get<ResourceObj>(image);
         imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
           .cmdBuf = cmdBuf,
           .newImageLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
