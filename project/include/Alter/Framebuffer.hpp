@@ -219,26 +219,12 @@ namespace ANAMED {
       decltype(auto) lastDepthFormat = attachment.depthAttachmentFormat;
       decltype(auto) lastStencilFormat = attachment.stencilAttachmentFormat;
 
+      // 
       decltype(auto) format = (*imageType) == ImageType::eDepthStencilAttachment ? lastDepthFormat : ((*imageType) == ImageType::eDepthAttachment ? lastDepthFormat : ((*imageType) == ImageType::eStencilAttachment ? lastStencilFormat : attachment.colorAttachmentFormats[colorAttachments.size()]));
-      decltype(auto) aspectMask =
-        (*imageType) == ImageType::eDepthStencilAttachment ? (vk::ImageAspectFlagBits::eDepth) :
-        ((*imageType) == ImageType::eDepthAttachment ? vk::ImageAspectFlagBits::eDepth :
-        ((*imageType) == ImageType::eStencilAttachment ? vk::ImageAspectFlagBits::eStencil : vk::ImageAspectFlagBits::eColor));
-      decltype(auto) components = (*imageType) == ImageType::eDepthStencilAttachment || (*imageType) == ImageType::eDepthAttachment || (*imageType) == ImageType::eStencilAttachment
-        ? vk::ComponentMapping{ .r = vk::ComponentSwizzle::eZero, .g = vk::ComponentSwizzle::eZero, .b = vk::ComponentSwizzle::eZero, .a = vk::ComponentSwizzle::eZero }
-        : vk::ComponentMapping{ .r = vk::ComponentSwizzle::eR, .g = vk::ComponentSwizzle::eG, .b = vk::ComponentSwizzle::eB, .a = vk::ComponentSwizzle::eA };
       decltype(auto) imageLayout = 
         (*imageType) == ImageType::eDepthStencilAttachment ? vk::ImageLayout::eDepthStencilAttachmentOptimal :
         ((*imageType) == ImageType::eDepthAttachment ? vk::ImageLayout::eDepthAttachmentOptimal :
         ((*imageType) == ImageType::eStencilAttachment ? vk::ImageLayout::eStencilAttachmentOptimal : ((*imageType) == ImageType::eColorAttachment ? vk::ImageLayout::eColorAttachmentOptimal : vk::ImageLayout::eGeneral)));
-      decltype(auto) subresourceRange =
-        vk::ImageSubresourceRange{
-          .aspectMask = aspectMask,
-          .baseMipLevel = 0u,
-          .levelCount = 1u,
-          .baseArrayLayer = 0u,
-          .layerCount = this->cInfo->type == FramebufferType::eCubemap ? 6u : 1u
-        };
 
       //
       auto imageObj = ResourceObj::make(this->base, ResourceCreateInfo{
@@ -255,6 +241,7 @@ namespace ANAMED {
       });
 
       //
+      decltype(auto) subresourceRange = imageObj->subresourceRange(0u, this->cInfo->type == FramebufferType::eCubemap ? 6u : 1u, 0u, 1u);
       decltype(auto) pair = imageObj->createImageView(ImageViewCreateInfo{
         .viewType = this->cInfo->type == FramebufferType::eCubemap ? vk::ImageViewType::eCube : vk::ImageViewType::e2D,
         .subresourceRange = subresourceRange,

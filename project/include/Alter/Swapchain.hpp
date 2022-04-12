@@ -166,18 +166,8 @@ namespace ANAMED {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
-      decltype(auto) aspectMask = vk::ImageAspectFlagBits::eColor;
-      decltype(auto) components = vk::ComponentMapping{ .r = vk::ComponentSwizzle::eR, .g = vk::ComponentSwizzle::eG, .b = vk::ComponentSwizzle::eB, .a = vk::ComponentSwizzle::eA };
       decltype(auto) imageLayout = vk::ImageLayout::eGeneral;
       decltype(auto) format = surfaceFormat2->surfaceFormat.format;
-      decltype(auto) subresourceRange =
-        vk::ImageSubresourceRange{
-          .aspectMask = aspectMask,
-          .baseMipLevel = 0u,
-          .levelCount = 1u,
-          .baseArrayLayer = 0u,
-          .layerCount = 1u
-        };
 
       //
       decltype(auto) imageObj = ResourceObj::make(this->base, ResourceCreateInfo{
@@ -192,6 +182,9 @@ namespace ANAMED {
           .type = imageType
         }
       });
+
+      // 
+      decltype(auto) subresourceRange = imageObj->subresourceRange();
 
       // 
       this->renderArea = vk::Rect2D{ vk::Offset2D{0u, 0u}, capInfo.capabilities->currentExtent };

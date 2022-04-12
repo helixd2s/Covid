@@ -70,35 +70,101 @@ namespace ANAMED {
       //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
+    // 
+    virtual vk::ImageAspectFlagBits aspectMask() {
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
+      return this->cInfo->imageInfo->type == ImageType::eDepthStencilAttachment ? (vk::ImageAspectFlagBits::eDepth) :
+            (this->cInfo->imageInfo->type == ImageType::eDepthAttachment ? vk::ImageAspectFlagBits::eDepth :
+            (this->cInfo->imageInfo->type == ImageType::eStencilAttachment ? vk::ImageAspectFlagBits::eStencil : vk::ImageAspectFlagBits::eColor));
+    };
+
+    //
+    virtual vk::ImageSubresourceRange subresourceRange(uint32_t baseArrayLayout = 0u, uint32_t layerCount = 1u, uint32_t baseMipLevel = 0u, uint32_t levelCount = 1u) {
+      return vk::ImageSubresourceRange{
+        .aspectMask = this->aspectMask(),
+        .baseMipLevel = baseMipLevel,
+        .levelCount = levelCount,
+        .baseArrayLayer = baseArrayLayout,
+        .layerCount = layerCount
+      };
+    };
+
+    //
+    virtual vk::ImageSubresourceLayers subresourceLayers(uint32_t baseArrayLayout = 0u, uint32_t layerCount = 1u, uint32_t mipLevel = 0u) {
+      return vk::ImageSubresourceLayers{
+        .aspectMask = this->aspectMask(),
+        .mipLevel = mipLevel,
+        .baseArrayLayer = baseArrayLayout,
+        .layerCount = layerCount
+      };
+    };
+
+    //
+    virtual vk::ComponentMapping componentMapping(cpp21::const_wrap_arg<vk::ComponentMapping> mapping_) {
+      decltype(auto) mapping = vk::ComponentMapping{.r = vk::ComponentSwizzle::eR, .g = vk::ComponentSwizzle::eG, .b = vk::ComponentSwizzle::eB, .a = vk::ComponentSwizzle::eA};
+      decltype(auto) imageInfo = this->cInfo->imageInfo;
+
+      // 
+      if (imageInfo->type == ImageType::eDepthStencilAttachment) {
+        mapping.r = vk::ComponentSwizzle::eR, 
+        mapping.g = vk::ComponentSwizzle::eG, 
+        mapping.b = vk::ComponentSwizzle::eZero, 
+        mapping.a = vk::ComponentSwizzle::eZero;
+      } else
+      if (imageInfo->type == ImageType::eDepthAttachment || imageInfo->type == ImageType::eStencilAttachment) {
+        mapping.r = vk::ComponentSwizzle::eR, 
+        mapping.g = vk::ComponentSwizzle::eZero, 
+        mapping.b = vk::ComponentSwizzle::eZero, 
+        mapping.a = vk::ComponentSwizzle::eZero;
+      } else 
+      if (mapping_) {
+        mapping = mapping_.value();
+      } else 
+      if (cpp21::orEqual(this->cInfo->imageInfo->format, std::vector<vk::Format>{vk::Format::eR8G8B8A8Unorm, vk::Format::eR16G16B16A16Unorm, vk::Format::eR16G16B16A16Sfloat, vk::Format::eR32G32B32A32Sfloat})) {
+        mapping.r = vk::ComponentSwizzle::eR, 
+        mapping.g = vk::ComponentSwizzle::eG, 
+        mapping.b = vk::ComponentSwizzle::eB, 
+        mapping.a = vk::ComponentSwizzle::eA;
+      } else 
+      if (cpp21::orEqual(this->cInfo->imageInfo->format, std::vector<vk::Format>{vk::Format::eR8G8B8Unorm, vk::Format::eR16G16B16Unorm, vk::Format::eR16G16B16Sfloat, vk::Format::eR32G32B32Sfloat})) {
+        mapping.r = vk::ComponentSwizzle::eR, 
+        mapping.g = vk::ComponentSwizzle::eG, 
+        mapping.b = vk::ComponentSwizzle::eB, 
+        mapping.a = vk::ComponentSwizzle::eOne;
+      } else 
+      if (cpp21::orEqual(this->cInfo->imageInfo->format, std::vector<vk::Format>{vk::Format::eR8G8Unorm, vk::Format::eR16G16Unorm, vk::Format::eR16G16Sfloat, vk::Format::eR32G32Sfloat})) {
+        mapping.r = vk::ComponentSwizzle::eR, 
+        mapping.g = vk::ComponentSwizzle::eR, 
+        mapping.b = vk::ComponentSwizzle::eR, 
+        mapping.a = vk::ComponentSwizzle::eG;
+      } else 
+      if (cpp21::orEqual(this->cInfo->imageInfo->format, std::vector<vk::Format>{vk::Format::eR8Unorm, vk::Format::eR16Unorm, vk::Format::eR16Sfloat, vk::Format::eR32Sfloat})) {
+        mapping.r = vk::ComponentSwizzle::eR, 
+        mapping.g = vk::ComponentSwizzle::eR, 
+        mapping.b = vk::ComponentSwizzle::eR, 
+        mapping.a = vk::ComponentSwizzle::eOne;
+      };
+
+      // 
+      return mapping;
+    };
+
     //
     std::tuple<vk::ImageView, uint32_t> createImageView(cpp21::const_wrap_arg<ImageViewCreateInfo> info = {}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = this->cInfo->descriptors ? deviceObj->get<DescriptorsObj>(this->cInfo->descriptors) : WrapShared<DescriptorsObj>{};
+      decltype(auto) imageInfo = this->cInfo->imageInfo;
 
       // 
-      auto& imageInfo = this->cInfo->imageInfo;
-
-      // 
-      decltype(auto) aspectMask =
-         imageInfo->type == ImageType::eDepthStencilAttachment ? (vk::ImageAspectFlagBits::eDepth) :
-        (imageInfo->type == ImageType::eDepthAttachment ? vk::ImageAspectFlagBits::eDepth :
-        (imageInfo->type == ImageType::eStencilAttachment ? vk::ImageAspectFlagBits::eStencil : vk::ImageAspectFlagBits::eColor));
-      decltype(auto) components = imageInfo->type == ImageType::eDepthStencilAttachment || imageInfo->type == ImageType::eDepthAttachment || imageInfo->type == ImageType::eStencilAttachment
-        ? vk::ComponentMapping{ .r = vk::ComponentSwizzle::eR, .g = vk::ComponentSwizzle::eZero, .b = vk::ComponentSwizzle::eZero, .a = vk::ComponentSwizzle::eZero }
-        : info->componentMapping;
-      decltype(auto) imageLayout =
-         imageInfo->type == ImageType::eDepthStencilAttachment ? vk::ImageLayout::eDepthStencilAttachmentOptimal :
-        (imageInfo->type == ImageType::eDepthAttachment ? vk::ImageLayout::eDepthAttachmentOptimal :
-        (imageInfo->type == ImageType::eStencilAttachment ? vk::ImageLayout::eStencilAttachmentOptimal : vk::ImageLayout::eColorAttachmentOptimal));
-
-      //
+      decltype(auto) components = this->componentMapping(info->componentMapping);
       decltype(auto) imageView = device.createImageView(vk::ImageViewCreateInfo{
         .image = this->handle.as<vk::Image>(),
         .viewType = info->viewType,
         .format = imageInfo->format,
         .components = components,
-        .subresourceRange = vk::ImageSubresourceRange(info->subresourceRange).setAspectMask(aspectMask)
+        .subresourceRange = vk::ImageSubresourceRange(info->subresourceRange ? info->subresourceRange.value() : this->subresourceRange(0u,imageInfo->layerCount,0u,imageInfo->mipLevelCount)).setAspectMask(this->aspectMask())
       });
 
       //
@@ -441,7 +507,7 @@ namespace ANAMED {
     };
 
   public:
-
+    
     //
     virtual void writeClearCommand(cpp21::const_wrap_arg<ImageClearWriteInfo> clearInfo) {
       if (this->cInfo->imageInfo && this->handle.type == HandleType::eImage) {
@@ -449,16 +515,7 @@ namespace ANAMED {
         decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
         decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
         decltype(auto) imageLayout = this->cInfo->imageInfo->layout;
-        decltype(auto) subresourceRange = clearInfo->subresourceRange ? clearInfo->subresourceRange.value() : vk::ImageSubresourceRange{
-          .aspectMask =
-            this->cInfo->imageInfo->type == ImageType::eDepthStencilAttachment ? (vk::ImageAspectFlagBits::eDepth) :
-            (this->cInfo->imageInfo->type == ImageType::eDepthAttachment ? vk::ImageAspectFlagBits::eDepth :
-            (this->cInfo->imageInfo->type == ImageType::eStencilAttachment ? vk::ImageAspectFlagBits::eStencil : vk::ImageAspectFlagBits::eColor)),
-          .baseMipLevel = 0u,
-          .levelCount = imageInfo->mipLevels,
-          .baseArrayLayer = 0u,
-          .layerCount = imageInfo->arrayLayers
-        };
+        decltype(auto) subresourceRange = clearInfo->subresourceRange ? clearInfo->subresourceRange.value() : this->subresourceRange(0u,imageInfo->arrayLayers,0u,imageInfo->mipLevels);
 
         // 
         bool isValidLayout = imageLayout == vk::ImageLayout::eGeneral || imageLayout == vk::ImageLayout::eSharedPresentKHR || imageLayout == vk::ImageLayout::eTransferDstOptimal;
@@ -481,36 +538,29 @@ namespace ANAMED {
         decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
         decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
         decltype(auto) oldImageLayout = switchInfo->oldImageLayout ? switchInfo->oldImageLayout.value() : this->cInfo->imageInfo->layout;
-        //decltype(auto) submission = CommandOnceSubmission{ .info = switchInfo.info };
-        decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
-        decltype(auto) externalAccessMask = vk::AccessFlagBits2(vku::getAccessMaskByImageUsage(this->getImageUsage()));
-        decltype(auto) correctAccessMask = vku::getCorrectAccessMaskByImageLayout<vk::AccessFlagBits2>(switchInfo->newImageLayout);
-        decltype(auto) transferBarrier = std::vector<vk::ImageMemoryBarrier2>{
-          vk::ImageMemoryBarrier2{
-            .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(externalAccessMask) | (externalAccessMask & vk::AccessFlagBits2(AccessFlagBitsSet::eShaderReadWrite) ? vk::PipelineStageFlagBits2::eAllCommands : vk::PipelineStageFlagBits2{}),
-            .srcAccessMask = externalAccessMask,
-            .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(correctAccessMask) | (correctAccessMask & vk::AccessFlagBits2(AccessFlagBitsSet::eShaderReadWrite) ? vk::PipelineStageFlagBits2::eAllCommands : vk::PipelineStageFlagBits2{}),
-            .dstAccessMask = correctAccessMask,
-            .oldLayout = oldImageLayout,
-            .newLayout = switchInfo->newImageLayout,
-            .srcQueueFamilyIndex = switchInfo->queueFamilyIndex, // TODO: SRC queueFamilyIndex
-            .dstQueueFamilyIndex = switchInfo->queueFamilyIndex, // TODO: DST queueFamilyIndex
-            .image = this->handle.as<vk::Image>(),
-            .subresourceRange = switchInfo->subresourceRange ? switchInfo->subresourceRange.value() : vk::ImageSubresourceRange{
-              .aspectMask =
-                this->cInfo->imageInfo->type == ImageType::eDepthStencilAttachment ? (vk::ImageAspectFlagBits::eDepth) :
-                (this->cInfo->imageInfo->type == ImageType::eDepthAttachment ? vk::ImageAspectFlagBits::eDepth :
-                (this->cInfo->imageInfo->type == ImageType::eStencilAttachment ? vk::ImageAspectFlagBits::eStencil : vk::ImageAspectFlagBits::eColor)),
-              .baseMipLevel = 0u,
-              .levelCount = imageInfo->mipLevels,
-              .baseArrayLayer = 0u,
-              .layerCount = imageInfo->arrayLayers
-            }
-          }
-        };
 
-        switchInfo->cmdBuf.pipelineBarrier2(depInfo.setImageMemoryBarriers(transferBarrier));
-        this->cInfo->imageInfo->layout = switchInfo->newImageLayout;
+        // cupola
+        if (oldImageLayout != switchInfo->newImageLayout) {
+          decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
+          decltype(auto) externalAccessMask = vk::AccessFlagBits2(vku::getAccessMaskByImageUsage(this->getImageUsage()));
+          decltype(auto) correctAccessMask = vku::getCorrectAccessMaskByImageLayout<vk::AccessFlagBits2>(switchInfo->newImageLayout);
+          decltype(auto) transferBarrier = std::vector<vk::ImageMemoryBarrier2>{
+            vk::ImageMemoryBarrier2{
+              .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(externalAccessMask) | (externalAccessMask & vk::AccessFlagBits2(AccessFlagBitsSet::eShaderReadWrite) ? vk::PipelineStageFlagBits2::eAllCommands : vk::PipelineStageFlagBits2{}),
+              .srcAccessMask = externalAccessMask,
+              .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(correctAccessMask) | (correctAccessMask & vk::AccessFlagBits2(AccessFlagBitsSet::eShaderReadWrite) ? vk::PipelineStageFlagBits2::eAllCommands : vk::PipelineStageFlagBits2{}),
+              .dstAccessMask = correctAccessMask,
+              .oldLayout = oldImageLayout,
+              .newLayout = switchInfo->newImageLayout,
+              .srcQueueFamilyIndex = switchInfo->queueFamilyIndex, // TODO: SRC queueFamilyIndex
+              .dstQueueFamilyIndex = switchInfo->queueFamilyIndex, // TODO: DST queueFamilyIndex
+              .image = this->handle.as<vk::Image>(),
+              .subresourceRange = switchInfo->subresourceRange ? switchInfo->subresourceRange.value() : this->subresourceRange(0u,imageInfo->arrayLayers,0u,imageInfo->mipLevels)
+            }
+          };
+          switchInfo->cmdBuf.pipelineBarrier2(depInfo.setImageMemoryBarriers(transferBarrier));
+          this->cInfo->imageInfo->layout = switchInfo->newImageLayout;
+        };
       };
 
       //return SFT();
@@ -518,26 +568,25 @@ namespace ANAMED {
 
     //
     virtual FenceType executeSwitchLayoutOnce(cpp21::const_wrap_arg<ImageLayoutSwitchInfo> execInfo = {}) {
-      // 
       decltype(auto) switchInfo = execInfo->switchInfo.value();
       decltype(auto) info = execInfo->info ? execInfo->info : this->cInfo->imageInfo->info;
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
       decltype(auto) oldImageLayout = switchInfo.oldImageLayout ? switchInfo.oldImageLayout.value() : this->cInfo->imageInfo->layout;
       decltype(auto) submission = CommandOnceSubmission{ .submission = execInfo->submission };
-      decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
-      decltype(auto) correctAccessMask = vku::getCorrectAccessMaskByImageLayout<vk::AccessFlagBits2>(switchInfo.newImageLayout);
 
-      //
-      if (this->cInfo->imageInfo && this->handle.type == HandleType::eImage) {
-        submission.commandInits.push_back([this, switchInfo](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
-          this->writeSwitchLayoutCommand(switchInfo.with(cmdBuf));
-          return cmdBuf;
-        });
+      // cupola
+      if (oldImageLayout != switchInfo.newImageLayout) {
+        if (this->cInfo->imageInfo && this->handle.type == HandleType::eImage) {
+          submission.commandInits.push_back([this, switchInfo](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+            this->writeSwitchLayoutCommand(switchInfo.with(cmdBuf));
+            return cmdBuf;
+          });
 
-        //
-        //this->cInfo->imageInfo->layout = switchInfo.newImageLayout;
-        return deviceObj->executeCommandOnce(submission);
+          //
+          //this->cInfo->imageInfo->layout = switchInfo.newImageLayout;
+          return deviceObj->executeCommandOnce(submission);
+        };
       };
 
       // 

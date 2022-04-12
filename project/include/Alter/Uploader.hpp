@@ -143,18 +143,7 @@ namespace ANAMED {
         decltype(auto) imageInfo = imageObj->infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
 
         // 
-        subresourceRange = vk::ImageSubresourceRange{
-          .aspectMask =
-             imageObj->cInfo->imageInfo->type == ImageType::eDepthStencilAttachment ? vk::ImageAspectFlagBits::eDepth :
-            (imageObj->cInfo->imageInfo->type == ImageType::eDepthAttachment ? vk::ImageAspectFlagBits::eDepth :
-            (imageObj->cInfo->imageInfo->type == ImageType::eStencilAttachment ? vk::ImageAspectFlagBits::eStencil : vk::ImageAspectFlagBits::eColor)),
-          .baseMipLevel = imageRegion.region.baseMipLevel,
-          .levelCount = 1u,
-          .baseArrayLayer = imageRegion.region.baseLayer,
-          .layerCount = imageRegion.region.layerCount
-        };
-
-        // 
+        subresourceRange = imageObj->subresourceRange(imageRegion.region.baseLayer, imageRegion.region.layerCount, imageRegion.region.baseMipLevel, 1u);
         subresourceLayers = vk::ImageSubresourceLayers{
           .aspectMask = subresourceRange.aspectMask,
           .mipLevel = subresourceRange.baseMipLevel,

@@ -180,8 +180,8 @@ namespace ANAMED {
       timeline.initialValue = 0ull;
 
       // incompatible with export
-      decltype(auto) readySemaphore = SemaphoreObj::make(this->base, SemaphoreCreateInfo{ .hasExport = false });
-      decltype(auto) presentSemaphore = SemaphoreObj::make(this->base, SemaphoreCreateInfo{ .hasExport = false });
+      decltype(auto) readySemaphore = SemaphoreObj::make(this->base, SemaphoreCreateInfo{});
+      decltype(auto) presentSemaphore = SemaphoreObj::make(this->base, SemaphoreCreateInfo{});
 
       //
       set->readySemaphoreInfo = readySemaphore->infoMap->get<vk::SemaphoreSubmitInfo>(vk::StructureType::eSemaphoreSubmitInfo);
@@ -200,19 +200,23 @@ namespace ANAMED {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
-      decltype(auto) aspectMask = vk::ImageAspectFlagBits::eColor;
-      decltype(auto) components = vk::ComponentMapping{ .r = vk::ComponentSwizzle::eR, .g = vk::ComponentSwizzle::eG, .b = vk::ComponentSwizzle::eB, .a = vk::ComponentSwizzle::eA };
       decltype(auto) imageLayout = vk::ImageLayout::eGeneral;
-      decltype(auto) format = this->cInfo->formats[index];
-      decltype(auto) subresourceRange =
-        vk::ImageSubresourceRange{
-          .aspectMask = aspectMask,
-          .baseMipLevel = 0u,
-          .levelCount = 1u,
-          .baseArrayLayer = 0u,
-          .layerCount = 1u
-        };
 
+      //
+      decltype(auto) extent3D = vk::Extent3D{ this->cInfo->extent.width, this->cInfo->extent.height, 1u };
+      decltype(auto) imageObj = ResourceObj::make(this->base, ResourceCreateInfo{
+        .descriptors = this->cInfo->layout,
+        .imageInfo = ImageCreateInfo{
+          .format = this->cInfo->formats[index],
+          .extent = extent3D,
+          .layout = imageLayout,
+          .info = this->cInfo->info ? this->cInfo->info : QueueGetInfo{0u, 0u},
+          .type = imageType
+        }
+      });
+
+      //
+      decltype(auto) subresourceRange = imageObj->subresourceRange();
       decltype(auto) subresourceLayers =
         vk::ImageSubresourceLayers{
           .aspectMask = subresourceRange.aspectMask,
@@ -220,19 +224,6 @@ namespace ANAMED {
           .baseArrayLayer = subresourceRange.baseArrayLayer,
           .layerCount = subresourceRange.layerCount
         };
-
-      //
-      decltype(auto) extent3D = vk::Extent3D{ this->cInfo->extent.width, this->cInfo->extent.height, 1u };
-      decltype(auto) imageObj = ResourceObj::make(this->base, ResourceCreateInfo{
-        .descriptors = this->cInfo->layout,
-        .imageInfo = ImageCreateInfo{
-          .format = format,
-          .extent = extent3D,
-          .layout = imageLayout,
-          .info = this->cInfo->info ? this->cInfo->info : QueueGetInfo{0u, 0u},
-          .type = imageType
-        }
-      });
 
       // 
       decltype(auto) pair = imageObj->createImageView(ImageViewCreateInfo{
@@ -242,8 +233,8 @@ namespace ANAMED {
       });
 
       //
-      intptr_t prevSetIndex = intptr_t(setIndex)-1;
-      if (prevSetIndex < 0) { prevSetIndex += this->sets.size(); };
+      //intptr_t prevSetIndex = intptr_t(setIndex)-1;
+      //if (prevSetIndex < 0) { prevSetIndex += this->sets.size(); };
 
       //
       decltype(auto) nextSetIndex = (setIndex+1u) % uint32_t(this->sets.size());
