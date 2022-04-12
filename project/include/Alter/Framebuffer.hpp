@@ -296,17 +296,30 @@ namespace ANAMED {
       };
     };
 
-    // 
-    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{}) {
-      if (cInfo) { this->cInfo = cInfo; };
-      //decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
+    //
+    virtual void updateFramebuffer() {
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
+
+      {
+        this->colorAttachments = {};
+        this->switchToShaderReadFn = {};
+        this->switchToAttachmentFn = {};
+      }
+
+      { //
+        decltype(auto) it = images.begin();
+        for (it = images.begin(); it != images.end();) {
+          deviceObj->get<ResourceObj>(*it)->destroy(deviceObj.get());
+          it = images.erase(it);
+        };
+      };
 
       //
       this->renderArea = vk::Rect2D{ vk::Offset2D{0u, 0u}, cInfo->extent };
 
       // 
-      glm::vec4 color = glm::vec4(0.f,0.f,0.f,0.f);
+      glm::vec4 color = glm::vec4(0.f, 0.f, 0.f, 0.f);
       for (auto& format : descriptorsObj->cInfo->attachments[uint32_t(this->cInfo->type)].colorAttachmentFormats) {
         this->createImage(ImageType::eUniversal);
       };
@@ -314,14 +327,21 @@ namespace ANAMED {
       // 
       if (descriptorsObj->cInfo->attachments[uint32_t(this->cInfo->type)].depthAttachmentFormat == descriptorsObj->cInfo->attachments[uint32_t(this->cInfo->type)].stencilAttachmentFormat) {
         this->createImage(ImageType::eDepthStencilAttachment);
-      } else {
+      }
+      else {
         this->createImage(ImageType::eDepthAttachment);
         this->createImage(ImageType::eStencilAttachment);
       };
 
       // 
       descriptorsObj->updateDescriptors();
+    };
+
+    // 
+    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{}) {
+      if (cInfo) { this->cInfo = cInfo; };
       this->handle = uintptr_t(this);
+      this->updateFramebuffer();
     };
 
 

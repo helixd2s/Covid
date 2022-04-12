@@ -184,8 +184,13 @@ namespace ANAMED {
       decltype(auto) presentMode = capInfo.presentModes.front();
 
       //
-      imageViews = {};
-      imageViewIndices = {};
+      this->imageViews = {};
+      this->imageViewIndices = {};
+      this->switchToReadyFn = {};
+      this->switchToPresentFn = {};
+      this->readySemaphoreInfos = {};
+      this->presentSemaphoreInfos = {};
+      this->renderArea = vk::Rect2D{ vk::Offset2D{0u, 0u}, capInfo.capabilities->currentExtent };
 
       { //
         decltype(auto) it = images.begin();
@@ -272,7 +277,6 @@ namespace ANAMED {
       decltype(auto) subresourceRange = imageObj->subresourceRange();
 
       // 
-      this->renderArea = vk::Rect2D{ vk::Offset2D{0u, 0u}, capInfo.capabilities->currentExtent };
       this->imageViews.push_back(std::get<0>(imageObj->createImageView(ImageViewCreateInfo{
         .viewType = vk::ImageViewType::e2D,
         .subresourceRange = subresourceRange,
