@@ -7,6 +7,7 @@
 #include "./Descriptors.hpp"
 #include "./Framebuffer.hpp"
 #include "./Swapchain.hpp"
+#include "./VirtualSwapchain.hpp"
 
 // 
 namespace ANAMED {
@@ -261,6 +262,9 @@ namespace ANAMED {
         if (exec->swapchain) {
           exec->cmdBuf.pushConstants(descriptorsObj->handle.as<vk::PipelineLayout>(), vk::ShaderStageFlagBits::eAll, sizeof(InstanceAddressBlock) + sizeof(PushConstantData), sizeof(SwapchainStateInfo), &deviceObj->get<SwapchainObj>(exec->swapchain)->getStateInfo());
         };
+        if (exec->pingpong) {
+          exec->cmdBuf.pushConstants(descriptorsObj->handle.as<vk::PipelineLayout>(), vk::ShaderStageFlagBits::eAll, sizeof(InstanceAddressBlock) + sizeof(PushConstantData) + sizeof(SwapchainStateInfo), sizeof(SwapchainStateInfo), &deviceObj->get<VirtualSwapchainObj>(exec->pingpong)->getStateInfo());
+        };
         exec->cmdBuf.dispatch(exec->dispatch.width, exec->dispatch.height, exec->dispatch.depth);
         exec->cmdBuf.pipelineBarrier2(depInfo.setMemoryBarriers(memoryBarriersEnd));
       };
@@ -352,6 +356,9 @@ namespace ANAMED {
             };
             if (exec->swapchain) {
               exec->cmdBuf.pushConstants(descriptorsObj->handle.as<vk::PipelineLayout>(), vk::ShaderStageFlagBits::eAll, sizeof(InstanceAddressBlock) + sizeof(PushConstantData), sizeof(SwapchainStateInfo), &deviceObj->get<SwapchainObj>(exec->swapchain)->getStateInfo());
+            };
+            if (exec->pingpong) {
+              exec->cmdBuf.pushConstants(descriptorsObj->handle.as<vk::PipelineLayout>(), vk::ShaderStageFlagBits::eAll, sizeof(InstanceAddressBlock) + sizeof(PushConstantData) + sizeof(SwapchainStateInfo), sizeof(SwapchainStateInfo), &deviceObj->get<VirtualSwapchainObj>(exec->pingpong)->getStateInfo());
             };
             multiDrawDirect(instInfo.drawInfos);
         };

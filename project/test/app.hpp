@@ -149,8 +149,7 @@ public:
       .graphics = std::optional<ANAMED::WriteGraphicsInfo>(ANAMED::WriteGraphicsInfo{
         .layout = descriptorsObj.as<vk::PipelineLayout>(),
         .framebuffer = framebufferObj.as<uintptr_t>(),
-        // WARNING! SwapchainKHR is wrong type of handle
-        .swapchain = swapchainObj.as<vk::SwapchainKHR>(),
+        .swapchain = swapchainObj.as<uintptr_t>(),
         .instanceDraws = modelObj->getDefaultScene()->instanced->getDrawInfo(),
         // # yet another std::optional problem (implicit)
         .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
@@ -166,8 +165,7 @@ public:
       .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
         .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 256u), renderArea.extent.height, 1u},
         .layout = descriptorsObj.as<vk::PipelineLayout>(),
-        // WARNING! SwapchainKHR is wrong type of handle
-        .swapchain = swapchainObj.as<vk::SwapchainKHR>(),
+        .swapchain = swapchainObj.as<uintptr_t>(),
         // # yet another std::optional problem (implicit)
         .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
       }),

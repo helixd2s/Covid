@@ -138,12 +138,13 @@ namespace ANAMED {
 
     //
     virtual uint32_t& acquireImage(cpp21::const_wrap_arg<ANAMED::QueueGetInfo> qfAndQueue) {
+      this->currentState.previous = this->currentState.index;
       decltype(auto) semIndex = (this->currentState.index + 1u) % this->imageViewIndices.size();
       decltype(auto) acquired = (this->currentState.index = this->base.as<vk::Device>().acquireNextImage2KHR(vk::AcquireNextImageInfoKHR{ .swapchain = this->swapchain, .timeout = 0, .semaphore = this->presentSemaphoreInfos[semIndex].semaphore, .deviceMask = 0x1u }));
 
       //
       this->switchToReady(acquired, qfAndQueue);
-      this->currentState.image = this->imageViewIndices[acquired];
+      this->currentState.images[0u] = this->imageViewIndices[acquired];
       return this->currentState.index;
     };
 
@@ -245,7 +246,7 @@ namespace ANAMED {
 
       //
       this->currentState.index = this->images.size() - 1u;
-      this->currentState.image = this->imageViewIndices[this->currentState.index];
+      this->currentState.images[0] = this->imageViewIndices[this->currentState.index];
       return this->swapchain;
     };
 
@@ -330,7 +331,8 @@ namespace ANAMED {
     // 
     virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) {
       if (cInfo) { this->cInfo = cInfo; };
-      this->handle = Handle(uintptr_t(this), HandleType::eSwapchain);
+      //this->handle = Handle(uintptr_t(this), HandleType::eSwapchain);
+      this->handle = uintptr_t(this);
       this->updateSwapchain();
     };
 

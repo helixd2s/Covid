@@ -57,7 +57,7 @@ namespace ANAMED {
     std::vector<SwapchainSet> sets = {};
 
     //
-    VirtualSwapchainStateInfo currentState = {};
+    SwapchainStateInfo currentState = {};
 
     //
     vk::Rect2D renderArea = {};
@@ -78,8 +78,8 @@ namespace ANAMED {
     };
 
     //
-    virtual VirtualSwapchainStateInfo& getStateInfo() { return currentState; };
-    virtual VirtualSwapchainStateInfo const& getStateInfo() const { return currentState; };
+    virtual SwapchainStateInfo& getStateInfo() { return currentState; };
+    virtual SwapchainStateInfo const& getStateInfo() const { return currentState; };
     virtual vk::Rect2D const& getRenderArea() const { return renderArea; };
 
     //
@@ -129,7 +129,7 @@ namespace ANAMED {
         submission.submission.waitSemaphores->push_back(sets[*imageIndex].copySemaphoreInfo);
       };
 
-      // 
+      // but currently there is no any commands...
       submission.commandInits.push_back([this, imageIndex](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
         for (auto& switchFn : this->sets[*imageIndex].switchToReadyFns) { switchFn(cmdBuf); };
         return cmdBuf;
@@ -143,7 +143,7 @@ namespace ANAMED {
     virtual uint32_t& acquireImage(cpp21::const_wrap_arg<ANAMED::QueueGetInfo> qfAndQueue) {
       this->currentState.previous = this->currentState.index;
       this->currentState.index = (++this->currentState.index) % this->sets.size();
-      decltype(auto) fence = this->switchToReady(this->currentState.index, qfAndQueue);
+      //decltype(auto) fence = this->switchToReady(this->currentState.index, qfAndQueue); // useless command currently, I guess...
       memcpy(this->currentState.images, this->sets[this->currentState.index].imageViewIndices.data(), std::min(uint32_t(this->sets[this->currentState.index].imageViewIndices.size()), 4u)*4u);
       return this->currentState.index;
     };
@@ -312,7 +312,7 @@ namespace ANAMED {
       set->imageViews.push_back(std::get<0>(pair));
       set->imageViewIndices.push_back(std::get<1>(pair));
 
-      // TODO: use pre-built command buffer
+      // currently there is no any command
       set->switchToReadyFns.push_back([](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
       });
 

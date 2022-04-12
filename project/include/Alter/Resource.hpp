@@ -426,7 +426,7 @@ namespace ANAMED {
       //
       std::vector<vk::BindImageMemoryInfo> bindInfos = { *infoMap->set(vk::StructureType::eBindImageMemoryInfo, vk::BindImageMemoryInfo{
         .pNext = cInfo->swapchain ? infoMap->set(vk::StructureType::eBindImageMemorySwapchainInfoKHR, vk::BindImageMemorySwapchainInfoKHR{
-          .swapchain = cInfo->swapchain->swapchain,
+          .swapchain = cInfo->swapchain->swapchain, // planned to fix by secondary handle term
           .imageIndex = cInfo->swapchain->index
          }).get() : nullptr,
         .image = this->handle.as<vk::Image>(), .memory = cInfo->swapchain ? vk::DeviceMemory{} : this->allocated->memory, .memoryOffset = cInfo->swapchain ? 0ull : this->allocated->offset

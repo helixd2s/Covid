@@ -120,10 +120,10 @@ namespace ANAMED {
     eMemoryAllocator,
     eExtension,
     ePipeline,
-    eFramebuffer,
-    eSwapchain,
-    eVirtualSwapchain,
-    eSurface,
+    //eFramebuffer, // useless
+    //eSwapchain, // useless
+    //eVirtualSwapchain, // useless
+    eSurface, // useless?!
     eSemaphore,
     eDescriptors,
     eCommandBuffer,
@@ -479,15 +479,6 @@ namespace ANAMED {
 #pragma pack(push, 1)
   __declspec(align(1))
   struct SwapchainStateInfo {
-    uint32_t image = 0u;
-    uint32_t index = uint32_t(-1);
-  };
-#pragma pack(pop)
-
-  //
-#pragma pack(push, 1)
-  __declspec(align(1))
-  struct VirtualSwapchainStateInfo {
     uint32_t images[4u] = { 0u };
     uint32_t previous = uint32_t(-1);
     uint32_t index = uint32_t(-1);
@@ -993,7 +984,8 @@ namespace ANAMED {
     vk::CommandBuffer cmdBuf = {};
     vk::Extent3D dispatch = { 1u, 1u, 1u };
     vk::PipelineLayout layout = {};
-    vk::SwapchainKHR swapchain = {};
+    uintptr_t swapchain = 0ull;
+    uintptr_t pingpong = 0ull;
 
     //
     std::optional<InstanceAddressBlock> instanceAddressBlock = {};
@@ -1006,8 +998,9 @@ namespace ANAMED {
   struct WriteGraphicsInfo : BaseCreateInfo {
     vk::CommandBuffer cmdBuf = {};
     vk::PipelineLayout layout = {};
-    uintptr_t framebuffer = {};
-    vk::SwapchainKHR swapchain = {};
+    uintptr_t framebuffer = 0ull;
+    uintptr_t swapchain = 0ull;
+    uintptr_t pingpong = 0ull;
 
     // needs multiple-levels support
     std::vector<InstanceDraw> instanceDraws = {}; // currently, problematic for dynamic rendering... 
@@ -1275,14 +1268,14 @@ namespace ANAMED {
     ANAMED::handleTypeMap[std::type_index(typeid(vk::CommandBuffer))] = HandleType::eCommandBuffer;
 
     // 
-    ANAMED::handleTypeMap[std::type_index(typeid(vk::SwapchainKHR))] = HandleType::eSwapchain;
+    //ANAMED::handleTypeMap[std::type_index(typeid(vk::Framebuffer))] = HandleType::eFramebuffer;
+    //ANAMED::handleTypeMap[std::type_index(typeid(vk::SwapchainKHR))] = HandleType::eSwapchain;
     ANAMED::handleTypeMap[std::type_index(typeid(vk::SurfaceKHR))] = HandleType::eSurface;
     ANAMED::handleTypeMap[std::type_index(typeid(vk::Buffer))] = HandleType::eBuffer;
     ANAMED::handleTypeMap[std::type_index(typeid(vk::Image))] = HandleType::eImage;
     ANAMED::handleTypeMap[std::type_index(typeid(vk::Pipeline))] = HandleType::ePipeline;
     ANAMED::handleTypeMap[std::type_index(typeid(vk::PipelineLayout))] = HandleType::eDescriptors;
     ANAMED::handleTypeMap[std::type_index(typeid(vk::AccelerationStructureKHR))] = HandleType::eAccelerationStructure;
-    ANAMED::handleTypeMap[std::type_index(typeid(vk::Framebuffer))] = HandleType::eFramebuffer;
     ANAMED::handleTypeMap[std::type_index(typeid(vk::Semaphore))] = HandleType::eSemaphore;
     ANAMED::handleTypeMap[std::type_index(typeid(vk::DeviceMemory))] = HandleType::eDeviceMemory;
     ANAMED::handleTypeMap[std::type_index(typeid(vk::Sampler))] = HandleType::eSampler;
