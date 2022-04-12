@@ -756,6 +756,7 @@ namespace ANAMED {
 
   //
   struct SemaphoreCreateInfo : BaseCreateInfo {
+    bool signaled = false;
     bool hasExport = true;
   };
 

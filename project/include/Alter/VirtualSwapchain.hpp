@@ -31,6 +31,7 @@ namespace ANAMED {
     std::vector<std::function<void(cpp21::const_wrap_arg<vk::CommandBuffer>)>> switchToReadyFns = {};
 
     // 
+    cpp21::wrap_shared_ptr<vk::SemaphoreSubmitInfo> copySemaphoreInfo = {};
     cpp21::wrap_shared_ptr<vk::SemaphoreSubmitInfo> readySemaphoreInfo = {};
     cpp21::wrap_shared_ptr<vk::SemaphoreSubmitInfo> presentSemaphoreInfo = {};
   };
@@ -47,6 +48,7 @@ namespace ANAMED {
     friend DeviceObj;
     friend PipelineObj;
     friend ResourceObj;
+    bool firstWait = true;
 
     //
     std::optional<VirtualSwapchainCreateInfo> cInfo = VirtualSwapchainCreateInfo{};
@@ -97,9 +99,11 @@ namespace ANAMED {
     //
     virtual FenceType switchToPresent(cpp21::const_wrap_arg<uint32_t> imageIndex, cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}) {
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = info ? info.value() : this->cInfo->info } };
+      decltype(auto) nextIndex = ((*imageIndex) + 1u) % this->sets.size();
 
       // 
-      submission.submission.signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{ sets[*imageIndex].readySemaphoreInfo };
+      //submission.submission.signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{ sets[*imageIndex].readySemaphoreInfo };
+      submission.submission.signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{ sets[nextIndex].copySemaphoreInfo };
       submission.commandInits.push_back([this, imageIndex](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
         for (auto& switchFn : this->sets[*imageIndex].switchToPresentFns) { switchFn(cmdBuf); };
         return cmdBuf;
@@ -114,7 +118,17 @@ namespace ANAMED {
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = info ? info.value() : this->cInfo->info } };
 
       // 
-      submission.submission.waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{ sets[*imageIndex].presentSemaphoreInfo };
+      submission.submission.waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
+      //submission.submission.waitSemaphores.push_back(sets[*imageIndex].presentSemaphoreInfo);
+
+      // 
+      if (firstWait) {
+        firstWait = false;
+      } else {
+        submission.submission.waitSemaphores->push_back(sets[*imageIndex].copySemaphoreInfo);
+      };
+
+      // 
       submission.commandInits.push_back([this, imageIndex](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
         for (auto& switchFn : this->sets[*imageIndex].switchToReadyFns) { switchFn(cmdBuf); };
         return cmdBuf;
@@ -182,10 +196,12 @@ namespace ANAMED {
       // incompatible with export
       decltype(auto) readySemaphore = SemaphoreObj::make(this->base, SemaphoreCreateInfo{});
       decltype(auto) presentSemaphore = SemaphoreObj::make(this->base, SemaphoreCreateInfo{});
+      decltype(auto) copySemaphore = SemaphoreObj::make(this->base, SemaphoreCreateInfo{ .signaled = true, .hasExport = false });
 
       //
       set->readySemaphoreInfo = readySemaphore->infoMap->get<vk::SemaphoreSubmitInfo>(vk::StructureType::eSemaphoreSubmitInfo);
       set->presentSemaphoreInfo = presentSemaphore->infoMap->get<vk::SemaphoreSubmitInfo>(vk::StructureType::eSemaphoreSubmitInfo);
+      set->copySemaphoreInfo = copySemaphore->infoMap->get<vk::SemaphoreSubmitInfo>(vk::StructureType::eSemaphoreSubmitInfo);
     };
 
     //
