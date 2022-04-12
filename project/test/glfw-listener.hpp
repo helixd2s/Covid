@@ -17,10 +17,8 @@ public:
   inline static std::unordered_map<uintptr_t, std::vector<std::function<void(GLFWwindow*, int, int, int)>>> MouseButtonCallbacks = {};
 
   //
-protected:
   GLFWwindow* window = nullptr;
 
-public: 
   // 
   GLFWListener(GLFWwindow* window) : window(window) {
     glfwSetKeyCallback(window, CtlKeyCallback);

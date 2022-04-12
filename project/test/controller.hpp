@@ -29,7 +29,6 @@ public:
 
   // 
   bool hasEscPressed = false;
-  GLFWwindow* window = nullptr;
   std::shared_ptr<GLFWListener> listener = {};
 
   //
@@ -52,10 +51,10 @@ public:
   int height = 1u;
 
   // 
-  Controller(GLFWwindow* window = nullptr, std::shared_ptr<GLFWListener> listener = {}) : window(window), listener(listener) {
-    if (window) {
-      glfwGetCursorPos(window, &mx, &my);
-      glfwGetWindowSize(window, &width, &height);
+  Controller(std::shared_ptr<GLFWListener> listener = {}) : listener(listener) {
+    if (listener->window) {
+      glfwGetCursorPos(listener->window, &mx, &my);
+      glfwGetWindowSize(listener->window, &width, &height);
 
       // 
       listener->registerKeyCallback([this](GLFWwindow* window, int key, int scancode, int action, int mods){
@@ -74,7 +73,7 @@ public:
 
   // 
   void handleMousePos() {
-    double mx = 0.f, my = 0.f; glfwGetCursorPos(window, &mx, &my);
+    double mx = 0.f, my = 0.f; glfwGetCursorPos(listener->window, &mx, &my);
     this->dx = mx - this->mx, this->dy = my - this->my, this->mx = mx, this->my = my;
     //this->handleAction();
   };

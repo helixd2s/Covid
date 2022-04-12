@@ -190,8 +190,7 @@ public:
 
   virtual void initSurface(GLFWwindow* window) {
     // 
-    this->listener = std::make_shared<GLFWListener>(this->window = window);
-    this->controller = std::make_shared<Controller>(this->window, this->listener);
+    this->controller = std::make_shared<Controller>(this->listener = std::make_shared<GLFWListener>(this->window = window));
 
     //
     vk::SurfaceKHR surface = {};
