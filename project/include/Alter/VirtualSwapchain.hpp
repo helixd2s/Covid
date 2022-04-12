@@ -110,6 +110,9 @@ namespace ANAMED {
       });
 
       //
+      firstWait = false;
+
+      //
       return ANAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
     };
 
@@ -122,9 +125,7 @@ namespace ANAMED {
       //submission.submission.waitSemaphores.push_back(sets[*imageIndex].presentSemaphoreInfo);
 
       // 
-      if (firstWait) {
-        firstWait = false;
-      } else {
+      if (!firstWait) {
         submission.submission.waitSemaphores->push_back(sets[*imageIndex].copySemaphoreInfo);
       };
 
