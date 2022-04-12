@@ -19,7 +19,8 @@ layout(location = 1) out uvec4 indices;
 layout(early_fragment_tests) in;
 #endif
 
-// 
+//
+// We prefer to use refraction and ray-tracing for transparent effects...
 void main() {
 
   //
@@ -31,11 +32,11 @@ void main() {
   GeometryInfo geometryInfo = getGeometry(instanceInfo, geometryIndex);
 
   // if translucent - discard!
-#ifdef TRANSLUCENT
-  if ((geometryInfo.flags&1u) != 0u) { discard; };
-#else
-  if ((geometryInfo.flags&1u) == 0u) { discard; };
-#endif
+//#ifdef TRANSLUCENT
+  //if ((geometryInfo.flags&1u) != 0u) { discard; };
+//#else
+  //if ((geometryInfo.flags&1u) == 0u) { discard; };
+//#endif
 
   //
   GeometryExtData geometry = getGeometryData(geometryInfo, pIndices.z);
@@ -50,9 +51,9 @@ void main() {
   MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), texcoord.xy, tbn);
 
   // alpha test failure
-#ifdef TRANSLUCENT
-  if (materialPix.color[MATERIAL_ALBEDO].a < 0.001f) { discard; };
-#endif
+//#ifdef TRANSLUCENT
+  //if (materialPix.color[MATERIAL_ALBEDO].a < 0.001f) { discard; };
+//#endif
 
   //
   baryData = vec4(pBary, 1.f);
