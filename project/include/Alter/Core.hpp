@@ -488,7 +488,7 @@ namespace ANAMED {
 #pragma pack(push, 1)
   __declspec(align(1))
   struct PingPongStateInfo {
-    uint32_t images[8u] = { 0u };
+    uint32_t images[10u] = { 0u };
     uint32_t previous = uint32_t(-1);
     uint32_t index = uint32_t(-1);
   };

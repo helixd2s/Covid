@@ -250,11 +250,22 @@ public:
     pingPongObj = ANAMED::PingPongObj::make(deviceObj.with(0u), ANAMED::PingPongCreateInfo{
       .layout = descriptorsObj.as<vk::PipelineLayout>(),
       .extent = renderArea.extent,
-      .minImageCount = 2u,
+      .minImageCount = 1u,
 
       // first image is accumulation, second image is back buffer, third image is index buffer, fourth image is position buffer
-      .split = std::vector<bool>{false, true, false, false, false},
-      .formats = std::vector<vk::Format>{ vk::Format::eR32G32B32A32Uint, vk::Format::eR32G32B32A32Uint, vk::Format::eR32G32B32A32Uint, vk::Format::eR32G32B32A32Sfloat, vk::Format::eR32G32B32A32Uint },
+      // 5th for reflection buffer, 6th for reflection back buffer, 7th for transparency, 8th for transparency back
+      .split = std::vector<bool>{false, true, false, false, false, true, false, true, false},
+      .formats = std::vector<vk::Format>{ 
+        vk::Format::eR32G32B32A32Uint, 
+        vk::Format::eR32G32B32A32Uint, 
+        vk::Format::eR32G32B32A32Uint, 
+        vk::Format::eR32G32B32A32Sfloat, 
+        vk::Format::eR32G32B32A32Uint, 
+        vk::Format::eR32G32B32A32Uint,
+        vk::Format::eR32G32B32A32Uint,
+        vk::Format::eR32G32B32A32Uint,
+        vk::Format::eR32G32B32A32Sfloat
+      },
       .info = qfAndQueue
     });
 
