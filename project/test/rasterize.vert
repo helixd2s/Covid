@@ -31,16 +31,16 @@ void main() {
   pIndices = uvec4(instanceIndex, geometryIndex, gl_VertexIndex/3u, 0u);
 
   // if translucent - discard
-//#ifdef TRANSLUCENT
-  //if ((geometryInfo.flags&1u) != 0u) 
-//#else
-  //if ((geometryInfo.flags&1u) == 0u) 
-//#endif
-  //{
-    //gl_Position = vec4(0.f.xxx, 1.f);
-    //pColor = vec4(0.f.xxx, 0.f);
-    //pBary = vec3(0.f.xxx);
-  //} else 
+#ifdef TRANSLUCENT
+  if ((geometryInfo.flags&1u) != 0u) 
+#else
+  if ((geometryInfo.flags&1u) == 0u) 
+#endif
+  {
+    gl_Position = vec4(0.f.xxx, 1.f);
+    pColor = vec4(0.f.xxx, 0.f);
+    pBary = vec3(0.f.xxx);
+  } else 
   {
     gl_Position = position;
     pColor = vec4(texcoord.xyz, 1.f);
