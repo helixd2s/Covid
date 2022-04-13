@@ -144,7 +144,7 @@ namespace ANAMED {
       this->currentState.previous = this->currentState.index;
       this->currentState.index = (++this->currentState.index) % this->sets.size();
       decltype(auto) fence = this->switchToReady(this->currentState.index, qfAndQueue); // still needs for await semaphores
-      memcpy(this->currentState.images, this->sets[this->currentState.index].imageViewIndices.data(), std::min(uint32_t(this->sets[this->currentState.index].imageViewIndices.size()), 4u)*4u);
+      memcpy(this->currentState.images, this->sets[this->currentState.index].imageViewIndices.data(), std::min(uint32_t(this->sets[this->currentState.index].imageViewIndices.size()), 8u) * 4u);
       return this->currentState.index;
     };
 
@@ -261,7 +261,7 @@ namespace ANAMED {
 
       //
       this->currentState.index = this->sets.size() - 1u;
-      memcpy(this->currentState.images, this->sets[this->currentState.index].imageViewIndices.data(), std::min(uint32_t(this->sets[this->currentState.index].imageViewIndices.size()), 4u) * 4u);
+      memcpy(this->currentState.images, this->sets[this->currentState.index].imageViewIndices.data(), std::min(uint32_t(this->sets[this->currentState.index].imageViewIndices.size()), 8u) * 4u);
     };
 
   protected:

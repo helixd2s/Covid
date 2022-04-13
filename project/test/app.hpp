@@ -128,11 +128,13 @@ public:
     decltype(auto) pingPong = pingPongObj->acquireImage(qfAndQueue);
 
     //
-    //if (controller->needsClear) {
-      //pingPongObj->clearImages(qfAndQueue, std::vector<glm::vec4>{ glm::uintBitsToFloat(glm::uvec4(0u)), glm::uintBitsToFloat(glm::uvec4(0u)), glm::uintBitsToFloat(glm::uvec4(0u)), glm::vec4(0.f) });
     pingPongObj->clearImage(qfAndQueue, 1u, glm::uintBitsToFloat(glm::uvec4(0u)));
-      //controller->needsClear = false;
-    //};
+
+    //
+    if (controller->needsClear) {
+      pingPongObj->clearImage(qfAndQueue, 4u, glm::uintBitsToFloat(glm::uvec4(0u)));
+      controller->needsClear = false;
+    };
 
     // wait ready for filling
     auto& fence = (*fences)[acquired];
@@ -251,8 +253,8 @@ public:
       .minImageCount = 2u,
 
       // first image is accumulation, second image is back buffer, third image is index buffer, fourth image is position buffer
-      .split = std::vector<bool>{false, true, false, false},
-      .formats = std::vector<vk::Format>{ vk::Format::eR32G32B32A32Uint, vk::Format::eR32G32B32A32Uint, vk::Format::eR32G32B32A32Uint, vk::Format::eR32G32B32A32Sfloat },
+      .split = std::vector<bool>{false, true, false, false, false},
+      .formats = std::vector<vk::Format>{ vk::Format::eR32G32B32A32Uint, vk::Format::eR32G32B32A32Uint, vk::Format::eR32G32B32A32Uint, vk::Format::eR32G32B32A32Sfloat, vk::Format::eR32G32B32A32Uint },
       .info = qfAndQueue
     });
 
