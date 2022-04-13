@@ -15,7 +15,7 @@ layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
 
 //
 vec3 reflective(in vec3 seed, in vec3 dir, in vec3 normal, in float roughness) {
-  return normalize(mix(reflect(dir, normal), randomCosineWeightedHemispherePoint(seed, normal), roughness));
+  return normalize(mix(randomCosineWeightedHemispherePoint(seed, normal), reflect(dir, normal), roughness));
 };
 
 //

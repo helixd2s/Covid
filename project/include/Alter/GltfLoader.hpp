@@ -519,10 +519,10 @@ namespace ANAMED {
       handleNodes = [=, &handleNodes, this](std::shared_ptr<GltfInstanced> inst, tinygltf::Model& model, tinygltf::Node& node, glm::mat4x4 transform = glm::mat4x4(1.f)) {
         // 
         auto localTransform = glm::dmat4(1.0);
-        localTransform *= glm::dmat4(node.matrix.size() >= 16 ? glm::make_mat4(node.matrix.data()) : glm::dmat4(1.0));
-        localTransform *= glm::dmat4(node.translation.size() >= 3 ? glm::translate(glm::dmat4(1.0), glm::make_vec3(node.translation.data())) : glm::dmat4(1.0));
-        localTransform *= glm::dmat4(node.scale.size() >= 3 ? glm::scale(glm::dmat4(1.0), glm::make_vec3(node.scale.data())) : glm::dmat4(1.0));
-        localTransform *= glm::dmat4((node.rotation.size() >= 4 ? glm::mat4_cast(glm::make_quat(node.rotation.data())) : glm::dmat4(1.0)));
+        localTransform *= node.matrix.size() >= 16 ? glm::make_mat4(node.matrix.data()) : glm::dmat4(1.0);
+        localTransform *= node.translation.size() >= 3 ? glm::translate(glm::dmat4(1.0), glm::make_vec3(node.translation.data())) : glm::dmat4(1.0);
+        localTransform *= node.scale.size() >= 3 ? glm::scale(glm::dmat4(1.0), glm::make_vec3(node.scale.data())) : glm::dmat4(1.0);
+        localTransform *= node.rotation.size() >= 4 ? glm::mat4_cast(glm::make_quat(node.rotation.data())) : glm::dmat4(1.0);
         transform *= glm::mat4x4(localTransform);
 
         //
@@ -541,7 +541,7 @@ namespace ANAMED {
       for (decltype(auto) scene : gltf->model.scenes) {
         decltype(auto) inst = std::make_shared<GltfInstanced>();
         for (decltype(auto) node : scene.nodes) {
-          handleNodes(inst, gltf->model, gltf->model.nodes[node], glm::mat4x4(1.f) * glm::scale(glm::mat4(1.0f), glm::vec3(-1.f * scale, -1.f * scale, 1.f * scale)));
+          handleNodes(inst, gltf->model, gltf->model.nodes[node], glm::mat4x4(1.f) * glm::scale(glm::mat4(1.0f), glm::vec3(1.f * scale, 1.f * scale, 1.f * scale)));
         };
 
         //
