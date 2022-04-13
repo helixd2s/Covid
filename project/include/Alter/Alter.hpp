@@ -24,7 +24,7 @@
 #include "./Uploader.hpp"
 #include "./Semaphore.hpp"
 #include "./Swapchain.hpp"
-#include "./VirtualSwapchain.hpp"
+#include "./PingPong.hpp"
 #include "./GeometryLevel.hpp"
 #include "./InstanceLevel.hpp"
 

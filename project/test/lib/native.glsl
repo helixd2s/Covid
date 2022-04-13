@@ -241,9 +241,15 @@ struct InstanceAddressBlock {
 };
 
 //
-struct SwapchainStateInfo {
+struct PingPongStateInfo {
   uint32_t images[4];
   uint32_t previous;
+  uint32_t index;
+};
+
+//
+struct SwapchainStateInfo {
+  uint32_t image;
   uint32_t index;
 };
 
@@ -346,7 +352,7 @@ layout(push_constant, scalar, buffer_reference_align = 1) uniform PConstBlock {
   InstanceAddressBlock instancedData;
   PushConstantData instanceDrawInfo;
   SwapchainStateInfo swapchain;
-  SwapchainStateInfo pingpong;
+  PingPongStateInfo pingpong;
 };
 
 //

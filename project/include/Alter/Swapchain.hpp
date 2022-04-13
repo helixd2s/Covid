@@ -138,13 +138,13 @@ namespace ANAMED {
 
     //
     virtual uint32_t& acquireImage(cpp21::const_wrap_arg<ANAMED::QueueGetInfo> qfAndQueue) {
-      this->currentState.previous = this->currentState.index;
+      //this->currentState.previous = this->currentState.index;
       decltype(auto) semIndex = (this->currentState.index + 1u) % this->imageViewIndices.size();
       decltype(auto) acquired = (this->currentState.index = this->base.as<vk::Device>().acquireNextImage2KHR(vk::AcquireNextImageInfoKHR{ .swapchain = this->swapchain, .timeout = 0, .semaphore = this->presentSemaphoreInfos[semIndex].semaphore, .deviceMask = 0x1u }));
 
       //
       this->switchToReady(acquired, qfAndQueue);
-      this->currentState.images[0u] = this->imageViewIndices[acquired];
+      this->currentState.image = this->imageViewIndices[acquired];
       return this->currentState.index;
     };
 
@@ -246,7 +246,7 @@ namespace ANAMED {
 
       //
       this->currentState.index = this->images.size() - 1u;
-      this->currentState.images[0] = this->imageViewIndices[this->currentState.index];
+      this->currentState.image = this->imageViewIndices[this->currentState.index];
       return this->swapchain;
     };
 

@@ -122,7 +122,7 @@ namespace ANAMED {
     ePipeline,
     //eFramebuffer, // useless
     //eSwapchain, // useless
-    //eVirtualSwapchain, // useless
+    //ePingPong, // useless
     eSurface, // useless?!
     eSemaphore,
     eDescriptors,
@@ -270,7 +270,7 @@ namespace ANAMED {
   class MemoryAllocatorObj;
   class SamplerObj;
   class ResourceSparseObj;
-  class VirtualSwapchainObj;
+  class PingPongObj;
 
   // 
   class GltfLoaderObj;
@@ -479,6 +479,15 @@ namespace ANAMED {
 #pragma pack(push, 1)
   __declspec(align(1))
   struct SwapchainStateInfo {
+    uint32_t image = uint32_t(0u);
+    uint32_t index = uint32_t(-1);
+  };
+#pragma pack(pop)
+
+  //
+#pragma pack(push, 1)
+  __declspec(align(1))
+  struct PingPongStateInfo {
     uint32_t images[4u] = { 0u };
     uint32_t previous = uint32_t(-1);
     uint32_t index = uint32_t(-1);
@@ -1137,7 +1146,7 @@ namespace ANAMED {
   };
 
   //
-  struct VirtualSwapchainCreateInfo : BaseCreateInfo {
+  struct PingPongCreateInfo : BaseCreateInfo {
     vk::PipelineLayout layout = {};
     vk::SurfaceKHR surface = {};
     uint32_t minImageCount = 1u;

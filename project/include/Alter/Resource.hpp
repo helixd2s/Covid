@@ -27,7 +27,7 @@ namespace ANAMED {
     friend GeometryLevelObj;
     friend InstanceLevelObj;
     friend MemoryAllocatorObj;
-    friend VirtualSwapchainObj;
+    friend PingPongObj;
 
     // 
     //vk::Buffer buffer = {};

@@ -37,9 +37,9 @@ namespace ANAMED {
   };
 
   // 
-  class VirtualSwapchainObj : public BaseObj {
+  class PingPongObj : public BaseObj {
   public: 
-    using tType = WrapShared<VirtualSwapchainObj>;
+    using tType = WrapShared<PingPongObj>;
     using BaseObj::BaseObj;
     //using BaseObj;
 
@@ -51,13 +51,13 @@ namespace ANAMED {
     bool firstWait = true;
 
     //
-    std::optional<VirtualSwapchainCreateInfo> cInfo = VirtualSwapchainCreateInfo{};
+    std::optional<PingPongCreateInfo> cInfo = PingPongCreateInfo{};
 
     //
     std::vector<SwapchainSet> sets = {};
 
     //
-    SwapchainStateInfo currentState = {};
+    PingPongStateInfo currentState = {};
 
     //
     vk::Rect2D renderArea = {};
@@ -68,18 +68,18 @@ namespace ANAMED {
 
   public:
     // 
-    VirtualSwapchainObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<VirtualSwapchainCreateInfo> cInfo = VirtualSwapchainCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
+    PingPongObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<PingPongCreateInfo> cInfo = PingPongCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
       //this->construct(deviceObj, cInfo);
     };
 
     // 
-    VirtualSwapchainObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<VirtualSwapchainCreateInfo> cInfo = VirtualSwapchainCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
+    PingPongObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<PingPongCreateInfo> cInfo = PingPongCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
       //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
     //
-    virtual SwapchainStateInfo& getStateInfo() { return currentState; };
-    virtual SwapchainStateInfo const& getStateInfo() const { return currentState; };
+    virtual PingPongStateInfo& getStateInfo() { return currentState; };
+    virtual PingPongStateInfo const& getStateInfo() const { return currentState; };
     virtual vk::Rect2D const& getRenderArea() const { return renderArea; };
 
     //
@@ -89,8 +89,8 @@ namespace ANAMED {
     };
 
     //
-    inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<VirtualSwapchainCreateInfo> cInfo = VirtualSwapchainCreateInfo{}) {
-      auto shared = std::make_shared<VirtualSwapchainObj>(handle, cInfo);
+    inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<PingPongCreateInfo> cInfo = PingPongCreateInfo{}) {
+      auto shared = std::make_shared<PingPongObj>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle), cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
@@ -407,7 +407,7 @@ namespace ANAMED {
     };
 
     // 
-    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<VirtualSwapchainCreateInfo> cInfo = VirtualSwapchainCreateInfo{}) {
+    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<PingPongCreateInfo> cInfo = PingPongCreateInfo{}) {
       if (cInfo) { this->cInfo = cInfo; };
       this->handle = uintptr_t(this);
       this->updateSwapchain();
