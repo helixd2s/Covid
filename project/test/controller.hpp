@@ -50,6 +50,9 @@ public:
   int width = 1u;
   int height = 1u;
 
+  //
+  bool needsClear = false;
+
   // 
   Controller(std::shared_ptr<GLFWListener> listener = {}) : listener(listener) {
     if (listener->window) {
@@ -130,9 +133,10 @@ public:
     glm::vec3 moveDir = glm::vec3(0.f);
 
     //
-    if (mouse[GLFW_MOUSE_BUTTON_1]) {
+    if (mouse[GLFW_MOUSE_BUTTON_1] && (glm::abs(dx) > 0.0 || glm::abs(dy) > 0.0)) {
       viewDirLocal = (xrot * glm::vec4(viewDirLocal, 1.0)).xyz();
       viewDirLocal = (yrot * glm::vec4(viewDirLocal, 1.0)).xyz();
+      needsClear = true;
     };
 
     // Z, forward should be correct
@@ -165,6 +169,7 @@ public:
     //
     if (doMove && glm::length(moveDir) > 0.f) {
       viewPosLocal += float(dt * this->moveSpeed) * glm::normalize(moveDir);
+      needsClear = true;
     };
 
     //

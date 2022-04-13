@@ -143,7 +143,7 @@ namespace ANAMED {
     virtual uint32_t& acquireImage(cpp21::const_wrap_arg<ANAMED::QueueGetInfo> qfAndQueue) {
       this->currentState.previous = this->currentState.index;
       this->currentState.index = (++this->currentState.index) % this->sets.size();
-      //decltype(auto) fence = this->switchToReady(this->currentState.index, qfAndQueue); // useless command currently, I guess...
+      decltype(auto) fence = this->switchToReady(this->currentState.index, qfAndQueue); // still needs for await semaphores
       memcpy(this->currentState.images, this->sets[this->currentState.index].imageViewIndices.data(), std::min(uint32_t(this->sets[this->currentState.index].imageViewIndices.size()), 4u)*4u);
       return this->currentState.index;
     };
@@ -309,6 +309,7 @@ namespace ANAMED {
       decltype(auto) nextSetIndex = (setIndex+1u) % uint32_t(this->sets.size());
 
       //
+      set->images.push_back(imageObj.as<vk::Image>());
       set->imageViews.push_back(std::get<0>(pair));
       set->imageViewIndices.push_back(std::get<1>(pair));
 

@@ -50,6 +50,7 @@ protected:
   ANAMED::WrapShared<ANAMED::PipelineObj> graphicsObj = {};
   ANAMED::WrapShared<ANAMED::SwapchainObj> swapchainObj = {};
   ANAMED::WrapShared<ANAMED::FramebufferObj> framebufferObj = {};
+  ANAMED::WrapShared<ANAMED::PingPongObj> pingPongObj = {};
 
   //
   UniformData uniformData = {};
@@ -119,6 +120,13 @@ public:
 
     // 
     decltype(auto) acquired = swapchainObj->acquireImage(qfAndQueue);
+    decltype(auto) pingPong = pingPongObj->acquireImage(qfAndQueue);
+
+    //
+    if (controller->needsClear) {
+      pingPongObj->clearImages(qfAndQueue, std::vector<glm::vec4>{ glm::vec4(0.f) });
+      controller->needsClear = false;
+    };
 
     // wait ready for filling
     auto& fence = (*fences)[acquired];
@@ -150,6 +158,7 @@ public:
         .layout = descriptorsObj.as<vk::PipelineLayout>(),
         .framebuffer = framebufferObj.as<uintptr_t>(),
         .swapchain = swapchainObj.as<uintptr_t>(),
+        .pingpong = pingPongObj.as<uintptr_t>(),
         .instanceDraws = modelObj->getDefaultScene()->instanced->getDrawInfo(),
         // # yet another std::optional problem (implicit)
         .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
@@ -166,6 +175,7 @@ public:
         .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 256u), renderArea.extent.height, 1u},
         .layout = descriptorsObj.as<vk::PipelineLayout>(),
         .swapchain = swapchainObj.as<uintptr_t>(),
+        .pingpong = pingPongObj.as<uintptr_t>(),
         // # yet another std::optional problem (implicit)
         .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
       }),
@@ -175,6 +185,7 @@ public:
     });
 
     //
+    pingPongObj->presentImage(qfAndQueue);
     fence = std::get<0u>(swapchainObj->presentImage(qfAndQueue));
 
     // stop the capture
@@ -210,6 +221,15 @@ public:
       .extent = renderArea.extent,
       .info = qfAndQueue
       });
+
+    //
+    pingPongObj = ANAMED::PingPongObj::make(deviceObj.with(0u), ANAMED::PingPongCreateInfo{
+      .layout = descriptorsObj.as<vk::PipelineLayout>(),
+      .extent = renderArea.extent,
+      .minImageCount = 2u,
+      .formats = std::vector<vk::Format>{ vk::Format::eR32G32B32A32Sfloat },
+      .info = qfAndQueue
+    });
 
     // 
     decltype(auto) framebufferAttachments = framebufferObj->getImageViewIndices();

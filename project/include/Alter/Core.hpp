@@ -1148,9 +1148,8 @@ namespace ANAMED {
   //
   struct PingPongCreateInfo : BaseCreateInfo {
     vk::PipelineLayout layout = {};
-    vk::SurfaceKHR surface = {};
-    uint32_t minImageCount = 1u;
     vk::Extent2D extent = {1u, 1u};
+    uint32_t minImageCount = 1u;
     std::vector<vk::Format> formats = {};
     std::optional<QueueGetInfo> info = {};
   };

@@ -170,9 +170,11 @@ void main() {
   };
 
   //finalColor = vec4(toLinear(normals.xyz * 0.5f + 0.5f), 1.f);//vec4(!all(lessThanEqual(intersection.barycentric, 0.f.xxx)) ? 1.f.xxx : 0.f.xxx, 1.f);
-  
+  vec4 resultColor = imageLoad(images[pingpong.images[0]], ivec2(gcoord.x, extent.y-1-gcoord.y)) + max(fromLinear(finalColor), vec4(0.f.xxx, 1.f));
+  imageStore(images[pingpong.images[0]], ivec2(gcoord.x, extent.y-1-gcoord.y), resultColor);
+
   // 
-  imageStore(images[swapchain.image], ivec2(gcoord.x, extent.y-1-gcoord.y), fromLinear(finalColor));
+  imageStore(images[swapchain.image], ivec2(gcoord.x, extent.y-1-gcoord.y), vec4(resultColor.xyz / resultColor.w, 1.f));
   //imageStore(images[swapchain.image], ivec2(extent.x-1-gcoord.x, gcoord.y), fromLinear(finalColor));
   //imageStore(images[swapchain.image], ivec2(gcoord.x, gcoord.y), fromLinear(finalColor));
 };
