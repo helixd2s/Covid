@@ -69,10 +69,11 @@ RayData pathTrace(in RayData rayData) {
         rayData.direction.xyz = randomCosineWeightedHemispherePoint(originSeedXYZ, normals);
         rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, diffuseColor.xyz));
       };
-      rayData.origin.xyz = vertice.xyz + outRayNormal(rayData.direction.xyz, normals.xyz) * 0.0001f;
+      rayData.origin.xyz = (intersection.hitT * rayData.direction.xyz + rayData.origin.xyz) + outRayNormal(rayData.direction.xyz, normals.xyz) * 0.0001f;
     } else {
       rayData.emission.xyz += f16vec3(trueMultColor(rayData.energy.xyz, toLinear(skyColor.xyz)));
       rayData.energy.xyz *= f16vec3(0.f.xxx);
+      rayData.origin.xyz = (10000.f * rayData.direction.xyz + rayData.origin.xyz);
       break;
     }
   };
@@ -128,7 +129,6 @@ void main() {
 
   // 
   //const vec3 rayOrigin = fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId).xyz;
-  const vec3 rayOrigin = texelFetch(textures[framebufferAttachments[2]], ivec2(rayData.launchId), 0).xyz;
 
   //finalColor = vec4(toLinear(normals.xyz * 0.5f + 0.5f), 1.f);//vec4(!all(lessThanEqual(intersection.barycentric, 0.f.xxx)) ? 1.f.xxx : 0.f.xxx, 1.f);
   //uvec4 original = imageLoad(imagesRgba32UI[pingpong.images[0]], ) + cvtRgb16Float(max(fromLinear(finalColor), vec4(0.f.xxx, 1.f)));
@@ -142,9 +142,11 @@ void main() {
   // 
   vec4 gpos = vec4(vec4(vec4(position.xyz, 1.f) * inverse(getPrevInstanceTransform(instancedData.opaqueAddressInfo, indices.x)), 1.f) * getInstanceTransform(instancedData.opaqueAddressInfo, indices.x), 1.f);
   vec4 npos = vec4(gpos * constants.lookAt, 1.f) * constants.perspective;
-  uvec2 ngcoord = uvec2(((npos.xy/npos.w) * 0.5f + 0.5f) * vec2(extent));
+  vec2 tcrd = ((npos.xy/npos.w) * 0.5f + 0.5f);
+  uvec2 ngcoord = uvec2(tcrd * vec2(extent));
 
   // 
+  const vec3 rayOrigin = texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), tcrd, 0).xyz;
   if (distance(rayOrigin.xyz, gpos.xyz) < 0.001f) {
     //ivec2 newCoord = ivec2(ngcoord.x, extent.y-1-ngcoord.y);
     ivec2 newCoord = ivec2(ngcoord.x, ngcoord.y);
