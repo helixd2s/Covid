@@ -536,7 +536,8 @@ namespace ANAMED {
     uint64_t geometryReference = 0ull;
     uint32_t geometryCount = 0u;
     uint32_t reserved = 0u;
-    glm::mat3x4 transform = {};
+    glm::mat3x4 transform = glm::mat3x4(1.f);
+    glm::mat3x4 prevTransform = glm::mat3x4(1.f);
     //glm::mat3x3 normalTransform = {};
     //uint32_t align;
   };

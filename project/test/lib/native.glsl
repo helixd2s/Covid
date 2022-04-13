@@ -48,6 +48,8 @@ struct Constants
   mat4x4 perspectiveInverse;
   mat3x4 lookAt;
   mat3x4 lookAtInverse;
+  mat3x4 previousLookAt;
+  mat3x4 previousLookAtInverse;
 };
 
 //
@@ -91,6 +93,8 @@ layout(set = 1, binding = 0) uniform texture2D textures[];
 layout(set = 1, binding = 0) uniform utexture2D texturesU[];
 layout(set = 2, binding = 0) uniform sampler samplers[];
 layout(set = 3, binding = 0, rgb10_a2) uniform image2D images[];
+layout(set = 3, binding = 0, rgba32f) uniform image2D imagesRgba32F[];
+layout(set = 3, binding = 0, rgba32ui) uniform uimage2D imagesRgba32UI[];
 
 // but may not to be...
 layout(buffer_reference, scalar, buffer_reference_align = 1) buffer TransformBlock {
@@ -206,6 +210,7 @@ layout(buffer_reference, scalar, buffer_reference_align = 1) buffer GeometryData
 struct InstanceInfo {
   uint64_t data; uint32_t geometryCount; uint32_t reserved;
   mat3x4 transform;
+  mat3x4 prevTransform;
   //mat3x3 normalTransform;
   //uint32_t align;
 };
@@ -688,6 +693,18 @@ vec3 inRayNormal(in vec3 dir, in vec3 normal) {
 
 vec3 outRayNormal(in vec3 dir, in vec3 normal) {
   return normalize(faceforward(normal, dir, normal));
+};
+
+//
+vec4 cvtRgb16Acc(in uvec4 color) {
+  vec3 minor = vec3(color.rgb & 0xFFFF) / 65536.f;
+  vec3 major = vec3((color.rgb & 0xFFFF0000) >> 16);
+  return vec4((major + minor), float(color.w));
+};
+
+//
+uvec4 cvtRgb16Float(in vec4 sampled) {
+  return uvec4(sampled.xyz * 65536.f, sampled.w);
 };
 
 #endif

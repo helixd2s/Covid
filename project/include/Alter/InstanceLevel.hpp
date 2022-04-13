@@ -61,6 +61,8 @@ namespace ANAMED {
     inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
     inline decltype(auto) SFT() const { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::const_pointer_cast<T>(std::dynamic_pointer_cast<T const>(shared_from_this()))); };
 
+    //
+    bool firstUpdate = true;
 
   public:
 
@@ -170,9 +172,13 @@ namespace ANAMED {
         };
 
         // 
+        instanceInfo.prevTransform = firstUpdate ? reinterpret_cast<glm::mat3x4&>(instanceDevInfo.transform) : instanceInfo.transform;
         instanceInfo.transform = reinterpret_cast<glm::mat3x4&>(instanceDevInfo.transform);
         instanceInfo.geometryCount = geometryLevel->getGeometries().size();
         instanceInfo.geometryReference = geometryLevel->getGeometryDeviceAddress();
+
+        //
+        firstUpdate = false;
       };
 
       {

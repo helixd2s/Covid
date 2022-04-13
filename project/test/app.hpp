@@ -27,6 +27,8 @@ struct Constants
   glm::mat4x4 perspectiveInverse = glm::mat4x4(1.f);
   glm::mat3x4 lookAt = glm::mat3x4(1.f);
   glm::mat3x4 lookAtInverse = glm::mat3x4(1.f);
+  glm::mat3x4 previousLookAt = glm::mat3x4(1.f);
+  glm::mat3x4 previousLookAtInverse = glm::mat3x4(1.f);
 };
 
 //
@@ -97,6 +99,8 @@ public:
     auto lkat = glm::lookAt(controller->viewPos, controller->viewCnt, controller->viewUp);
     uniformData.constants.perspective = glm::transpose(persp);
     uniformData.constants.perspectiveInverse = glm::transpose(glm::inverse(persp));
+    uniformData.constants.previousLookAt = uniformData.constants.lookAt;
+    uniformData.constants.previousLookAtInverse = uniformData.constants.lookAtInverse;
     uniformData.constants.lookAt = glm::mat3x4(glm::transpose(lkat));
     uniformData.constants.lookAtInverse = glm::mat3x4(glm::transpose(glm::inverse(lkat)));
     uniformData.extent = glm::uvec2(renderArea.extent.width, renderArea.extent.height);
@@ -124,7 +128,7 @@ public:
 
     //
     if (controller->needsClear) {
-      pingPongObj->clearImages(qfAndQueue, std::vector<glm::vec4>{ glm::vec4(0.f) });
+      pingPongObj->clearImages(qfAndQueue, std::vector<glm::vec4>{ glm::uintBitsToFloat(glm::uvec4(0u)) });
       controller->needsClear = false;
     };
 
@@ -227,7 +231,7 @@ public:
       .layout = descriptorsObj.as<vk::PipelineLayout>(),
       .extent = renderArea.extent,
       .minImageCount = 2u,
-      .formats = std::vector<vk::Format>{ vk::Format::eR32G32B32A32Sfloat },
+      .formats = std::vector<vk::Format>{ vk::Format::eR32G32B32A32Uint },
       .info = qfAndQueue
     });
 
