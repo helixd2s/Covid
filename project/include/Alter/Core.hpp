@@ -655,12 +655,13 @@ namespace ANAMED {
     vk::ClearValue stencilClearValue = vk::ClearValue{ .depthStencil = vk::ClearDepthStencilValue{.depth = 1.f, .stencil = 0u} };
     std::vector<vk::ClearValue> colorClearValues = { 
       vk::ClearValue{.color = vk::ClearColorValue{.float32 = std::array<float, 4>{0.f,0.f,0.f,0.f}} }, 
-      vk::ClearValue{.color = vk::ClearColorValue{.uint32 = std::array<uint32_t, 4>{0u,0u,0u,0u}}} 
+      vk::ClearValue{.color = vk::ClearColorValue{.uint32 = std::array<uint32_t, 4>{0u,0u,0u,0u}}},
+      vk::ClearValue{.color = vk::ClearColorValue{.float32 = std::array<float, 4>{0.f,0.f,0.f,0.f}} }
     };
 
     vk::Format depthAttachmentFormat = vk::Format::eD32SfloatS8Uint;//eD32Sfloat;
     vk::Format stencilAttachmentFormat = vk::Format::eD32SfloatS8Uint;//eS8Uint;
-    std::vector<vk::Format> colorAttachmentFormats = { vk::Format::eR32G32B32A32Sfloat, vk::Format::eR32G32B32A32Uint };
+    std::vector<vk::Format> colorAttachmentFormats = { vk::Format::eR32G32B32A32Sfloat, vk::Format::eR32G32B32A32Uint, vk::Format::eR32G32B32A32Sfloat };
     std::vector<vk::PipelineColorBlendAttachmentState> blendStates = {
       vk::PipelineColorBlendAttachmentState{
         .blendEnable = false,
@@ -681,6 +682,16 @@ namespace ANAMED {
         .dstAlphaBlendFactor = vk::BlendFactor::eOne,
         .alphaBlendOp = vk::BlendOp::eMax,
         .colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
+      },
+      vk::PipelineColorBlendAttachmentState{
+        .blendEnable = false,
+        .srcColorBlendFactor = vk::BlendFactor::eOne, // needs pre-mult
+        .dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
+        .colorBlendOp = vk::BlendOp::eAdd,
+        .srcAlphaBlendFactor = vk::BlendFactor::eOne,
+        .dstAlphaBlendFactor = vk::BlendFactor::eOne,
+        .alphaBlendOp = vk::BlendOp::eMax,
+        .colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
       }
     };
   };
@@ -689,69 +700,7 @@ namespace ANAMED {
   struct DescriptorsCreateInfo : BaseCreateInfo {
     std::optional<QueueGetInfo> info = QueueGetInfo{};
     std::vector<AttachmentsInfo> attachments = {
-      AttachmentsInfo{},
-      AttachmentsInfo{
-        .depthClearValue = vk::ClearValue{.depthStencil = vk::ClearDepthStencilValue{.depth = 1.f, .stencil = 0u} },
-        .stencilClearValue = vk::ClearValue{.depthStencil = vk::ClearDepthStencilValue{.depth = 1.f, .stencil = 0u} },
-        .colorClearValues = { vk::ClearValue{.color = vk::ClearColorValue{.float32 = std::array<float, 4>{0.f,0.f,0.f,0.f}} }, vk::ClearValue{.color = vk::ClearColorValue{.uint32 = std::array<uint32_t, 4>{0u,0u,0u,0u}}} },
-
-        .depthAttachmentFormat = vk::Format::eD32SfloatS8Uint,
-        .stencilAttachmentFormat = vk::Format::eD32SfloatS8Uint,
-        .colorAttachmentFormats = { vk::Format::eR32G32B32A32Sfloat, vk::Format::eR32G32B32A32Uint },
-        .blendStates = {
-          vk::PipelineColorBlendAttachmentState{
-            .blendEnable = false,
-            .srcColorBlendFactor = vk::BlendFactor::eOne, // needs pre-mult
-            .dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
-            .colorBlendOp = vk::BlendOp::eAdd,
-            .srcAlphaBlendFactor = vk::BlendFactor::eOne,
-            .dstAlphaBlendFactor = vk::BlendFactor::eOne,
-            .alphaBlendOp = vk::BlendOp::eMax,
-            .colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
-          },
-          vk::PipelineColorBlendAttachmentState{
-            .blendEnable = false,
-            .srcColorBlendFactor = vk::BlendFactor::eOne, // needs pre-mult
-            .dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
-            .colorBlendOp = vk::BlendOp::eAdd,
-            .srcAlphaBlendFactor = vk::BlendFactor::eOne,
-            .dstAlphaBlendFactor = vk::BlendFactor::eOne,
-            .alphaBlendOp = vk::BlendOp::eMax,
-            .colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
-          }
-        }
-      },
-      AttachmentsInfo{
-        .depthClearValue = vk::ClearValue{.depthStencil = vk::ClearDepthStencilValue{.depth = 1.f, .stencil = 0u} },
-        .stencilClearValue = vk::ClearValue{.depthStencil = vk::ClearDepthStencilValue{.depth = 1.f, .stencil = 0u} },
-        .colorClearValues = { vk::ClearValue{.color = vk::ClearColorValue{.float32 = std::array<float, 4>{0.f,0.f,0.f,0.f}} }, vk::ClearValue{.color = vk::ClearColorValue{.uint32 = std::array<uint32_t, 4>{0u,0u,0u,0u}}} },
-
-        .depthAttachmentFormat = vk::Format::eD32SfloatS8Uint,
-        .stencilAttachmentFormat = vk::Format::eD32SfloatS8Uint,
-        .colorAttachmentFormats = { vk::Format::eR8G8B8A8Unorm, vk::Format::eR8G8B8A8Unorm },
-        .blendStates = {
-          vk::PipelineColorBlendAttachmentState{
-            .blendEnable = false,
-            .srcColorBlendFactor = vk::BlendFactor::eOne, // needs pre-mult
-            .dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
-            .colorBlendOp = vk::BlendOp::eAdd,
-            .srcAlphaBlendFactor = vk::BlendFactor::eOne,
-            .dstAlphaBlendFactor = vk::BlendFactor::eOne,
-            .alphaBlendOp = vk::BlendOp::eMax,
-            .colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
-          },
-          vk::PipelineColorBlendAttachmentState{
-            .blendEnable = false,
-            .srcColorBlendFactor = vk::BlendFactor::eOne, // needs pre-mult
-            .dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
-            .colorBlendOp = vk::BlendOp::eAdd,
-            .srcAlphaBlendFactor = vk::BlendFactor::eOne,
-            .dstAlphaBlendFactor = vk::BlendFactor::eOne,
-            .alphaBlendOp = vk::BlendOp::eMax,
-            .colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
-          }
-        }
-      }
+      AttachmentsInfo{}
     };
   };
 
@@ -1151,6 +1100,7 @@ namespace ANAMED {
     vk::PipelineLayout layout = {};
     vk::Extent2D extent = {1u, 1u};
     uint32_t minImageCount = 1u;
+    std::vector<bool> split = {};
     std::vector<vk::Format> formats = {};
     std::optional<QueueGetInfo> info = {};
   };

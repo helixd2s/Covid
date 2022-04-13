@@ -160,8 +160,7 @@ namespace ANAMED {
       // 
       //submission.submission.waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{ sets[*imageIndex].presentSemaphoreInfo };
       submission.commandInits.push_back([this, clearColors, queueFamilyIndex= info->queueFamilyIndex](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
-        //for (auto& switchFn : this->sets[*imageIndex].switchToReadyFns) { switchFn(cmdBuf); };
-        this->writeClearImages(cmdBuf, clearColors, queueFamilyIndex);
+        this->writeClearImages(cmdBuf, queueFamilyIndex, clearColors);
         return cmdBuf;
       });
 
@@ -170,7 +169,35 @@ namespace ANAMED {
     };
 
     //
-    virtual void writeClearImages(cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf, std::vector<glm::vec4> const& clearColors, uint32_t const& queueFamilyIndex = 0u) {
+    virtual FenceType clearImage(cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}, uint32_t const& imageIndex = 0u, cpp21::const_wrap_arg<glm::vec4> clearColors = {}) {
+      decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo {.info = info ? info.value() : this->cInfo->info } };
+
+      // 
+      //submission.submission.waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{ sets[*imageIndex].presentSemaphoreInfo };
+      submission.commandInits.push_back([this, clearColors, imageIndex, queueFamilyIndex = info->queueFamilyIndex](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+        this->writeClearImage(cmdBuf, queueFamilyIndex, imageIndex, clearColors);
+        return cmdBuf;
+      });
+
+      //
+      return ANAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
+    };
+
+    //
+    virtual void writeClearImage(cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf, uint32_t const& queueFamilyIndex = 0u, uint32_t const& imageIndex = 0u, cpp21::const_wrap_arg<glm::vec4> clearColors = {}) {
+      decltype(auto) device = this->base.as<vk::Device>();
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) image = this->sets[this->currentState.index].images[imageIndex];
+      decltype(auto) imageObj = deviceObj->get<ResourceObj>(image);
+      imageObj->writeClearCommand(ImageClearWriteInfo{
+        .cmdBuf = cmdBuf,
+        .clearColor = clearColors,
+        .queueFamilyIndex = queueFamilyIndex
+      });
+    };
+
+    //
+    virtual void writeClearImages(cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf, uint32_t const& queueFamilyIndex = 0u, std::vector<glm::vec4> const& clearColors = {}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
 
@@ -272,11 +299,11 @@ namespace ANAMED {
       decltype(auto) imageLayout = vk::ImageLayout::eGeneral;
 
       //
-      decltype(auto) extent3D = vk::Extent3D{ this->cInfo->extent.width, this->cInfo->extent.height, 1u };
+      decltype(auto) extent3D = vk::Extent3D{ this->cInfo->extent.width * (this->cInfo->split[index] ? 4u : 1u), this->cInfo->extent.height, 1u};
       decltype(auto) imageObj = ResourceObj::make(this->base, ResourceCreateInfo{
         .descriptors = this->cInfo->layout,
         .imageInfo = ImageCreateInfo{
-          .format = this->cInfo->formats[index],
+          .format = this->cInfo->split[index] ? vk::Format::eR32Uint : this->cInfo->formats[index],
           .extent = extent3D,
           .layout = imageLayout,
           .info = this->cInfo->info ? this->cInfo->info : QueueGetInfo{0u, 0u},

@@ -10,9 +10,11 @@
 layout(location = 0) in vec4 pColor;
 layout(location = 1) in vec3 pBary;
 layout(location = 2) flat in uvec4 pIndices;
+
 //
 layout(location = 0) out vec4 baryData;
 layout(location = 1) out uvec4 indices;
+layout(location = 2) out vec4 position;
 
 //
 #ifndef TRANSLUCENT
@@ -57,5 +59,6 @@ void main() {
 
   //
   baryData = vec4(pBary, 1.f);
+  position = vec4(fullTransform(instanceInfo, vertice, geometryIndex).xyz, 1.f);
   indices = pIndices;
 };

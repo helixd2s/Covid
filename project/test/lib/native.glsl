@@ -95,6 +95,25 @@ layout(set = 2, binding = 0) uniform sampler samplers[];
 layout(set = 3, binding = 0, rgb10_a2) uniform image2D images[];
 layout(set = 3, binding = 0, rgba32f) uniform image2D imagesRgba32F[];
 layout(set = 3, binding = 0, rgba32ui) uniform uimage2D imagesRgba32UI[];
+layout(set = 3, binding = 0, r32ui) uniform uimage2D imagesR32UI[];
+
+//
+uvec4 readSplit(in uint image, in ivec2 coord) {
+  return uvec4(
+    imageLoad(imagesR32UI[image], coord * ivec2(4u,1u) + ivec2(0u,0u)).x, 
+    imageLoad(imagesR32UI[image], coord * ivec2(4u,1u) + ivec2(1u,0u)).x, 
+    imageLoad(imagesR32UI[image], coord * ivec2(4u,1u) + ivec2(2u,0u)).x, 
+    imageLoad(imagesR32UI[image], coord * ivec2(4u,1u) + ivec2(3u,0u)).x
+  );
+};
+
+//
+void accumulateSplit(in uint image, in ivec2 coord, in uvec4 data) {
+  imageAtomicAdd(imagesR32UI[image], coord * ivec2(4u,1u) + ivec2(0u,0u), data.x); 
+  imageAtomicAdd(imagesR32UI[image], coord * ivec2(4u,1u) + ivec2(1u,0u), data.y); 
+  imageAtomicAdd(imagesR32UI[image], coord * ivec2(4u,1u) + ivec2(2u,0u), data.z);
+  imageAtomicAdd(imagesR32UI[image], coord * ivec2(4u,1u) + ivec2(3u,0u), data.w);
+};
 
 // but may not to be...
 layout(buffer_reference, scalar, buffer_reference_align = 1) buffer TransformBlock {
@@ -495,8 +514,25 @@ const vec3 bary[3] = { vec3(1.f,0.f,0.f), vec3(0.f,1.f,0.f), vec3(0.f,0.f,1.f) }
 
 
 //
+mat3x4 getInstanceTransform(in InstanceAddressInfo addressInfo, in uint32_t instanceId) {
+  InstanceInfo instanceInfo = getInstance(addressInfo, instanceId);
+  return instanceInfo.transform;
+};
+
+//
 mat3x4 getInstanceTransform(in InstanceInfo info) {
   return info.transform;
+};
+
+//
+mat3x4 getPrevInstanceTransform(in InstanceInfo info) {
+  return info.transform;
+};
+
+//
+mat3x4 getPrevInstanceTransform(in InstanceAddressInfo addressInfo, in uint32_t instanceId) {
+  InstanceInfo instanceInfo = getInstance(addressInfo, instanceId);
+  return instanceInfo.prevTransform;
 };
 
 //
@@ -507,7 +543,8 @@ mat3x4 getGeometryTransform(in GeometryInfo info) {
 
 //
 mat3x4 inverse(in mat3x4 inmat) {
-  const mat4x4 temp = transpose(inverse(transpose(mat4x4(inmat))));
+  const mat4x4 temp = transpose(inverse(transpose(mat4x4(inmat[0],inmat[1],inmat[2],vec4(0.f.xxx,1.f)))));
+  //const mat4x4 temp = inverse(mat4x4(inmat[0],inmat[1],inmat[2],vec4(0.f.xxx,1.f)));
   return mat3x4(temp[0],temp[1],temp[2]);
 };
 

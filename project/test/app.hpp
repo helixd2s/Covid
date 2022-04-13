@@ -48,6 +48,7 @@ protected:
   ANAMED::WrapShared<ANAMED::DescriptorsObj> descriptorsObj = {};
   ANAMED::WrapShared<ANAMED::UploaderObj> uploaderObj = {};
   ANAMED::WrapShared<ANAMED::GltfLoaderObj> gltfLoader = {};
+  ANAMED::WrapShared<ANAMED::PipelineObj> resampleObj = {};
   ANAMED::WrapShared<ANAMED::PipelineObj> computeObj = {};
   ANAMED::WrapShared<ANAMED::PipelineObj> graphicsObj = {};
   ANAMED::WrapShared<ANAMED::SwapchainObj> swapchainObj = {};
@@ -127,10 +128,11 @@ public:
     decltype(auto) pingPong = pingPongObj->acquireImage(qfAndQueue);
 
     //
-    if (controller->needsClear) {
-      pingPongObj->clearImages(qfAndQueue, std::vector<glm::vec4>{ glm::uintBitsToFloat(glm::uvec4(0u)) });
-      controller->needsClear = false;
-    };
+    //if (controller->needsClear) {
+      //pingPongObj->clearImages(qfAndQueue, std::vector<glm::vec4>{ glm::uintBitsToFloat(glm::uvec4(0u)), glm::uintBitsToFloat(glm::uvec4(0u)), glm::uintBitsToFloat(glm::uvec4(0u)), glm::vec4(0.f) });
+    pingPongObj->clearImage(qfAndQueue, 1u, glm::uintBitsToFloat(glm::uvec4(0u)));
+      //controller->needsClear = false;
+    //};
 
     // wait ready for filling
     auto& fence = (*fences)[acquired];
@@ -171,6 +173,22 @@ public:
         .info = qfAndQueue,
       }
     });
+
+    //
+    decltype(auto) resampleFence = resampleObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
+      // # yet another std::optional problem (implicit)
+      .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
+        .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 256u), renderArea.extent.height, 1u},
+        .layout = descriptorsObj.as<vk::PipelineLayout>(),
+        .swapchain = swapchainObj.as<uintptr_t>(),
+        .pingpong = pingPongObj.as<uintptr_t>(),
+        // # yet another std::optional problem (implicit)
+        .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
+      }),
+      .submission = ANAMED::SubmissionInfo{
+        .info = qfAndQueue
+      }
+      });
 
     //
     decltype(auto) computeFence = computeObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
@@ -231,7 +249,10 @@ public:
       .layout = descriptorsObj.as<vk::PipelineLayout>(),
       .extent = renderArea.extent,
       .minImageCount = 2u,
-      .formats = std::vector<vk::Format>{ vk::Format::eR32G32B32A32Uint },
+
+      // first image is accumulation, second image is back buffer, third image is index buffer, fourth image is position buffer
+      .split = std::vector<bool>{false, true, false, false},
+      .formats = std::vector<vk::Format>{ vk::Format::eR32G32B32A32Uint, vk::Format::eR32G32B32A32Uint, vk::Format::eR32G32B32A32Uint, vk::Format::eR32G32B32A32Sfloat },
       .info = qfAndQueue
     });
 
@@ -290,6 +311,14 @@ protected:
       .layout = descriptorsObj.as<vk::PipelineLayout>(),
       .compute = ANAMED::ComputePipelineCreateInfo{
         .code = cpp21::readBinaryU32("./test.comp.spv")
+      }
+    });
+
+    //
+    resampleObj = ANAMED::PipelineObj::make(deviceObj.with(0u), ANAMED::PipelineCreateInfo{
+      .layout = descriptorsObj.as<vk::PipelineLayout>(),
+      .compute = ANAMED::ComputePipelineCreateInfo{
+        .code = cpp21::readBinaryU32("./resample.comp.spv")
       }
     });
 
