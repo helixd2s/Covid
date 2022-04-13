@@ -177,19 +177,18 @@ void main() {
   };
 
   //finalColor = vec4(toLinear(normals.xyz * 0.5f + 0.5f), 1.f);//vec4(!all(lessThanEqual(intersection.barycentric, 0.f.xxx)) ? 1.f.xxx : 0.f.xxx, 1.f);
-  ivec2 sampleCoord = ivec2(gcoord.x, extent.y-1-gcoord.y);
-  uvec4 original = readSplit(pingpong.images[1], sampleCoord) + cvtRgb16Float(max(finalColor * vec4(diffuseColor.xyz, 1.f) + vec4(emissiveColor.xyz, 0.f), vec4(0.f.xxx, 1.f)));
-  imageStore(imagesRgba32UI[pingpong.images[0]], sampleCoord, original);
-  imageStore(imagesRgba32UI[pingpong.images[2]], sampleCoord, uvec4(intersection.instanceId, intersection.geometryId, intersection.primitiveId, 0u));
-  imageStore(imagesRgba32F[pingpong.images[3]], sampleCoord, vec4(rayOrigin, 1.f));
+  uvec4 original = readSplit(pingpong.images[1], ivec2(gcoord)) + cvtRgb16Float(max(finalColor /** vec4(diffuseColor.xyz, 1.f) + vec4(emissiveColor.xyz, 0.f)*/, vec4(0.f.xxx, 1.f)));
+  imageStore(imagesRgba32UI[pingpong.images[0]], ivec2(gcoord), original);
+  imageStore(imagesRgba32UI[pingpong.images[2]], ivec2(gcoord), uvec4(intersection.instanceId, intersection.geometryId, intersection.primitiveId, 0u));
+  imageStore(imagesRgba32F[pingpong.images[3]], ivec2(gcoord), vec4(rayOrigin, 1.f));
 
   // 
-  reflColor += imageLoad(imagesRgba32F[pingpong.images[4]], sampleCoord);
-  imageStore(imagesRgba32F[pingpong.images[4]], sampleCoord, reflColor);
+  reflColor += imageLoad(imagesRgba32F[pingpong.images[4]], ivec2(gcoord));
+  imageStore(imagesRgba32F[pingpong.images[4]], ivec2(gcoord), reflColor);
 
   // 
   vec4 resultColor = cvtRgb16Acc(original);
-  imageStore(images[swapchain.image], sampleCoord, fromLinear(vec4(mix(resultColor.xyz / resultColor.w, reflColor.xyz / reflColor.w, hasHit ? (metallicFactor + (fresnel_schlick(0.f, dot(reflDir.xyz, normals))) * (1.f - metallicFactor)) : 0.f), 1.f)));
+  imageStore(images[swapchain.image], ivec2(gcoord.x, extent.y-1-gcoord.y), fromLinear(vec4(mix(resultColor.xyz / resultColor.w * diffuseColor.xyz + emissiveColor.xyz, reflColor.xyz / reflColor.w, hasHit ? (metallicFactor + (fresnel_schlick(0.f, dot(reflDir.xyz, normals))) * (1.f - metallicFactor)) : 0.f), 1.f)));
   //imageStore(images[swapchain.image], ivec2(extent.x-1-gcoord.x, gcoord.y), fromLinear(finalColor));
   //imageStore(images[swapchain.image], ivec2(gcoord.x, gcoord.y), fromLinear(finalColor));
 };

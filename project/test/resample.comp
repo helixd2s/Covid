@@ -134,10 +134,9 @@ void main() {
   //uvec4 original = imageLoad(imagesRgba32UI[pingpong.images[0]], ) + cvtRgb16Float(max(fromLinear(finalColor), vec4(0.f.xxx, 1.f)));
 
   // 
-  ivec2 sampleCoord = ivec2(gcoord.x, extent.y-1-gcoord.y);
-  uvec4 original = imageLoad(imagesRgba32UI[pingpong.images[0]], sampleCoord);
-  uvec4 indices = imageLoad(imagesRgba32UI[pingpong.images[2]], sampleCoord);
-  vec4 position = imageLoad(imagesRgba32F[pingpong.images[3]], sampleCoord);
+  uvec4 original = imageLoad(imagesRgba32UI[pingpong.images[0]], ivec2(gcoord));
+  uvec4 indices = imageLoad(imagesRgba32UI[pingpong.images[2]], ivec2(gcoord));
+  vec4 position = imageLoad(imagesRgba32F[pingpong.images[3]], ivec2(gcoord));
 
   // 
   vec4 gpos = vec4(vec4(vec4(position.xyz, 1.f) * inverse(getPrevInstanceTransform(instancedData.opaqueAddressInfo, indices.x)), 1.f) * getInstanceTransform(instancedData.opaqueAddressInfo, indices.x), 1.f);
@@ -148,8 +147,6 @@ void main() {
   // 
   const vec3 rayOrigin = texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), tcrd, 0).xyz;
   if (distance(rayOrigin.xyz, gpos.xyz) < 0.001f) {
-    //ivec2 newCoord = ivec2(ngcoord.x, extent.y-1-ngcoord.y);
-    ivec2 newCoord = ivec2(ngcoord.x, ngcoord.y);
-    accumulateSplit(pingpong.images[1], ivec2(newCoord.x, extent.y-1-newCoord.y), original);
+    accumulateSplit(pingpong.images[1], ivec2(ngcoord), original);
   };
 };
