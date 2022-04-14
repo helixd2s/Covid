@@ -468,6 +468,7 @@ namespace ANAMED {
     BufferViewInfo transform = {};
 
     //
+    uint64_t previousRef = 0ull;
     uint64_t extensionRef = 0ull;
     uint64_t materialRef = 0ull;
 

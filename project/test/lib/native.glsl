@@ -212,6 +212,7 @@ struct GeometryInfo {
   BufferViewInfo transform;
 
   //
+  uint64_t previousRef;
   uint64_t extensionRef;
   uint64_t materialRef;
 
