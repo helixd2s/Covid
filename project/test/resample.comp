@@ -96,57 +96,61 @@ IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayDat
   return intersection;
 };
 
+//
+vec3 proj_point_in_plane(in vec3 p, in vec3 v0, in vec3 n, out float d) {
+  d = dot(n, p - v0);
+  return p - (n * d);
+};
+
+//
+vec3 find_reflection_incident_point(in vec3 p0, in vec3 p1, in vec3 v0, in vec3 n) {
+  float d0 = 0;
+  float d1 = 0;
+  vec3 proj_p0 = proj_point_in_plane(p0, v0, n, d0);
+  vec3 proj_p1 = proj_point_in_plane(p1, v0, n, d1);
+
+  if(d1 < d0)
+    return (proj_p0 - proj_p1) * d1/(d0+d1) + proj_p1;
+  else
+    return (proj_p1 - proj_p0) * d0/(d0+d1) + proj_p0;
+};
+
 // 
 void main() {
   const uvec2 gcoord = gl_GlobalInvocationID.xy;
   const vec2 tCoord = vec2(gcoord)/vec2(extent);
 
+  // TODO: convert into view space
+  const uvec4 prevIndices = imageLoad(imagesRgba32UI[pingpong.images[2]], ivec2(gcoord));
+  const uvec4 prevReflIndices = imageLoad(imagesRgba32UI[pingpong.images[10]], ivec2(gcoord));
+  const vec4 prevPos = imageLoad(imagesRgba32F[pingpong.images[3]], ivec2(gcoord));
+  const vec4 prevReflPos = imageLoad(imagesRgba32F[pingpong.images[8]], ivec2(gcoord));
+  const vec4 prevNormal = imageLoad(imagesRgba32F[pingpong.images[9]], ivec2(gcoord));
+
+  // 
+  const vec4 currentPos = vec4(vec4(vec4(prevPos.xyz, 1.f) * inverse(getPrevInstanceTransform(instancedData.opaqueAddressInfo, prevIndices.x)), 1.f) * getInstanceTransform(instancedData.opaqueAddressInfo, prevIndices.x), 1.f);
+  const vec4 currentReflPos = vec4(vec4(vec4(prevReflPos.xyz, 1.f) * inverse(getPrevInstanceTransform(instancedData.opaqueAddressInfo, prevReflIndices.x)), 1.f) * getInstanceTransform(instancedData.opaqueAddressInfo, prevReflIndices.x), 1.f);
+  const vec4 perspPos = vec4(currentPos * constants.lookAt, 1.f) * constants.perspective;
+  const vec2 screenPos = ((perspPos.xy/perspPos.w) * 0.5f + 0.5f);
+  const ivec2 intScreenPos = ivec2(screenPos * vec2(extent));
+
+  // TODO: correctly reproject previous reflection point
+  const vec3 foundIntersection = find_reflection_incident_point(currentReflPos.xyz, prevReflPos.xyz, currentPos.xyz, prevNormal.xyz);
+  const vec3 reprojIntersection = vec4(vec4(foundIntersection, 1.f) * inverse(getPrevInstanceTransform(instancedData.opaqueAddressInfo, prevReflIndices.x)), 1.f) * getInstanceTransform(instancedData.opaqueAddressInfo, prevReflIndices.x);
+
+  // 
+  const vec3 viewIntersection = vec4(reprojIntersection, 1.f) * constants.lookAt;
+  const vec4 SSIntersection = vec4(viewIntersection, 1.f) * constants.perspective;
+  const vec2 whereReflect = SSIntersection.xy / SSIntersection.w * 0.5f + 0.5f;
+  const ivec2 intWhereReflect = ivec2(whereReflect * vec2(extent));
+
+  // 
+  if (distance(texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), screenPos, 0).xyz, currentPos.xyz) < 0.001f) {
+    accumulateSplit(pingpong.images[1], intScreenPos, imageLoad(imagesRgba32UI[pingpong.images[0]], ivec2(gcoord))); // from previous diffuse
+  };
+
   //
-  const vec3 rayBegin = divW(vec4(vec3(tCoord, 0.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse;//fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId);
-  const vec3 rayEnd = divW(vec4(vec3(tCoord, 1.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse;
-  const vec3 rayDir = normalize(rayEnd.xyz - rayBegin.xyz);
-
-  //
-  RayData rayData;
-  rayData.launchId = u16vec2(gcoord.xy);
-  rayData.origin = rayBegin.xyz;
-  rayData.direction = rayDir;
-  rayData.energy = f16vec4(1.f.xxx, 1.f);
-  rayData.emission = f16vec4(0.f.xxx, 1.f);
-
-  //
-//#ifdef USE_RASTERIZE_PASS
-  //IntersectionInfo intersection = rasterize(instancedData.opaqueAddressInfo, rayData, 10000.f);
-//#else
-  //IntersectionInfo intersection = traceRaysOpaque(instancedData.opaqueAddressInfo, rayData, 10000.f);
-//#endif
-
-  // 
-  //InstanceInfo instanceInfo = getInstance(instancedData.opaqueAddressInfo, intersection.instanceId);
-  //GeometryInfo geometryInfo = getGeometry(instanceInfo, intersection.geometryId);
-  //GeometryExtData geometry = getGeometryData(geometryInfo, intersection.primitiveId);
-  //GeometryExtAttrib attrib = interpolate(geometry, intersection.barycentric);
-
-  // 
-  //const vec3 rayOrigin = fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId).xyz;
-
-  //finalColor = vec4(toLinear(normals.xyz * 0.5f + 0.5f), 1.f);//vec4(!all(lessThanEqual(intersection.barycentric, 0.f.xxx)) ? 1.f.xxx : 0.f.xxx, 1.f);
-  //uvec4 original = imageLoad(imagesRgba32UI[pingpong.images[0]], ) + cvtRgb16Float(max(fromLinear(finalColor), vec4(0.f.xxx, 1.f)));
-
-  // 
-  uvec4 original = imageLoad(imagesRgba32UI[pingpong.images[0]], ivec2(gcoord));
-  uvec4 indices = imageLoad(imagesRgba32UI[pingpong.images[2]], ivec2(gcoord));
-  vec4 position = imageLoad(imagesRgba32F[pingpong.images[3]], ivec2(gcoord));
-
-  // 
-  vec4 gpos = vec4(vec4(vec4(position.xyz, 1.f) * inverse(getPrevInstanceTransform(instancedData.opaqueAddressInfo, indices.x)), 1.f) * getInstanceTransform(instancedData.opaqueAddressInfo, indices.x), 1.f);
-  vec4 npos = vec4(gpos * constants.lookAt, 1.f) * constants.perspective;
-  vec2 tcrd = ((npos.xy/npos.w) * 0.5f + 0.5f);
-  uvec2 ngcoord = uvec2(tcrd * vec2(extent));
-
-  // 
-  const vec3 rayOrigin = texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), tcrd, 0).xyz;
-  if (distance(rayOrigin.xyz, gpos.xyz) < 0.001f) {
-    accumulateSplit(pingpong.images[1], ivec2(ngcoord), original);
+  if (distance(texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), whereReflect, 0).xyz, reprojIntersection.xyz) < 0.001f) {
+    accumulateSplit(pingpong.images[5], intWhereReflect, imageLoad(imagesRgba32UI[pingpong.images[4]], ivec2(gcoord))); // from previous reflection
   };
 };

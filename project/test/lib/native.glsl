@@ -267,7 +267,7 @@ struct InstanceAddressBlock {
 
 //
 struct PingPongStateInfo {
-  uint32_t images[10];
+  uint32_t images[12];
   uint32_t previous;
   uint32_t index;
 };
@@ -598,6 +598,11 @@ vec3 fullTransformNormal(in InstanceAddressInfo info, in vec3 normals, in uint32
   return fullTransformNormal(getInstance(info, instanceId), normals, geometryId);
 };
 
+//
+vec3 fullPreviousTransformNormal(in InstanceInfo instance, in vec3 normals, in uint32_t geometryId) {
+  GeometryInfo geometry = getGeometry(instance, geometryId);
+  return normalize(toNormalMat(getPrevInstanceTransform(instance)) * normalize(toNormalMat(getGeometryTransform(geometry)) * normalize(normals)));
+};
 
 //
 GeometryExtData getGeometryData(in GeometryInfo geometryInfo, in uvec3 indices) {

@@ -129,12 +129,13 @@ public:
 
     //
     pingPongObj->clearImage(qfAndQueue, 1u, glm::uintBitsToFloat(glm::uvec4(0u)));
+    pingPongObj->clearImage(qfAndQueue, 5u, glm::uintBitsToFloat(glm::uvec4(0u)));
 
     //
-    if (controller->needsClear) {
-      pingPongObj->clearImage(qfAndQueue, 4u, glm::uintBitsToFloat(glm::uvec4(0u)));
-      controller->needsClear = false;
-    };
+    //if (controller->needsClear) {
+      //pingPongObj->clearImage(qfAndQueue, 4u, glm::uintBitsToFloat(glm::uvec4(0u)));
+      //controller->needsClear = false;
+    //};
 
     // wait ready for filling
     auto& fence = (*fences)[acquired];
@@ -254,7 +255,7 @@ public:
 
       // first image is accumulation, second image is back buffer, third image is index buffer, fourth image is position buffer
       // 5th for reflection buffer, 6th for reflection back buffer, 7th for transparency, 8th for transparency back
-      .split = std::vector<bool>{false, true, false, false, false, true, false, true, false},
+      .split = std::vector<bool>{false, true, false, false, false, true, false, true, false, false, false, false},
       .formats = std::vector<vk::Format>{ 
         vk::Format::eR32G32B32A32Uint, 
         vk::Format::eR32G32B32A32Uint, 
@@ -264,7 +265,10 @@ public:
         vk::Format::eR32G32B32A32Uint,
         vk::Format::eR32G32B32A32Uint,
         vk::Format::eR32G32B32A32Uint,
-        vk::Format::eR32G32B32A32Sfloat
+        vk::Format::eR32G32B32A32Sfloat,
+        vk::Format::eR32G32B32A32Sfloat,
+        vk::Format::eR32G32B32A32Uint,
+        vk::Format::eR32G32B32A32Uint,
       },
       .info = qfAndQueue
     });
