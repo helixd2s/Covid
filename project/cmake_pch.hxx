@@ -39,6 +39,7 @@
 #include <experimental/generator>
 #endif
 
+#define GLM_FORCE_QUAT_DATA_XYZW
 #define GLM_FORCE_SWIZZLE
 #include <tinygltf/tiny_gltf.h>
 #include <tinygltf/stb_image.h>
@@ -48,6 +49,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <robin_hood.h>
 #endif

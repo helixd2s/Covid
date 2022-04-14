@@ -159,6 +159,30 @@ namespace ANAMED {
     return vk::ComponentMapping{ .r = vk::ComponentSwizzle::eR, .g = vk::ComponentSwizzle::eG, .b = vk::ComponentSwizzle::eB, .a = vk::ComponentSwizzle::eA };
   };
 
+  static void QuatToAngleAxis(const std::vector<double> quaternion,
+    double& outAngleDegrees,
+    double* axis) {
+    double qx = quaternion[0];
+    double qy = quaternion[1];
+    double qz = quaternion[2];
+    double qw = quaternion[3];
+
+    double angleRadians = 2 * acos(qw);
+    if (angleRadians == 0.0) {
+      outAngleDegrees = 0.0;
+      axis[0] = 0.0;
+      axis[1] = 0.0;
+      axis[2] = 1.0;
+      return;
+    }
+
+    double denom = sqrt(1 - qw * qw);
+    outAngleDegrees = angleRadians * 180.0 / glm::pi<double>();
+    axis[0] = qx / denom;
+    axis[1] = qy / denom;
+    axis[2] = qz / denom;
+  };
+
   // 
   class GltfLoaderObj : public BaseObj {
   public:
@@ -496,9 +520,9 @@ namespace ANAMED {
       };
 
       // 
-      decltype(auto) useMesh = [=, this](std::shared_ptr<GltfInstanced> inst, tinygltf::Model& model, intptr_t const& meshId, glm::mat4x4 transform = glm::mat4x4()) {
+      decltype(auto) useMesh = [=, this](std::shared_ptr<GltfInstanced> inst, tinygltf::Model& model, intptr_t const& meshId, glm::dmat4 transform = glm::dmat4()) {
         decltype(auto) mesh = model.meshes[meshId];
-        decltype(auto) transposed = glm::transpose(transform);
+        decltype(auto) transposed = glm::mat4(glm::transpose(transform));
         inst->instances.push_back(InstanceDataInfo{
           .instanceDevInfo = InstanceDevInfo{
             .transform = reinterpret_cast<vk::TransformMatrixKHR&>(transposed),
@@ -515,25 +539,32 @@ namespace ANAMED {
       };
 
       //
-      std::function<void(std::shared_ptr<GltfInstanced>, tinygltf::Model&, tinygltf::Node&, glm::mat4x4 parentTransform)> handleNodes = {};
-      handleNodes = [=, &handleNodes, this](std::shared_ptr<GltfInstanced> inst, tinygltf::Model& model, tinygltf::Node& node, glm::mat4x4 transform = glm::mat4x4(1.f)) {
+      std::function<void(std::shared_ptr<GltfInstanced>, tinygltf::Model&, tinygltf::Node&, glm::dmat4 parentTransform)> handleNodes = {};
+      handleNodes = [=, &handleNodes, this](std::shared_ptr<GltfInstanced> inst, tinygltf::Model& model, tinygltf::Node& node, glm::dmat4 transform = glm::dmat4(1.f)) {
         // 
         auto localTransform = glm::dmat4(1.0);
         localTransform *= node.matrix.size() >= 16 ? glm::make_mat4(node.matrix.data()) : glm::dmat4(1.0);
         localTransform *= node.translation.size() >= 3 ? glm::translate(glm::dmat4(1.0), glm::make_vec3(node.translation.data())) : glm::dmat4(1.0);
         localTransform *= node.scale.size() >= 3 ? glm::scale(glm::dmat4(1.0), glm::make_vec3(node.scale.data())) : glm::dmat4(1.0);
         localTransform *= node.rotation.size() >= 4 ? glm::mat4_cast(glm::make_quat(node.rotation.data())) : glm::dmat4(1.0);
-        transform *= glm::mat4x4(localTransform);
+
+        //
+        //if (node.rotation.size() >= 4) {
+          //glm::dvec3 rot = glm::dvec3(0.0);
+          //double angle = 0;
+          //QuatToAngleAxis(node.rotation, angle, (double*)&rot);
+          //localTransform *= glm::rotate(glm::dmat4(1.0), angle, rot);
+        //};
 
         //
         if ((node.mesh >= 0) && (node.mesh < model.meshes.size())) {
-          useMesh(inst, model, node.mesh, transform);
+          useMesh(inst, model, node.mesh, transform * localTransform);
         };
 
         //
         for (size_t i = 0; i < node.children.size(); i++) {
           assert((node.children[i] >= 0) && (node.children[i] < model.nodes.size()));
-          handleNodes(inst, model, model.nodes[node.children[i]], transform);
+          handleNodes(inst, model, model.nodes[node.children[i]], transform * localTransform);
         };
       };
 
@@ -541,7 +572,7 @@ namespace ANAMED {
       for (decltype(auto) scene : gltf->model.scenes) {
         decltype(auto) inst = std::make_shared<GltfInstanced>();
         for (decltype(auto) node : scene.nodes) {
-          handleNodes(inst, gltf->model, gltf->model.nodes[node], glm::mat4x4(1.f) * glm::scale(glm::mat4(1.0f), glm::vec3(1.f * scale, 1.f * scale, 1.f * scale)));
+          handleNodes(inst, gltf->model, gltf->model.nodes[node], glm::dmat4(1.f) * glm::scale(glm::dmat4(1.0f), glm::dvec3(1.f * scale, 1.f * scale, 1.f * scale)));
         };
 
         //
