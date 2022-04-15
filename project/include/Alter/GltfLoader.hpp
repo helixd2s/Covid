@@ -546,7 +546,7 @@ namespace ANAMED {
         localTransform *= node.matrix.size() >= 16 ? glm::make_mat4(node.matrix.data()) : glm::dmat4(1.0);
         localTransform *= node.translation.size() >= 3 ? glm::translate(glm::dmat4(1.0), glm::make_vec3(node.translation.data())) : glm::dmat4(1.0);
         localTransform *= node.scale.size() >= 3 ? glm::scale(glm::dmat4(1.0), glm::make_vec3(node.scale.data())) : glm::dmat4(1.0);
-        localTransform *= node.rotation.size() >= 4 ? glm::mat4_cast(glm::make_quat(node.rotation.data())) : glm::dmat4(1.0);
+        localTransform *= node.rotation.size() >= 4 ? glm::mat4_cast(glm::dquat(node.rotation[3], node.rotation[0], node.rotation[1], node.rotation[2])) : glm::dmat4(1.0);
 
         //
         //if (node.rotation.size() >= 4) {
