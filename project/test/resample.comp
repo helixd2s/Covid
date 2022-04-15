@@ -123,26 +123,39 @@ void main() {
   // TODO: convert into view space
   const uvec4 prevIndices = imageLoad(imagesRgba32UI[pingpong.images[2]], ivec2(gcoord));
   const uvec4 prevReflIndices = imageLoad(imagesRgba32UI[pingpong.images[10]], ivec2(gcoord));
-  const vec4 prevPos = imageLoad(imagesRgba32F[pingpong.images[3]], ivec2(gcoord));
-  const vec4 prevReflPos = imageLoad(imagesRgba32F[pingpong.images[8]], ivec2(gcoord));
-  const vec4 prevNormal = imageLoad(imagesRgba32F[pingpong.images[9]], ivec2(gcoord));
+
+  // 
+  const vec4 prevPos = vec4(imageLoad(imagesRgba32F[pingpong.images[3]], ivec2(gcoord)).xyz, 1.f);
+  const vec4 prevReflPos = vec4(imageLoad(imagesRgba32F[pingpong.images[8]], ivec2(gcoord)).xyz, 1.f);
+  const vec4 prevNormal = vec4(imageLoad(imagesRgba32F[pingpong.images[9]], ivec2(gcoord)).xyz, 0.f);
+
+  //
+  const vec3 viewPrevPos = prevPos * constants.lookAt;
+  const vec3 viewPrevReflPos = prevReflPos * constants.lookAt;
+  const vec3 viewPrevNormal = prevNormal * constants.lookAt;
 
   // 
   const vec4 currentPos = vec4(vec4(vec4(prevPos.xyz, 1.f) * inverse(getPrevInstanceTransform(instancedData.opaqueAddressInfo, prevIndices.x)), 1.f) * getInstanceTransform(instancedData.opaqueAddressInfo, prevIndices.x), 1.f);
   const vec4 currentReflPos = vec4(vec4(vec4(prevReflPos.xyz, 1.f) * inverse(getPrevInstanceTransform(instancedData.opaqueAddressInfo, prevReflIndices.x)), 1.f) * getInstanceTransform(instancedData.opaqueAddressInfo, prevReflIndices.x), 1.f);
-  const vec4 perspPos = vec4(currentPos * constants.lookAt, 1.f) * constants.perspective;
+  
+  //
+  const vec3 viewCurrentPos = currentPos * constants.lookAt;
+  const vec3 viewCurrentReflPos = currentReflPos * constants.lookAt;
+  
+  //
+  const vec4 perspPos = vec4(viewCurrentPos, 1.f) * constants.perspective;
   const vec2 screenPos = ((perspPos.xy/perspPos.w) * 0.5f + 0.5f);
   const ivec2 intScreenPos = ivec2(screenPos * vec2(extent));
 
   // TODO: correctly reproject previous reflection point
-  const vec3 foundIntersection = find_reflection_incident_point(currentReflPos.xyz, prevReflPos.xyz, currentPos.xyz, prevNormal.xyz);
-  const vec3 reprojIntersection = vec4(vec4(foundIntersection, 1.f) * inverse(getPrevInstanceTransform(instancedData.opaqueAddressInfo, prevReflIndices.x)), 1.f) * getInstanceTransform(instancedData.opaqueAddressInfo, prevReflIndices.x);
+  //const vec3 foundIntersection = find_reflection_incident_point(viewCurrentReflPos.xyz, viewPrevReflPos.xyz, viewCurrentPos.xyz, viewPrevNormal.xyz);
+  //const vec3 foundIntersection = find_reflection_incident_point(viewCurrentPos.xyz, viewPrevReflPos.xyz, viewPrevPos.xyz, viewPrevNormal.xyz);
+  //const vec3 reprojIntersection = vec4(vec4(vec4(foundIntersection, 1.f) * constants.lookAtInverse, 1.f) * inverse(getPrevInstanceTransform(instancedData.opaqueAddressInfo, prevReflIndices.x)), 1.f) * getInstanceTransform(instancedData.opaqueAddressInfo, prevReflIndices.x);
 
   // 
-  const vec3 viewIntersection = vec4(reprojIntersection, 1.f) * constants.lookAt;
-  const vec4 SSIntersection = vec4(viewIntersection, 1.f) * constants.perspective;
-  const vec2 whereReflect = SSIntersection.xy / SSIntersection.w * 0.5f + 0.5f;
-  const ivec2 intWhereReflect = ivec2(whereReflect * vec2(extent));
+  //const vec4 perspIntersection = vec4(vec4(reprojIntersection, 1.f) * constants.lookAt, 1.f) * constants.perspective;
+  //const vec2 whereReflect = perspIntersection.xy / perspIntersection.w * 0.5f + 0.5f;
+  //const ivec2 intWhereReflect = ivec2(whereReflect * vec2(extent));
 
   // 
   if (distance(texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), screenPos, 0).xyz, currentPos.xyz) < 0.001f) {
@@ -150,7 +163,7 @@ void main() {
   };
 
   //
-  if (distance(texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), whereReflect, 0).xyz, reprojIntersection.xyz) < 0.001f) {
-    accumulateSplit(pingpong.images[5], intWhereReflect, imageLoad(imagesRgba32UI[pingpong.images[4]], ivec2(gcoord))); // from previous reflection
-  };
+  //if (distance(texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), whereReflect, 0).xyz, reprojIntersection.xyz) < 0.001f) {
+    //accumulateSplit(pingpong.images[5], intWhereReflect, imageLoad(imagesRgba32UI[pingpong.images[4]], ivec2(gcoord))); // from previous reflection
+  //};
 };

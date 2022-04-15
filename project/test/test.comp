@@ -204,9 +204,18 @@ void main() {
   imageStore(imagesRgba32UI[pingpong.images[10]], ivec2(gcoord), reflIndices);
 
   // 
+  //vec4 reflAccumCol = cvtRgb16Acc(readSplit(pingpong.images[5], ivec2(gcoord)));
+  //diffuseColor = 1.f.xxx;
+  //emissiveColor = 0.f.xxx;
+  //vec4 resultColor = vec4(reflAccumCol.xyz/reflAccumCol.w, 1.f);//cvtRgb16Acc(original);
+  //vec4 resultRefl = vec4(0.f.xxx, 1.f);//cvtRgb16Acc(origRefl);
+  //float reflCoef = 0.f;//hasHit ? (metallicFactor + (fresnel_schlick(0.f, dot(reflDir.xyz, normals))) * (1.f - metallicFactor)) : 0.f;
+
   vec4 resultColor = cvtRgb16Acc(original);
   vec4 resultRefl = cvtRgb16Acc(origRefl);
-  imageStore(images[swapchain.image], ivec2(gcoord.x, extent.y-1-gcoord.y), fromLinear(vec4(mix(resultColor.xyz / resultColor.w * diffuseColor.xyz + emissiveColor.xyz, resultRefl.xyz / resultRefl.w, hasHit ? (metallicFactor + (fresnel_schlick(0.f, dot(reflDir.xyz, normals))) * (1.f - metallicFactor)) : 0.f), 1.f)));
+  float reflCoef = hasHit ? (metallicFactor + (fresnel_schlick(0.f, dot(reflDir.xyz, normals))) * (1.f - metallicFactor)) : 0.f;
+
+  imageStore(images[swapchain.image], ivec2(gcoord.x, extent.y-1-gcoord.y), fromLinear(vec4(mix(resultColor.xyz / resultColor.w * diffuseColor.xyz + emissiveColor.xyz, resultRefl.xyz / resultRefl.w, reflCoef), 1.f)));
   //imageStore(images[swapchain.image], ivec2(extent.x-1-gcoord.x, gcoord.y), fromLinear(finalColor));
   //imageStore(images[swapchain.image], ivec2(gcoord.x, gcoord.y), fromLinear(finalColor));
 };
