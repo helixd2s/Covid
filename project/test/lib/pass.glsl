@@ -69,7 +69,7 @@ RayData handleIntersection(in RayData rayData, in IntersectionInfo intersection,
 };
 
 //
-RayData pathTrace(in RayData rayData, inout vec3 firstHit, inout uvec4 firstIndices) {
+RayData pathTrace(in RayData rayData, inout vec4 firstHit, inout uvec4 firstIndices) {
   //
   for (uint32_t i=0;i<3;i++) {
     if (luminance(rayData.energy.xyz) < 0.001f) { break; };
@@ -101,13 +101,13 @@ RayData pathTrace(in RayData rayData, inout vec3 firstHit, inout uvec4 firstIndi
 
       // 
       if (i == 0) { 
-        firstHit = opaquePass.origin.xyz;
+        firstHit = vec4(opaquePass.origin.xyz, intersection.hitT);
         firstIndices = uvec4(intersection.instanceId, intersection.geometryId, intersection.primitiveId, 0u);
       };
 
     } else {
       const vec3 hitOrigin = rayData.origin.xyz * rayData.direction.xyz * 10000.f;
-      if (i == 0) { firstHit = hitOrigin; };
+      if (i == 0) { firstHit = vec4(hitOrigin, intersection.hitT); };
       rayData.origin.xyz = hitOrigin;
       rayData.emission.xyz += f16vec3(trueMultColor(rayData.energy.xyz, toLinear(skyColor.xyz)));
       rayData.energy.xyz *= f16vec3(0.f.xxx);
