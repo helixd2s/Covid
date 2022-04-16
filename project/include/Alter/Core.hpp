@@ -921,6 +921,18 @@ namespace ANAMED {
     decltype(auto) with(cpp21::const_wrap_arg<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
   };
 
+  //
+  struct CacheDataWriteSet : BaseCreateInfo {
+    vk::CommandBuffer cmdBuf = {};
+    std::optional<QueueGetInfo> info = QueueGetInfo{};
+    std::optional<DataRegion> region = DataRegion{};
+    cpp21::data_view<char8_t> data = {};
+    uintptr_t page = 0ull;
+
+    //
+    decltype(auto) with(cpp21::const_wrap_arg<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
+  };
+
   // 
   struct UniformDataSet : BaseCreateInfo {
     std::optional<UniformDataWriteSet> writeInfo = {};
@@ -928,7 +940,12 @@ namespace ANAMED {
     SubmissionInfo submission = {};
   };
 
-
+  // 
+  struct CacheDataSet : BaseCreateInfo {
+    std::optional<CacheDataWriteSet> writeInfo = {};
+    std::optional<QueueGetInfo> info = QueueGetInfo{};
+    SubmissionInfo submission = {};
+  };
 
 
 

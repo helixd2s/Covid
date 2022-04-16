@@ -321,7 +321,7 @@ namespace ANAMED {
       return SFT();
     };
 
-    virtual tType writeCacheUpdateCommand(cpp21::const_wrap_arg<UniformDataWriteSet> cInfo) {
+    virtual tType writeCacheUpdateCommand(cpp21::const_wrap_arg<CacheDataWriteSet> cInfo) {
       size_t size = std::min(cInfo->data.size(), cInfo->region->size);
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
@@ -336,7 +336,7 @@ namespace ANAMED {
           .srcQueueFamilyIndex = cInfo->info->queueFamilyIndex,
           .dstQueueFamilyIndex = cInfo->info->queueFamilyIndex,
           .buffer = this->cacheBuffer,
-          .offset = cInfo->region->offset,
+          .offset = this->cachePageSize * cInfo->page + cInfo->region->offset,
           .size = size
         }
       };
@@ -351,14 +351,14 @@ namespace ANAMED {
           .srcQueueFamilyIndex = cInfo->info->queueFamilyIndex,
           .dstQueueFamilyIndex = cInfo->info->queueFamilyIndex,
           .buffer = this->cacheBuffer,
-          .offset = cInfo->region->offset,
+          .offset = this->cachePageSize * cInfo->page + cInfo->region->offset,
           .size = size
         }
       };
 
       // 
       cInfo->cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersBegin));
-      cInfo->cmdBuf.updateBuffer(this->cacheBuffer, cInfo->region->offset, size, cInfo->data.data());
+      cInfo->cmdBuf.updateBuffer(this->cacheBuffer, this->cachePageSize * cInfo->page + cInfo->region->offset, size, cInfo->data.data());
       cInfo->cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersEnd));
 
       // 
@@ -380,7 +380,7 @@ namespace ANAMED {
     };
 
     //
-    virtual FenceType executeCacheUpdateOnce(cpp21::const_wrap_arg<UniformDataSet> cInfo) {
+    virtual FenceType executeCacheUpdateOnce(cpp21::const_wrap_arg<CacheDataSet> cInfo) {
       decltype(auto) submission = CommandOnceSubmission{ .submission = cInfo->submission };
 
       // 
