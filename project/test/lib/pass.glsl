@@ -6,6 +6,68 @@ vec3 reflective(in vec3 seed, in vec3 dir, in vec3 normal, in float roughness) {
 //
 const vec4 skyColor = vec4(vec3(135.f,206.f,235.f)/vec3(255.f,255.f,255.f), 1.f);
 
+// 
+struct PassData {
+  vec4 alphaColor;
+  bool alphaPassed;
+  vec3 normals;
+  vec3 origin;
+};
+
+// 
+RayData handleIntersection(in RayData rayData, in IntersectionInfo intersection, inout PassData passed) {
+  InstanceInfo instanceInfo = getInstance(instancedData.opaqueAddressInfo, intersection.instanceId);
+  GeometryInfo geometryInfo = getGeometry(instanceInfo, intersection.geometryId);
+  GeometryExtData geometry = getGeometryData(geometryInfo, intersection.primitiveId);
+  GeometryExtAttrib attrib = interpolate(geometry, intersection.barycentric);
+
+  //
+  const vec4 texcoord = attrib.data[VERTEX_TEXCOORD];
+  const vec4 vertice = fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId);
+
+  //
+  mat3x3 tbn = getTBN(attrib);
+  MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), texcoord.xy, tbn);
+  const vec3 normals = inRayNormal(rayData.direction, fullTransformNormal(instanceInfo, attrib.data[VERTEX_NORMALS].xyz, intersection.geometryId));//materialPix.color[MATERIAL_NORMAL].xyz;
+
+  // 
+  vec4 emissiveColor = toLinear(materialPix.color[MATERIAL_EMISSIVE]);
+  vec4 diffuseColor = toLinear(materialPix.color[MATERIAL_ALBEDO]);
+  float metallicFactor = materialPix.color[MATERIAL_PBR].b;
+  float roughnessFactor = materialPix.color[MATERIAL_PBR].g;
+
+  //
+  if (luminance(emissiveColor.xyz) > 0.001f) {
+    rayData.emission.xyz += f16vec3(trueMultColor(rayData.energy.xyz, emissiveColor.xyz));
+    rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, 1.f-emissiveColor.xyz));
+  };
+
+  //
+  float reflFactor = (metallicFactor + fresnel_schlick(0.f, dot(-rayData.direction.xyz, normals)) * (1.f - metallicFactor));
+  vec3 originSeedXYZ = vec3(random(rayData.launchId.xy), random(rayData.launchId.xy), random(rayData.launchId.xy));
+
+  //
+  if (random(rayData.launchId.xy) <= reflFactor && diffuseColor.a >= 0.001f) { // I currently, have no time for fresnel
+    rayData.direction.xyz = reflective(originSeedXYZ, rayData.direction.xyz, normals, roughnessFactor);
+    rayData.energy.xyz = f16vec3(metallicMult(rayData.energy.xyz, diffuseColor.xyz, metallicFactor));
+  } else 
+  if (random(rayData.launchId.xy) >= diffuseColor.a) {
+    passed.alphaPassed = true;
+    passed.alphaColor = vec4(1.f.xxx, diffuseColor.a);
+    rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, mix(passed.alphaColor.xyz, 1.f.xxx, diffuseColor.a)));
+  } else
+  {
+    rayData.direction.xyz = randomCosineWeightedHemispherePoint(originSeedXYZ, normals);
+    rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, diffuseColor.xyz));
+  };
+
+  // 
+  rayData.origin.xyz = vertice.xyz + outRayNormal(rayData.direction.xyz, normals.xyz) * 0.0001f;
+
+  // 
+  return rayData;
+};
+
 //
 RayData pathTrace(in RayData rayData, inout vec3 firstHit, inout uvec4 firstIndices) {
   //
@@ -13,64 +75,36 @@ RayData pathTrace(in RayData rayData, inout vec3 firstHit, inout uvec4 firstIndi
     if (luminance(rayData.energy.xyz) < 0.001f) { break; };
 
     // 
-    vec4 finalPosition = vec4(0.f.xxx, 1.f);
     IntersectionInfo opaqueIntersection = traceRaysOpaque(instancedData.opaqueAddressInfo, rayData, 10000.f);
     IntersectionInfo translucentIntersection = traceRaysTransparent(instancedData.opaqueAddressInfo, rayData, 10000.f);
     IntersectionInfo intersection = translucentIntersection.hitT <= opaqueIntersection.hitT ? translucentIntersection : opaqueIntersection;
 
     //
     if (!all(lessThanEqual(intersection.barycentric, 0.f.xxx))) {
-      InstanceInfo instanceInfo = getInstance(instancedData.opaqueAddressInfo, intersection.instanceId);
-      GeometryInfo geometryInfo = getGeometry(instanceInfo, intersection.geometryId);
-      GeometryExtData geometry = getGeometryData(geometryInfo, intersection.primitiveId);
-      GeometryExtAttrib attrib = interpolate(geometry, intersection.barycentric);
+      PassData opaquePass, transpPass;
+      opaquePass.alphaColor = vec4(1.f.xxx, 1.f);
+      opaquePass.alphaPassed = false;
+      opaquePass.normals = vec3(0.f.xxx);
+      opaquePass.origin = vec3(0.f.xxx);
+      transpPass = opaquePass;
 
       //
-      const vec4 texcoord = attrib.data[VERTEX_TEXCOORD];
-      const vec4 vertice = fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId);
-      //const vec3 normals = fullTransformNormal(instanceInfo, normalize(attrib.data[VERTEX_NORMALS].xyz), intersection.geometryId);
+      RayData opaqueRayData = handleIntersection(rayData, opaqueIntersection, opaquePass);
+      rayData = handleIntersection(rayData, intersection, transpPass);
 
-      //
-      mat3x3 tbn = getTBN(attrib);
-      MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), texcoord.xy, tbn);
-      const vec3 normals = inRayNormal(rayData.direction, fullTransformNormal(instanceInfo, attrib.data[VERTEX_NORMALS].xyz, intersection.geometryId));//materialPix.color[MATERIAL_NORMAL].xyz;
+      // if translucent over opaque (decals)
+      if (transpPass.alphaPassed && opaqueIntersection.hitT <= (intersection.hitT + 0.0001f)) {
+        rayData = opaqueRayData;
+        rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, transpPass.alphaColor.xyz));
+        intersection = opaqueIntersection;
+      };
 
       // 
-      vec4 emissiveColor = toLinear(materialPix.color[MATERIAL_EMISSIVE]);
-      vec4 diffuseColor = toLinear(materialPix.color[MATERIAL_ALBEDO]);
-      float metallicFactor = materialPix.color[MATERIAL_PBR].b;
-      float roughnessFactor = materialPix.color[MATERIAL_PBR].g;
-
-      //
-      if (luminance(materialPix.color[MATERIAL_EMISSIVE].xyz) > 0.001f) {
-        rayData.emission.xyz += f16vec3(trueMultColor(rayData.energy.xyz, emissiveColor.xyz));
-        rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, 1.f-emissiveColor.xyz));
-      };
-
-      //
-      //if (diffuseColor.a < 1.f) { diffuseColor.a = 0.002f; };
-
-      //
-      float reflFactor = (metallicFactor + fresnel_schlick(0.f, dot(-rayData.direction.xyz, normals)) * (1.f - metallicFactor));
-      vec3 originSeedXYZ = vec3(random(rayData.launchId.xy), random(rayData.launchId.xy), random(rayData.launchId.xy));
-      
-      if (random(rayData.launchId.xy) <= reflFactor && diffuseColor.a >= 0.001f) { // I currently, have no time for fresnel
-        rayData.direction.xyz = reflective(originSeedXYZ, rayData.direction.xyz, normals, roughnessFactor);
-        rayData.energy.xyz = f16vec3(metallicMult(rayData.energy.xyz, diffuseColor.xyz, metallicFactor));
-      } else 
-      if (random(rayData.launchId.xy) >= diffuseColor.a) {
-        //rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, mix(diffuseColor.xyz, 1.f.xxx, diffuseColor.a)));
-      } else
-      {
-        rayData.direction.xyz = randomCosineWeightedHemispherePoint(originSeedXYZ, normals);
-        rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, diffuseColor.xyz));
-      };
-      const vec3 hitOrigin = vertice.xyz;//rayData.origin.xyz * rayData.direction.xyz * intersection.hitT;
       if (i == 0) { 
-        firstHit = hitOrigin;
+        firstHit = opaquePass.origin.xyz;
         firstIndices = uvec4(intersection.instanceId, intersection.geometryId, intersection.primitiveId, 0u);
       };
-      rayData.origin.xyz = hitOrigin + outRayNormal(rayData.direction.xyz, normals.xyz) * 0.0001f;
+
     } else {
       const vec3 hitOrigin = rayData.origin.xyz * rayData.direction.xyz * 10000.f;
       if (i == 0) { firstHit = hitOrigin; };
