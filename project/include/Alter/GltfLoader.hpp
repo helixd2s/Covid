@@ -78,6 +78,11 @@ namespace ANAMED {
     std::vector<WrapShared<ResourceObj>> extensionBuffers = {};
     
     //
+    std::unordered_map<uintptr_t, bool> translucentTextures = {};
+    std::unordered_map<uintptr_t, bool> translucentMaterials = {};
+    std::unordered_map<uintptr_t, bool> translucentImages = {};
+
+    //
     WrapShared<ResourceObj> materialBuffer = {};
 
     //
@@ -119,31 +124,31 @@ namespace ANAMED {
   };
 
   //
-  inline vk::Format convertFormat(uint32_t comp, uint32_t bits, uint32_t type = TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE) {
+  inline vk::Format convertFormat(bool& translucent, uint32_t comp, uint32_t bits, uint32_t type = TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE) {
     if (bits == 8) {
-      if (comp == 1) { return vk::Format::eR8Unorm; }; //break;
-      if (comp == 2) { return vk::Format::eR8G8Unorm; }; //break;
-      if (comp == 3) { return vk::Format::eR8G8B8Unorm; }; //break;
-      if (comp == 4) { return vk::Format::eR8G8B8A8Unorm; }; //break;
+      if (comp == 1) { return vk::Format::eR8Unorm; translucent = false; }; //break;
+      if (comp == 2) { return vk::Format::eR8G8Unorm; translucent = true; }; //break;
+      if (comp == 3) { return vk::Format::eR8G8B8Unorm; translucent = false; }; //break;
+      if (comp == 4) { return vk::Format::eR8G8B8A8Unorm; translucent = true; }; //break;
     } else 
     if (bits == 16) {
       if (type == TINYGLTF_COMPONENT_TYPE_FLOAT) {
-        if (comp == 1) { return vk::Format::eR16Sfloat; }; //break;
-        if (comp == 2) { return vk::Format::eR16G16Sfloat; }; //break;
-        if (comp == 3) { return vk::Format::eR16G16B16Sfloat; }; //break;
-        if (comp == 4) { return vk::Format::eR16G16B16A16Sfloat; }; //break;
+        if (comp == 1) { return vk::Format::eR16Sfloat; translucent = false; }; //break;
+        if (comp == 2) { return vk::Format::eR16G16Sfloat; translucent = true; }; //break;
+        if (comp == 3) { return vk::Format::eR16G16B16Sfloat; translucent = false; }; //break;
+        if (comp == 4) { return vk::Format::eR16G16B16A16Sfloat; translucent = true; }; //break;
       } else {
-        if (comp == 1) { return vk::Format::eR16Unorm; }; //break;
-        if (comp == 2) { return vk::Format::eR16G16Unorm; }; //break;
-        if (comp == 3) { return vk::Format::eR16G16B16Unorm; }; //break;
-        if (comp == 4) { return vk::Format::eR16G16B16A16Unorm; }; //break;
+        if (comp == 1) { return vk::Format::eR16Unorm; translucent = false; }; //break;
+        if (comp == 2) { return vk::Format::eR16G16Unorm; translucent = true; }; //break;
+        if (comp == 3) { return vk::Format::eR16G16B16Unorm; translucent = false; }; //break;
+        if (comp == 4) { return vk::Format::eR16G16B16A16Unorm; translucent = true; }; //break;
       }
     } else
     if (bits == 32) {
-      if (comp == 1) { return vk::Format::eR32Sfloat; }; //break;
-      if (comp == 2) { return vk::Format::eR32G32Sfloat; }; //break;
-      if (comp == 3) { return vk::Format::eR32G32B32Sfloat; }; //break;
-      if (comp == 4) { return vk::Format::eR32G32B32A32Sfloat; }; //break;
+      if (comp == 1) { return vk::Format::eR32Sfloat; translucent = false; }; //break;
+      if (comp == 2) { return vk::Format::eR32G32Sfloat;  translucent = true; }; //break;
+      if (comp == 3) { return vk::Format::eR32G32B32Sfloat; translucent = false; }; //break;
+      if (comp == 4) { return vk::Format::eR32G32B32A32Sfloat;  translucent = true; }; //break;
     };
     return vk::Format::eR8G8B8A8Unorm;
   };
@@ -238,16 +243,21 @@ namespace ANAMED {
       };
 
       //
-      for (decltype(auto) image : gltf->model.images) {
+      uintptr_t i = 0;
+      for (decltype(auto) image : gltf->model.images) { uintptr_t I = i++;
         //
+        bool isTranslucent = false;
         decltype(auto) imageObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
           .descriptors = cInfo->descriptors,
           .imageInfo = ANAMED::ImageCreateInfo{
-            .format = convertFormat(image.component, image.bits, image.pixel_type),
+            .format = convertFormat(isTranslucent, image.component, image.bits, image.pixel_type),
             .extent = vk::Extent3D{uint32_t(image.width), uint32_t(image.height), 1u},
             .type = ANAMED::ImageType::eTexture
           }
           });
+
+        // 
+        gltf->translucentImages[I] = isTranslucent;
 
         //
         decltype(auto) status = uploaderObj->executeUploadToResourceOnce(ANAMED::UploadExecutionOnce{
@@ -293,7 +303,9 @@ namespace ANAMED {
       };
 
       //
-      for (decltype(auto) texture : gltf->model.textures) {
+      i = 0;
+      for (decltype(auto) texture : gltf->model.textures) { uintptr_t I = i++;
+        gltf->translucentTextures[I] = texture.source >= 0 ? gltf->translucentImages.at(texture.source) : false;
         gltf->textures.push_back(CTexture{ gltf->imageIndices[texture.source], texture.sampler >= 0 ? gltf->samplerIndices[texture.sampler] : 0u });
       };
 
@@ -322,7 +334,7 @@ namespace ANAMED {
           auto decomposeFormat = BufferViewFormatBitSet(defFormat);
           auto virtualStride = bufferView.byteStride > 0 ? bufferView.byteStride : (decomposeFormat.countMinusOne + 1u) * (decomposeFormat.is16bit ? 2u : 4u);
           auto realStride = std::max(uint32_t(bufferView.byteStride), (decomposeFormat.countMinusOne + 1u) * (decomposeFormat.is16bit ? 2u : 4u));
-          auto realSize = std::max({uint32_t(std::max(intptr_t(bufferView.byteStride * accessor.count) /* - intptr_t(accessor.byteOffset)*/,0ll)), uint32_t((decomposeFormat.countMinusOne + 1u) * (decomposeFormat.is16bit ? 2u : 4u) * accessor.count), uint32_t(bv.region.size - accessor.byteOffset)});
+          auto realSize = std::max({uint32_t(std::max(intptr_t(bufferView.byteStride * accessor.count), 0ll)), uint32_t((decomposeFormat.countMinusOne + 1u) * (decomposeFormat.is16bit ? 2u : 4u) * accessor.count), uint32_t(bv.region.size - accessor.byteOffset)});
 
           //
           if (isIndice) {
@@ -333,7 +345,7 @@ namespace ANAMED {
             auto decomposeFormat = BufferViewFormatBitSet(defFormat);
             auto virtualStride = bufferView.byteStride > 0 ? bufferView.byteStride : ((decomposeFormat.countMinusOne + 1u) * (decomposeFormat.is16bit ? 2u : 4u) / 3u);
             auto realStride = std::max(uint32_t(bufferView.byteStride), ((decomposeFormat.countMinusOne + 1u) * (decomposeFormat.is16bit ? 2u : 4u)) / 3u);
-            auto realSize = std::max({ uint32_t(std::max(intptr_t(bufferView.byteStride * accessor.count) /*- intptr_t(accessor.byteOffset)*/,0ll)), uint32_t((decomposeFormat.countMinusOne + 1u) * (decomposeFormat.is16bit ? 2u : 4u) * accessor.count / 3), uint32_t(bv.region.size - accessor.byteOffset)});
+            auto realSize = std::max({ uint32_t(std::max(intptr_t(bufferView.byteStride * accessor.count),0ll)), uint32_t((decomposeFormat.countMinusOne + 1u) * (decomposeFormat.is16bit ? 2u : 4u) * accessor.count / 3), uint32_t(bv.region.size - accessor.byteOffset)});
 
             //
             return (bresult = ANAMED::BufferViewInfo{ .region = ANAMED::BufferViewRegion{.deviceAddress = address + bv.region.offset + accessor.byteOffset, .stride = defFormat == ANAMED::BufferViewFormat::eUint3 ? 4u : 2u, .size = realSize}, .format = defFormat });
@@ -400,14 +412,15 @@ namespace ANAMED {
       uint64_t materialAddress = gltf->materialBuffer->getDeviceAddress();
 
       //
-      for (decltype(auto) material : gltf->model.materials) {
+      i = 0;
+      for (decltype(auto) material : gltf->model.materials) { uintptr_t I = i++;
         decltype(auto) materialInf = ANAMED::MaterialInfo{};
         materialInf.texCol[uint32_t(ANAMED::TextureBind::eAlbedo)] = ANAMED::TexOrDef{ .texture = material.pbrMetallicRoughness.baseColorTexture.index >= 0 ? gltf->textures[material.pbrMetallicRoughness.baseColorTexture.index] : CTexture{}, .defValue = handleFactor(material.pbrMetallicRoughness.baseColorFactor)};
-        //materialInf.texCol[uint32_t(ANAMED::TextureBind::eAlbedo)] = ANAMED::TexOrDef{ .texture = CTexture{}, .defValue = /*handleFactor(material.pbrMetallicRoughness.baseColorFactor)*/ glm::vec4(1.f)};
         materialInf.texCol[uint32_t(ANAMED::TextureBind::eNormal)] = ANAMED::TexOrDef{ .texture = material.normalTexture.index >= 0 ? gltf->textures[material.normalTexture.index] : CTexture{}, .defValue = glm::vec4(0.5f, 0.5f, 1.f, 1.f) };
         materialInf.texCol[uint32_t(ANAMED::TextureBind::ePBR)] = ANAMED::TexOrDef{ .texture = material.pbrMetallicRoughness.metallicRoughnessTexture.index >= 0 ? gltf->textures[material.pbrMetallicRoughness.metallicRoughnessTexture.index] : CTexture{}, .defValue = glm::vec4(1.f, material.pbrMetallicRoughness.roughnessFactor, material.pbrMetallicRoughness.metallicFactor, 1.f) };
         materialInf.texCol[uint32_t(ANAMED::TextureBind::eEmissive)] = ANAMED::TexOrDef{ .texture = material.emissiveTexture.index >= 0 ? gltf->textures[material.emissiveTexture.index] : CTexture{}, .defValue = handleFactor(material.emissiveFactor) };
         gltf->materials.push_back(materialInf);
+        gltf->translucentMaterials[I] = material.pbrMetallicRoughness.baseColorTexture.index >= 0 ? gltf->translucentTextures.at(material.pbrMetallicRoughness.baseColorTexture.index) : (handleFactor(material.pbrMetallicRoughness.baseColorFactor).a < 1.f ? true : false);
       };
 
       {
@@ -470,7 +483,8 @@ namespace ANAMED {
             .indices = primitive.indices >= 0 ? indices : nullView,
             .extensionRef = extensionAddress + pId * sizeof(ANAMED::GeometryExtension),
             .materialRef = materialAddress + materialId * sizeof(ANAMED::MaterialInfo),
-            .primitiveCount = uint32_t(gltf->model.accessors[primitive.indices >= 0 ? primitive.indices : primitive.attributes.at("POSITION")].count) / 3u
+            .primitiveCount = uint32_t(gltf->model.accessors[primitive.indices >= 0 ? primitive.indices : primitive.attributes.at("POSITION")].count) / 3u,
+            .flags = (gltf->translucentMaterials.at(uintptr_t(materialId)) ? vk::GeometryFlagBitsKHR{} : vk::GeometryFlagBitsKHR::eOpaque)
           });
 
           //
@@ -529,7 +543,7 @@ namespace ANAMED {
             .instanceCustomIndex = 0u,
             .mask = 0xFFu,
             .instanceShaderBindingTableRecordOffset = 0u,
-            .flags = uint8_t(vk::GeometryInstanceFlagBitsKHR{}/*::eTriangleFrontCounterclockwise*/),
+            .flags = uint8_t(vk::GeometryInstanceFlagBitsKHR{}),
             .accelerationStructureReference = gltf->meshes[meshId]->getDeviceAddress()
           },
           .instanceInfo {

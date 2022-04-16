@@ -32,9 +32,9 @@ void main() {
 
   // if translucent - discard
 #ifdef TRANSLUCENT
-  if ((geometryInfo.flags&1u) != 0u) 
-#else
   if ((geometryInfo.flags&1u) == 0u) 
+#else
+  if ((geometryInfo.flags&1u) != 0u) 
 #endif
   {
     gl_Position = vec4(0.f.xxx, 1.f);

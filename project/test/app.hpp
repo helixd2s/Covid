@@ -50,7 +50,8 @@ protected:
   ANAMED::WrapShared<ANAMED::GltfLoaderObj> gltfLoader = {};
   ANAMED::WrapShared<ANAMED::PipelineObj> resampleObj = {};
   ANAMED::WrapShared<ANAMED::PipelineObj> computeObj = {};
-  ANAMED::WrapShared<ANAMED::PipelineObj> graphicsObj = {};
+  ANAMED::WrapShared<ANAMED::PipelineObj> opaqueObj = {};
+  ANAMED::WrapShared<ANAMED::PipelineObj> translucentObj = {};
   ANAMED::WrapShared<ANAMED::SwapchainObj> swapchainObj = {};
   ANAMED::WrapShared<ANAMED::FramebufferObj> framebufferObj = {};
   ANAMED::WrapShared<ANAMED::PingPongObj> pingPongObj = {};
@@ -130,6 +131,7 @@ public:
     //
     pingPongObj->clearImage(qfAndQueue, 1u, glm::uintBitsToFloat(glm::uvec4(0u)));
     pingPongObj->clearImage(qfAndQueue, 5u, glm::uintBitsToFloat(glm::uvec4(0u)));
+    pingPongObj->clearImage(qfAndQueue, 7u, glm::uintBitsToFloat(glm::uvec4(0u)));
 
     //
     //if (controller->needsClear) {
@@ -161,7 +163,24 @@ public:
     framebufferObj->clearAttachments(qfAndQueue);
 
     //
-    decltype(auto) graphicsFence = graphicsObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
+    decltype(auto) opaqueFence = opaqueObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
+      // # yet another std::optional problem (implicit)
+      .graphics = std::optional<ANAMED::WriteGraphicsInfo>(ANAMED::WriteGraphicsInfo{
+        .layout = descriptorsObj.as<vk::PipelineLayout>(),
+        .framebuffer = framebufferObj.as<uintptr_t>(),
+        .swapchain = swapchainObj.as<uintptr_t>(),
+        .pingpong = pingPongObj.as<uintptr_t>(),
+        .instanceDraws = modelObj->getDefaultScene()->instanced->getDrawInfo(),
+        // # yet another std::optional problem (implicit)
+        .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
+      }),
+      .submission = ANAMED::SubmissionInfo{
+        .info = qfAndQueue,
+      }
+    });
+
+    //
+    decltype(auto) translucentFence = translucentObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
       // # yet another std::optional problem (implicit)
       .graphics = std::optional<ANAMED::WriteGraphicsInfo>(ANAMED::WriteGraphicsInfo{
         .layout = descriptorsObj.as<vk::PipelineLayout>(),
@@ -340,15 +359,24 @@ protected:
     });
 
     //
-    std::unordered_map<vk::ShaderStageFlagBits, cpp21::shared_vector<uint32_t>> stageMaps = {};
-    stageMaps[vk::ShaderStageFlagBits::eVertex] = cpp21::readBinaryU32("./opaque.vert.spv");
-    stageMaps[vk::ShaderStageFlagBits::eFragment] = cpp21::readBinaryU32("./opaque.frag.spv");
-
-    //
-    graphicsObj = ANAMED::PipelineObj::make(deviceObj.with(0u), ANAMED::PipelineCreateInfo{
+    std::unordered_map<vk::ShaderStageFlagBits, cpp21::shared_vector<uint32_t>> opaqueStageMaps = {};
+    opaqueStageMaps[vk::ShaderStageFlagBits::eVertex] = cpp21::readBinaryU32("./opaque.vert.spv");
+    opaqueStageMaps[vk::ShaderStageFlagBits::eFragment] = cpp21::readBinaryU32("./opaque.frag.spv");
+    opaqueObj = ANAMED::PipelineObj::make(deviceObj.with(0u), ANAMED::PipelineCreateInfo{
       .layout = descriptorsObj.as<vk::PipelineLayout>(),
       .graphics = ANAMED::GraphicsPipelineCreateInfo{
-        .stageCodes = stageMaps
+        .stageCodes = opaqueStageMaps
+      }
+    });
+
+    //
+    std::unordered_map<vk::ShaderStageFlagBits, cpp21::shared_vector<uint32_t>> translucentStageMaps = {};
+    translucentStageMaps[vk::ShaderStageFlagBits::eVertex] = cpp21::readBinaryU32("./translucent.vert.spv");
+    translucentStageMaps[vk::ShaderStageFlagBits::eFragment] = cpp21::readBinaryU32("./translucent.frag.spv");
+    translucentObj = ANAMED::PipelineObj::make(deviceObj.with(0u), ANAMED::PipelineCreateInfo{
+      .layout = descriptorsObj.as<vk::PipelineLayout>(),
+      .graphics = ANAMED::GraphicsPipelineCreateInfo{
+        .stageCodes = translucentStageMaps
       }
     });
 

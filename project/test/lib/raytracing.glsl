@@ -74,7 +74,7 @@ IntersectionInfo traceRaysTransparent(in InstanceAddressInfo instance, in RayDat
             mat3x3 tbn = getTBN(interpol);
             MaterialPixelInfo material = handleMaterial(getMaterialInfo(geometryInfo), interpol.data[VERTEX_TEXCOORD].xy, tbn);
 
-            if (material.color[MATERIAL_ALBEDO].a < 0.0001f) {
+            if (material.color[MATERIAL_ALBEDO].a < 0.001f) {
                 isOpaque = false;
             };
         };
