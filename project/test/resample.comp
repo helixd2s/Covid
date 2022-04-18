@@ -56,14 +56,15 @@ void main() {
   // 
   const vec3 currentPos = vec4(vec4(prevPos.xyz, 1.f) * inverse(getPrevInstanceTransform(instancedData.opaqueAddressInfo, prevIndices.x)), 1.f) * getInstanceTransform(instancedData.opaqueAddressInfo, prevIndices.x);
   const vec3 currentReflPos = vec4(vec4(prevReflPos.xyz, 1.f) * inverse(getPrevInstanceTransform(instancedData.opaqueAddressInfo, prevReflIndices.x)), 1.f) * getInstanceTransform(instancedData.opaqueAddressInfo, prevReflIndices.x);
-  
+
   //
   const vec4 perspPos = vec4(vec4(currentPos.xyz, 1.f) * constants.lookAt, 1.f) * constants.perspective;
   const vec2 screenPos = (perspPos.xy/perspPos.w) * 0.5f + 0.5f;
   const ivec2 intScreenPos = ivec2(screenPos * vec2(extent));
 
   // TODO: correctly reproject previous reflection point
-  const vec3 foundIntersection = find_reflection_incident_point(currentPos.xyz, prevReflPos.xyz, prevPos.xyz, normalize(prevNormal.xyz));
+  //const vec3 foundIntersection = find_reflection_incident_point(currentPos.xyz, prevReflPos.xyz, prevPos.xyz, normalize(prevNormal.xyz));
+  const vec3 foundIntersection = find_reflection_incident_point(currentReflPos.xyz, prevPos.xyz, prevReflPos.xyz, normalize(prevNormal.xyz));
   const vec3 reprojIntersection = foundIntersection;//vec4(vec4(foundIntersection, 1.f) * inverse(getPrevInstanceTransform(instancedData.opaqueAddressInfo, prevReflIndices.x)), 1.f) * getInstanceTransform(instancedData.opaqueAddressInfo, prevReflIndices.x);
 
   // 
@@ -76,9 +77,9 @@ void main() {
     accumulateSplit(pingpong.images[1], intScreenPos, imageLoad(imagesRgba32UI[pingpong.images[0]], ivec2(gcoord))); // from previous diffuse
 
     // 
-    if (distance(texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), whereReflect, 0).xyz, reprojIntersection.xyz) < 0.001f) {
+    //if (distance(texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), whereReflect, 0).xyz, reprojIntersection.xyz) < 0.001f) {
       accumulateSplit(pingpong.images[5], intWhereReflect, imageLoad(imagesRgba32UI[pingpong.images[4]], ivec2(gcoord)));
-    };
+    //};
   };
 
   

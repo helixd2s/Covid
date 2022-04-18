@@ -47,13 +47,17 @@ RayData handleIntersection(in RayData rayData, in IntersectionInfo intersection,
   vec3 originSeedXYZ = vec3(random(rayData.launchId.xy), random(rayData.launchId.xy), random(rayData.launchId.xy));
 
   //
+  passed.alphaColor = vec4(1.f.xxx, diffuseColor.a);
+  passed.normals = normals;
+  passed.origin = vertice.xyz;
+
+  //
   if (random(rayData.launchId.xy) <= reflFactor && diffuseColor.a >= 0.001f) { // I currently, have no time for fresnel
     rayData.direction.xyz = reflective(originSeedXYZ, rayData.direction.xyz, normals, roughnessFactor);
     rayData.energy.xyz = f16vec3(metallicMult(rayData.energy.xyz, diffuseColor.xyz, metallicFactor));
   } else 
   if (random(rayData.launchId.xy) >= diffuseColor.a) {
     passed.alphaPassed = true;
-    passed.alphaColor = vec4(1.f.xxx, diffuseColor.a);
     rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, mix(passed.alphaColor.xyz, 1.f.xxx, diffuseColor.a)));
   } else
   {
@@ -69,7 +73,7 @@ RayData handleIntersection(in RayData rayData, in IntersectionInfo intersection,
 };
 
 //
-RayData pathTrace(in RayData rayData, inout vec4 firstHit, inout uvec4 firstIndices) {
+RayData pathTrace(in RayData rayData, inout vec4 firstHit, inout vec3 firstNormal, inout uvec4 firstIndices) {
   //
   for (uint32_t i=0;i<3;i++) {
     if (luminance(rayData.energy.xyz) < 0.001f) { break; };
@@ -103,6 +107,7 @@ RayData pathTrace(in RayData rayData, inout vec4 firstHit, inout uvec4 firstIndi
       if (i == 0) { 
         firstHit = vec4(opaquePass.origin.xyz, intersection.hitT);
         firstIndices = uvec4(intersection.instanceId, intersection.geometryId, intersection.primitiveId, 0u);
+        firstNormal = opaquePass.normals.xyz;
       };
 
     } else {

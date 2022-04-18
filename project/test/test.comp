@@ -100,6 +100,7 @@ void main() {
   //
   uvec4 reflIndices = uvec4(0u), diffuseIndices = uvec4(0u), transpIndices = uvec4(0u);
   vec4 reflHit = vec4(rayOrigin, 10000.f), diffuseHit = vec4(rayOrigin, 10000.f), transpHit = vec4(rayOrigin, 10000.f);
+  vec3 reflNorm = 0.f.xxx, diffuseNorm = 0.f.xxx, transpNorm = 0.f.xxx;
 
   // 
   if (hasHit) {
@@ -108,14 +109,14 @@ void main() {
     diffRayData.origin = rayOrigin.xyz + outRayNormal(diffRayData.direction.xyz, normals.xyz) * 0.0001f;
     diffRayData.energy = f16vec4(1.f.xxx, 1.f);
     diffRayData.emission = f16vec4(0.f.xxx, 1.f);
-    diffRayData = luminance(diffuseColor.xyz) >= 0.001f ? pathTrace(diffRayData, diffuseHit, diffuseIndices) : diffRayData;
+    diffRayData = luminance(diffuseColor.xyz) >= 0.001f ? pathTrace(diffRayData, diffuseHit, reflNorm, diffuseIndices) : diffRayData;
 
     // 
     reflRayData.direction.xyz = reflDir;
     reflRayData.origin = rayOrigin.xyz + outRayNormal(reflRayData.direction.xyz, normals.xyz) * 0.0001f;
     reflRayData.energy = f16vec4(metallicMult(1.f.xxx, materialPix.color[MATERIAL_ALBEDO].xyz, metallicFactor), 1.f);
     reflRayData.emission = f16vec4(0.f.xxx, 1.f);
-    reflRayData = pathTrace(reflRayData, reflHit, reflIndices);
+    reflRayData = pathTrace(reflRayData, reflHit, diffuseNorm, reflIndices);
 
     //
     if (diffuseColor.a < 1.f) {
@@ -123,7 +124,7 @@ void main() {
       transpRayData.origin = rayOrigin.xyz + outRayNormal(transpRayData.direction.xyz, normals.xyz) * 0.0001f;
       transpRayData.energy = f16vec4(1.f.xxx, 1.f);//f16vec4(metallicMult(1.f.xxx, materialPix.color[MATERIAL_ALBEDO].xyz, metallicFactor), 1.f);
       transpRayData.emission = f16vec4(0.f.xxx, 1.f);
-      transpRayData = pathTrace(transpRayData, transpHit, transpIndices);
+      transpRayData = pathTrace(transpRayData, transpHit, transpNorm, transpIndices);
     };
 
     // I currently, have no time for fresnel
