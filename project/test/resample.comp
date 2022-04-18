@@ -63,8 +63,8 @@ void main() {
   const ivec2 intScreenPos = ivec2(screenPos * vec2(extent));
 
   // TODO: correctly reproject previous reflection point
-  //const vec3 foundIntersection = find_reflection_incident_point(currentPos.xyz, prevReflPos.xyz, prevPos.xyz, normalize(prevNormal.xyz));
-  const vec3 foundIntersection = find_reflection_incident_point(currentReflPos.xyz, prevPos.xyz, prevReflPos.xyz, normalize(prevNormal.xyz));
+  //const vec3 foundIntersection = find_reflection_incident_point(prevPos.xyz, prevReflPos.xyz, currentPos.xyz, normalize(prevNormal.xyz));
+  const vec3 foundIntersection = find_reflection_incident_point(prevReflPos.xyz, prevPos.xyz, currentReflPos.xyz, normalize(prevNormal.xyz));
   const vec3 reprojIntersection = foundIntersection;//vec4(vec4(foundIntersection, 1.f) * inverse(getPrevInstanceTransform(instancedData.opaqueAddressInfo, prevReflIndices.x)), 1.f) * getInstanceTransform(instancedData.opaqueAddressInfo, prevReflIndices.x);
 
   // 
