@@ -21,6 +21,7 @@ void main() {
   if (gcoord_.y < (extent.y/2)) {
     const uvec2 gcoord = uvec2(gcoord_.x, gcoord_.y * 2 + ((gcoord_.x&1)^(frameCounter&1)));
     const vec2 tCoord = vec2(gcoord)/vec2(extent);
+    const uint pixelId = gcoord.x + extent.x * gcoord.y;
 
     //
     const vec3 rayBegin = divW(vec4(vec3(tCoord, 0.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse;//fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId);
@@ -118,39 +119,37 @@ void main() {
     };
 
     // 
-    uvec4 origRefl = readSplit(pingpong.images[5], ivec2(gcoord)) + cvtRgb16Float(clamp(reflColor, vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f)));
-    imageStore(imagesRgba32UI[pingpong.images[4]], ivec2(gcoord), origRefl);
-
-    // 
-    uvec4 origTransp = readSplit(pingpong.images[6], ivec2(gcoord)) + cvtRgb16Float(clamp(transpColor, vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f)));
-    imageStore(imagesRgba32F[pingpong.images[7]], ivec2(gcoord), origTransp);
+    vec4 origRefl = cvtRgb16Acc(pixelData.pixels[pixelId].reflectionAccum) + clamp(reflColor, vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f));
+    vec4 origTransp = cvtRgb16Acc(pixelData.pixels[pixelId].transparencyAccum) + clamp(transpColor, vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f));
+    vec4 origDiffuse = cvtRgb16Acc(pixelData.pixels[pixelId].diffuseAccum) + clamp(finalColor, vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f));
 
     //
-    uvec4 original = readSplit(pingpong.images[1], ivec2(gcoord)) + cvtRgb16Float(clamp(finalColor, vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f)));
-    imageStore(imagesRgba32UI[pingpong.images[0]], ivec2(gcoord), original);
-
-    // pass parameters
-    imageStore(imagesRgba32UI[pingpong.images[2]], ivec2(gcoord), uvec4(intersection.instanceId, intersection.geometryId, intersection.primitiveId, 0u));
-    imageStore(imagesRgba32F[pingpong.images[3]], ivec2(gcoord), vec4(rayOrigin, 1.f));
-    imageStore(imagesRgba32F[pingpong.images[8]], ivec2(gcoord), vec4(reflHit.w, transpHit.w, 0.f, 0.f));
-    //imageStore(imagesRgba32F[pingpong.images[8]], ivec2(gcoord), vec4(reflHit.xyz, 0.f));
-    imageStore(imagesRgba32F[pingpong.images[9]], ivec2(gcoord), vec4(normals, 1.f));
-    imageStore(imagesRgba32UI[pingpong.images[10]], ivec2(gcoord), reflIndices);
-    imageStore(imagesRgba32UI[pingpong.images[11]], ivec2(gcoord), transpIndices);
+    pixelData.pixels[pixelId].diffuse = origDiffuse;
+    pixelData.pixels[pixelId].transparency = origTransp;
+    pixelData.pixels[pixelId].reflection = origRefl;
+    pixelData.pixels[pixelId].surfaceOrigin = vec4(rayOrigin, 1.f);
+    pixelData.pixels[pixelId].surfaceNormal = vec4(normals, 0.f);
+    pixelData.pixels[pixelId].distanceMap = vec4(distance(reflHit.xyz, rayOrigin.xyz), 0.f, 0.f, 1.f);
+    pixelData.pixels[pixelId].reflIndices = reflIndices;
+    pixelData.pixels[pixelId].reflectionAccum = uvec4(0u);
+    pixelData.pixels[pixelId].transparencyAccum = uvec4(0u);
+    pixelData.pixels[pixelId].diffuseAccum = uvec4(0u);
 
   } else {
     const uvec2 gcoord = uvec2(gcoord_.x, (gcoord_.y - (extent.y/2)) * 2u + ((gcoord_.x&1u)^(1u-(frameCounter&1u))));
+    const uint pixelId = gcoord.x + extent.x * gcoord.y;
 
     // 
-    uvec4 origRefl = readSplit(pingpong.images[5], ivec2(gcoord));
-    imageStore(imagesRgba32UI[pingpong.images[4]], ivec2(gcoord), origRefl);
-
-    // 
-    uvec4 origTransp = readSplit(pingpong.images[6], ivec2(gcoord));
-    imageStore(imagesRgba32F[pingpong.images[7]], ivec2(gcoord), origTransp);
+    vec4 origRefl = cvtRgb16Acc(pixelData.pixels[pixelId].reflectionAccum);
+    vec4 origTransp = cvtRgb16Acc(pixelData.pixels[pixelId].transparencyAccum);
+    vec4 origDiffuse = cvtRgb16Acc(pixelData.pixels[pixelId].diffuseAccum);
 
     //
-    uvec4 original = readSplit(pingpong.images[1], ivec2(gcoord));
-    imageStore(imagesRgba32UI[pingpong.images[0]], ivec2(gcoord), original);
-  }
+    pixelData.pixels[pixelId].diffuse = origDiffuse;
+    pixelData.pixels[pixelId].transparency = origTransp;
+    pixelData.pixels[pixelId].reflection = origRefl;
+    pixelData.pixels[pixelId].reflectionAccum = uvec4(0u);
+    pixelData.pixels[pixelId].transparencyAccum = uvec4(0u);
+    pixelData.pixels[pixelId].diffuseAccum = uvec4(0u);
+  };
 };

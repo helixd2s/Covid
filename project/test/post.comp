@@ -15,16 +15,31 @@
 layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
 
 //
-vec4 readAndNeighbor(in uint img, in ivec2 coord) {
-  uvec4 center = imageLoad(imagesRgba32UI[img], coord);
-  if (center.w <= 0u) { center += (imageLoad(imagesRgba32UI[img], coord + ivec2(1,0)) + imageLoad(imagesRgba32UI[img], coord + ivec2(0,1))); };
-  return cvtRgb16Acc(center);
+vec4 readAndNeighborDiffuse(in uint pixelId) {
+  vec4 center = pixelData.pixels[pixelId].diffuse;
+  if (center.w <= 0.f && (pixelId + extent.x) < (extent.y * extent.x)) { center = pixelData.pixels[pixelId + extent.x].diffuse + pixelData.pixels[pixelId + 1].diffuse; };
+  return center;
+};
+
+//
+vec4 readAndNeighborReflect(in uint pixelId) {
+  vec4 center = pixelData.pixels[pixelId].reflection;
+  if (center.w <= 0.f && (pixelId + extent.x) < (extent.y * extent.x)) { center = pixelData.pixels[pixelId + extent.x].reflection + pixelData.pixels[pixelId + 1].reflection; };
+  return center;
+};
+
+//
+vec4 readAndNeighborTransp(in uint pixelId) {
+  vec4 center = pixelData.pixels[pixelId].transparency;
+  if (center.w <= 0.f && (pixelId + extent.x) < (extent.y * extent.x)) { center = pixelData.pixels[pixelId + extent.x].transparency + pixelData.pixels[pixelId + 1].transparency; };
+  return center;
 };
 
 // 
 void main() {
   const uvec2 gcoord = gl_GlobalInvocationID.xy;
   const vec2 tCoord = vec2(gcoord)/vec2(extent);
+  const uint pixelId = gcoord.x + extent.x * gcoord.y;
 
   //
   const vec3 rayBegin = divW(vec4(vec3(tCoord, 0.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse;//fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId);
@@ -72,9 +87,9 @@ void main() {
   float roughnessFactor = hasHit ? materialPix.color[MATERIAL_PBR].g : 0.f;
 
   // 
-  vec4 resultRefl = readAndNeighbor(pingpong.images[4], ivec2(gcoord));
-  vec4 resultTransp = readAndNeighbor(pingpong.images[6], ivec2(gcoord));
-  vec4 resultColor = readAndNeighbor(pingpong.images[0], ivec2(gcoord));
+  vec4 resultRefl = readAndNeighborReflect(pixelId);
+  vec4 resultTransp = readAndNeighborTransp(pixelId);
+  vec4 resultColor = readAndNeighborDiffuse(pixelId);
   vec3 reflDir = reflect(rayDir, normals);
 
   // 

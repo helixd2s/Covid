@@ -72,6 +72,8 @@ struct PixelInfo {
   uvec4 diffuseAccum;
   uvec4 reflectionAccum;
   uvec4 transparencyAccum;
+  uvec4 indices;
+  uvec4 reflIndices;
 };
 
 //
@@ -102,13 +104,18 @@ uint tiled(in uint sz, in uint gmaxtile) {
   return sz <= 0 ? 0 : (sz / gmaxtile + sgn(sz % gmaxtile));
 };
 
+// but may not to be...
+layout(buffer_reference, scalar, buffer_reference_align = 1) buffer PixelData {
+  PixelInfo pixels[];
+};
+
 // 
 layout(set = 0, binding = 0, scalar) uniform MatrixBlock
 {
   uint32_t framebufferAttachments[4]; // framebuffers
   uvec2 extent; uint frameCounter, reserved0;
   Constants constants;
-  uint64_t pixelData;
+  PixelData pixelData;
   uint32_t background;
 
   //TestVertices vertices;
@@ -141,6 +148,30 @@ void accumulateSplit(in uint image, in ivec2 coord, in uvec4 data) {
   imageAtomicAdd(imagesR32UI[image], coord * ivec2(4u,1u) + ivec2(1u,0u), data.y); 
   imageAtomicAdd(imagesR32UI[image], coord * ivec2(4u,1u) + ivec2(2u,0u), data.z);
   imageAtomicAdd(imagesR32UI[image], coord * ivec2(4u,1u) + ivec2(3u,0u), data.w);
+};
+
+//
+void accumulateDiffuse(in uint pixelId, in uvec4 data) {
+  atomicAdd(pixelData.pixels[pixelId].diffuseAccum.x, data.x);
+  atomicAdd(pixelData.pixels[pixelId].diffuseAccum.y, data.y);
+  atomicAdd(pixelData.pixels[pixelId].diffuseAccum.z, data.z);
+  atomicAdd(pixelData.pixels[pixelId].diffuseAccum.w, data.w);
+};
+
+//
+void accumulateReflection(in uint pixelId, in uvec4 data) {
+  atomicAdd(pixelData.pixels[pixelId].reflectionAccum.x, data.x);
+  atomicAdd(pixelData.pixels[pixelId].reflectionAccum.y, data.y);
+  atomicAdd(pixelData.pixels[pixelId].reflectionAccum.z, data.z);
+  atomicAdd(pixelData.pixels[pixelId].reflectionAccum.w, data.w);
+};
+
+//
+void accumulateTransparency(in uint pixelId, in uvec4 data) {
+  atomicAdd(pixelData.pixels[pixelId].transparencyAccum.x, data.x);
+  atomicAdd(pixelData.pixels[pixelId].transparencyAccum.y, data.y);
+  atomicAdd(pixelData.pixels[pixelId].transparencyAccum.z, data.z);
+  atomicAdd(pixelData.pixels[pixelId].transparencyAccum.w, data.w);
 };
 
 // but may not to be...

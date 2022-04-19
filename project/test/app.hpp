@@ -48,9 +48,11 @@ struct PixelInfo {
   glm::vec4 distanceMap = glm::vec4(0.f);
   glm::vec4 surfaceOrigin = glm::vec4(0.f);
   glm::vec4 surfaceNormal = glm::vec4(0.f);
-  glm::uvec4 diffuseAccum = glm::vec4(0.f);
-  glm::uvec4 reflectionAccum = glm::vec4(0.f);
-  glm::uvec4 transparencyAccum = glm::vec4(0.f);
+  glm::uvec4 diffuseAccum = glm::uvec4(0u);
+  glm::uvec4 reflectionAccum = glm::uvec4(0u);
+  glm::uvec4 transparencyAccum = glm::uvec4(0u);
+  glm::uvec4 indices = glm::uvec4(0u);
+  glm::uvec4 reflIndices = glm::uvec4(0u);
 };
 
 // 
@@ -146,9 +148,9 @@ public:
     decltype(auto) pingPong = pingPongObj->acquireImage(qfAndQueue);
 
     //
-    pingPongObj->clearImage(qfAndQueue, 1u, glm::uintBitsToFloat(glm::uvec4(0u)));
-    pingPongObj->clearImage(qfAndQueue, 5u, glm::uintBitsToFloat(glm::uvec4(0u)));
-    pingPongObj->clearImage(qfAndQueue, 7u, glm::uintBitsToFloat(glm::uvec4(0u)));
+    //pingPongObj->clearImage(qfAndQueue, 1u, glm::uintBitsToFloat(glm::uvec4(0u)));
+    //pingPongObj->clearImage(qfAndQueue, 5u, glm::uintBitsToFloat(glm::uvec4(0u)));
+    //pingPongObj->clearImage(qfAndQueue, 7u, glm::uintBitsToFloat(glm::uvec4(0u)));
 
     //
     //if (controller->needsClear) {
@@ -319,21 +321,8 @@ public:
 
       // first image is accumulation, second image is back buffer, third image is index buffer, fourth image is position buffer
       // 5th for reflection buffer, 6th for reflection back buffer, 7th for transparency, 8th for transparency back
-      .split = std::vector<bool>{false, true, false, false, false, true, false, true, false, false, false, false},
-      .formats = std::vector<vk::Format>{ 
-        vk::Format::eR32G32B32A32Uint, 
-        vk::Format::eR32G32B32A32Uint, 
-        vk::Format::eR32G32B32A32Uint, 
-        vk::Format::eR32G32B32A32Sfloat, 
-        vk::Format::eR32G32B32A32Uint, 
-        vk::Format::eR32G32B32A32Uint,
-        vk::Format::eR32G32B32A32Uint,
-        vk::Format::eR32G32B32A32Uint,
-        vk::Format::eR32G32B32A32Sfloat,
-        vk::Format::eR32G32B32A32Sfloat,
-        vk::Format::eR32G32B32A32Uint,
-        vk::Format::eR32G32B32A32Uint,
-      },
+      .split = std::vector<bool>{false},
+      .formats = std::vector<vk::Format>{ vk::Format::eR32Uint },
       .info = qfAndQueue
     });
 
