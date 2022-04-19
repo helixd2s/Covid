@@ -51,6 +51,7 @@ protected:
   ANAMED::WrapShared<ANAMED::PipelineObj> resampleObj = {};
   ANAMED::WrapShared<ANAMED::PipelineObj> computeObj = {};
   ANAMED::WrapShared<ANAMED::PipelineObj> opaqueObj = {};
+  ANAMED::WrapShared<ANAMED::PipelineObj> postObj = {};
   ANAMED::WrapShared<ANAMED::PipelineObj> translucentObj = {};
   ANAMED::WrapShared<ANAMED::SwapchainObj> swapchainObj = {};
   ANAMED::WrapShared<ANAMED::FramebufferObj> framebufferObj = {};
@@ -229,6 +230,22 @@ public:
     });
 
     //
+    decltype(auto) postFence = postObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
+      // # yet another std::optional problem (implicit)
+      .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
+        .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 256u), renderArea.extent.height, 1u},
+        .layout = descriptorsObj.as<vk::PipelineLayout>(),
+        .swapchain = swapchainObj.as<uintptr_t>(),
+        .pingpong = pingPongObj.as<uintptr_t>(),
+        // # yet another std::optional problem (implicit)
+        .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
+      }),
+      .submission = ANAMED::SubmissionInfo{
+        .info = qfAndQueue
+      }
+      });
+
+    //
     pingPongObj->presentImage(qfAndQueue);
     fence = std::get<0u>(swapchainObj->presentImage(qfAndQueue));
 
@@ -355,6 +372,14 @@ protected:
       .layout = descriptorsObj.as<vk::PipelineLayout>(),
       .compute = ANAMED::ComputePipelineCreateInfo{
         .code = cpp21::readBinaryU32("./resample.comp.spv")
+      }
+    });
+
+    //
+    postObj = ANAMED::PipelineObj::make(deviceObj.with(0u), ANAMED::PipelineCreateInfo{
+      .layout = descriptorsObj.as<vk::PipelineLayout>(),
+      .compute = ANAMED::ComputePipelineCreateInfo{
+        .code = cpp21::readBinaryU32("./post.comp.spv")
       }
     });
 

@@ -23,6 +23,9 @@ namespace ANAMED {
     friend FramebufferObj;
     friend DescriptorsObj;
 
+    //
+    std::vector<vk::Pipeline> secondaryPipelines = {};
+
     // 
     //vk::Pipeline pipeline = {};
     std::optional<PipelineCreateInfo> cInfo = PipelineCreateInfo{};
@@ -100,6 +103,11 @@ namespace ANAMED {
       //
       viewports = { vk::Viewport{.x = 0.f, .y = 0.f, .width = 1.f, .height = 1.f, .minDepth = 0.f, .maxDepth = 1.f} };
       scissors = { vk::Rect2D{{0,0},{1u,1u}} };
+
+      // TODO: learn this feature...
+      decltype(auto) pFragmentRate = infoMap->set(vk::StructureType::ePipelineFragmentShadingRateStateCreateInfoKHR, vk::PipelineFragmentShadingRateStateCreateInfoKHR{
+
+      });
 
       //
       decltype(auto) pRendering = infoMap->set(vk::StructureType::ePipelineRenderingCreateInfo, vk::PipelineRenderingCreateInfo{
@@ -255,7 +263,7 @@ namespace ANAMED {
       {
         exec->cmdBuf.pipelineBarrier2(depInfo.setMemoryBarriers(memoryBarriersBegin));
         exec->cmdBuf.bindDescriptorSets(vk::PipelineBindPoint::eCompute, descriptorsObj->handle.as<vk::PipelineLayout>(), 0u, descriptorsObj->sets, offsets);
-        exec->cmdBuf.bindPipeline(vk::PipelineBindPoint::eCompute, this->handle.as<vk::Pipeline>());
+        exec->cmdBuf.bindPipeline(vk::PipelineBindPoint::eCompute, exec->pipelineIndex == 0u ? this->handle.as<vk::Pipeline>() : this->secondaryPipelines[exec->pipelineIndex-1u]);
         if (exec->instanceAddressBlock) {
           exec->cmdBuf.pushConstants(descriptorsObj->handle.as<vk::PipelineLayout>(), vk::ShaderStageFlagBits::eAll, 0u, sizeof(InstanceAddressBlock), &exec->instanceAddressBlock.value());
         };
@@ -322,7 +330,7 @@ namespace ANAMED {
       if (framebuffer) { framebuffer->writeSwitchToAttachment(exec->cmdBuf); };
       exec->cmdBuf.pipelineBarrier2(_depInfo.setMemoryBarriers(memoryBarriersBegin));
       exec->cmdBuf.beginRendering(vk::RenderingInfoKHR{ .renderArea = renderArea, .layerCount = this->cInfo->graphics->framebufferType == FramebufferType::eCubemap ? 6u : 1u, .viewMask = 0x0u, .colorAttachmentCount = uint32_t(colorAttachments.size()), .pColorAttachments = colorAttachments.data(), .pDepthAttachment = &depthAttachment, .pStencilAttachment = &stencilAttachment });
-      exec->cmdBuf.bindPipeline(vk::PipelineBindPoint::eGraphics, this->handle.as<vk::Pipeline>());
+      exec->cmdBuf.bindPipeline(vk::PipelineBindPoint::eGraphics, exec->pipelineIndex == 0u ? this->handle.as<vk::Pipeline>() : this->secondaryPipelines[exec->pipelineIndex - 1u]);
       exec->cmdBuf.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, descriptorsObj->handle.as<vk::PipelineLayout>(), 0u, descriptorsObj->sets, offsets);
       exec->cmdBuf.setViewportWithCount(viewports);
       exec->cmdBuf.setScissorWithCount(scissors);

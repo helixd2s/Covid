@@ -1,4 +1,5 @@
 glslangValidator --target-env spirv1.6 --client vulkan100 test.comp -o test.comp.spv
+glslangValidator --target-env spirv1.6 --client vulkan100 post.comp -o post.comp.spv
 glslangValidator --target-env spirv1.6 --client vulkan100 resample.comp -o resample.comp.spv
 glslangValidator --target-env spirv1.6 --client vulkan100 rasterize.frag -o opaque.frag.spv
 glslangValidator --target-env spirv1.6 --client vulkan100 rasterize.vert -o opaque.vert.spv

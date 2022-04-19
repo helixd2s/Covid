@@ -1,0 +1,87 @@
+#version 460 core
+
+// 
+#extension GL_GOOGLE_include_directive : require
+
+//
+#include "lib/native.glsl"
+#include "lib/raytracing.glsl"
+#include "lib/random.glsl"
+#include "lib/sphere.glsl"
+#include "lib/fresnel.glsl"
+#include "lib/pass.glsl"
+
+//
+layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+
+//
+vec4 readAndNeighbor(in uint img, in ivec2 coord) {
+  uvec4 center = imageLoad(imagesRgba32UI[img], coord);
+  if (center.w <= 0u) { center = imageLoad(imagesRgba32UI[img], coord + ivec2(1,0)) + imageLoad(imagesRgba32UI[img], coord + ivec2(0,1)); };
+  return cvtRgb16Acc(center);
+};
+
+// 
+void main() {
+  const uvec2 gcoord = gl_GlobalInvocationID.xy;
+  const vec2 tCoord = vec2(gcoord)/vec2(extent);
+
+  //
+  const vec3 rayBegin = divW(vec4(vec3(tCoord, 0.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse;//fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId);
+  const vec3 rayEnd = divW(vec4(vec3(tCoord, 1.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse;
+  const vec3 rayDir = normalize(rayEnd.xyz - rayBegin.xyz);
+  
+  //
+  RayData rayData;
+  rayData.launchId = u16vec2(gcoord.xy);
+  rayData.origin = rayBegin.xyz;
+  rayData.direction = rayDir;
+  rayData.energy = f16vec4(1.f.xxx, 1.f);
+  rayData.emission = f16vec4(0.f.xxx, 1.f);
+
+  //
+#ifdef USE_RASTERIZE_PASS
+  IntersectionInfo intersection = rasterize(instancedData.opaqueAddressInfo, rayData, 10000.f);
+#else
+  IntersectionInfo intersection = traceRaysOpaque(instancedData.opaqueAddressInfo, rayData, 10000.f);
+#endif
+
+  // 
+  InstanceInfo instanceInfo = getInstance(instancedData.opaqueAddressInfo, intersection.instanceId);
+  GeometryInfo geometryInfo = getGeometry(instanceInfo, intersection.geometryId);
+  GeometryExtData geometry = getGeometryData(geometryInfo, intersection.primitiveId);
+  GeometryExtAttrib attrib = interpolate(geometry, intersection.barycentric);
+
+  //
+  const vec3 rayOrigin = fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId).xyz;
+  const vec4 texcoord = attrib.data[VERTEX_TEXCOORD];
+  const vec4 tangent = attrib.data[VERTEX_TANGENT];
+
+  //
+  mat3x3 tbn = getTBN(attrib);
+  MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), texcoord.xy, tbn);
+  const vec3 mNormal = materialPix.color[MATERIAL_NORMAL].xyz;
+  const vec3 normals = inRayNormal(rayDir, fullTransformNormal(instanceInfo, mNormal, intersection.geometryId));
+
+  // 
+  bool hasHit = !all(lessThanEqual(intersection.barycentric, 0.f.xxx));
+  vec4 diffuseColor = toLinear(hasHit ? materialPix.color[MATERIAL_ALBEDO] : vec4(skyColor.xyz, 1.f));
+  vec4 emissiveColor = toLinear(hasHit ? materialPix.color[MATERIAL_EMISSIVE] : vec4(0.f.xxx, 1.f));
+  float metallicFactor = hasHit ? materialPix.color[MATERIAL_PBR].b : 0.f;
+  float roughnessFactor = hasHit ? materialPix.color[MATERIAL_PBR].g : 0.f;
+
+  // 
+  vec4 resultRefl = readAndNeighbor(pingpong.images[4], ivec2(gcoord));
+  vec4 resultTransp = readAndNeighbor(pingpong.images[6], ivec2(gcoord));
+  vec4 resultColor = readAndNeighbor(pingpong.images[0], ivec2(gcoord));
+  vec3 reflDir = reflect(rayDir, normals);
+
+  // 
+  float reflCoef = hasHit ? (metallicFactor + (fresnel_schlick(0.f, dot(reflDir.xyz, normals))) * (1.f - metallicFactor)) : 0.f;
+
+  // final color
+  imageStore(images[swapchain.image], ivec2(gcoord.x, extent.y-1-gcoord.y), fromLinear(vec4(mix(mix(resultTransp.xyz, resultColor.xyz / resultColor.w * diffuseColor.xyz, diffuseColor.a) + emissiveColor.xyz, resultRefl.xyz / resultRefl.w, reflCoef), 1.f)));
+
+  //vec4 reflDebug = cvtRgb16Acc(readSplit(pingpong.images[5], ivec2(gcoord)));
+  //imageStore(images[swapchain.image], ivec2(gcoord.x, extent.y-1-gcoord.y), vec4(fromLinear(reflDebug.xyz/reflDebug.w), 1.f));
+};

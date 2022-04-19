@@ -378,7 +378,8 @@ namespace ANAMED {
       //"VK_KHR_shader_subgroup_uniform_control_flow",
       //"VK_KHR_workgroup_memory_explicit_layout",
       "VK_KHR_shared_presentable_image",
-      "VK_KHR_shader_clock"
+      "VK_KHR_shader_clock",
+      "VK_KHR_fragment_shading_rate"
     };
     cpp21::shared_vector<std::string> layerList = std::vector<std::string>{
     };
@@ -965,6 +966,7 @@ namespace ANAMED {
     vk::CommandBuffer cmdBuf = {};
     vk::Extent3D dispatch = { 1u, 1u, 1u };
     vk::PipelineLayout layout = {};
+    uintptr_t pipelineIndex = 0ull;
     uintptr_t swapchain = 0ull;
     uintptr_t pingpong = 0ull;
 
@@ -979,6 +981,7 @@ namespace ANAMED {
   struct WriteGraphicsInfo : BaseCreateInfo {
     vk::CommandBuffer cmdBuf = {};
     vk::PipelineLayout layout = {};
+    uintptr_t pipelineIndex = 0ull;
     uintptr_t framebuffer = 0ull;
     uintptr_t swapchain = 0ull;
     uintptr_t pingpong = 0ull;
