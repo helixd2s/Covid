@@ -114,7 +114,7 @@ RayData pathTrace(in RayData rayData, inout vec4 firstHit, inout vec3 firstNorma
       const vec3 hitOrigin = rayData.origin.xyz * rayData.direction.xyz * 10000.f;
       if (i == 0) { firstHit = vec4(hitOrigin, intersection.hitT); };
       rayData.origin.xyz = hitOrigin;
-      rayData.emission.xyz += f16vec3(trueMultColor(rayData.energy.xyz, toLinear(skyColor.xyz)));
+      rayData.emission.xyz += f16vec3(trueMultColor(rayData.energy.xyz, pow(toLinear(texture(sampler2D(textures[background], samplers[0]), lcts(rayData.direction.xyz)).xyz), 1.f/2.2f.xxx)));
       rayData.energy.xyz *= f16vec3(0.f.xxx);
       break;
     }

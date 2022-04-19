@@ -1,6 +1,15 @@
 #ifndef NATIVE_DEF
 #define NATIVE_DEF
 
+//
+const float PI = 3.1415926535897932384626422832795028841971f;
+const float TWO_PI = 6.2831853071795864769252867665590057683943f;
+const float SQRT_OF_ONE_THIRD = 0.5773502691896257645091487805019574556476f;
+const float E = 2.7182818284590452353602874713526624977572f;
+const float INV_PI = 0.3183098861837907f;
+const float TWO_INV_PI = 0.6366197723675814f;
+const float INV_TWO_PI = 0.15915494309189535f;
+
 // 
 #extension GL_EXT_scalar_block_layout : require
 #extension GL_EXT_shader_explicit_arithmetic_types_int16 : require
@@ -53,6 +62,23 @@ struct Constants
 };
 
 //
+struct PixelInfo {
+  vec4 diffuse;
+  vec4 reflection;
+  vec4 transparency;
+  vec4 distanceMap;
+  vec4 surfaceOrigin;
+  vec4 surfaceNormal;
+  uvec4 diffuseAccum;
+  uvec4 reflectionAccum;
+  uvec4 transparencyAccum;
+};
+
+//
+vec2 lcts(in vec3 direct) { return vec2(fma(atan(direct.z,direct.x),INV_TWO_PI,0.5f), acos(direct.y)*INV_PI); };
+vec3 dcts(in vec2 hr) { hr = fma(hr,vec2(TWO_PI,PI),vec2(-PI,0.f)); const float up=-cos(hr.y),over=sqrt(fma(up,-up,1.f)); return vec3(cos(hr.x)*over,up,sin(hr.x)*over); };
+
+//
 const float HDR_GAMMA = 2.2f;
 vec3 fromLinear(in vec3 linearRGB) { return mix(vec3(1.055)*pow(linearRGB, vec3(1.0/2.4)) - vec3(0.055), linearRGB * vec3(12.92), lessThan(linearRGB, vec3(0.0031308))); }
 vec4 fromLinear(in vec4 linearRGB) { return vec4(fromLinear(linearRGB.xyz), linearRGB.w); }
@@ -82,6 +108,8 @@ layout(set = 0, binding = 0, scalar) uniform MatrixBlock
   uint32_t framebufferAttachments[4]; // framebuffers
   uvec2 extent; uint frameCounter, reserved0;
   Constants constants;
+  uint64_t pixelData;
+  uint32_t background;
 
   //TestVertices vertices;
   // for test

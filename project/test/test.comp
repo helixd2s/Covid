@@ -118,15 +118,15 @@ void main() {
     };
 
     // 
-    uvec4 origRefl = readSplit(pingpong.images[5], ivec2(gcoord)) + cvtRgb16Float(max(reflColor, vec4(0.f.xxx, 1.f)));
+    uvec4 origRefl = readSplit(pingpong.images[5], ivec2(gcoord)) + cvtRgb16Float(clamp(reflColor, vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f)));
     imageStore(imagesRgba32UI[pingpong.images[4]], ivec2(gcoord), origRefl);
 
     // 
-    uvec4 origTransp = readSplit(pingpong.images[6], ivec2(gcoord)) + cvtRgb16Float(max(transpColor, vec4(0.f.xxx, 1.f)));
+    uvec4 origTransp = readSplit(pingpong.images[6], ivec2(gcoord)) + cvtRgb16Float(clamp(transpColor, vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f)));
     imageStore(imagesRgba32F[pingpong.images[7]], ivec2(gcoord), origTransp);
 
     //
-    uvec4 original = readSplit(pingpong.images[1], ivec2(gcoord)) + cvtRgb16Float(max(finalColor /** vec4(diffuseColor.xyz, 1.f) + vec4(emissiveColor.xyz, 0.f)*/, vec4(0.f.xxx, 1.f)));
+    uvec4 original = readSplit(pingpong.images[1], ivec2(gcoord)) + cvtRgb16Float(clamp(finalColor, vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f)));
     imageStore(imagesRgba32UI[pingpong.images[0]], ivec2(gcoord), original);
 
     // pass parameters

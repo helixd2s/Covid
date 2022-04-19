@@ -607,6 +607,9 @@ namespace ANAMED {
       deviceObj->tickProcessing();
 
       //
+      descriptorsObj->updateDescriptors();
+
+      //
       this->gltfModels.push_back(gltf);
       return this->gltfModels.back();
     };

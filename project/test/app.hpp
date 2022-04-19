@@ -36,7 +36,21 @@ struct UniformData {
   uint32_t framebufferAttachments[4] = { 0u,0u,0u,0u };
   glm::uvec2 extent = {}; uint32_t frameCounter, reserved;
   Constants constants = {};
-  //uint64_t verticesAddress = 0ull;
+  uint64_t pixelData = 0ull;
+  uint32_t background = 0u;
+};
+
+//
+struct PixelInfo {
+  glm::vec4 diffuse = glm::vec4(0.f);
+  glm::vec4 reflection = glm::vec4(0.f);
+  glm::vec4 transparency = glm::vec4(0.f);
+  glm::vec4 distanceMap = glm::vec4(0.f);
+  glm::vec4 surfaceOrigin = glm::vec4(0.f);
+  glm::vec4 surfaceNormal = glm::vec4(0.f);
+  glm::uvec4 diffuseAccum = glm::vec4(0.f);
+  glm::uvec4 reflectionAccum = glm::vec4(0.f);
+  glm::uvec4 transparencyAccum = glm::vec4(0.f);
 };
 
 // 
@@ -56,6 +70,8 @@ protected:
   ANAMED::WrapShared<ANAMED::SwapchainObj> swapchainObj = {};
   ANAMED::WrapShared<ANAMED::FramebufferObj> framebufferObj = {};
   ANAMED::WrapShared<ANAMED::PingPongObj> pingPongObj = {};
+  ANAMED::WrapShared<ANAMED::ResourceObj> background = {};
+  ANAMED::WrapShared<ANAMED::ResourceObj> pixelData = {};
 
   //
   UniformData uniformData = {};
@@ -277,6 +293,18 @@ public:
     renderArea = swapchainObj->getRenderArea();
 
     //
+    pixelData = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
+      .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
+      .bufferInfo = ANAMED::BufferCreateInfo{
+        .size = sizeof(PixelInfo) * renderArea.extent.width * renderArea.extent.height,
+        .type = ANAMED::BufferType::eStorage,
+      }
+      });
+
+    //
+    uniformData.pixelData = pixelData->getDeviceAddress();
+
+    //
     framebufferObj = ANAMED::FramebufferObj::make(deviceObj.with(0u), ANAMED::FramebufferCreateInfo{
       .layout = descriptorsObj.as<vk::PipelineLayout>(),
       .extent = renderArea.extent,
@@ -412,6 +440,46 @@ protected:
     //
     previousTime = glfwGetTime();
     frameCount = 0;
+
+    //
+    stbi_ldr_to_hdr_scale(1.0f);
+    stbi_ldr_to_hdr_gamma(2.2f);
+
+    //
+    int w = 0, h = 0, c = 0;
+    float* data = (float*)stbi_loadf("./HDR_111_Parking_Lot_2_Ref.hdr", &w, &h, &c, STBI_rgb_alpha);
+
+    //
+    background = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
+      .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
+      .imageInfo = ANAMED::ImageCreateInfo{
+        .format = vk::Format::eR32G32B32A32Sfloat,
+        .extent = vk::Extent3D{uint32_t(w), uint32_t(h), 1u},
+        .type = ANAMED::ImageType::eTexture
+      }
+    });
+
+    //
+    decltype(auto) pair = background->createImageView(ANAMED::ImageViewCreateInfo{
+      .viewType = vk::ImageViewType::e2D
+    });
+
+
+    // complete loader
+    //
+    decltype(auto) status = uploaderObj->executeUploadToResourceOnce(ANAMED::UploadExecutionOnce{
+      .host = cpp21::data_view<char8_t>((char8_t*)data, 0ull, h * w * 16ull),
+      .writeInfo = ANAMED::UploadCommandWriteInfo{
+        // # yet another std::optional problem (implicit)
+        .dstImage = std::optional<ANAMED::ImageRegion>(ANAMED::ImageRegion{.image = background.as<vk::Image>(), .region = ANAMED::ImageDataRegion{.extent = vk::Extent3D{uint32_t(w), uint32_t(h), 1u}}}),
+      }
+    });
+
+    //
+    descriptorsObj->updateDescriptors();
+
+    //
+    uniformData.background = std::get<1u>(pair);
   };
 
 };

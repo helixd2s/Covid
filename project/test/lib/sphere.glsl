@@ -4,7 +4,6 @@
  */
 
 //#define PI 3.14159265359
-const float PI = 3.14159265359f;
 
 /**
  * Generate a uniformly distributed random point on the unit disk oriented around 'n'.
