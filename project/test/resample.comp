@@ -55,6 +55,7 @@ void main() {
   const vec4 prevReflPos = vec4(prevPos.xyz + prevHitT.w * rayDir, 1.f);
   const vec3 currentPos = vec4(vec4(prevPos.xyz, 1.f) * inverse(getPrevInstanceTransform(instancedData.opaqueAddressInfo, prevIndices.x)), 1.f) * getInstanceTransform(instancedData.opaqueAddressInfo, prevIndices.x);
   const vec3 currentReflPos = vec4(vec4(prevReflPos.xyz, 1.f) * inverse(getPrevInstanceTransform(instancedData.opaqueAddressInfo, prevReflIndices.x)), 1.f) * getInstanceTransform(instancedData.opaqueAddressInfo, prevReflIndices.x);
+  const vec3 currrentNormal = vec4(vec4(prevNormal.xyz, 0.f) * getPrevInstanceTransform(instancedData.opaqueAddressInfo, prevIndices.x), 0.f) * inverse(getInstanceTransform(instancedData.opaqueAddressInfo, prevIndices.x));
 
   //
   const vec4 perspPos = vec4(vec4(currentPos.xyz, 1.f) * constants.lookAt, 1.f) * constants.perspective;
@@ -72,11 +73,17 @@ void main() {
   //
   if (distance(sampledPos.xyz, currentPos.xyz) < 0.001f) {
     if (intScreenPos.x < extent.x && intScreenPos.y < extent.y) {
-      accumulateDiffuse(uint(intScreenPos.x + intScreenPos.y * extent.x), cvtRgb16Float(pixelData.pixels[pixelId].diffuse.color)); // from previous diffuse
+      uint pix = uint(intScreenPos.x + intScreenPos.y * extent.x);
+      accumulateDiffuse(pix, cvtRgb16Float(pixelData.pixels[pixelId].diffuse.color)); // from previous diffuse
     };
     if (intWhereReflect.x < extent.x && intWhereReflect.y < extent.y) {
-      accumulateReflection(uint(intWhereReflect.x + intWhereReflect.y * extent.x), cvtRgb16Float(pixelData.pixels[pixelId].reflection.color));
+      uint pix = uint(intWhereReflect.x + intWhereReflect.y * extent.x);
+      accumulateReflection(pix, cvtRgb16Float(pixelData.pixels[pixelId].reflection.color));
     };
   };
 
+  // actualize
+  pixelData.pixels[pixelId].surface.origin.xyz = currentPos.xyz;
+  pixelData.pixels[pixelId].surface.normal.xyz = currrentNormal.xyz;
+  pixelData.pixels[pixelId].reflection.direction.w = distance(currentPos.xyz, foundIntersection);
 };

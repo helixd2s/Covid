@@ -14,12 +14,22 @@
 //
 layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
 
+//
+#define ENABLE_CHECKERBOARD
+
 // 
 void main() {
+#ifdef ENABLE_CHECKERBOARD
   const uvec2 gcoord_ = gl_GlobalInvocationID.xy;
-
-  if (gcoord_.y < (extent.y/2)) {
+  if (gcoord_.y < (extent.y/2)) 
+#endif
+  {
+#ifdef ENABLE_CHECKERBOARD
     const uvec2 gcoord = uvec2(gcoord_.x, gcoord_.y * 2 + ((gcoord_.x&1)^(frameCounter&1)));
+#else
+    const uvec2 gcoord = gl_GlobalInvocationID.xy;
+#endif
+
     const vec2 tCoord = vec2(gcoord)/vec2(extent);
     const uint pixelId = gcoord.x + extent.x * gcoord.y;
 
@@ -146,7 +156,9 @@ void main() {
     pixelData.pixels[pixelId].surface.normal = normals.xyz;
     pixelData.pixels[pixelId].surface.indices = uvec4(intersection.instanceId, intersection.geometryId, intersection.primitiveId, 0u);
     pixelData.pixels[pixelId].surface.emission = vec4(emissiveColor * (1.f - reflCoef));
-  } else {
+  } 
+#ifdef ENABLE_CHECKERBOARD
+  else {
     const uvec2 gcoord = uvec2(gcoord_.x, (gcoord_.y - (extent.y/2)) * 2u + ((gcoord_.x&1u)^(1u-(frameCounter&1u))));
     const uint pixelId = gcoord.x + extent.x * gcoord.y;
 
@@ -158,4 +170,5 @@ void main() {
     pixelData.pixels[pixelId].transparency.color = cvtRgb16Acc(pixelData.pixels[pixelId].transparency.accum);
     pixelData.pixels[pixelId].transparency.accum = uvec4(0u);
   };
+#endif
 };
