@@ -617,7 +617,8 @@ mat3x4 inverse(in mat3x4 inmat) {
 
 //
 mat3x3 toNormalMat(in mat3x4 inmat) {
-  return transpose(inverse(transpose(mat3x3(inmat))));
+  //return transpose(inverse(transpose(mat3x3(inmat))));
+  return inverse(transpose(mat3x3(inmat)));
 };
 
 
@@ -651,7 +652,7 @@ vec4 fullTransform(in InstanceAddressInfo info, in vec3 vertices, in uint32_t in
 //
 vec3 fullTransformNormal(in InstanceInfo instance, in vec3 normals, in uint32_t geometryId) {
   GeometryInfo geometry = getGeometry(instance, geometryId);
-  return normalize(toNormalMat(getInstanceTransform(instance)) * normalize(toNormalMat(getGeometryTransform(geometry)) * normalize(normals)));
+  return normalize(normalize(normals) * toNormalMat(getInstanceTransform(instance)) * toNormalMat(getGeometryTransform(geometry)));
 };
 
 //
