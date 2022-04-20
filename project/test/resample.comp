@@ -45,14 +45,14 @@ void main() {
   const vec3 rayDir = normalize(rayEnd.xyz - rayBegin.xyz);
 
   // TODO: convert into view space
-  const uvec4 prevIndices = pixelData.pixels[pixelId].indices;
-  const uvec4 prevReflIndices = pixelData.pixels[pixelId].reflIndices;
+  const uvec4 prevIndices = pixelData.pixels[pixelId].surface.indices;
+  const uvec4 prevReflIndices = pixelData.pixels[pixelId].reflection.indices;
 
   // 
-  const vec4 prevPos = vec4(pixelData.pixels[pixelId].surfaceOrigin.xyz, 1.f);
-  const vec4 prevHitT = pixelData.pixels[pixelId].distanceMap;
-  const vec4 prevNormal = vec4(pixelData.pixels[pixelId].surfaceNormal.xyz, 1.f);
-  const vec4 prevReflPos = vec4(prevPos.xyz + prevHitT.x * rayDir, 1.f);
+  const vec4 prevPos = vec4(pixelData.pixels[pixelId].surface.origin.xyz, 1.f);
+  const vec4 prevHitT = pixelData.pixels[pixelId].reflection.direction;
+  const vec4 prevNormal = vec4(pixelData.pixels[pixelId].surface.normal.xyz, 1.f);
+  const vec4 prevReflPos = vec4(prevPos.xyz + prevHitT.w * rayDir, 1.f);
 
   // 
   const vec3 currentPos = vec4(vec4(prevPos.xyz, 1.f) * inverse(getPrevInstanceTransform(instancedData.opaqueAddressInfo, prevIndices.x)), 1.f) * getInstanceTransform(instancedData.opaqueAddressInfo, prevIndices.x);
@@ -76,10 +76,10 @@ void main() {
   // 
   if (distance(texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), screenPos, 0).xyz, currentPos.xyz) < 0.001f) {
     if (intScreenPos.x < extent.x && intScreenPos.y < extent.y) {
-      accumulateDiffuse(uint(intScreenPos.x + intScreenPos.y * extent.x), cvtRgb16Float(pixelData.pixels[pixelId].diffuse)); // from previous diffuse
+      accumulateDiffuse(uint(intScreenPos.x + intScreenPos.y * extent.x), cvtRgb16Float(pixelData.pixels[pixelId].diffuse.color)); // from previous diffuse
     };
     if (intWhereReflect.x < extent.x && intWhereReflect.y < extent.y) {
-      accumulateReflection(uint(intWhereReflect.x + intWhereReflect.y * extent.x), cvtRgb16Float(pixelData.pixels[pixelId].reflection));
+      accumulateReflection(uint(intWhereReflect.x + intWhereReflect.y * extent.x), cvtRgb16Float(pixelData.pixels[pixelId].reflection.color));
     };
   };
 

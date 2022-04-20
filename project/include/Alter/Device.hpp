@@ -403,7 +403,9 @@ namespace ANAMED {
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR, vk::PhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR{
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceShaderClockFeaturesKHR, vk::PhysicalDeviceShaderClockFeaturesKHR{
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceFragmentShadingRateFeaturesKHR, vk::PhysicalDeviceFragmentShadingRateFeaturesKHR{
+        .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceGraphicsPipelineLibraryFeaturesEXT, vk::PhysicalDeviceGraphicsPipelineLibraryFeaturesEXT{
         .pNext = nullptr
+        })
         })
         })
         })

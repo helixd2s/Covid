@@ -16,22 +16,36 @@ layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
 
 //
 vec4 readAndNeighborDiffuse(in uint pixelId) {
-  vec4 center = pixelData.pixels[pixelId].diffuse;
-  if (center.w <= 0.f && (pixelId + extent.x) < (extent.y * extent.x)) { center = pixelData.pixels[pixelId + extent.x].diffuse + pixelData.pixels[pixelId + 1].diffuse; };
+  vec4 center = pixelData.pixels[pixelId].diffuse.color;
+  if (center.w <= 0.f && (pixelId + extent.x) < (extent.y * extent.x)) { center = pixelData.pixels[pixelId + extent.x].diffuse.color + pixelData.pixels[pixelId + 1].diffuse.color; };
   return center;
 };
 
 //
 vec4 readAndNeighborReflect(in uint pixelId) {
-  vec4 center = pixelData.pixels[pixelId].reflection;
-  if (center.w <= 0.f && (pixelId + extent.x) < (extent.y * extent.x)) { center = pixelData.pixels[pixelId + extent.x].reflection + pixelData.pixels[pixelId + 1].reflection; };
+  vec4 center = pixelData.pixels[pixelId].reflection.color;
+  if (center.w <= 0.f && (pixelId + extent.x) < (extent.y * extent.x)) { center = pixelData.pixels[pixelId + extent.x].reflection.color + pixelData.pixels[pixelId + 1].reflection.color; };
   return center;
 };
 
 //
 vec4 readAndNeighborTransp(in uint pixelId) {
-  vec4 center = pixelData.pixels[pixelId].transparency;
-  if (center.w <= 0.f && (pixelId + extent.x) < (extent.y * extent.x)) { center = pixelData.pixels[pixelId + extent.x].transparency + pixelData.pixels[pixelId + 1].transparency; };
+  vec4 center = pixelData.pixels[pixelId].transparency.color;
+  if (center.w <= 0.f && (pixelId + extent.x) < (extent.y * extent.x)) { center = pixelData.pixels[pixelId + extent.x].transparency.color + pixelData.pixels[pixelId + 1].transparency.color; };
+  return center;
+};
+
+//
+vec4 readAndNeighborReflectDir(in uint pixelId) {
+  vec4 center = pixelData.pixels[pixelId].reflection.direction;
+  if (center.w <= 0.f && (pixelId + extent.x) < (extent.y * extent.x)) { center = (pixelData.pixels[pixelId + extent.x].reflection.direction + pixelData.pixels[pixelId + 1].reflection.direction)/2.f; center.xyz = normalize(center.xyz); };
+  return center;
+};
+
+//
+vec4 readAndNeighborEmission(in uint pixelId) {
+  vec4 center = pixelData.pixels[pixelId].surface.emission;
+  if (center.w <= 0.f && (pixelId + extent.x) < (extent.y * extent.x)) { center = pixelData.pixels[pixelId + extent.x].surface.emission + pixelData.pixels[pixelId + 1].surface.emission; };
   return center;
 };
 
@@ -90,13 +104,11 @@ void main() {
   vec4 resultRefl = readAndNeighborReflect(pixelId);
   vec4 resultTransp = readAndNeighborTransp(pixelId);
   vec4 resultColor = readAndNeighborDiffuse(pixelId);
-  vec3 reflDir = reflect(rayDir, normals);
-
-  // 
-  float reflCoef = hasHit ? (metallicFactor + (fresnel_schlick(0.f, dot(reflDir.xyz, normals))) * (1.f - metallicFactor)) : 0.f;
+  vec3 reflDir = reflect(rayDir, normals);//readAndNeighborReflectDir(pixelId).xyz;
+  vec4 resultEmission = readAndNeighborEmission(pixelId);
 
   // final color
-  imageStore(images[swapchain.image], ivec2(gcoord.x, extent.y-1-gcoord.y), fromLinear(vec4(mix(mix(resultTransp.xyz / max(resultTransp.w, 1.f), resultColor.xyz / max(resultColor.w, 1.f) * diffuseColor.xyz, diffuseColor.a) + emissiveColor.xyz, resultRefl.xyz / max(resultRefl.w, 1.f), reflCoef), 1.f)));
+  imageStore(images[swapchain.image], ivec2(gcoord.x, extent.y-1-gcoord.y), fromLinear(vec4(mix(resultTransp.xyz / max(resultTransp.w, 1.f), resultColor.xyz / max(resultColor.w, 1.f) * diffuseColor.xyz, diffuseColor.a) + resultEmission.xyz + resultRefl.xyz / max(resultRefl.w, 1.f), 1.f)));
 
   //vec4 reflDebug = cvtRgb16Acc(readSplit(pingpong.images[5], ivec2(gcoord)));
   //imageStore(images[swapchain.image], ivec2(gcoord.x, extent.y-1-gcoord.y), vec4(fromLinear(reflDebug.xyz/reflDebug.w), 1.f));

@@ -110,7 +110,17 @@ namespace ANAMED {
       });
 
       //
+      decltype(auto) pLibrary = infoMap->set(vk::StructureType::eGraphicsPipelineLibraryCreateInfoEXT, vk::GraphicsPipelineLibraryCreateInfoEXT{
+        .flags =
+          vk::GraphicsPipelineLibraryFlagBitsEXT::eVertexInputInterface |
+          vk::GraphicsPipelineLibraryFlagBitsEXT::ePreRasterizationShaders |
+          vk::GraphicsPipelineLibraryFlagBitsEXT::eFragmentShader | 
+          vk::GraphicsPipelineLibraryFlagBitsEXT::eFragmentOutputInterface
+      });
+
+      //
       decltype(auto) pRendering = infoMap->set(vk::StructureType::ePipelineRenderingCreateInfo, vk::PipelineRenderingCreateInfo{
+        .pNext = pLibrary.get(),
         .viewMask = 0x0u,
         .depthAttachmentFormat = descriptors->cInfo->attachments[uint32_t(graphics->framebufferType)].depthAttachmentFormat,
         .stencilAttachmentFormat = descriptors->cInfo->attachments[uint32_t(graphics->framebufferType)].stencilAttachmentFormat

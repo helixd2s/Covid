@@ -118,38 +118,44 @@ void main() {
       transpColor = vec4(vec3(transpRayData.emission.xyz), 1.f);
     };
 
+    //
+    float reflCoef = hasHit ? (metallicFactor + (fresnel_schlick(0.f, dot(reflDir.xyz, normals))) * (1.f - metallicFactor)) : 0.f;
+
     // 
-    vec4 origRefl = cvtRgb16Acc(pixelData.pixels[pixelId].reflectionAccum) + clamp(reflColor, vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f));
-    vec4 origTransp = cvtRgb16Acc(pixelData.pixels[pixelId].transparencyAccum) + clamp(transpColor, vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f));
-    vec4 origDiffuse = cvtRgb16Acc(pixelData.pixels[pixelId].diffuseAccum) + clamp(finalColor, vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f));
+    vec4 origRefl = cvtRgb16Acc(pixelData.pixels[pixelId].reflection.accum) + clamp(reflColor * reflCoef, vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f));
+    vec4 origTransp = cvtRgb16Acc(pixelData.pixels[pixelId].transparency.accum) + clamp(transpColor * (1.f - reflCoef), vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f));
+    vec4 origDiffuse = cvtRgb16Acc(pixelData.pixels[pixelId].diffuse.accum) + clamp(finalColor * (1.f - reflCoef), vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f));
 
     //
-    pixelData.pixels[pixelId].diffuse = origDiffuse;
-    pixelData.pixels[pixelId].transparency = origTransp;
-    pixelData.pixels[pixelId].reflection = origRefl;
-    pixelData.pixels[pixelId].surfaceOrigin = vec4(rayOrigin, 1.f);
-    pixelData.pixels[pixelId].surfaceNormal = vec4(normals, 0.f);
-    pixelData.pixels[pixelId].distanceMap = vec4(distance(reflHit.xyz, rayOrigin.xyz), 0.f, 0.f, 1.f);
-    pixelData.pixels[pixelId].reflIndices = reflIndices;
-    pixelData.pixels[pixelId].reflectionAccum = uvec4(0u);
-    pixelData.pixels[pixelId].transparencyAccum = uvec4(0u);
-    pixelData.pixels[pixelId].diffuseAccum = uvec4(0u);
+    pixelData.pixels[pixelId].diffuse.color = origDiffuse;
+    pixelData.pixels[pixelId].diffuse.accum = uvec4(0u);
+    pixelData.pixels[pixelId].diffuse.indices = diffuseIndices;
+    pixelData.pixels[pixelId].diffuse.direction = vec4(diffRayData.direction.xyz, distance(transpHit.xyz, rayOrigin.xyz));
 
+    pixelData.pixels[pixelId].reflection.color = origRefl;
+    pixelData.pixels[pixelId].reflection.accum = uvec4(0u);
+    pixelData.pixels[pixelId].reflection.indices = reflIndices;
+    pixelData.pixels[pixelId].reflection.direction = vec4(reflRayData.direction.xyz, distance(reflHit.xyz, rayOrigin.xyz));
+
+    pixelData.pixels[pixelId].transparency.color = origTransp;
+    pixelData.pixels[pixelId].transparency.accum = uvec4(0u);
+    pixelData.pixels[pixelId].transparency.indices = transpIndices;
+    pixelData.pixels[pixelId].transparency.direction = vec4(transpRayData.direction.xyz, distance(transpHit.xyz, rayOrigin.xyz));
+
+    pixelData.pixels[pixelId].surface.origin = rayOrigin.xyz;
+    pixelData.pixels[pixelId].surface.normal = normals.xyz;
+    pixelData.pixels[pixelId].surface.indices = uvec4(intersection.instanceId, intersection.geometryId, intersection.primitiveId, 0u);
+    pixelData.pixels[pixelId].surface.emission = vec4(emissiveColor * (1.f - reflCoef));
   } else {
     const uvec2 gcoord = uvec2(gcoord_.x, (gcoord_.y - (extent.y/2)) * 2u + ((gcoord_.x&1u)^(1u-(frameCounter&1u))));
     const uint pixelId = gcoord.x + extent.x * gcoord.y;
 
-    // 
-    vec4 origRefl = cvtRgb16Acc(pixelData.pixels[pixelId].reflectionAccum);
-    vec4 origTransp = cvtRgb16Acc(pixelData.pixels[pixelId].transparencyAccum);
-    vec4 origDiffuse = cvtRgb16Acc(pixelData.pixels[pixelId].diffuseAccum);
-
     //
-    pixelData.pixels[pixelId].diffuse = origDiffuse;
-    pixelData.pixels[pixelId].transparency = origTransp;
-    pixelData.pixels[pixelId].reflection = origRefl;
-    pixelData.pixels[pixelId].reflectionAccum = uvec4(0u);
-    pixelData.pixels[pixelId].transparencyAccum = uvec4(0u);
-    pixelData.pixels[pixelId].diffuseAccum = uvec4(0u);
+    pixelData.pixels[pixelId].diffuse.color = cvtRgb16Acc(pixelData.pixels[pixelId].diffuse.accum);
+    pixelData.pixels[pixelId].diffuse.accum = uvec4(0u);
+    pixelData.pixels[pixelId].reflection.color = cvtRgb16Acc(pixelData.pixels[pixelId].reflection.accum);
+    pixelData.pixels[pixelId].reflection.accum = uvec4(0u);
+    pixelData.pixels[pixelId].transparency.color = cvtRgb16Acc(pixelData.pixels[pixelId].transparency.accum);
+    pixelData.pixels[pixelId].transparency.accum = uvec4(0u);
   };
 };

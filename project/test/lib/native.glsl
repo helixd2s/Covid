@@ -62,18 +62,27 @@ struct Constants
 };
 
 //
-struct PixelInfo {
-  vec4 diffuse;
-  vec4 reflection;
-  vec4 transparency;
-  vec4 distanceMap;
-  vec4 surfaceOrigin;
-  vec4 surfaceNormal;
-  uvec4 diffuseAccum;
-  uvec4 reflectionAccum;
-  uvec4 transparencyAccum;
+struct PixelHitInfo {
+  vec4 color;
+  vec4 direction;
+  uvec4 accum;
   uvec4 indices;
-  uvec4 reflIndices;
+};
+
+//
+struct PixelSurfaceInfo {
+  vec3 origin;
+  vec3 normal;
+  uvec4 indices;
+  vec4 emission;
+};
+
+//
+struct PixelInfo {
+  PixelHitInfo diffuse;
+  PixelHitInfo reflection;
+  PixelHitInfo transparency;
+  PixelSurfaceInfo surface;
 };
 
 //
@@ -152,26 +161,26 @@ void accumulateSplit(in uint image, in ivec2 coord, in uvec4 data) {
 
 //
 void accumulateDiffuse(in uint pixelId, in uvec4 data) {
-  atomicAdd(pixelData.pixels[pixelId].diffuseAccum.x, data.x);
-  atomicAdd(pixelData.pixels[pixelId].diffuseAccum.y, data.y);
-  atomicAdd(pixelData.pixels[pixelId].diffuseAccum.z, data.z);
-  atomicAdd(pixelData.pixels[pixelId].diffuseAccum.w, data.w);
+  atomicAdd(pixelData.pixels[pixelId].diffuse.accum.x, data.x);
+  atomicAdd(pixelData.pixels[pixelId].diffuse.accum.y, data.y);
+  atomicAdd(pixelData.pixels[pixelId].diffuse.accum.z, data.z);
+  atomicAdd(pixelData.pixels[pixelId].diffuse.accum.w, data.w);
 };
 
 //
 void accumulateReflection(in uint pixelId, in uvec4 data) {
-  atomicAdd(pixelData.pixels[pixelId].reflectionAccum.x, data.x);
-  atomicAdd(pixelData.pixels[pixelId].reflectionAccum.y, data.y);
-  atomicAdd(pixelData.pixels[pixelId].reflectionAccum.z, data.z);
-  atomicAdd(pixelData.pixels[pixelId].reflectionAccum.w, data.w);
+  atomicAdd(pixelData.pixels[pixelId].reflection.accum.x, data.x);
+  atomicAdd(pixelData.pixels[pixelId].reflection.accum.y, data.y);
+  atomicAdd(pixelData.pixels[pixelId].reflection.accum.z, data.z);
+  atomicAdd(pixelData.pixels[pixelId].reflection.accum.w, data.w);
 };
 
 //
 void accumulateTransparency(in uint pixelId, in uvec4 data) {
-  atomicAdd(pixelData.pixels[pixelId].transparencyAccum.x, data.x);
-  atomicAdd(pixelData.pixels[pixelId].transparencyAccum.y, data.y);
-  atomicAdd(pixelData.pixels[pixelId].transparencyAccum.z, data.z);
-  atomicAdd(pixelData.pixels[pixelId].transparencyAccum.w, data.w);
+  atomicAdd(pixelData.pixels[pixelId].transparency.accum.x, data.x);
+  atomicAdd(pixelData.pixels[pixelId].transparency.accum.y, data.y);
+  atomicAdd(pixelData.pixels[pixelId].transparency.accum.z, data.z);
+  atomicAdd(pixelData.pixels[pixelId].transparency.accum.w, data.w);
 };
 
 // but may not to be...

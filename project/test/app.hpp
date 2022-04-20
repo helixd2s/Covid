@@ -41,19 +41,29 @@ struct UniformData {
 };
 
 //
-struct PixelInfo {
-  glm::vec4 diffuse = glm::vec4(0.f);
-  glm::vec4 reflection = glm::vec4(0.f);
-  glm::vec4 transparency = glm::vec4(0.f);
-  glm::vec4 distanceMap = glm::vec4(0.f);
-  glm::vec4 surfaceOrigin = glm::vec4(0.f);
-  glm::vec4 surfaceNormal = glm::vec4(0.f);
-  glm::uvec4 diffuseAccum = glm::uvec4(0u);
-  glm::uvec4 reflectionAccum = glm::uvec4(0u);
-  glm::uvec4 transparencyAccum = glm::uvec4(0u);
-  glm::uvec4 indices = glm::uvec4(0u);
-  glm::uvec4 reflIndices = glm::uvec4(0u);
+struct PixelHitInfo {
+  glm::vec4 color;
+  glm::vec4 direction;
+  glm::uvec4 accum;
+  glm::uvec4 indices;
 };
+
+//
+struct PixelSurfaceInfo {
+  glm::vec3 origin;
+  glm::vec3 normal;
+  glm::uvec4 indices;
+  glm::vec4 emission;
+};
+
+//
+struct PixelInfo {
+  PixelHitInfo diffuse;
+  PixelHitInfo reflection;
+  PixelHitInfo transparency;
+  PixelSurfaceInfo surface;
+};
+
 
 // 
 class App {
