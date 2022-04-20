@@ -163,10 +163,15 @@ void main() {
     const uint pixelId = gcoord.x + extent.x * gcoord.y;
 
     //
+    pixelData.pixels[pixelId].surface.origin = pixelData.pixels[pixelId].surface.actualOrigin;
+    pixelData.pixels[pixelId].surface.normal = pixelData.pixels[pixelId].surface.actualNormal;
+    pixelData.pixels[pixelId].diffuse.direction.w = pixelData.pixels[pixelId].diffuse.actualT;
     pixelData.pixels[pixelId].diffuse.color = cvtRgb16Acc(pixelData.pixels[pixelId].diffuse.accum);
     pixelData.pixels[pixelId].diffuse.accum = uvec4(0u);
+    pixelData.pixels[pixelId].reflection.direction.w = pixelData.pixels[pixelId].reflection.actualT;
     pixelData.pixels[pixelId].reflection.color = cvtRgb16Acc(pixelData.pixels[pixelId].reflection.accum);
     pixelData.pixels[pixelId].reflection.accum = uvec4(0u);
+    pixelData.pixels[pixelId].transparency.direction.w = pixelData.pixels[pixelId].transparency.actualT;
     pixelData.pixels[pixelId].transparency.color = cvtRgb16Acc(pixelData.pixels[pixelId].transparency.accum);
     pixelData.pixels[pixelId].transparency.accum = uvec4(0u);
   };

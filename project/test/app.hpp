@@ -46,12 +46,15 @@ struct PixelHitInfo {
   glm::vec4 direction;
   glm::uvec4 accum;
   glm::uvec4 indices;
+  float actualT;
 };
 
 //
 struct PixelSurfaceInfo {
   glm::vec3 origin;
   glm::vec3 normal;
+  glm::vec3 actualOrigin;
+  glm::vec3 actualNormal;
   glm::uvec4 indices;
   glm::vec4 emission;
 };

@@ -67,12 +67,15 @@ struct PixelHitInfo {
   vec4 direction;
   uvec4 accum;
   uvec4 indices;
+  float actualT;
 };
 
 //
 struct PixelSurfaceInfo {
   vec3 origin;
   vec3 normal;
+  vec3 actualOrigin;
+  vec3 actualNormal;
   uvec4 indices;
   vec4 emission;
 };
