@@ -44,9 +44,9 @@ struct UniformData {
 struct PixelHitInfo {
   glm::vec4 color;
   glm::vec4 direction;
+  glm::vec4 actualDirection;
   glm::uvec4 accum;
   glm::uvec4 indices;
-  float actualT;
 };
 
 //
@@ -57,6 +57,7 @@ struct PixelSurfaceInfo {
   glm::vec3 actualNormal;
   glm::uvec4 indices;
   glm::vec4 emission;
+  glm::vec4 diffuse;
 };
 
 //

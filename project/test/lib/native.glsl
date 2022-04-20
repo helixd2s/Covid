@@ -65,9 +65,9 @@ struct Constants
 struct PixelHitInfo {
   vec4 color;
   vec4 direction;
+  vec4 actualDirection;
   uvec4 accum;
   uvec4 indices;
-  float actualT;
 };
 
 //
@@ -78,6 +78,7 @@ struct PixelSurfaceInfo {
   vec3 actualNormal;
   uvec4 indices;
   vec4 emission;
+  vec4 diffuse;
 };
 
 //
@@ -99,12 +100,6 @@ vec4 fromLinear(in vec4 linearRGB) { return vec4(fromLinear(linearRGB.xyz), line
 vec3 toLinear(in vec3 sRGB) { return mix(pow((sRGB + vec3(0.055))/vec3(1.055), vec3(2.4)), sRGB/vec3(12.92), lessThan(sRGB, vec3(0.04045))); }
 vec4 toLinear(in vec4 sRGB) { return vec4(toLinear(sRGB.xyz), sRGB.w); }
 
-
-// but may not to be...
-layout(buffer_reference, scalar, buffer_reference_align = 1) buffer TestVertices {
-  mat3x4 data[];
-};
-
 //
 vec4 divW(in vec4 coord) {
   return coord.xyzw/coord.w;
@@ -117,7 +112,7 @@ uint tiled(in uint sz, in uint gmaxtile) {
 };
 
 // but may not to be...
-layout(buffer_reference, scalar, buffer_reference_align = 1) buffer PixelData {
+layout(buffer_reference, scalar, buffer_reference_align = 1) coherent buffer PixelData {
   PixelInfo pixels[];
 };
 
@@ -187,7 +182,7 @@ void accumulateTransparency(in uint pixelId, in uvec4 data) {
 };
 
 // but may not to be...
-layout(buffer_reference, scalar, buffer_reference_align = 1) buffer TransformBlock {
+layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer TransformBlock {
   mat3x4 transform[];
 };
 
@@ -242,7 +237,7 @@ MaterialPixelInfo handleMaterial(in MaterialInfo materialInfo, in vec2 texcoord,
 };
 
 // but may not to be...
-layout(buffer_reference, scalar, buffer_reference_align = 1) buffer MaterialData {
+layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer MaterialData {
   MaterialInfo infos[];
 };
 
@@ -262,7 +257,7 @@ struct BufferViewInfo {
 };
 
 // but may not to be...
-layout(buffer_reference, scalar, buffer_reference_align = 1) buffer GeometryExtension {
+layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer GeometryExtension {
   BufferViewInfo bufferViews[MAX_EXT_VERTEX_DATA];
 };
 
@@ -293,7 +288,7 @@ struct GeometryInfo {
 };
 
 //
-layout(buffer_reference, scalar, buffer_reference_align = 1) buffer GeometryData {
+layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer GeometryData {
   GeometryInfo infos[];
 };
 
@@ -307,7 +302,7 @@ struct InstanceInfo {
 };
 
 //
-layout(buffer_reference, scalar, buffer_reference_align = 1) buffer InstanceData {
+layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer InstanceData {
   InstanceInfo infos[];
 };
 
@@ -350,28 +345,28 @@ struct SwapchainStateInfo {
 };
 
 //
-layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer Float4 { vec4 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer Float3 { vec3 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer Float2 { vec2 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer Float { float data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) readonly buffer Float4 { vec4 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) readonly buffer Float3 { vec3 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) readonly buffer Float2 { vec2 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) readonly buffer Float { float data[]; };
 
 //
-layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer Uint4 { uvec4 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer Uint3 { uvec3 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer Uint2 { uvec2 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer Uint { uint data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) readonly buffer Uint4 { uvec4 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) readonly buffer Uint3 { uvec3 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) readonly buffer Uint2 { uvec2 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) readonly buffer Uint { uint data[]; };
 
 //
-layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer Half4 { f16vec4 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer Half3 { f16vec3 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer Half2 { f16vec2 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer Half { float16_t data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) readonly buffer Half4 { f16vec4 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) readonly buffer Half3 { f16vec3 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) readonly buffer Half2 { f16vec2 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) readonly buffer Half { float16_t data[]; };
 
 //
-layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer Ushort4 { u16vec4 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer Ushort3 { u16vec3 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer Ushort2 { u16vec2 data[]; };
-layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) buffer Ushort { uint16_t data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) readonly buffer Ushort4 { u16vec4 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) readonly buffer Ushort3 { u16vec3 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) readonly buffer Ushort2 { u16vec2 data[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) readonly buffer Ushort { uint16_t data[]; };
 
 // instead of `0u` (zero) should to be `firstVertex`
 uvec4 readAsUint4(in BufferViewInfo bufferViewInfo, in uint32_t index) {
@@ -811,14 +806,14 @@ vec3 outRayNormal(in vec3 dir, in vec3 normal) {
 
 //
 vec4 cvtRgb16Acc(in uvec4 color) {
-  vec3 minor = vec3(color.rgb & 0xFFFF) / 65536.f;
-  vec3 major = vec3((color.rgb & 0xFFFF0000) >> 16);
-  return vec4((major + minor), float(color.w));
+  const vec4 minor = (color & 0xFFFF) / 65536.f;
+  const vec4 major = ((color & 0xFFFF0000) >> 16);
+  return major + minor;
 };
 
 //
 uvec4 cvtRgb16Float(in vec4 sampled) {
-  return uvec4(sampled.xyz * 65536.f, sampled.w);
+  return uvec4(sampled * 65536.f);
 };
 
 #endif
