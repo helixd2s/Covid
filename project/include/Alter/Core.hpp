@@ -380,6 +380,7 @@ namespace ANAMED {
       "VK_KHR_shared_presentable_image",
       "VK_KHR_shader_clock",
       "VK_KHR_fragment_shading_rate",
+      "VK_KHR_pipeline_library",
       "VK_EXT_graphics_pipeline_library"
     };
     cpp21::shared_vector<std::string> layerList = std::vector<std::string>{
