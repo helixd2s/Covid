@@ -95,7 +95,7 @@ void main() {
 
     //
     uvec4 reflIndices = uvec4(0u), diffuseIndices = uvec4(0u), transpIndices = uvec4(0u);
-    float reflHit = 0.f, diffuseHit = 0.f, transpHit = 0.f;
+    float reflHit = hasHit ? 0.f : 10000.f, diffuseHit = hasHit ? 0.f : 10000.f, transpHit = hasHit ? 0.f : 10000.f;
     vec3 reflNorm = 0.f.xxx, diffuseNorm = 0.f.xxx, transpNorm = 0.f.xxx;
 
     // 

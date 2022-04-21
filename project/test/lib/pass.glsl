@@ -77,6 +77,7 @@ RayData handleIntersection(in RayData rayData, in IntersectionInfo intersection,
 //
 RayData pathTrace(in RayData rayData, inout float hitDist, inout vec3 firstNormal, inout uvec4 firstIndices) {
   //
+  bool surfaceFound = false;
   float currentT = 0.f;
   for (uint32_t i=0;i<3;i++) {
     if (luminance(rayData.energy.xyz) < 0.001f) { break; };
@@ -112,17 +113,20 @@ RayData pathTrace(in RayData rayData, inout float hitDist, inout vec3 firstNorma
 
       // 
       if (pass.diffusePass) { 
-        hitDist = intersection.hitT;
+        hitDist = currentT;
+        surfaceFound = true;
         firstIndices = uvec4(intersection.instanceId, intersection.geometryId, intersection.primitiveId, 0u);
         firstNormal = pass.normals.xyz;
       };
 
     } else {
-      const vec3 hitOrigin = rayData.origin.xyz * rayData.direction.xyz * 10000.f;
+      const vec3 hitOrigin = rayData.origin.xyz * rayData.direction.xyz * (10000.f - currentT);
       rayData.origin.xyz = hitOrigin;
       rayData.emission.xyz += f16vec3(trueMultColor(rayData.energy.xyz, pow(toLinear(texture(sampler2D(textures[background], samplers[0]), lcts(rayData.direction.xyz)).xyz), 1.f/2.2f.xxx)));
       rayData.energy.xyz *= f16vec3(0.f.xxx);
-      currentT = 10000.f;
+      if (!surfaceFound) {
+        hitDist = currentT = 10000.f;
+      };
       break;
     }
   };
