@@ -22,3 +22,6 @@
 [submodule "submodules/include/args"]
 	path = submodules/include/args
 	url = https://github.com/Taywee/args.git
+[submodule "RayTracingDenoiser"]
+	path = RayTracingDenoiser
+	url = https://github.com/NVIDIAGameWorks/RayTracingDenoiser.git
