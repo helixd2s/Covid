@@ -209,6 +209,7 @@ namespace ANAMED {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(Handle(this->cInfo->uploader, HandleType::eUploader));
+      decltype(auto) accelInstInfo = infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR);
 
       // 
       uploaderObj->writeUploadToResourceCmd(UploadCommandWriteInfo{
@@ -283,8 +284,11 @@ namespace ANAMED {
 
       // 
       cmdBuf->pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersBegin).setMemoryBarriers(memoryBarriersBegin));
-      cmdBuf->buildAccelerationStructuresKHR(1u, &infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR)->setGeometries(this->instances), cpp21::rvalue_to_ptr(instanceRanges.data()), deviceObj->getDispatch());
+      cmdBuf->buildAccelerationStructuresKHR(1u, &accelInstInfo->setGeometries(this->instances).setMode(accelInstInfo->srcAccelerationStructure ? vk::BuildAccelerationStructureModeKHR::eUpdate : vk::BuildAccelerationStructureModeKHR::eBuild), cpp21::rvalue_to_ptr(instanceRanges.data()), deviceObj->getDispatch());
       cmdBuf->pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersEnd).setMemoryBarriers(memoryBarriersEnd));
+
+      //
+      accelInstInfo->srcAccelerationStructure = accelInstInfo->dstAccelerationStructure;
 
       //
       return cmdBuf;
@@ -408,7 +412,7 @@ namespace ANAMED {
       //
       accelInstInfo->type = accelInfo->type;
       accelInstInfo->scratchData = reinterpret_cast<vk::DeviceOrHostAddressKHR&>(this->bindInstanceScratch->getDeviceAddress());
-      accelInstInfo->srcAccelerationStructure = accelInstInfo->dstAccelerationStructure;
+      accelInstInfo->srcAccelerationStructure = vk::AccelerationStructureKHR{};
       accelInstInfo->dstAccelerationStructure = (this->accelStruct = device.createAccelerationStructureKHR(accelInfo.ref(), nullptr, deviceObj->getDispatch()));
 
       //

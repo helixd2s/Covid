@@ -145,10 +145,10 @@ namespace ANAMED {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(Handle(this->cInfo->uploader, HandleType::eUploader));
+      decltype(auto) accelGeomInfo = infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR);
 
       //
       decltype(auto) accelInfo = infoMap->get<vk::AccelerationStructureCreateInfoKHR>(vk::StructureType::eAccelerationStructureCreateInfoKHR);
-      decltype(auto) accelGeomInfo = infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR);
       decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelGeomInfo->setGeometries(this->geometryInfos), this->cInfo->limits, deviceObj->getDispatch()));
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
       decltype(auto) accessMask = vk::AccessFlagBits2(vku::getAccessMaskByImageUsage(deviceObj->get<ResourceObj>(this->geometryBuild)->getBufferUsage()));
@@ -212,8 +212,11 @@ namespace ANAMED {
 
       //
       cmdBuf->pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersBegin).setMemoryBarriers(memoryBarriersBegin));
-      cmdBuf->buildAccelerationStructuresKHR(1u, &infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR)->setGeometries(this->geometryInfos), cpp21::rvalue_to_ptr(geometryRanges.data()), deviceObj->getDispatch());
+      cmdBuf->buildAccelerationStructuresKHR(1u, &accelGeomInfo->setGeometries(this->geometryInfos).setMode(accelGeomInfo->srcAccelerationStructure ? vk::BuildAccelerationStructureModeKHR::eUpdate : vk::BuildAccelerationStructureModeKHR::eBuild), cpp21::rvalue_to_ptr(geometryRanges.data()), deviceObj->getDispatch());
       cmdBuf->pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersEnd).setMemoryBarriers(memoryBarriersEnd));
+
+      //
+      accelGeomInfo->srcAccelerationStructure = accelGeomInfo->dstAccelerationStructure;
 
       // 
       return cmdBuf;
@@ -313,7 +316,7 @@ namespace ANAMED {
       //
       accelGeomInfo->type = accelInfo->type;
       accelGeomInfo->scratchData = reinterpret_cast<vk::DeviceOrHostAddressKHR&>(ANAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->geometryScratch)->getDeviceAddress());
-      accelGeomInfo->srcAccelerationStructure = accelGeomInfo->dstAccelerationStructure;
+      accelGeomInfo->srcAccelerationStructure = vk::AccelerationStructureKHR{};
       accelGeomInfo->dstAccelerationStructure = (this->accelStruct = device.createAccelerationStructureKHR(accelInfo.ref(), nullptr, deviceObj->getDispatch()));
 
       // 

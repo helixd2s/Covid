@@ -155,7 +155,7 @@ void main() {
     pixelData.pixels[pixelId].transparency.actualDirection = vec4(0.f);
 
     pixelData.pixels[pixelId].surface.origin = rayOrigin.xyz;
-    pixelData.pixels[pixelId].surface.normal = tbn[2].xyz;
+    pixelData.pixels[pixelId].surface.normal = normals;//tbn[2].xyz;
     pixelData.pixels[pixelId].surface.indices = uvec4(intersection.instanceId, intersection.geometryId, intersection.primitiveId, 0u);
     pixelData.pixels[pixelId].surface.emission = vec4(emissiveColor * (1.f - reflCoef));
     pixelData.pixels[pixelId].surface.diffuse = diffuseColor;
