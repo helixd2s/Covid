@@ -91,6 +91,7 @@ RayData pathTrace(in RayData rayData, inout float hitDist, inout vec3 firstNorma
       PassData opaquePass, pass;
       opaquePass.alphaColor = vec4(1.f.xxx, 1.f);
       opaquePass.alphaPassed = false;
+      opaquePass.diffusePass = false;
       opaquePass.normals = vec3(0.f.xxx);
       opaquePass.origin = vec3(0.f.xxx);
       pass = opaquePass;
