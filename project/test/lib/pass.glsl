@@ -114,7 +114,7 @@ RayData pathTrace(in RayData rayData, inout float hitDist, inout vec3 firstNorma
       if (pass.diffusePass) { 
         hitDist = intersection.hitT;
         firstIndices = uvec4(intersection.instanceId, intersection.geometryId, intersection.primitiveId, 0u);
-        firstNormal = opaquePass.normals.xyz;
+        firstNormal = pass.normals.xyz;
       };
 
     } else {
