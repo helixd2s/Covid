@@ -124,6 +124,7 @@ RayData pathTrace(in RayData rayData, inout float hitDist, inout vec3 firstNorma
       rayData.energy.xyz *= f16vec3(0.f.xxx);
       if (!surfaceFound) {
         hitDist = currentT = 10000.f;
+        surfaceFound = true;
       };
       break;
     }
