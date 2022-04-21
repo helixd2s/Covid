@@ -10,6 +10,7 @@ const vec4 skyColor = vec4(vec3(135.f,206.f,235.f)/vec3(255.f,255.f,255.f), 1.f)
 struct PassData {
   vec4 alphaColor;
   bool alphaPassed;
+  bool diffusePass;
   vec3 normals;
   vec3 origin;
 };
@@ -61,6 +62,7 @@ RayData handleIntersection(in RayData rayData, in IntersectionInfo intersection,
     rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, mix(passed.alphaColor.xyz, 1.f.xxx, diffuseColor.a)));
   } else
   {
+    passed.diffusePass = true;
     rayData.direction.xyz = randomCosineWeightedHemispherePoint(originSeedXYZ, normals);
     rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, diffuseColor.xyz));
   };
@@ -73,8 +75,9 @@ RayData handleIntersection(in RayData rayData, in IntersectionInfo intersection,
 };
 
 //
-RayData pathTrace(in RayData rayData, inout vec4 firstHit, inout vec3 firstNormal, inout uvec4 firstIndices) {
+RayData pathTrace(in RayData rayData, inout float hitDist, inout vec3 firstNormal, inout uvec4 firstIndices) {
   //
+  float currentT = 0.f;
   for (uint32_t i=0;i<3;i++) {
     if (luminance(rayData.energy.xyz) < 0.001f) { break; };
 
@@ -85,37 +88,40 @@ RayData pathTrace(in RayData rayData, inout vec4 firstHit, inout vec3 firstNorma
 
     //
     if (!all(lessThanEqual(intersection.barycentric, 0.f.xxx))) {
-      PassData opaquePass, transpPass;
+      PassData opaquePass, pass;
       opaquePass.alphaColor = vec4(1.f.xxx, 1.f);
       opaquePass.alphaPassed = false;
       opaquePass.normals = vec3(0.f.xxx);
       opaquePass.origin = vec3(0.f.xxx);
-      transpPass = opaquePass;
+      pass = opaquePass;
 
       //
       RayData opaqueRayData = handleIntersection(rayData, opaqueIntersection, opaquePass);
-      rayData = handleIntersection(rayData, intersection, transpPass);
+      rayData = handleIntersection(rayData, intersection, pass);
 
       // if translucent over opaque (decals)
-      if (transpPass.alphaPassed && opaqueIntersection.hitT <= (intersection.hitT + 0.0001f)) {
+      if (pass.alphaPassed && opaqueIntersection.hitT <= (intersection.hitT + 0.0001f)) {
         rayData = opaqueRayData;
-        rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, transpPass.alphaColor.xyz));
-        intersection = opaqueIntersection;
+        rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, pass.alphaColor.xyz));
+        intersection = opaqueIntersection, pass = opaquePass;
       };
 
+      //
+      currentT += intersection.hitT;
+
       // 
-      if (i == 0) { 
-        firstHit = vec4(opaquePass.origin.xyz, intersection.hitT);
+      if (pass.diffusePass) { 
+        hitDist = intersection.hitT;
         firstIndices = uvec4(intersection.instanceId, intersection.geometryId, intersection.primitiveId, 0u);
         firstNormal = opaquePass.normals.xyz;
       };
 
     } else {
       const vec3 hitOrigin = rayData.origin.xyz * rayData.direction.xyz * 10000.f;
-      if (i == 0) { firstHit = vec4(hitOrigin, intersection.hitT); };
       rayData.origin.xyz = hitOrigin;
       rayData.emission.xyz += f16vec3(trueMultColor(rayData.energy.xyz, pow(toLinear(texture(sampler2D(textures[background], samplers[0]), lcts(rayData.direction.xyz)).xyz), 1.f/2.2f.xxx)));
       rayData.energy.xyz *= f16vec3(0.f.xxx);
+      currentT = 10000.f;
       break;
     }
   };
