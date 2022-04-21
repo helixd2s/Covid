@@ -36,6 +36,7 @@ namespace ANAMED {
   protected:
     vk::DispatchLoaderDynamic dispatch = {};
     std::optional<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{};
+    VmaPool exportPool = {};
 
   protected:
 
@@ -73,9 +74,29 @@ namespace ANAMED {
       //this->handle.type = HandleType::eMemoryAllocator; // Unable to Map without specific type
       this->handle.type = HandleType::eExtension;
       //this->handle = Handle(uintptr_t(this), HandleType::eMemoryAllocator);
+
+      //
+      decltype(auto) exportMemory = infoMap->set(vk::StructureType::eExportMemoryAllocateInfo, vk::ExportMemoryAllocateInfo{
+        .handleTypes = extMemFlags
+      });
+
+      //
+      VmaPoolCreateInfo vmaPoolCreateInfo = {};
+      vmaPoolCreateInfo.minBlockCount = 0;
+      vmaPoolCreateInfo.maxBlockCount = 0;
+      vmaPoolCreateInfo.minAllocationAlignment = 0;
+      vmaPoolCreateInfo.blockSize = 0;
+      vmaPoolCreateInfo.pMemoryAllocateNext = exportMemory.get();
+
+      //
+      vmaCreatePool(this->handle.as<VmaAllocator>(), &vmaPoolCreateInfo, &exportPool);
     };
 
   public:
+
+    //
+    VmaPool& getExportPool() { return exportPool; };
+    VmaPool const& getExportPool() const { return exportPool; };
 
     //
     ~MemoryAllocatorVma() {
@@ -133,6 +154,7 @@ namespace ANAMED {
       VmaAllocationCreateInfo vmaCreateInfo = {
         .flags = (requirements->memoryUsage != MemoryUsage::eGpuOnly ? VMA_ALLOCATION_CREATE_MAPPED_BIT : VmaAllocationCreateFlags{}) | VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
         .usage = memUsage,
+        .pool = requirements->memoryUsage == MemoryUsage::eGpuOnly ? this->getExportPool() : VmaPool{}
       };
 
       //

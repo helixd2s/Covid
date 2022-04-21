@@ -30,7 +30,7 @@ float floatConstruct( uint m ) {
 uint rndCount = 0;
 
 // Pseudo-random value in half-open range [0:1].
-float random( float x ) { return floatConstruct(hash(uvec4(floatBitsToUint(x), frameCounter + (rndCount++), clockRealtime2x32EXT()))); }
-float random( vec2  v ) { return floatConstruct(hash(uvec4(floatBitsToUint(v), uvec2(frameCounter + (rndCount++), 0u) + clockRealtime2x32EXT()))); }
-float random( vec3  v ) { return floatConstruct(hash(uvec4(floatBitsToUint(v), frameCounter + (rndCount++) + clockRealtime2x32EXT().x))); }
-float random( vec4  v ) { return floatConstruct(hash(floatBitsToUint(v))); }
+float random( float x ) { return floatConstruct(hash(uvec4(floatBitsToUint(x), frameCounter + (rndCount++), clockRealtime2x32EXT()))); };
+float random( vec2  v ) { return floatConstruct(hash(uvec4(floatBitsToUint(v.x), floatBitsToUint(v.y) + frameCounter + (rndCount++), clockRealtime2x32EXT()))); };
+float random( vec3  v ) { return floatConstruct(hash(uvec4(floatBitsToUint(v.x), floatBitsToUint(v.y) + frameCounter + (rndCount++), uvec2(floatBitsToUint(v.z), 0u) + clockRealtime2x32EXT()))); };
+float random( vec4  v ) { return floatConstruct(hash(uvec4(floatBitsToUint(v.x), floatBitsToUint(v.y) + frameCounter + (rndCount++), uvec2(floatBitsToUint(v.z), floatBitsToUint(v.w)) + clockRealtime2x32EXT()))); };

@@ -336,7 +336,7 @@ namespace ANAMED {
       // 
       VmaVirtualAllocationCreateInfo allocCreateInfo = {};
       allocCreateInfo.size = size; // 4 KB
-      allocCreateInfo.flags = VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT;
+      allocCreateInfo.flags = VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_TIME_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_MEMORY_BIT;
 
       //
       VmaVirtualAllocation alloc;

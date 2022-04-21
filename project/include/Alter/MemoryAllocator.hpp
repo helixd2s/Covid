@@ -87,7 +87,7 @@ namespace ANAMED {
       //
       decltype(auto) exportMemory = infoMap->set(vk::StructureType::eExportMemoryAllocateInfo, vk::ExportMemoryAllocateInfo{
          .handleTypes = requirements->memoryUsage == MemoryUsage::eGpuOnly ? extMemFlags : vk::ExternalMemoryHandleTypeFlags{}
-      });
+        });
 
       // 
       //auto& allocated = (this->allocated = AllocatedMemory{}).value();

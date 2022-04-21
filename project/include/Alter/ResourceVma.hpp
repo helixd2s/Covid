@@ -105,7 +105,7 @@ namespace ANAMED {
       VmaAllocationCreateInfo vmaCreateInfo = {
         .flags = (this->memoryUsage != MemoryUsage::eGpuOnly ? VMA_ALLOCATION_CREATE_MAPPED_BIT : VmaAllocationCreateFlags{}) | VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
         .usage = memUsage,
-        
+        .pool = memoryUsage == MemoryUsage::eGpuOnly ? memoryAllocatorObj->getExportPool() : VmaPool{}
       };
 
       //
@@ -174,6 +174,7 @@ namespace ANAMED {
       VmaAllocationCreateInfo vmaCreateInfo = {
         .flags = (memoryUsage != MemoryUsage::eGpuOnly ? VMA_ALLOCATION_CREATE_MAPPED_BIT : VmaAllocationCreateFlags{}) | VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
         .usage = memUsage,
+        .pool = memoryUsage == MemoryUsage::eGpuOnly ? memoryAllocatorObj->getExportPool() : VmaPool{}
       };
 
       //

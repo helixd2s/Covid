@@ -77,13 +77,13 @@ void main() {
   if (distance(reflSampledPos.xyz, foundIntersection.xyz) < 0.001f && intWhereReflect.x < extent.x && intWhereReflect.y < extent.y && pixelData.pixels[pixelId].reflection.color.w > 0.f) {
     uint pix = uint(intWhereReflect.x + intWhereReflect.y * extent.x);
     accumulateReflection(pix, cvtRgb16Float(pixelData.pixels[pixelId].reflection.color));
-    pixelData.pixels[pix].reflection.actualDirection = vec4(currrentRayDir, dist);
+    pixelData.pixels[pix].surface.actualOrigin.xyz = currentPos.xyz;
+    pixelData.pixels[pix].surface.actualNormal.xyz = currrentNormal.xyz;
   };
   if (distance(sampledPos.xyz, currentPos.xyz) < 0.001f && intScreenPos.x < extent.x && intScreenPos.y < extent.y && pixelData.pixels[pixelId].diffuse.color.w > 0.f) {
     uint pix = uint(intScreenPos.x + intScreenPos.y * extent.x);
     accumulateDiffuse(pix, cvtRgb16Float(pixelData.pixels[pixelId].diffuse.color)); // from previous diffuse
-    pixelData.pixels[pix].surface.actualOrigin.xyz = currentPos.xyz;
-    pixelData.pixels[pix].surface.actualNormal.xyz = currrentNormal.xyz;
+    pixelData.pixels[pix].reflection.actualDirection = vec4(currrentRayDir, dist);
   };
 
 };
