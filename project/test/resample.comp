@@ -67,14 +67,14 @@ void main() {
 
   // 
   //vec3 foundIntersection = find_reflection_incident_point(prevPos.xyz, prevReflPos.xyz, currentPos.xyz, normalize(prevNormal.xyz));
-  //vec3 reflFoundIntersection = find_reflection_incident_point(prevReflPos.xyz, prevPos.xyz, currentReflPos.xyz, normalize(prevNormal.xyz));
-  vec3 reflFoundIntersection = find_reflection_incident_point( currentReflPos.xyz, currentPos.xyz, prevReflPos.xyz, normalize(currrentNormal.xyz));
+  vec3 reflFoundIntersection = find_reflection_incident_point(prevReflPos.xyz, prevPos.xyz, currentReflPos.xyz, normalize(prevNormal.xyz));
+  //vec3 reflFoundIntersection = find_reflection_incident_point( currentReflPos.xyz, currentPos.xyz, prevReflPos.xyz, normalize(currrentNormal.xyz));
   const float reflDist = distance(reflFoundIntersection.xyz, currentPos.xyz);
   //reflFoundIntersection -= currrentRayDir.xyz * reflDist;
 
   //vec3 transpFoundIntersection = find_reflection_incident_point(prevPos.xyz, prevTranspPos.xyz, currentPos.xyz, normalize(prevNormal.xyz));
-  //vec3 transpFoundIntersection = find_reflection_incident_point( prevTranspPos.xyz, prevPos.xyz, currentTranspPos.xyz, normalize(prevNormal.xyz));
-  vec3 transpFoundIntersection = find_reflection_incident_point( currentTranspPos.xyz, currentPos.xyz, prevTranspPos.xyz, normalize(currrentNormal.xyz));
+  vec3 transpFoundIntersection = find_reflection_incident_point( prevTranspPos.xyz, prevPos.xyz, currentTranspPos.xyz, normalize(prevNormal.xyz));
+  //vec3 transpFoundIntersection = find_reflection_incident_point( currentTranspPos.xyz, currentPos.xyz, prevTranspPos.xyz, normalize(currrentNormal.xyz));
   const float transpDist = distance(transpFoundIntersection.xyz, currentPos.xyz);
   //transpFoundIntersection -= currrentRayDir.xyz * transpDist;
 
