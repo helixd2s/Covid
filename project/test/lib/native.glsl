@@ -79,6 +79,8 @@ struct PixelSurfaceInfo {
   uvec4 indices;
   vec4 emission;
   vec4 diffuse;
+  uvec4 emissionAccum;
+  uvec4 diffuseAccum;
 };
 
 //
@@ -164,6 +166,22 @@ void accumulateDiffuse(in uint pixelId, in uvec4 data) {
   atomicAdd(pixelData.pixels[pixelId].diffuse.accum.y, data.y);
   atomicAdd(pixelData.pixels[pixelId].diffuse.accum.z, data.z);
   atomicAdd(pixelData.pixels[pixelId].diffuse.accum.w, data.w);
+};
+
+//
+void accumulateDiffuseTex(in uint pixelId, in uvec4 data) {
+  atomicAdd(pixelData.pixels[pixelId].surface.diffuseAccum.x, data.x);
+  atomicAdd(pixelData.pixels[pixelId].surface.diffuseAccum.y, data.y);
+  atomicAdd(pixelData.pixels[pixelId].surface.diffuseAccum.z, data.z);
+  atomicAdd(pixelData.pixels[pixelId].surface.diffuseAccum.w, data.w);
+};
+
+//
+void accumulateEmissiveTex(in uint pixelId, in uvec4 data) {
+  atomicAdd(pixelData.pixels[pixelId].surface.emissionAccum.x, data.x);
+  atomicAdd(pixelData.pixels[pixelId].surface.emissionAccum.y, data.y);
+  atomicAdd(pixelData.pixels[pixelId].surface.emissionAccum.z, data.z);
+  atomicAdd(pixelData.pixels[pixelId].surface.emissionAccum.w, data.w);
 };
 
 //

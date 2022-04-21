@@ -130,10 +130,11 @@ void main() {
     };
 
     //
+    float transpCoef = diffuseColor.a;
     float reflCoef = clamp(hasHit ? (metallicFactor + (fresnel_schlick(0.f, dot(reflDir.xyz, normals))) * (1.f - metallicFactor)) * (1.f - luminance(emissiveColor.xyz)) : 0.f, 0.f, 1.f);
     vec4 origRefl = cvtRgb16Acc(pixelData.pixels[pixelId].reflection.accum) + clamp(reflColor * reflCoef, vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f)) * float(luminance(reflColor.xyz) > 0.f);
-    vec4 origTransp = cvtRgb16Acc(pixelData.pixels[pixelId].transparency.accum) + clamp(transpColor * (1.f - reflCoef), vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f)) * float(luminance(transpColor.xyz) > 0.f);
-    vec4 origDiffuse = cvtRgb16Acc(pixelData.pixels[pixelId].diffuse.accum) + clamp(finalColor * (1.f - reflCoef), vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f)) * float(luminance(finalColor.xyz) > 0.f);
+    vec4 origTransp = cvtRgb16Acc(pixelData.pixels[pixelId].transparency.accum) + clamp(transpColor * (1.f - reflCoef) * (1.f - transpCoef), vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f)) * float(luminance(transpColor.xyz) > 0.f);
+    vec4 origDiffuse = cvtRgb16Acc(pixelData.pixels[pixelId].diffuse.accum) + clamp(finalColor * (1.f - reflCoef) * transpCoef, vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f)) * float(luminance(finalColor.xyz) > 0.f);
 
     //
     if (luminance(finalColor.xyz) > 0.f || luminance(reflColor.xyz) > 0.f || luminance(transpColor.xyz) > 0.f || luminance(emissiveColor.xyz) > 0.f) {
@@ -141,7 +142,10 @@ void main() {
       pixelData.pixels[pixelId].surface.normal = normals;//tbn[2].xyz;
       pixelData.pixels[pixelId].surface.indices = uvec4(intersection.instanceId, intersection.geometryId, intersection.primitiveId, 0u);
       pixelData.pixels[pixelId].surface.emission = vec4(emissiveColor * (1.f - reflCoef));
-      pixelData.pixels[pixelId].surface.diffuse = diffuseColor;
+      pixelData.pixels[pixelId].surface.emission = vec4(emissiveColor.xyz, 1.f) + cvtRgb16Acc(pixelData.pixels[pixelId].surface.emissionAccum);
+      pixelData.pixels[pixelId].surface.diffuse = vec4(diffuseColor.xyz, 1.f) + cvtRgb16Acc(pixelData.pixels[pixelId].surface.diffuseAccum);
+      pixelData.pixels[pixelId].surface.emissionAccum = uvec4(0u);
+      pixelData.pixels[pixelId].surface.diffuseAccum = uvec4(0u);
       pixelData.pixels[pixelId].surface.actualOrigin = vec3(0.f);
       pixelData.pixels[pixelId].surface.actualNormal = vec3(0.f);
       pixelData.pixels[pixelId].diffuse.color = origDiffuse;
@@ -160,8 +164,10 @@ void main() {
       pixelData.pixels[pixelId].transparency.direction = vec4(/*transpRayData.direction.xyz*/rayDir, transpHit);
       pixelData.pixels[pixelId].transparency.actualDirection = vec4(0.f);
     } else {
-      pixelData.pixels[pixelId].surface.emission = vec4(0.f);
-      pixelData.pixels[pixelId].surface.diffuse = vec4(0.f);
+      pixelData.pixels[pixelId].surface.emission = cvtRgb16Acc(pixelData.pixels[pixelId].surface.emissionAccum);
+      pixelData.pixels[pixelId].surface.diffuse = cvtRgb16Acc(pixelData.pixels[pixelId].surface.diffuseAccum);
+      pixelData.pixels[pixelId].surface.emissionAccum = uvec4(0u);
+      pixelData.pixels[pixelId].surface.diffuseAccum = uvec4(0u);
       pixelData.pixels[pixelId].surface.origin = pixelData.pixels[pixelId].surface.actualOrigin;
       pixelData.pixels[pixelId].surface.normal = pixelData.pixels[pixelId].surface.actualNormal;
       pixelData.pixels[pixelId].surface.actualOrigin = vec3(0.f);
@@ -192,8 +198,10 @@ void main() {
     const uint pixelId = gcoord.x + extent.x * gcoord.y;
 
     // actualize
-    pixelData.pixels[pixelId].surface.emission = vec4(0.f);
-    pixelData.pixels[pixelId].surface.diffuse = vec4(0.f);
+    pixelData.pixels[pixelId].surface.emission = cvtRgb16Acc(pixelData.pixels[pixelId].surface.emissionAccum);
+    pixelData.pixels[pixelId].surface.diffuse = cvtRgb16Acc(pixelData.pixels[pixelId].surface.diffuseAccum);
+    pixelData.pixels[pixelId].surface.emissionAccum = uvec4(0u);
+    pixelData.pixels[pixelId].surface.diffuseAccum = uvec4(0u);
     pixelData.pixels[pixelId].surface.origin = pixelData.pixels[pixelId].surface.actualOrigin;
     pixelData.pixels[pixelId].surface.normal = pixelData.pixels[pixelId].surface.actualNormal;
     pixelData.pixels[pixelId].surface.actualOrigin = vec3(0.f);

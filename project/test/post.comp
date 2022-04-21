@@ -113,7 +113,7 @@ void main() {
   vec4 resultDiffuse = readAndNeighborSurfaceDiffuse(pixelId);
 
   // final color
-  imageStore(images[swapchain.image], ivec2(gcoord.x, extent.y-1-gcoord.y), fromLinear(vec4(mix(resultTransp.xyz / max(resultTransp.w, 1.f), resultColor.xyz / max(resultColor.w, 1.f) * resultDiffuse.xyz, resultDiffuse.a) + resultEmission.xyz + resultRefl.xyz / max(resultRefl.w, 1.f), 1.f)));
+  imageStore(images[swapchain.image], ivec2(gcoord.x, extent.y-1-gcoord.y), fromLinear(vec4(resultTransp.xyz / max(resultTransp.w, 1.f) + resultColor.xyz / max(resultColor.w, 1.f) * (resultDiffuse.xyz / max(resultDiffuse.w, 1.f)) + (resultEmission.xyz / max(resultEmission.w, 1.f)) + resultRefl.xyz / max(resultRefl.w, 1.f), 1.f)));
 
   //vec4 reflDebug = cvtRgb16Acc(readSplit(pingpong.images[5], ivec2(gcoord)));
   //imageStore(images[swapchain.image], ivec2(gcoord.x, extent.y-1-gcoord.y), vec4(fromLinear(reflDebug.xyz/reflDebug.w), 1.f));

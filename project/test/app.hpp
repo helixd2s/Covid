@@ -58,6 +58,8 @@ struct PixelSurfaceInfo {
   glm::uvec4 indices;
   glm::vec4 emission;
   glm::vec4 diffuse;
+  glm::uvec4 emissionAccum;
+  glm::uvec4 diffuseAccum;
 };
 
 //
