@@ -161,6 +161,12 @@ void main() {
     pixelData.pixels[pixelId].surface.diffuse = diffuseColor;
     pixelData.pixels[pixelId].surface.actualOrigin = vec3(0.f);
     pixelData.pixels[pixelId].surface.actualNormal = vec3(0.f);
+
+    //
+    imageStore(imagesRgba16F[pingpong.images[0]], ivec2(gcoord), diffuseColor);
+    imageStore(imagesRgba16F[pingpong.images[1]], ivec2(gcoord), origDiffuse/origDiffuse.w);
+    imageStore(imagesRgba16F[pingpong.images[2]], ivec2(gcoord), origTransp/origTransp.w);
+    imageStore(imagesRgba16F[pingpong.images[3]], ivec2(gcoord), origRefl/origRefl.w);
   }
 #ifdef ENABLE_CHECKERBOARD
   else {

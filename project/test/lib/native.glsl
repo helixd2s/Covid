@@ -136,6 +136,7 @@ layout(set = 1, binding = 0) uniform utexture2D texturesU[];
 layout(set = 2, binding = 0) uniform sampler samplers[];
 layout(set = 3, binding = 0, rgb10_a2) uniform image2D images[];
 layout(set = 3, binding = 0, rgba32f) uniform image2D imagesRgba32F[];
+layout(set = 3, binding = 0, rgba16f) uniform image2D imagesRgba16F[];
 layout(set = 3, binding = 0, rgba32ui) uniform uimage2D imagesRgba32UI[];
 layout(set = 3, binding = 0, r32ui) uniform uimage2D imagesR32UI[];
 

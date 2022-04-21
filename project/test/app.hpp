@@ -335,8 +335,8 @@ public:
 
       // first image is accumulation, second image is back buffer, third image is index buffer, fourth image is position buffer
       // 5th for reflection buffer, 6th for reflection back buffer, 7th for transparency, 8th for transparency back
-      .split = std::vector<bool>{false},
-      .formats = std::vector<vk::Format>{ vk::Format::eR32Uint },
+      .split = std::vector<bool>{false, false, false, false},
+      .formats = std::vector<vk::Format>{ vk::Format::eR16G16B16A16Sfloat, vk::Format::eR16G16B16A16Sfloat, vk::Format::eR16G16B16A16Sfloat, vk::Format::eR16G16B16A16Sfloat },
       .info = qfAndQueue
     });
 
