@@ -787,8 +787,8 @@ float luminance(in vec3 color) {
 
 // for metallic reflection (true-multiply)
 vec3 trueMultColor(in vec3 rayColor, in vec3 material) {
-  float rfactor = luminance(max(rayColor,0.f.xxx));
-  float mfactor = luminance(max(material,0.f.xxx));
+  float rfactor = clamp(luminance(max(rayColor,0.f.xxx)), 0.f, 1.f);
+  float mfactor = clamp(luminance(max(material,0.f.xxx)), 0.f, 1.f);
   //return rfactor * materialColor + mfactor * rayColor;
   return sqrt((rfactor * max(material,0.f.xxx)) * (mfactor * max(rayColor,0.f.xxx)));
 };

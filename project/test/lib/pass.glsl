@@ -44,7 +44,7 @@ RayData handleIntersection(in RayData rayData, in IntersectionInfo intersection,
   };
 
   //
-  float reflFactor = (metallicFactor + fresnel_schlick(0.f, dot(-rayData.direction.xyz, normals)) * (1.f - metallicFactor));
+  float reflFactor = (metallicFactor + fresnel_schlick(0.f, dot(-rayData.direction.xyz, normals)) * (1.f - metallicFactor)) * (1.f - luminance(emissiveColor.xyz));
   vec3 originSeedXYZ = vec3(random(rayData.launchId.xy), random(rayData.launchId.xy), random(rayData.launchId.xy));
 
   //
@@ -112,7 +112,7 @@ RayData pathTrace(in RayData rayData, inout float hitDist, inout vec3 firstNorma
       currentT += intersection.hitT;
 
       // 
-      if (pass.diffusePass) { 
+      if (pass.diffusePass && !surfaceFound) { 
         hitDist = currentT;
         surfaceFound = true;
         firstIndices = uvec4(intersection.instanceId, intersection.geometryId, intersection.primitiveId, 0u);

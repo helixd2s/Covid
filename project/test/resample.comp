@@ -66,8 +66,9 @@ void main() {
   const vec4 sampledPos = vec4(texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), screenPos, 0).xyz, 1.f);
 
   // 
-  //const vec3 foundIntersection = find_reflection_incident_point(prevPos.xyz, prevReflPos.xyz, currentPos.xyz, normalize(prevNormal.xyz));
-  vec3 reflFoundIntersection = find_reflection_incident_point(prevReflPos.xyz, prevPos.xyz, currentReflPos.xyz, normalize(prevNormal.xyz));
+  //vec3 foundIntersection = find_reflection_incident_point(prevPos.xyz, prevReflPos.xyz, currentPos.xyz, normalize(prevNormal.xyz));
+  //vec3 reflFoundIntersection = find_reflection_incident_point(prevReflPos.xyz, prevPos.xyz, currentReflPos.xyz, normalize(prevNormal.xyz));
+  vec3 reflFoundIntersection = find_reflection_incident_point( currentReflPos.xyz, prevPos.xyz, prevReflPos.xyz, normalize(prevNormal.xyz));
   const float reflDist = distance(reflFoundIntersection.xyz, currentPos.xyz);
   reflFoundIntersection -= currrentRayDir.xyz * reflDist;
 
@@ -77,8 +78,9 @@ void main() {
   const ivec2 intWhereReflect = ivec2(reflScreenPos * vec2(extent));
   const vec4 reflSampledPos = vec4(texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), reflScreenPos, 0).xyz, 1.f);
 
-  //const vec3 foundIntersection = find_reflection_incident_point(prevPos.xyz, prevtranspPos.xyz, currentPos.xyz, normalize(prevNormal.xyz));
-  vec3 transpFoundIntersection = find_reflection_incident_point(prevTranspPos.xyz, prevPos.xyz, currentTranspPos.xyz, normalize(prevNormal.xyz));
+  //vec3 transpFoundIntersection = find_reflection_incident_point(prevPos.xyz, prevTranspPos.xyz, currentPos.xyz, normalize(prevNormal.xyz));
+  //vec3 transpFoundIntersection = find_reflection_incident_point( prevTranspPos.xyz, prevPos.xyz, currentTranspPos.xyz, normalize(prevNormal.xyz));
+  vec3 transpFoundIntersection = find_reflection_incident_point( currentTranspPos.xyz, prevPos.xyz, prevTranspPos.xyz, normalize(prevNormal.xyz));
   const float transpDist = distance(transpFoundIntersection.xyz, currentPos.xyz);
   transpFoundIntersection -= currrentRayDir.xyz * transpDist;
 

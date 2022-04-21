@@ -45,8 +45,8 @@ void main() {
   GeometryExtAttrib attrib = interpolate(geometry, pBary);
 
   //
-  const vec4 vertice = attrib.data[VERTEX_VERTICES];
-  const vec4 texcoord = attrib.data[VERTEX_TEXCOORD];
+  const vec4 vertice = vec4(attrib.data[VERTEX_VERTICES].xyz, 1.f);
+  const vec4 texcoord = vec4(attrib.data[VERTEX_TEXCOORD].xyz, 1.f);
 
   //
 #ifdef TRANSLUCENT
