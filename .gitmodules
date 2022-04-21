@@ -25,3 +25,6 @@
 [submodule "RayTracingDenoiser"]
 	path = RayTracingDenoiser
 	url = https://github.com/NVIDIAGameWorks/RayTracingDenoiser.git
+[submodule "FidelityFX-Denoiser"]
+	path = FidelityFX-Denoiser
+	url = https://github.com/GPUOpen-Effects/FidelityFX-Denoiser.git
