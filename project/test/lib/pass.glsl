@@ -38,12 +38,6 @@ RayData handleIntersection(in RayData rayData, in IntersectionInfo intersection,
   float roughnessFactor = materialPix.color[MATERIAL_PBR].g;
 
   //
-  if (luminance(emissiveColor.xyz) > 0.001f) {
-    rayData.emission.xyz += f16vec3(trueMultColor(rayData.energy.xyz, emissiveColor.xyz));
-    rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, 1.f-emissiveColor.xyz));
-  };
-
-  //
   float reflFactor = (metallicFactor + fresnel_schlick(0.f, dot(-rayData.direction.xyz, normals)) * (1.f - metallicFactor)) * (1.f - luminance(emissiveColor.xyz));
   vec3 originSeedXYZ = vec3(random(rayData.launchId.xy), random(rayData.launchId.xy), random(rayData.launchId.xy));
 
@@ -58,10 +52,14 @@ RayData handleIntersection(in RayData rayData, in IntersectionInfo intersection,
     rayData.energy.xyz = f16vec3(metallicMult(rayData.energy.xyz, diffuseColor.xyz, metallicFactor));
   } else 
   if (random(rayData.launchId.xy) >= diffuseColor.a) {
-    passed.alphaPassed = true;
     rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, mix(passed.alphaColor.xyz, 1.f.xxx, diffuseColor.a)));
+    passed.alphaPassed = true;
   } else
   {
+    if (luminance(emissiveColor.xyz) > 0.001f) {
+      rayData.emission.xyz += f16vec3(trueMultColor(rayData.energy.xyz, emissiveColor.xyz));
+      rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, 1.f-emissiveColor.xyz));
+    };
     passed.diffusePass = true;
     rayData.direction.xyz = randomCosineWeightedHemispherePoint(originSeedXYZ, normals);
     rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, diffuseColor.xyz));
