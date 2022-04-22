@@ -145,7 +145,7 @@ public:
     uniformData.frameCounter = 0u;
 
     // 
-    gltfLoader->updateInstances(0u, glm::dmat4(1.f) * glm::scale(glm::dmat4(1.0f), glm::dvec3(1.f * scale, 1.f * scale, 1.f * scale)) * glm::rotate(glm::dmat4(1.0f), (controller->time - controller->beginTime) * 0.01, glm::dvec3(0.f, 1.f, 0.f)));
+    gltfLoader->updateInstances(0u, glm::dmat4(1.f) * glm::scale(glm::dmat4(1.0f), glm::dvec3(1.f * scale, 1.f * scale, 1.f * scale)) * glm::rotate(glm::dmat4(1.0f), (controller->time - controller->beginTime) * 0.05, glm::dvec3(0.f, 1.f, 0.f)));
     //gltfLoader->updateInstances(0u, glm::dmat4(1.f) * glm::scale(glm::dmat4(1.0f), glm::dvec3(1.f * scale, 1.f * scale, 1.f * scale)));
 
     //

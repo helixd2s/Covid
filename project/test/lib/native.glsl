@@ -331,7 +331,7 @@ layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer Geo
 struct InstanceInfo {
   uint64_t data; uint32_t geometryCount; uint32_t reserved;
   mat3x4 transform;
-  mat3x4 prevTransform;
+  mat3x4 previousTransform;
   //mat3x3 normalTransform;
   //uint32_t align;
 };
@@ -627,14 +627,14 @@ mat3x4 getInstanceTransform(in InstanceInfo info) {
 };
 
 //
-mat3x4 getPrevInstanceTransform(in InstanceInfo info) {
+mat3x4 getPreviousInstanceTransform(in InstanceInfo info) {
   return info.transform;
 };
 
 //
-mat3x4 getPrevInstanceTransform(in InstanceAddressInfo addressInfo, in uint32_t instanceId) {
+mat3x4 getPreviousInstanceTransform(in InstanceAddressInfo addressInfo, in uint32_t instanceId) {
   InstanceInfo instanceInfo = getInstance(addressInfo, instanceId);
-  return instanceInfo.prevTransform;
+  return instanceInfo.previousTransform;
 };
 
 //
@@ -703,7 +703,7 @@ vec3 fullTransformNormal(in InstanceAddressInfo info, in vec3 normals, in uint32
 //
 vec3 fullPreviousTransformNormal(in InstanceInfo instance, in vec3 normals, in uint32_t geometryId) {
   GeometryInfo geometry = getGeometry(instance, geometryId);
-  return normalize(toNormalMat(getPrevInstanceTransform(instance)) * normalize(toNormalMat(getGeometryTransform(geometry)) * normalize(normals)));
+  return normalize(toNormalMat(getPreviousInstanceTransform(instance)) * normalize(toNormalMat(getGeometryTransform(geometry)) * normalize(normals)));
 };
 
 //

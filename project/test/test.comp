@@ -144,10 +144,17 @@ void main() {
     vec4 fDiffuse = clamp(finalColor * (1.f - reflCoef) * transpCoef, vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f)) * float(luminance(finalColor.xyz) > 0.f);
 
     //
-    const float sampleCount = 16.f;
-    origRefl = mix(origRefl/max(origRefl.w,1.f), fRefl/max(fRefl.w,1.f), origRefl.w > 0.f ? (1.f/sampleCount) : 1.f);
-    origTransp = mix(origTransp/max(origTransp.w,1.f), fTransp/max(fTransp.w,1.f), origTransp.w > 0.f ? (1.f/sampleCount) : 1.f);
-    origDiffuse = mix(origDiffuse/max(origDiffuse.w,1.f), fDiffuse/max(fDiffuse.w,1.f), origDiffuse.w > 0.f ? (1.f/sampleCount) : 1.f);
+    const float sampleCount = 64.f;
+
+    //
+    //origRefl = mix(origRefl/max(origRefl.w,1.f), fRefl/max(fRefl.w,1.f), origRefl.w > 0.f ? (1.f/sampleCount) : 1.f);
+    //origTransp = mix(origTransp/max(origTransp.w,1.f), fTransp/max(fTransp.w,1.f), origTransp.w > 0.f ? (1.f/sampleCount) : 1.f);
+    //origDiffuse = mix(origDiffuse/max(origDiffuse.w,1.f), fDiffuse/max(fDiffuse.w,1.f), origDiffuse.w > 0.f ? (1.f/sampleCount) : 1.f);
+
+    //
+    origRefl += fRefl;
+    origTransp += fTransp;
+    origDiffuse += fDiffuse;
 
     //
     if (luminance(finalColor.xyz) > 0.f || luminance(reflColor.xyz) > 0.f || luminance(transpColor.xyz) > 0.f || luminance(emissiveColor.xyz) > 0.f) {
