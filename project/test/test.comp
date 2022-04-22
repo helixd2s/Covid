@@ -132,9 +132,22 @@ void main() {
     //
     float transpCoef = diffuseColor.a;
     float reflCoef = clamp(hasHit ? (metallicFactor + (fresnel_schlick(0.f, dot(reflDir.xyz, normals))) * (1.f - metallicFactor)) * (1.f - luminance(emissiveColor.xyz)) : 0.f, 0.f, 1.f);
-    vec4 origRefl = cvtRgb16Acc(pixelData.pixels[pixelId].reflection.accum) + clamp(reflColor * reflCoef, vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f)) * float(luminance(reflColor.xyz) > 0.f);
-    vec4 origTransp = cvtRgb16Acc(pixelData.pixels[pixelId].transparency.accum) + clamp(transpColor * (1.f - reflCoef) * (1.f - transpCoef), vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f)) * float(luminance(transpColor.xyz) > 0.f);
-    vec4 origDiffuse = cvtRgb16Acc(pixelData.pixels[pixelId].diffuse.accum) + clamp(finalColor * (1.f - reflCoef) * transpCoef, vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f)) * float(luminance(finalColor.xyz) > 0.f);
+
+    // 
+    vec4 origRefl = cvtRgb16Acc(pixelData.pixels[pixelId].reflection.accum);
+    vec4 origTransp = cvtRgb16Acc(pixelData.pixels[pixelId].transparency.accum);
+    vec4 origDiffuse = cvtRgb16Acc(pixelData.pixels[pixelId].diffuse.accum);
+
+    //
+    vec4 fRefl = clamp(reflColor * reflCoef, vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f)) * float(luminance(reflColor.xyz) > 0.f);
+    vec4 fTransp = clamp(transpColor * (1.f - reflCoef) * (1.f - transpCoef), vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f)) * float(luminance(transpColor.xyz) > 0.f);
+    vec4 fDiffuse = clamp(finalColor * (1.f - reflCoef) * transpCoef, vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f)) * float(luminance(finalColor.xyz) > 0.f);
+
+    //
+    const float sampleCount = 16.f;
+    origRefl = mix(origRefl/max(origRefl.w,1.f), fRefl/max(fRefl.w,1.f), origRefl.w > 0.f ? (1.f/sampleCount) : 1.f);
+    origTransp = mix(origTransp/max(origTransp.w,1.f), fTransp/max(fTransp.w,1.f), origTransp.w > 0.f ? (1.f/sampleCount) : 1.f);
+    origDiffuse = mix(origDiffuse/max(origDiffuse.w,1.f), fDiffuse/max(fDiffuse.w,1.f), origDiffuse.w > 0.f ? (1.f/sampleCount) : 1.f);
 
     //
     if (luminance(finalColor.xyz) > 0.f || luminance(reflColor.xyz) > 0.f || luminance(transpColor.xyz) > 0.f || luminance(emissiveColor.xyz) > 0.f) {
