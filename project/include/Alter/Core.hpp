@@ -381,7 +381,9 @@ namespace ANAMED {
       "VK_KHR_shader_clock",
       "VK_KHR_fragment_shading_rate",
       "VK_KHR_pipeline_library",
-      "VK_EXT_graphics_pipeline_library"
+      "VK_EXT_graphics_pipeline_library",
+      "VK_EXT_shader_atomic_float",
+      "VK_EXT_shader_atomic_float2"
     };
     cpp21::shared_vector<std::string> layerList = std::vector<std::string>{
     };

@@ -48,8 +48,8 @@ void reproject3D(in PixelSurfaceInfo surface, in PixelHitInfo data, in uint pixe
   const vec3 currentRayDir = normalize(prevRayDir.xyz * toNormalMat(getPrevInstanceTransform(instancedData.opaqueAddressInfo, surface.indices.x)) * toNormalMat(inverse(getInstanceTransform(instancedData.opaqueAddressInfo, surface.indices.x))));
 
   //
-  //const vec3 prevHitFoundIntersection = find_reflection_incident_point( currentPos.xyz, prevHitPos.xyz, prevPos.xyz, normalize(prevNormal.xyz));
-  const vec3 prevHitFoundIntersection = find_reflection_incident_point( prevPos.xyz, prevHitPos.xyz, currentPos.xyz, normalize(prevNormal.xyz));
+  const vec3 prevHitFoundIntersection = find_reflection_incident_point( currentPos.xyz, prevHitPos.xyz, prevPos.xyz, normalize(prevNormal.xyz));
+  //const vec3 prevHitFoundIntersection = find_reflection_incident_point( prevPos.xyz, prevHitPos.xyz, currentPos.xyz, normalize(prevNormal.xyz));
   const vec3 currentHitFoundIntersection = vec4(vec4(prevHitFoundIntersection.xyz, 1.f) * inverse(getPrevInstanceTransform(instancedData.opaqueAddressInfo, data.indices.x)), 1.f) * getInstanceTransform(instancedData.opaqueAddressInfo, data.indices.x);
 
   // 
@@ -59,10 +59,12 @@ void reproject3D(in PixelSurfaceInfo surface, in PixelHitInfo data, in uint pixe
   //
   //const vec4 hitPersp = vec4(vec4(hitFoundIntersection, 1.f) * constants.lookAt, 1.f) * constants.perspective;
   //const vec4 hitSurfacePersp = vec4(vec4(hitFoundIntersection - hitDist * hitOutDir, 1.f) * constants.lookAt, 1.f) * constants.perspective;
-  const vec4 prevHitPersp = vec4(vec4(prevHitFoundIntersection, 1.f) * constants.previousLookAt, 1.f) * constants.perspective;
-  const vec4 currentHitPersp = vec4(vec4(currentHitFoundIntersection, 1.f) * constants.lookAt, 1.f) * constants.perspective;
-  const ivec2 intSrc = ivec2((prevHitPersp.xy/prevHitPersp.w * 0.5f + 0.5f) * vec2(extent));
-  const ivec2 intDst = ivec2((currentHitPersp.xy/currentHitPersp.w * 0.5f + 0.5f) * vec2(extent));
+  const vec4 srcHitPersp = vec4(vec4(prevHitFoundIntersection, 1.f) * constants.previousLookAt, 1.f) * constants.perspective;
+  const vec4 dstHitPersp = vec4(vec4(currentHitFoundIntersection, 1.f) * constants.lookAt, 1.f) * constants.perspective;
+  const vec2 screenSrc = (srcHitPersp.xy/srcHitPersp.w * 0.5f + 0.5f);
+  const vec2 screenDst = (dstHitPersp.xy/dstHitPersp.w * 0.5f + 0.5f);
+  const ivec2 intSrc = ivec2(screenSrc * vec2(extent));
+  const ivec2 intDst = ivec2(screenDst * vec2(extent));
   const uint srcId = uint(intSrc.x + intSrc.y * extent.x);
   const uint dstId = uint(intDst.x + intDst.y * extent.x);
   const bool validSrc = intSrc.x < extent.x && intSrc.y < extent.y;
@@ -72,19 +74,26 @@ void reproject3D(in PixelSurfaceInfo surface, in PixelHitInfo data, in uint pixe
 #define SURF_DST pixelData.pixels[dstId].surface
 #define REFL_DST pixelData.pixels[dstId].reflection
 #define TRNS_DST pixelData.pixels[dstId].transparency
+
+// 
 #define SURF_SRC pixelData.pixels[srcId].surface
 #define REFL_SRC pixelData.pixels[srcId].reflection
 #define TRNS_SRC pixelData.pixels[srcId].transparency
 
   // 
   if (validSrc && validDst) {
-    if ( type == 0 && REFL_SRC.color.w > 0.f && (REFL_SRC.direction.w < 10000.f || REFL_DST.color.w <= 0.f)) {
+    // 
+    const bool validDstDist = distance(texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), screenDst.xy, 0).xyz, dstHitPersp.xyz) < 0.001f;
+    const bool validSrcDist = distance(texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), screenSrc.xy, 0).xyz, srcHitPersp.xyz) < 0.001f;
+
+    //
+    if ( type == 0 && REFL_SRC.color.w > 0.f && (REFL_SRC.direction.w < 10000.f || REFL_DST.color.w <= 0.f || validDstDist)) {
       accumulateReflection(dstId, cvtRgb16Float(REFL_SRC.color));
       pixelData.pixels[dstId].reflection.actualDirection = vec4(currentHitFoundIntersection, hitDist);
       //accumulateReflection(pix, cvtRgb16Float(data.color));
       //REFL.actualDirection = vec4(currentPos, hitDist);
     };
-    if ( type == 1 && TRNS_SRC.color.w > 0.f && (TRNS_SRC.direction.w < 10000.f || TRNS_DST.color.w <= 0.f)) { 
+    if ( type == 1 && TRNS_SRC.color.w > 0.f && (TRNS_SRC.direction.w < 10000.f || TRNS_DST.color.w <= 0.f || validDstDist)) { 
       accumulateTransparency(dstId, cvtRgb16Float(TRNS_SRC.color));
       pixelData.pixels[dstId].transparency.actualDirection = vec4(currentHitFoundIntersection, hitDist);
       //accumulateTransparency(pix, cvtRgb16Float(data.color));

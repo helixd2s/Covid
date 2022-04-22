@@ -10,6 +10,9 @@ const float INV_PI = 0.3183098861837907f;
 const float TWO_INV_PI = 0.6366197723675814f;
 const float INV_TWO_PI = 0.15915494309189535f;
 
+//
+#define USE_ATOMIC_FLOAT
+
 // 
 #extension GL_EXT_scalar_block_layout : require
 #extension GL_EXT_shader_explicit_arithmetic_types_int16 : require
@@ -27,6 +30,9 @@ const float INV_TWO_PI = 0.15915494309189535f;
 #extension GL_EXT_debug_printf : require
 #extension GL_EXT_control_flow_attributes : require
 #extension GL_EXT_shader_realtime_clock : require
+#ifdef USE_ATOMIC_FLOAT
+#extension GL_EXT_shader_atomic_float : require
+#endif
 
 //
 const uint32_t VERTEX_VERTICES = 0u;
@@ -62,11 +68,20 @@ struct Constants
 };
 
 //
+#ifdef USE_ATOMIC_FLOAT
+#define IMGS imagesR32F
+#define TYPE vec4
+#else
+#define IMGS imagesR32UI
+#define TYPE uvec4
+#endif
+
+//
 struct PixelHitInfo {
   vec4 color;
   vec4 direction;
   vec4 actualDirection;
-  uvec4 accum;
+  TYPE accum;
   uvec4 indices;
 };
 
@@ -79,8 +94,8 @@ struct PixelSurfaceInfo {
   uvec4 indices;
   vec4 emission;
   vec4 diffuse;
-  uvec4 emissionAccum;
-  uvec4 diffuseAccum;
+  TYPE emissionAccum;
+  TYPE diffuseAccum;
 };
 
 //
@@ -141,6 +156,7 @@ layout(set = 3, binding = 0, rgba32f) uniform image2D imagesRgba32F[];
 layout(set = 3, binding = 0, rgba16f) uniform image2D imagesRgba16F[];
 layout(set = 3, binding = 0, rgba32ui) uniform uimage2D imagesRgba32UI[];
 layout(set = 3, binding = 0, r32ui) uniform uimage2D imagesR32UI[];
+layout(set = 3, binding = 0, r32f) uniform image2D imagesR32F[];
 
 //
 uvec4 readSplit(in uint image, in ivec2 coord) {
@@ -153,15 +169,15 @@ uvec4 readSplit(in uint image, in ivec2 coord) {
 };
 
 //
-void accumulateSplit(in uint image, in ivec2 coord, in uvec4 data) {
-  imageAtomicAdd(imagesR32UI[image], coord * ivec2(4u,1u) + ivec2(0u,0u), data.x); 
-  imageAtomicAdd(imagesR32UI[image], coord * ivec2(4u,1u) + ivec2(1u,0u), data.y); 
-  imageAtomicAdd(imagesR32UI[image], coord * ivec2(4u,1u) + ivec2(2u,0u), data.z);
-  imageAtomicAdd(imagesR32UI[image], coord * ivec2(4u,1u) + ivec2(3u,0u), data.w);
+void accumulateSplit(in uint image, in ivec2 coord, in TYPE data) {
+  imageAtomicAdd(IMGS[image], coord * ivec2(4u,1u) + ivec2(0u,0u), data.x); 
+  imageAtomicAdd(IMGS[image], coord * ivec2(4u,1u) + ivec2(1u,0u), data.y); 
+  imageAtomicAdd(IMGS[image], coord * ivec2(4u,1u) + ivec2(2u,0u), data.z);
+  imageAtomicAdd(IMGS[image], coord * ivec2(4u,1u) + ivec2(3u,0u), data.w);
 };
 
 //
-void accumulateDiffuse(in uint pixelId, in uvec4 data) {
+void accumulateDiffuse(in uint pixelId, in TYPE data) {
   atomicAdd(pixelData.pixels[pixelId].diffuse.accum.x, data.x);
   atomicAdd(pixelData.pixels[pixelId].diffuse.accum.y, data.y);
   atomicAdd(pixelData.pixels[pixelId].diffuse.accum.z, data.z);
@@ -169,7 +185,7 @@ void accumulateDiffuse(in uint pixelId, in uvec4 data) {
 };
 
 //
-void accumulateDiffuseTex(in uint pixelId, in uvec4 data) {
+void accumulateDiffuseTex(in uint pixelId, in TYPE data) {
   atomicAdd(pixelData.pixels[pixelId].surface.diffuseAccum.x, data.x);
   atomicAdd(pixelData.pixels[pixelId].surface.diffuseAccum.y, data.y);
   atomicAdd(pixelData.pixels[pixelId].surface.diffuseAccum.z, data.z);
@@ -177,7 +193,7 @@ void accumulateDiffuseTex(in uint pixelId, in uvec4 data) {
 };
 
 //
-void accumulateEmissiveTex(in uint pixelId, in uvec4 data) {
+void accumulateEmissiveTex(in uint pixelId, in TYPE data) {
   atomicAdd(pixelData.pixels[pixelId].surface.emissionAccum.x, data.x);
   atomicAdd(pixelData.pixels[pixelId].surface.emissionAccum.y, data.y);
   atomicAdd(pixelData.pixels[pixelId].surface.emissionAccum.z, data.z);
@@ -185,7 +201,7 @@ void accumulateEmissiveTex(in uint pixelId, in uvec4 data) {
 };
 
 //
-void accumulateReflection(in uint pixelId, in uvec4 data) {
+void accumulateReflection(in uint pixelId, in TYPE data) {
   atomicAdd(pixelData.pixels[pixelId].reflection.accum.x, data.x);
   atomicAdd(pixelData.pixels[pixelId].reflection.accum.y, data.y);
   atomicAdd(pixelData.pixels[pixelId].reflection.accum.z, data.z);
@@ -193,7 +209,7 @@ void accumulateReflection(in uint pixelId, in uvec4 data) {
 };
 
 //
-void accumulateTransparency(in uint pixelId, in uvec4 data) {
+void accumulateTransparency(in uint pixelId, in TYPE data) {
   atomicAdd(pixelData.pixels[pixelId].transparency.accum.x, data.x);
   atomicAdd(pixelData.pixels[pixelId].transparency.accum.y, data.y);
   atomicAdd(pixelData.pixels[pixelId].transparency.accum.z, data.z);
@@ -825,6 +841,16 @@ vec3 outRayNormal(in vec3 dir, in vec3 normal) {
 };
 
 //
+#ifdef USE_ATOMIC_FLOAT
+vec4 cvtRgb16Acc(in vec4 color) {
+  return color;
+};
+
+//
+vec4 cvtRgb16Float(in vec4 sampled) {
+  return sampled;
+};
+#else
 vec4 cvtRgb16Acc(in uvec4 color) {
   const vec4 minor = (color & 0xFFFF) / 65536.f;
   const vec4 major = ((color & 0xFFFF0000) >> 16);
@@ -835,5 +861,6 @@ vec4 cvtRgb16Acc(in uvec4 color) {
 uvec4 cvtRgb16Float(in vec4 sampled) {
   return uvec4(sampled * 65536.f);
 };
+#endif
 
 #endif
