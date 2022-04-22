@@ -53,8 +53,8 @@ void reproject3D(in PixelSurfaceInfo surface, in PixelHitInfo data, in uint pixe
   const vec3 currentHitFoundIntersection = vec4(vec4(prevHitFoundIntersection.xyz, 1.f) * inverse(getPrevInstanceTransform(instancedData.opaqueAddressInfo, data.indices.x)), 1.f) * getInstanceTransform(instancedData.opaqueAddressInfo, data.indices.x);
 
   // 
-  const float hitDist = distance(currentHitFoundIntersection, currentPos);
-  const vec3 hitOutDir = normalize(currentHitFoundIntersection - currentPos);
+  const float hitDist = distance(currentHitPos, currentPos);
+  const vec3 hitOutDir = normalize(currentHitPos - currentPos);
 
   //
   //const vec4 hitPersp = vec4(vec4(hitFoundIntersection, 1.f) * constants.lookAt, 1.f) * constants.perspective;
