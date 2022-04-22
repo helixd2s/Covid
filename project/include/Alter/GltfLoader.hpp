@@ -26,7 +26,8 @@
 #endif
 
 //
-namespace ANAMED {
+namespace ANAMED 
+{
 
   //
   enum class FilterType : uint32_t {
@@ -43,7 +44,7 @@ namespace ANAMED {
 
   //
   struct GltfInstanced : std::enable_shared_from_this<GltfInstanced> {
-    std::vector<InstanceDataInfo> instances = {};
+    cpp21::bucket<InstanceDataInfo> instances = std::vector<InstanceDataInfo>{};
     WrapShared<InstanceLevelObj> instanced = {};
   };
 
@@ -217,6 +218,7 @@ namespace ANAMED {
     // 
     virtual std::shared_ptr<GltfModel> load(std::string const& filename = "./BoomBox.gltf", float scale = 1.f, FilterType const& filter = FilterType::eOpaque) {
       decltype(auto) gltf = std::make_shared<GltfModel>();
+      this->gltfModels.push_back(gltf);
 
       //decltype(auto) handle = Handle(cInfo->device, HandleType::eDevice);
       decltype(auto) handle = this->base;
@@ -533,23 +535,77 @@ namespace ANAMED {
         };
       };
 
+      //
+      for (decltype(auto) scene : gltf->model.scenes) {
+        
+
+        decltype(auto) inst = std::make_shared<GltfInstanced>();
+        decltype(auto) iter = 0ull;
+        for (decltype(auto) node : scene.nodes) {
+          this->updateInstance(iter, gltfModels.size() - 1ull, inst, gltf->model, gltf->model.nodes[node], glm::dmat4(1.f)* glm::scale(glm::dmat4(1.0f), glm::dvec3(1.f * scale, 1.f * scale, 1.f * scale)));
+        };
+
+        //
+        inst->instanced = ANAMED::InstanceLevelObj::make(handle, ANAMED::InstanceLevelCreateInfo{
+          .instances = inst->instances,
+          .uploader = this->cInfo->uploader,
+          });
+
+        //
+        gltf->scenes.push_back(inst);
+      };
+
+      //
+      gltf->defaultScene = gltf->model.defaultScene == -1 ? 0 : gltf->model.defaultScene;
+
+      //
+      device.waitIdle();
+      deviceObj->tickProcessing();
+
+      //
+      descriptorsObj->updateDescriptors();
+
+      //
+      return this->gltfModels.back();
+    };
+    
+
+    //
+    virtual void updateInstances(uintptr_t const& model = 0u, glm::dmat4x4 preTransform = glm::dmat4x4(1.f)) {
+      decltype(auto) gltf = this->gltfModels[model];
+      uintptr_t i = 0; for (decltype(auto) scene : gltf->model.scenes) {
+        decltype(auto) inst = this->getScene(model, i++);
+        decltype(auto) iter = 0ull;
+        //inst->instances.clear();
+        for (decltype(auto) node : scene.nodes) {
+          this->updateInstance(iter, model, inst, gltf->model, gltf->model.nodes[node], preTransform);
+        };
+        inst->instanced->buildStructure();
+      };
+    };
+
+    //
+    virtual void updateInstance(uintptr_t& iter, uintptr_t const& modelId, std::shared_ptr<GltfInstanced> inst, tinygltf::Model& model, tinygltf::Node& node, glm::dmat4 transform = glm::dmat4(1.f)) {
       // 
-      decltype(auto) useMesh = [=, this](std::shared_ptr<GltfInstanced> inst, tinygltf::Model& model, intptr_t const& meshId, glm::dmat4 transform = glm::dmat4()) {
+      decltype(auto) gltf = this->gltfModels[modelId];
+      decltype(auto) useMesh = [=, &iter, this](std::shared_ptr<GltfInstanced> inst, tinygltf::Model& model, intptr_t const& meshId, glm::dmat4 transform = glm::dmat4()) {
         decltype(auto) mesh = model.meshes[meshId];
         decltype(auto) transposed = glm::mat4(glm::transpose(transform));
-        inst->instances.push_back(InstanceDataInfo{
-          .instanceDevInfo = InstanceDevInfo{
-            .transform = reinterpret_cast<vk::TransformMatrixKHR&>(transposed),
-            .instanceCustomIndex = 0u,
-            .mask = 0xFFu,
-            .instanceShaderBindingTableRecordOffset = 0u,
-            .flags = uint8_t(vk::GeometryInstanceFlagBitsKHR{}),
-            .accelerationStructureReference = gltf->meshes[meshId]->getDeviceAddress()
-          },
-          .instanceInfo {
-            //.normalTransform = glm::mat3x3(glm::inverse(transform))
-          }
-        });
+        decltype(auto) devInfo = InstanceDevInfo{
+          .transform = reinterpret_cast<vk::TransformMatrixKHR&>(transposed),
+          .instanceCustomIndex = 0u,
+          .mask = 0xFFu,
+          .instanceShaderBindingTableRecordOffset = 0u,
+          .flags = uint8_t(vk::GeometryInstanceFlagBitsKHR{}),
+          .accelerationStructureReference = gltf->meshes[meshId]->getDeviceAddress()
+        };
+        // if equal - add, if less - replace
+        if (iter >= inst->instances->size()) {
+          inst->instances.add(InstanceDataInfo{ .instanceDevInfo = devInfo });
+          iter++;
+        } else {
+          inst->instances[iter++].instanceDevInfo = devInfo;
+        }
       };
 
       //
@@ -583,35 +639,7 @@ namespace ANAMED {
       };
 
       //
-      for (decltype(auto) scene : gltf->model.scenes) {
-        decltype(auto) inst = std::make_shared<GltfInstanced>();
-        for (decltype(auto) node : scene.nodes) {
-          handleNodes(inst, gltf->model, gltf->model.nodes[node], glm::dmat4(1.f) * glm::scale(glm::dmat4(1.0f), glm::dvec3(1.f * scale, 1.f * scale, 1.f * scale)));
-        };
-
-        //
-        inst->instanced = ANAMED::InstanceLevelObj::make(handle, ANAMED::InstanceLevelCreateInfo{
-          .instances = inst->instances,
-          .uploader = this->cInfo->uploader,
-          });
-
-        //
-        gltf->scenes.push_back(inst);
-      };
-
-      //
-      gltf->defaultScene = gltf->model.defaultScene == -1 ? 0 : gltf->model.defaultScene;
-
-      //
-      device.waitIdle();
-      deviceObj->tickProcessing();
-
-      //
-      descriptorsObj->updateDescriptors();
-
-      //
-      this->gltfModels.push_back(gltf);
-      return this->gltfModels.back();
+      handleNodes(inst, gltf->model, node, transform);
     };
 
     //

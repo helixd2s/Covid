@@ -33,81 +33,87 @@ vec3 find_reflection_incident_point(in vec3 p0, in vec3 p1, in vec3 v0, in vec3 
     return (proj_p1 - proj_p0) * d0/(d0+d1) + proj_p0;
 };
 
+//
+void reproject3D(in PixelSurfaceInfo surface, in PixelHitInfo data, in vec3 prevPos, in vec3 prevPosEnd, in vec3 prevRayDir, in vec3 prevNormal, in int type) {
+  //
+  const vec3 prevHitPos = prevPos.xyz + data.direction.w * prevRayDir;
+
+  //
+  const vec3 currentPos = vec4(vec4(prevPos.xyz, 1.f) * inverse(getPrevInstanceTransform(instancedData.opaqueAddressInfo, surface.indices.x)), 1.f) * getInstanceTransform(instancedData.opaqueAddressInfo, surface.indices.x);
+  const vec3 currentHitPos = vec4(vec4(prevHitPos.xyz, 1.f) * inverse(getPrevInstanceTransform(instancedData.opaqueAddressInfo, data.indices.x)), 1.f) * getInstanceTransform(instancedData.opaqueAddressInfo, data.indices.x);
+  const vec3 currentPosEnd = vec4(vec4(prevPosEnd.xyz, 1.f) * inverse(getPrevInstanceTransform(instancedData.opaqueAddressInfo, surface.indices.x)), 1.f) * getInstanceTransform(instancedData.opaqueAddressInfo, surface.indices.x);
+
+  //
+  const vec3 currentNormal = normalize(prevNormal.xyz * toNormalMat(getPrevInstanceTransform(instancedData.opaqueAddressInfo, surface.indices.x)) * toNormalMat(inverse(getInstanceTransform(instancedData.opaqueAddressInfo, surface.indices.x))));
+  const vec3 currentRayDir = normalize(currentPosEnd - currentPos);
+
+  //
+  vec3 hitFoundIntersection = find_reflection_incident_point(  prevHitPos.xyz,  prevPos.xyz,  currentHitPos.xyz, normalize(prevNormal.xyz));
+  hitFoundIntersection = vec4(vec4(hitFoundIntersection.xyz, 1.f) * inverse(getPrevInstanceTransform(instancedData.opaqueAddressInfo, data.indices.x)), 1.f) * getInstanceTransform(instancedData.opaqueAddressInfo, data.indices.x);
+
+  // 
+  const float hitDist = distance(hitFoundIntersection.xyz, currentPos.xyz);
+  const vec3 hitOutDir = normalize(hitFoundIntersection.xyz - currentPos.xyz);//currentRayDir;
+
+  //
+  const vec4 hitPersp = vec4(vec4(hitFoundIntersection, 1.f) * constants.lookAt, 1.f) * constants.perspective;
+  const vec4 hitSurfacePersp = vec4(vec4(hitFoundIntersection - hitOutDir * hitDist, 1.f) * constants.lookAt, 1.f) * constants.perspective;
+  const ivec2 intWhere = ivec2((hitPersp.xy/hitPersp.w * 0.5f + 0.5f) * vec2(extent));
+  const vec4 hitSampledPos = vec4(texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), (hitSurfacePersp.xy/hitSurfacePersp.w) * 0.5f + 0.5f).xyz, 1.f);
+
+  //
+  if (distance( hitFoundIntersection.xyz - hitOutDir.xyz * hitDist, hitSampledPos.xyz) < 0.001f && intWhere.x < extent.x && intWhere.y < extent.y && data.color.w > 0.f) {
+    uint pix = uint(intWhere.x + intWhere.y * extent.x);
+    if (type == 0) { 
+      accumulateReflection(pix, cvtRgb16Float(data.color)); 
+      pixelData.pixels[pix].reflection.actualDirection = vec4(normalize(hitOutDir), hitDist);
+    };
+    if (type == 1) { 
+      accumulateTransparency(pix, cvtRgb16Float(data.color)); 
+      pixelData.pixels[pix].transparency.actualDirection = vec4(normalize(hitOutDir), hitDist);
+    };
+  };
+
+};
+
+//
+void reprojectDiffuse(in PixelSurfaceInfo surface, in PixelHitInfo data, in vec3 prevPos, in vec3 prevPosEnd, in vec3 prevRayDir, in vec3 prevNormal) {
+  //
+  const vec3 currentPos = vec4(vec4(prevPos.xyz, 1.f) * inverse(getPrevInstanceTransform(instancedData.opaqueAddressInfo, surface.indices.x)), 1.f) * getInstanceTransform(instancedData.opaqueAddressInfo, surface.indices.x);
+  const vec3 currentNormal = normalize(prevNormal.xyz * toNormalMat(getPrevInstanceTransform(instancedData.opaqueAddressInfo, surface.indices.x)) * toNormalMat(inverse(getInstanceTransform(instancedData.opaqueAddressInfo, surface.indices.x))));
+  const vec3 currentRayDir = normalize(prevRayDir.xyz * toNormalMat(getPrevInstanceTransform(instancedData.opaqueAddressInfo, surface.indices.x)) * toNormalMat(inverse(getInstanceTransform(instancedData.opaqueAddressInfo, surface.indices.x))));
+
+  //
+  const vec4 perspPos = vec4(vec4(currentPos.xyz, 1.f) * constants.lookAt, 1.f) * constants.perspective;
+  const vec4 sampledPos = vec4(texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), (perspPos.xy/perspPos.w) * 0.5f + 0.5f, 0).xyz, 1.f);
+  const ivec2 intScreenPos = ivec2(((perspPos.xy/perspPos.w) * 0.5f + 0.5f) * vec2(extent));
+
+  //
+  if (distance( sampledPos.xyz, currentPos.xyz) < 0.001f && intScreenPos.x < extent.x && intScreenPos.y < extent.y && data.color.w > 0.f) {
+    uint pix = uint(intScreenPos.x + intScreenPos.y * extent.x);
+    accumulateDiffuse(pix, cvtRgb16Float(data.color));
+    accumulateDiffuseTex(pix, cvtRgb16Float(surface.diffuse));
+    accumulateEmissiveTex(pix, cvtRgb16Float(surface.emission));
+    pixelData.pixels[pix].surface.actualOrigin.xyz = currentPos.xyz;
+    pixelData.pixels[pix].surface.actualNormal.xyz = currentNormal.xyz;
+  };
+}
+
 // 
 void main() {
   const uvec2 gcoord = gl_GlobalInvocationID.xy;
   const vec2 tCoord = vec2(gcoord)/vec2(extent);
   const uint pixelId = gcoord.x + extent.x * gcoord.y;
 
-  // 
-  const uvec4 prevIndices = pixelData.pixels[pixelId].surface.indices;
-  const uvec4 prevReflIndices = pixelData.pixels[pixelId].reflection.indices;
-
   //
   const vec3 prevRayBegin = divW(vec4(vec3(tCoord, 0.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.previousLookAtInverse;//fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId);
   const vec3 prevRayEnd = divW(vec4(vec3(tCoord, 1.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.previousLookAtInverse;
   const vec3 prevPos = pixelData.pixels[pixelId].surface.origin.xyz;
-  const vec3 prevRayDir = normalize(prevPos.xyz - prevRayBegin.xyz);
+  const vec3 prevRayDir = normalize(prevRayEnd.xyz - prevRayBegin.xyz);
   const vec3 prevNormal = pixelData.pixels[pixelId].surface.normal.xyz;
-  const vec3 prevReflPos = prevPos.xyz + pixelData.pixels[pixelId].reflection.direction.w * prevRayDir;
-  const vec3 prevTranspPos = prevPos.xyz + pixelData.pixels[pixelId].transparency.direction.w * prevRayDir;
 
   //
-  const vec3 currentPos = vec4(vec4(prevPos.xyz, 1.f) * inverse(getPrevInstanceTransform(instancedData.opaqueAddressInfo, prevIndices.x)), 1.f) * getInstanceTransform(instancedData.opaqueAddressInfo, prevIndices.x);
-  const vec3 currentReflPos = vec4(vec4(prevReflPos.xyz, 1.f) * inverse(getPrevInstanceTransform(instancedData.opaqueAddressInfo, prevReflIndices.x)), 1.f) * getInstanceTransform(instancedData.opaqueAddressInfo, prevReflIndices.x);
-  const vec3 currentTranspPos = vec4(vec4(prevTranspPos.xyz, 1.f) * inverse(getPrevInstanceTransform(instancedData.opaqueAddressInfo, prevReflIndices.x)), 1.f) * getInstanceTransform(instancedData.opaqueAddressInfo, prevReflIndices.x);
-  const vec3 currrentNormal = normalize(prevNormal.xyz * toNormalMat(getPrevInstanceTransform(instancedData.opaqueAddressInfo, prevIndices.x)) * toNormalMat(inverse(getInstanceTransform(instancedData.opaqueAddressInfo, prevIndices.x))));
-  const vec3 currrentRayDir = normalize(prevRayDir.xyz * toNormalMat(getPrevInstanceTransform(instancedData.opaqueAddressInfo, prevIndices.x)) * toNormalMat(inverse(getInstanceTransform(instancedData.opaqueAddressInfo, prevIndices.x))));
-
-  //
-  const vec4 perspPos = vec4(vec4(currentPos.xyz, 1.f) * constants.lookAt, 1.f) * constants.perspective;
-  const vec2 screenPos = (perspPos.xy/perspPos.w) * 0.5f + 0.5f;
-  const ivec2 intScreenPos = ivec2(screenPos * vec2(extent));
-  const vec4 sampledPos = vec4(texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), screenPos, 0).xyz, 1.f);
-
-  // 
-  //vec3 foundIntersection = find_reflection_incident_point(prevPos.xyz, prevReflPos.xyz, currentPos.xyz, normalize(prevNormal.xyz));
-  vec3 reflFoundIntersection = find_reflection_incident_point(prevReflPos.xyz, prevPos.xyz, currentReflPos.xyz, normalize(prevNormal.xyz));
-  //vec3 reflFoundIntersection = find_reflection_incident_point( currentReflPos.xyz, currentPos.xyz, prevReflPos.xyz, normalize(currrentNormal.xyz));
-  const float reflDist = distance(reflFoundIntersection.xyz, currentPos.xyz);
-  //reflFoundIntersection -= currrentRayDir.xyz * reflDist;
-
-  //vec3 transpFoundIntersection = find_reflection_incident_point(prevPos.xyz, prevTranspPos.xyz, currentPos.xyz, normalize(prevNormal.xyz));
-  vec3 transpFoundIntersection = find_reflection_incident_point( prevTranspPos.xyz, prevPos.xyz, currentTranspPos.xyz, normalize(prevNormal.xyz));
-  //vec3 transpFoundIntersection = find_reflection_incident_point( currentTranspPos.xyz, currentPos.xyz, prevTranspPos.xyz, normalize(currrentNormal.xyz));
-  const float transpDist = distance(transpFoundIntersection.xyz, currentPos.xyz);
-  //transpFoundIntersection -= currrentRayDir.xyz * transpDist;
-
-  //
-  const vec4 reflPersp = vec4(vec4(reflFoundIntersection, 1.f) * constants.lookAt, 1.f) * constants.perspective;
-  const vec2 reflScreenPos = reflPersp.xy/reflPersp.w * 0.5f + 0.5f;
-  const ivec2 intWhereReflect = ivec2(reflScreenPos * vec2(extent));
-  const vec4 reflSampledPos = vec4(texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), reflScreenPos, 0).xyz, 1.f);
-
-  //
-  const vec4 transpPersp = vec4(vec4(transpFoundIntersection, 1.f) * constants.lookAt, 1.f) * constants.perspective;
-  const vec2 transpScreenPos = transpPersp.xy/transpPersp.w * 0.5f + 0.5f;
-  const ivec2 intWhereTransp = ivec2(transpScreenPos * vec2(extent));
-  const vec4 transpSampledPos = vec4(texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), transpScreenPos, 0).xyz, 1.f);
-
-  //
-  if (distance( sampledPos.xyz, currentPos.xyz) < 0.001f && intScreenPos.x < extent.x && intScreenPos.y < extent.y && pixelData.pixels[pixelId].diffuse.color.w > 0.f) {
-    uint pix = uint(intScreenPos.x + intScreenPos.y * extent.x);
-    accumulateDiffuse(pix, cvtRgb16Float(pixelData.pixels[pixelId].diffuse.color));
-    accumulateDiffuseTex(pix, cvtRgb16Float(pixelData.pixels[pixelId].surface.diffuse));
-    accumulateEmissiveTex(pix, cvtRgb16Float(pixelData.pixels[pixelId].surface.emission));
-    pixelData.pixels[pix].surface.actualOrigin.xyz = currentPos.xyz;
-    pixelData.pixels[pix].surface.actualNormal.xyz = currrentNormal.xyz;
-  };
-  if (distance(transpSampledPos.xyz, transpFoundIntersection - currrentRayDir.xyz * transpDist) < 0.001f && intWhereTransp.x < extent.x && intWhereTransp.y < extent.y && pixelData.pixels[pixelId].transparency.color.w > 0.f) {
-    uint pix = uint(intWhereTransp.x + intWhereTransp.y * extent.x);
-    accumulateTransparency(pix, cvtRgb16Float(pixelData.pixels[pixelId].transparency.color));
-    pixelData.pixels[pix].transparency.actualDirection = vec4(currrentRayDir, transpDist);
-  };
-  if (distance(reflSampledPos.xyz, reflFoundIntersection.xyz - currrentRayDir.xyz * reflDist) < 0.001f && intWhereReflect.x < extent.x && intWhereReflect.y < extent.y && pixelData.pixels[pixelId].reflection.color.w > 0.f) {
-    uint pix = uint(intWhereReflect.x + intWhereReflect.y * extent.x);
-    accumulateReflection(pix, cvtRgb16Float(pixelData.pixels[pixelId].reflection.color));
-    pixelData.pixels[pix].reflection.actualDirection = vec4(currrentRayDir, reflDist);
-  };
-
+  reprojectDiffuse(pixelData.pixels[pixelId].surface, pixelData.pixels[pixelId].diffuse, prevPos, prevRayEnd, prevRayDir, prevNormal);
+  reproject3D(pixelData.pixels[pixelId].surface, pixelData.pixels[pixelId].reflection, prevPos, prevRayEnd, prevRayDir, prevNormal, 0);
+  reproject3D(pixelData.pixels[pixelId].surface, pixelData.pixels[pixelId].transparency, prevPos, prevRayEnd, prevRayDir, prevNormal, 1);
 };

@@ -109,6 +109,7 @@ protected:
   //
   double previousTime = glfwGetTime();
   uint32_t frameCount = 0;
+  float scale = 1.f;
 
   //
 public: 
@@ -142,6 +143,10 @@ public:
     uniformData.constants.lookAtInverse = glm::mat3x4(glm::transpose(glm::inverse(lkat)));
     uniformData.extent = glm::uvec2(renderArea.extent.width, renderArea.extent.height);
     uniformData.frameCounter = 0u;
+
+    // 
+    gltfLoader->updateInstances(0u, glm::dmat4(1.f) * glm::scale(glm::dmat4(1.0f), glm::dvec3(1.f * scale, 1.f * scale, 1.f * scale)) * glm::rotate(glm::dmat4(1.0f), (controller->time - controller->beginTime) * 0.01, glm::dvec3(0.f, 1.f, 0.f)));
+    //gltfLoader->updateInstances(0u, glm::dmat4(1.f) * glm::scale(glm::dmat4(1.0f), glm::dvec3(1.f * scale, 1.f * scale, 1.f * scale)));
 
     //
 //#ifdef ENABLE_RENDERDOC
@@ -350,7 +355,7 @@ public:
   //
   void loadModel(std::string model, float scale = 1.f) {
     instanceAddressBlock = ANAMED::InstanceAddressBlock{
-      .opaqueAddressInfo = (modelObj = gltfLoader->load(model, scale))->getDefaultScene()->instanced->getAddressInfo()
+      .opaqueAddressInfo = (modelObj = gltfLoader->load(model, this->scale = scale))->getDefaultScene()->instanced->getAddressInfo()
     };
   };
 

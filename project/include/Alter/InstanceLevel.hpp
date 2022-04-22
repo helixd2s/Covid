@@ -112,6 +112,10 @@ namespace ANAMED {
     virtual vk::Buffer const& getInstancedBuffer() const { return this->instanceBuffer; };
 
     //
+    //virtual std::vector<InstanceDevInfo>& getDevInstances() { return this->instanceDevInfo; };
+    //virtual std::vector<InstanceDevInfo> const& getDevInstances() const { return this->instanceDevInfo; };
+
+    //
     virtual std::vector<InstanceInfo>& getInstances() { return this->instanceInfo; };
     virtual std::vector<InstanceInfo> const& getInstances() const { return this->instanceInfo; };
 

@@ -43,6 +43,7 @@ public:
   double mx = 0.f, my = 0.f;
 
   //
+  double beginTime = 0.f;
   double time = 0.f;
   double dt = 0.f;
 
@@ -71,6 +72,7 @@ public:
       });
     };
     time = glfwGetTime();
+    beginTime = glfwGetTime();
     viewCnt = viewPos + viewDir;
   };
 
