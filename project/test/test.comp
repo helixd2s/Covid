@@ -96,11 +96,11 @@ PathTraceOutput pathTraceCommand(in PathTraceCommand cmd, in uint type) {
 
 
 // 
-void retranslateHit(in uint pixelId, in uint type) {
+void retranslateHit(in uint pixelId, in uint type, in vec3 origin) {
   PixelHitInfoRef hitInfo = getPixelHitInfo(pixelId, type);
   hitInfo.indices = hitInfo.actualIndices, hitInfo.actualIndices = uvec4(0u);
   hitInfo.color = cvtRgb16Acc(hitInfo.accum), hitInfo.accum = TYPE(0u);
-  hitInfo.origin = hitInfo.actualOrigin, hitInfo.actualOrigin = vec4(0.f);
+  hitInfo.origin = hitInfo.actualOrigin, hitInfo.origin.xyz = origin, hitInfo.actualOrigin = vec4(0.f);
 };
 
 // 
@@ -112,11 +112,11 @@ void blankHit(in PathTraceCommand cmd, in uint type) {
 };
 
 // 
-void backgroundHit(in uint pixelId, in uint type, in vec3 rayEnd) {
+void backgroundHit(in uint pixelId, in uint type, in vec3 origin) {
   PixelHitInfoRef hitInfo = getPixelHitInfo(pixelId, type);
   hitInfo.indices = uvec4(0u);
   hitInfo.color = ((type == 2) ? vec4(1.f.xxxx) : vec4(0.f.xxx, 1.f)), hitInfo.accum = TYPE(0u);
-  hitInfo.origin = vec4(rayEnd, 10000.f), hitInfo.actualOrigin = vec4(0.f);
+  hitInfo.origin = vec4(origin, 10000.f), hitInfo.actualOrigin = vec4(0.f);
 };
 
 
@@ -134,7 +134,7 @@ void retranslateSurface(in uint pixelId) {
 void retranslateSurface(in PathTraceCommand cmd) {
   PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.pixelId);
   surfaceInfo.indices = uvec4(cmd.intersection.instanceId, cmd.intersection.geometryId, cmd.intersection.primitiveId, 0u);
-  surfaceInfo.origin = cmd.rayData.origin, surfaceInfo.actualOrigin = vec3(0.f);
+  surfaceInfo.origin = surfaceInfo.actualOrigin, surfaceInfo.origin.xyz = cmd.rayData.origin.xyz, surfaceInfo.actualOrigin = vec3(0.f);
   surfaceInfo.normal = cmd.normals, surfaceInfo.actualNormal = vec3(0.f);
   surfaceInfo.emission = vec4(cmd.emissiveColor.xyz, 1.f), surfaceInfo.emissionAccum = TYPE(0u);
   surfaceInfo.diffuse = vec4(cmd.diffuseColor.xyz, 1.f), surfaceInfo.diffuseAccum = TYPE(0u);
@@ -160,9 +160,9 @@ void main() {
     const uint pixelId = gcoord.x + extent.x * gcoord.y;
 
     //
-    const vec3 rayBegin = divW(vec4(vec3(tCoord, 0.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse;//fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId);
-    const vec3 rayEnd = divW(vec4(vec3(tCoord, 1.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse;
-    const vec3 rayDir = normalize(rayEnd.xyz - rayBegin.xyz);
+    vec3 rayBegin = divW(vec4(vec3(tCoord, 0.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse;//fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId);
+    vec3 rayEnd = divW(vec4(vec3(tCoord, 1.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse;
+    vec3 rayDir = normalize(rayEnd.xyz - rayBegin.xyz);
 
     //
     RayData rayData;
@@ -188,10 +188,11 @@ void main() {
     //
     PathTraceCommand cmd;
     cmd.pixelId = pixelId;
-    cmd.rayData = rayData;
-    cmd.rayData.origin = fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId).xyz;
-    cmd.tbn = getTBN(attrib); //cmd.rayData.origin += outRayNormal(cmd.rayData.direction.xyz, cmd.tbn[2].xyz) * 0.0001f;
     cmd.intersection = intersection;
+    cmd.hasHit = !all(lessThanEqual(cmd.intersection.barycentric, 0.f.xxx));
+    cmd.rayData = rayData;
+    cmd.rayData.origin = cmd.hasHit ? fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId).xyz : (cmd.rayData.origin + cmd.rayData.direction * 10000.f);
+    cmd.tbn = getTBN(attrib); //cmd.rayData.origin += outRayNormal(cmd.rayData.direction.xyz, cmd.tbn[2].xyz) * 0.0001f;
 
     //
     const MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), attrib.data[VERTEX_TEXCOORD].xy, cmd.tbn);
@@ -199,7 +200,6 @@ void main() {
 
     //
     cmd.normals = inRayNormal(cmd.rayData.direction.xyz, fullTransformNormal(instanceInfo, materialPix.color[MATERIAL_NORMAL].xyz, intersection.geometryId));
-    cmd.hasHit = !all(lessThanEqual(intersection.barycentric, 0.f.xxx));
     cmd.diffuseColor = toLinear(cmd.hasHit ? materialPix.color[MATERIAL_ALBEDO] : vec4(skyColor.xyz, 1.f));
     cmd.emissiveColor = toLinear(cmd.hasHit ? materialPix.color[MATERIAL_EMISSIVE] : vec4(0.f.xxx, 1.f)).xyz;
     cmd.PBR = cmd.hasHit ? materialPix.color[MATERIAL_PBR].xyz : 0.f.xxx;
@@ -207,9 +207,9 @@ void main() {
 
     //
     retranslateSurface(cmd);
-    retranslateHit(pixelId, 0);
-    retranslateHit(pixelId, 1);
-    retranslateHit(pixelId, 2);
+    retranslateHit(pixelId, 0, cmd.rayData.origin);
+    retranslateHit(pixelId, 1, cmd.rayData.origin);
+    retranslateHit(pixelId, 2, cmd.rayData.origin);
 
     // 
     if (firstPart) {
@@ -218,9 +218,9 @@ void main() {
         if (cmd.diffuseColor.a < 1.f) { pathTraceCommand(cmd, 1); } else { blankHit(cmd, 1); };
         if (luminance(cmd.diffuseColor.xyz) >= 0.001f && cmd.diffuseColor.a > 0.f) { pathTraceCommand(cmd, 2); } else { blankHit(cmd, 2); };
       } else {
-        backgroundHit(pixelId, 0, rayEnd);
-        backgroundHit(pixelId, 1, rayEnd);
-        backgroundHit(pixelId, 2, rayEnd);
+        backgroundHit(pixelId, 0, rayData.origin);
+        backgroundHit(pixelId, 1, rayData.origin);
+        backgroundHit(pixelId, 2, rayData.origin);
       };
     };
   };

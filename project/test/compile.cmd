@@ -6,6 +6,9 @@ glslangValidator --target-env spirv1.6 --client vulkan100 rasterize.vert -o opaq
 glslangValidator --target-env spirv1.6 --client vulkan100 rasterize.frag -DTRANSLUCENT -o translucent.frag.spv
 glslangValidator --target-env spirv1.6 --client vulkan100 rasterize.vert -DTRANSLUCENT -o translucent.vert.spv
 
+echo "Let's optimize?"
+pause
+
 spirv-opt --skip-validation -O test.comp.spv -o test.comp.spv
 spirv-opt --skip-validation -O post.comp.spv -o post.comp.spv
 spirv-opt --skip-validation -O resample.comp.spv -o resample.comp.spv

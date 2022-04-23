@@ -127,7 +127,7 @@ public:
 
     // set perspective
     controller->handleFrame();
-    auto persp = glm::perspective(60.f / 180 * glm::pi<float>(), float(renderArea.extent.width) / float(renderArea.extent.height), 0.001f, 10000.f);
+    auto persp = glm::perspective(60.f / 180 * glm::pi<float>(), float(renderArea.extent.width) / float(renderArea.extent.height), 0.001f, 20000.f);
     auto lkat = glm::lookAt(controller->viewPos, controller->viewCnt, controller->viewUp);
     uniformData.constants.perspective = glm::transpose(persp);
     uniformData.constants.perspectiveInverse = glm::transpose(glm::inverse(persp));
@@ -139,8 +139,8 @@ public:
     uniformData.frameCounter = 0u;
 
     // 
-    gltfLoader->updateInstances(0u, glm::dmat4(1.f) * glm::scale(glm::dmat4(1.0f), glm::dvec3(1.f * scale, 1.f * scale, 1.f * scale)) * glm::rotate(glm::dmat4(1.0f), (controller->time - controller->beginTime) * 0.05, glm::dvec3(0.f, 1.f, 0.f)));
-    //gltfLoader->updateInstances(0u, glm::dmat4(1.f) * glm::scale(glm::dmat4(1.0f), glm::dvec3(1.f * scale, 1.f * scale, 1.f * scale)));
+    //gltfLoader->updateInstances(0u, glm::dmat4(1.f) * glm::scale(glm::dmat4(1.0f), glm::dvec3(1.f * scale, 1.f * scale, 1.f * scale)) * glm::rotate(glm::dmat4(1.0f), (controller->time - controller->beginTime) * 0.05, glm::dvec3(0.f, 1.f, 0.f)));
+    gltfLoader->updateInstances(0u, glm::dmat4(1.f) * glm::scale(glm::dmat4(1.0f), glm::dvec3(1.f * scale, 1.f * scale, 1.f * scale)));
 
     //
 //#ifdef ENABLE_RENDERDOC

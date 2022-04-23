@@ -24,26 +24,40 @@ vec3 find_reflection_incident_point(in vec3 p0, in vec3 p1, in vec3 v0, in vec3 
 };
 
 //
-vec3 fetchSrcPos(in ivec2 srcInt) {
+vec4 fetchSrcPosRaw(in ivec2 srcInt) {
   PixelSurfaceInfoRef surf = getPixelSurface(uint(srcInt.x + srcInt.y * extent.x));
-  return surf.origin.xyz;
+  return vec4(surf.origin.xyz, 1.f);
+};
+
+//
+vec4 fetchSrcPos(in ivec2 srcInt) {
+  PixelSurfaceInfoRef surf = getPixelSurface(uint(srcInt.x + srcInt.y * extent.x));
+  vec4 center = vec4(surf.origin.xyz, 1.f);
+  if (all(lessThanEqual(abs(center.xyz),0.f.xxx))) {
+    center = (
+      fetchSrcPosRaw(clamp(srcInt+ivec2(0,1),int(0).xx,ivec2(extent)-1)) + 
+      fetchSrcPosRaw(clamp(srcInt+ivec2(1,0),int(0).xx,ivec2(extent)-1)) + 
+      fetchSrcPosRaw(clamp(srcInt+ivec2(0,-1),int(0).xx,ivec2(extent)-1)) + 
+      fetchSrcPosRaw(clamp(srcInt+ivec2(-1,0),int(0).xx,ivec2(extent)-1))
+    ) / 4.f;
+  };
+  return divW(vec4(center * constants.previousLookAt, 1.f) * constants.perspective);
 };
 
 //
 vec3 texSrcPos(in vec2 srcScreen) {
-  //return fetchSrcPos(ivec2(ceil(fract(srcScreen) * (extent) - 0.5f)));
-  //return fetchSrcPos(ivec2(round(fract(srcScreen) * (extent) - 0.49999f)));
-  return fetchSrcPos(ivec2(round(clamp(srcScreen, 0.f, 0.99999f) * (extent) - 0.49999f)));
+  return fetchSrcPos(clamp(ivec2(srcScreen*extent),int(0).xx,ivec2(extent)-1)).xyz;
 };
 
 //
 vec3 linearSrcPos(in vec2 txy) {
   const vec2 txs = extent;
-  const vec2 txd = 1.f/extent;
-  const vec2 ttf = fract(txy*txs.xy-0.5f);
+  const vec2 txd = 1.f/txs;
+  //const vec2 ttf = fract(txy*txs.xy-0.5f);
+  const vec2 ttf = fract(txy*txs.xy);
   const vec2 px = vec2(1.f-ttf.x,ttf.x), py = vec2(1.f-ttf.y,ttf.y);
   const mat2x2 i2 = outerProduct(px,py);
-  const vec2 pix = txy-(ttf*txd)+0.0001f;
+  const vec2 pix = txy-((ttf-0.0001f)*txd);
   const mat4x3 texels = mat4x3(
     texSrcPos(pix+vec2(0.f  ,0.f)), texSrcPos(pix+vec2(txd.x,0.f  )),
     texSrcPos(pix+vec2(txd.y,0.f)), texSrcPos(pix+vec2(txd.x,txd.y))
@@ -71,18 +85,19 @@ void reproject3D(in uint pixelId, in vec3 srcRayDir, in int type) {
   const vec3 dstRayDir = normalize(srcRayDir.xyz * toNormalMat(getPreviousInstanceTransform(instancedData.opaqueAddressInfo, surface.indices.x)) * toNormalMat(inverse(getInstanceTransform(instancedData.opaqueAddressInfo, surface.indices.x))));
 
   //
-  const vec3 srcHitFoundIntersection = find_reflection_incident_point( dstPos.xyz, srcHitPos.xyz, srcPos.xyz, normalize(srcNormal.xyz));
+  //const vec3 srcHitFoundIntersection = find_reflection_incident_point( dstPos.xyz, srcHitPos.xyz, srcPos.xyz, normalize(srcNormal.xyz));
+  const vec3 srcHitFoundIntersection = find_reflection_incident_point( srcPos.xyz, srcHitPos.xyz, dstPos.xyz, normalize(srcNormal.xyz));
   const vec4 srcHitPersp = vec4(vec4(srcHitFoundIntersection, 1.f) * constants.previousLookAt, 1.f) * constants.perspective;
   const vec2 srcScreen = (srcHitPersp.xy/srcHitPersp.w * 0.5f + 0.5f);
-  const ivec2 srcInt = ivec2(round(srcScreen * vec2(extent) - 0.49999f));
+  const ivec2 srcInt = ivec2(srcScreen * vec2(extent));
   const uint srcId = uint(srcInt.x + srcInt.y * extent.x);
   const bool srcValid = srcInt.x < extent.x && srcInt.y < extent.y;
 
   // 
-  const vec3 dstHitFoundIntersection = vec4(vec4(srcHitFoundIntersection.xyz, 1.f) * inverse(getPreviousInstanceTransform(instancedData.opaqueAddressInfo, data.indices.x)), 1.f) * getInstanceTransform(instancedData.opaqueAddressInfo, data.indices.x);
+  const vec3 dstHitFoundIntersection = dstPos;//vec4(vec4(srcHitFoundIntersection.xyz, 1.f) * inverse(getPreviousInstanceTransform(instancedData.opaqueAddressInfo, data.indices.x)), 1.f) * getInstanceTransform(instancedData.opaqueAddressInfo, data.indices.x);
   const vec4 dstHitPersp = vec4(vec4(dstHitFoundIntersection, 1.f) * constants.lookAt, 1.f) * constants.perspective;
   const vec2 dstScreen = (dstHitPersp.xy/dstHitPersp.w * 0.5f + 0.5f);
-  const ivec2 dstInt = ivec2(round(dstScreen * vec2(extent) - 0.49999f));
+  const ivec2 dstInt = ivec2(dstScreen * vec2(extent));
   const uint dstId = uint(dstInt.x + dstInt.y * extent.x);
   const bool dstValid = dstInt.x < extent.x && dstInt.y < extent.y;
 
@@ -94,11 +109,11 @@ void reproject3D(in uint pixelId, in vec3 srcRayDir, in int type) {
 
     //
     const vec4 dstSamplePos = texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), dstScreen);
-    const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz-(dstHitPersp.xyz/dstHitPersp.w)), vec3(2.f/extent, 0.001f)));
-    const bool srcValidDist = true;//distance(linearSrcPos(srcScreen), srcHitFoundIntersection.xyz) < 0.01f; // TODO: complex linear interpolation
+    const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz       -(dstHitPersp.xyz/dstHitPersp.w)), vec3(1.f/extent, 0.001f))) && distance(dstPos, dstHitFoundIntersection) < 0.001f;
+    const bool srcValidDist = all(lessThan(abs(linearSrcPos(srcScreen)-(srcHitPersp.xyz/srcHitPersp.w)), vec3(5.f/extent, 0.005f))); // TODO: complex linear interpolation
 
     //
-    if ( HIT_SRC.color.w > 0.f && dstValidDist && (HIT_SRC.origin.w < 10000.f && (srcHitPersp.z/srcHitPersp.w) < 1.f && srcValidDist || HIT_DST.color.w <= 0.f) ) {
+    if ( HIT_SRC.color.w > 0.f && dstValidDist && (srcValidDist || HIT_DST.color.w <= 0.f) ) {
       accumulate(HIT_DST, cvtRgb16Float(HIT_SRC.color));
       HIT_DST.actualOrigin = vec4(dstHitFoundIntersection, distance(dstHitPos, dstHitFoundIntersection));
       HIT_DST.actualIndices = HIT_SRC.indices;
@@ -125,7 +140,7 @@ void reprojectDiffuse(in uint srcId, in vec3 srcRayDir) {
   const vec4 dstPerspPos = vec4(vec4(dstPos.xyz, 1.f) * constants.lookAt, 1.f) * constants.perspective;
   const vec2 dstScreen = (dstPerspPos.xy/dstPerspPos.w) * 0.5f + 0.5f;
   const vec4 dstSamplePos = vec4(texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), dstScreen, 0).xyz, 1.f);
-  const ivec2 dstScreenPos = ivec2(round(dstScreen * vec2(extent) - 0.49999f));
+  const ivec2 dstScreenPos = ivec2(dstScreen * vec2(extent));
 
   //
   if (dstScreenPos.x < extent.x && dstScreenPos.y < extent.y) {
