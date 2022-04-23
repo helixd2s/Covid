@@ -352,7 +352,7 @@ namespace ANAMED {
       //
       if (exec->instanceDraws.size() > 0) {
         for (decltype(auto) instInfo : exec->instanceDraws) {
-          decltype(auto) multiDrawDirect = false ?
+          decltype(auto) multiDrawDirect = supportMultiDraw ?
             fnTp([cmdBuf = exec->cmdBuf, dispatch = deviceObj->getDispatch()](cpp21::shared_vector<vk::MultiDrawInfoEXT> const& multiDraw) {
               cmdBuf.drawMultiEXT(*multiDraw, 1u, 0u, sizeof(vk::MultiDrawInfoEXT), dispatch);
             }) :

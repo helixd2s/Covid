@@ -361,7 +361,7 @@ namespace ANAMED {
       "VK_KHR_ray_query", 
       "VK_KHR_ray_tracing_pipeline", 
       "VK_KHR_swapchain", 
-      //"VK_EXT_multi_draw", 
+      "VK_EXT_multi_draw", 
       "VK_KHR_separate_depth_stencil_layouts", 
       "VK_EXT_depth_range_unrestricted", 
       "VK_EXT_depth_clip_enable", 
