@@ -22,6 +22,9 @@ const float INV_TWO_PI = 0.15915494309189535f;
 #extension GL_EXT_shader_explicit_arithmetic_types_float32 : require
 #extension GL_EXT_buffer_reference : require
 #extension GL_EXT_buffer_reference2 : require
+#extension GL_EXT_buffer_reference_uvec2 : require
+//#extension GLSL_EXT_buffer_reference : require
+//#extension GLSL_EXT_buffer_reference2 : require
 #extension GL_EXT_nonuniform_qualifier : require
 #extension GL_EXT_samplerless_texture_functions : require
 #extension GL_EXT_ray_query : enable
@@ -76,6 +79,15 @@ struct Constants
 #define TYPE uvec4
 #endif
 
+// but may not to be...
+layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer PixelHitInfoRef {
+  vec4 color;
+  vec4 direction;
+  vec4 actualDirection;
+  TYPE accum;
+  uvec4 indices;
+};
+
 //
 struct PixelHitInfo {
   vec4 color;
@@ -83,6 +95,19 @@ struct PixelHitInfo {
   vec4 actualDirection;
   TYPE accum;
   uvec4 indices;
+};
+
+// but may not to be...
+layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer PixelSurfaceInfoRef {
+  vec3 origin;
+  vec3 normal;
+  vec3 actualOrigin;
+  vec3 actualNormal;
+  uvec4 indices;
+  vec4 emission;
+  vec4 diffuse;
+  TYPE emissionAccum;
+  TYPE diffuseAccum;
 };
 
 //
@@ -98,13 +123,53 @@ struct PixelSurfaceInfo {
   TYPE diffuseAccum;
 };
 
-//
-struct PixelInfo {
-  PixelHitInfo diffuse;
+// but may not to be...
+layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer PixelInfoRef {
   PixelHitInfo reflection;
   PixelHitInfo transparency;
+  PixelHitInfo diffuse;
   PixelSurfaceInfo surface;
 };
+
+//
+struct PixelInfo {
+  PixelHitInfo reflection;
+  PixelHitInfo transparency;
+  PixelHitInfo diffuse;
+  PixelSurfaceInfo surface;
+};
+
+// but may not to be...
+layout(buffer_reference, scalar, buffer_reference_align = 1) coherent buffer PixelData {
+  PixelInfo pixels[];
+};
+
+// 
+layout(set = 0, binding = 0, scalar) uniform MatrixBlock
+{
+  uint32_t framebufferAttachments[4]; // framebuffers
+  uvec2 extent; uint frameCounter, reserved0;
+  Constants constants;
+  PixelData pixelData;
+  //uint64_t pixelData;
+  uint32_t background;
+
+  //TestVertices vertices;
+  // for test
+  //uint64_t verticesAddress;
+};
+
+//
+#define sizeof(Type) uint64_t(Type(uint64_t(0))+1)
+
+//
+PixelHitInfoRef getPixelReflection(in uint pixelId)   { return PixelHitInfoRef(uint64_t(pixelData) + uint64_t(pixelId) * sizeof(PixelInfoRef) + 0u*sizeof(PixelHitInfoRef)); };
+PixelHitInfoRef getPixelTransparency(in uint pixelId) { return PixelHitInfoRef(uint64_t(pixelData) + uint64_t(pixelId) * sizeof(PixelInfoRef) + 1u*sizeof(PixelHitInfoRef)); };
+PixelHitInfoRef getPixelDiffuse(in uint pixelId)      { return PixelHitInfoRef(uint64_t(pixelData) + uint64_t(pixelId) * sizeof(PixelInfoRef) + 2u*sizeof(PixelHitInfoRef)); };
+PixelSurfaceInfoRef getPixelSurface(in uint pixelId)  { return PixelSurfaceInfoRef(uint64_t(pixelData) + uint64_t(pixelId) * sizeof(PixelInfoRef) + 3u*sizeof(PixelHitInfoRef)); };
+
+//
+PixelHitInfoRef getPixelHitInfo(in uint pixelId, in uint type) { return PixelHitInfoRef(uint64_t(pixelData) + uint64_t(pixelId) * sizeof(PixelInfoRef) + type*sizeof(PixelHitInfoRef)); };
 
 //
 vec2 lcts(in vec3 direct) { return vec2(fma(atan(direct.z,direct.x),INV_TWO_PI,0.5f), acos(direct.y)*INV_PI); };
@@ -126,25 +191,6 @@ vec4 divW(in vec4 coord) {
 uint sgn(in uint val) { return uint(0 < val) - uint(val < 0); }
 uint tiled(in uint sz, in uint gmaxtile) {
   return sz <= 0 ? 0 : (sz / gmaxtile + sgn(sz % gmaxtile));
-};
-
-// but may not to be...
-layout(buffer_reference, scalar, buffer_reference_align = 1) coherent buffer PixelData {
-  PixelInfo pixels[];
-};
-
-// 
-layout(set = 0, binding = 0, scalar) uniform MatrixBlock
-{
-  uint32_t framebufferAttachments[4]; // framebuffers
-  uvec2 extent; uint frameCounter, reserved0;
-  Constants constants;
-  PixelData pixelData;
-  uint32_t background;
-
-  //TestVertices vertices;
-  // for test
-  //uint64_t verticesAddress;
 };
 
 //
@@ -177,43 +223,27 @@ void accumulateSplit(in uint image, in ivec2 coord, in TYPE data) {
 };
 
 //
-void accumulateDiffuse(in uint pixelId, in TYPE data) {
-  atomicAdd(pixelData.pixels[pixelId].diffuse.accum.x, data.x);
-  atomicAdd(pixelData.pixels[pixelId].diffuse.accum.y, data.y);
-  atomicAdd(pixelData.pixels[pixelId].diffuse.accum.z, data.z);
-  atomicAdd(pixelData.pixels[pixelId].diffuse.accum.w, data.w);
+void accumulate(inout PixelHitInfoRef hitInfo, in TYPE data) {
+  atomicAdd(hitInfo.accum.x, data.x);
+  atomicAdd(hitInfo.accum.y, data.y);
+  atomicAdd(hitInfo.accum.z, data.z);
+  atomicAdd(hitInfo.accum.w, data.w);
 };
 
 //
-void accumulateDiffuseTex(in uint pixelId, in TYPE data) {
-  atomicAdd(pixelData.pixels[pixelId].surface.diffuseAccum.x, data.x);
-  atomicAdd(pixelData.pixels[pixelId].surface.diffuseAccum.y, data.y);
-  atomicAdd(pixelData.pixels[pixelId].surface.diffuseAccum.z, data.z);
-  atomicAdd(pixelData.pixels[pixelId].surface.diffuseAccum.w, data.w);
+void accumulateDiffuseTex(inout PixelSurfaceInfoRef surface, in TYPE data) {
+  atomicAdd(surface.diffuseAccum.x, data.x);
+  atomicAdd(surface.diffuseAccum.y, data.y);
+  atomicAdd(surface.diffuseAccum.z, data.z);
+  atomicAdd(surface.diffuseAccum.w, data.w);
 };
 
 //
-void accumulateEmissiveTex(in uint pixelId, in TYPE data) {
-  atomicAdd(pixelData.pixels[pixelId].surface.emissionAccum.x, data.x);
-  atomicAdd(pixelData.pixels[pixelId].surface.emissionAccum.y, data.y);
-  atomicAdd(pixelData.pixels[pixelId].surface.emissionAccum.z, data.z);
-  atomicAdd(pixelData.pixels[pixelId].surface.emissionAccum.w, data.w);
-};
-
-//
-void accumulateReflection(in uint pixelId, in TYPE data) {
-  atomicAdd(pixelData.pixels[pixelId].reflection.accum.x, data.x);
-  atomicAdd(pixelData.pixels[pixelId].reflection.accum.y, data.y);
-  atomicAdd(pixelData.pixels[pixelId].reflection.accum.z, data.z);
-  atomicAdd(pixelData.pixels[pixelId].reflection.accum.w, data.w);
-};
-
-//
-void accumulateTransparency(in uint pixelId, in TYPE data) {
-  atomicAdd(pixelData.pixels[pixelId].transparency.accum.x, data.x);
-  atomicAdd(pixelData.pixels[pixelId].transparency.accum.y, data.y);
-  atomicAdd(pixelData.pixels[pixelId].transparency.accum.z, data.z);
-  atomicAdd(pixelData.pixels[pixelId].transparency.accum.w, data.w);
+void accumulateEmissiveTex(inout PixelSurfaceInfoRef surface, in TYPE data) {
+  atomicAdd(surface.emissionAccum.x, data.x);
+  atomicAdd(surface.emissionAccum.y, data.y);
+  atomicAdd(surface.emissionAccum.z, data.z);
+  atomicAdd(surface.emissionAccum.w, data.w);
 };
 
 // but may not to be...

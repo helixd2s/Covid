@@ -35,7 +35,10 @@ vec3 find_reflection_incident_point(in vec3 p0, in vec3 p1, in vec3 v0, in vec3 
 
 //
 //void reproject3D(in PixelSurfaceInfo surface, in PixelHitInfo data, in uint pixelId, in vec3 srcRayDir, in int type) {
-void reproject3D(in PixelSurfaceInfo surface, in PixelHitInfo data, in uint pixelId, in vec3 srcRayDir, in int type) {
+void reproject3D(in uint pixelId, in vec3 srcRayDir, in int type) {
+  PixelSurfaceInfoRef surface = getPixelSurface(pixelId);
+  PixelHitInfoRef data = getPixelHitInfo(pixelId, type);
+
   //
   const vec3 srcHitPos = data.direction.xyz + data.direction.w * srcRayDir;
   const vec3 srcPos = data.direction.xyz;
@@ -54,50 +57,42 @@ void reproject3D(in PixelSurfaceInfo surface, in PixelHitInfo data, in uint pixe
 
   //
   const vec4 srcHitPersp = vec4(vec4(srcHitFoundIntersection, 1.f) * constants.previousLookAt, 1.f) * constants.perspective;
-  const vec4 dstHitPersp = vec4(vec4(dstPos, 1.f) * constants.lookAt, 1.f) * constants.perspective;
-  const vec2 screenSrc = (srcHitPersp.xy/srcHitPersp.w * 0.5f + 0.5f);
-  const vec2 screenDst = (dstHitPersp.xy/dstHitPersp.w * 0.5f + 0.5f);
-  const ivec2 intSrc = ivec2(screenSrc * vec2(extent));
-  const ivec2 intDst = ivec2(screenDst * vec2(extent));
-  const uint srcId = uint(intSrc.x + intSrc.y * extent.x);
-  const uint dstId = uint(intDst.x + intDst.y * extent.x);
-  const bool validSrc = intSrc.x < extent.x && intSrc.y < extent.y;
-  const bool validDst = intDst.x < extent.x && intDst.y < extent.y;
-
-//
-#define SURF_DST pixelData.pixels[dstId].surface
-#define REFL_DST pixelData.pixels[dstId].reflection
-#define TRNS_DST pixelData.pixels[dstId].transparency
-
-// 
-#define SURF_SRC pixelData.pixels[srcId].surface
-#define REFL_SRC pixelData.pixels[srcId].reflection
-#define TRNS_SRC pixelData.pixels[srcId].transparency
+  const vec2 srcScreen = (srcHitPersp.xy/srcHitPersp.w * 0.5f + 0.5f);
+  const ivec2 srcInt = ivec2(srcScreen * vec2(extent));
+  const uint srcId = uint(srcInt.x + srcInt.y * extent.x);
+  const bool srcValid = srcInt.x < extent.x && srcInt.y < extent.y;
 
   // 
-  if (validSrc && validDst) {
+  const vec4 dstHitPersp = vec4(vec4(dstPos, 1.f) * constants.lookAt, 1.f) * constants.perspective;
+  const vec2 dstScreen = (dstHitPersp.xy/dstHitPersp.w * 0.5f + 0.5f);
+  const ivec2 dstInt = ivec2(dstScreen * vec2(extent));
+  const uint dstId = uint(dstInt.x + dstInt.y * extent.x);
+  const bool dstValid = dstInt.x < extent.x && dstInt.y < extent.y;
+
+  // 
+  if (srcValid && dstValid) {
     // 
-    const bool validDstDist = distance(texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), screenDst.xy, 0).xyz, dstPos.xyz) < 0.001f;
+    const bool dstValidDist = distance(texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), dstScreen.xy, 0).xyz, dstPos.xyz) < 0.001f;
 
     //
-    if ( type == 0 && REFL_SRC.color.w > 0.f && validDstDist && (REFL_SRC.direction.w < 10000.f || REFL_DST.color.w <= 0.f)) {
-      accumulateReflection(dstId, cvtRgb16Float(REFL_SRC.color));
-      pixelData.pixels[dstId].reflection.actualDirection = vec4(dstPos, distance(dstHitPos, dstPos));
-      //accumulateReflection(pix, cvtRgb16Float(data.color));
-      //REFL.actualDirection = vec4(dstPos, hitDist);
-    };
-    if ( type == 1 && TRNS_SRC.color.w > 0.f && validDstDist && (TRNS_SRC.direction.w < 10000.f || TRNS_DST.color.w <= 0.f)) { 
-      accumulateTransparency(dstId, cvtRgb16Float(TRNS_SRC.color));
-      pixelData.pixels[dstId].transparency.actualDirection = vec4(dstPos, distance(dstHitPos, dstPos));
-      //accumulateTransparency(pix, cvtRgb16Float(data.color));
-      //TRNS.actualDirection = vec4(dstPos, hitDist);
+    PixelSurfaceInfoRef SURF_SRC = getPixelSurface(srcId), SURF_DST = getPixelSurface(dstId);
+    PixelHitInfoRef HIT_SRC = getPixelHitInfo(srcId, type), HIT_DST = getPixelHitInfo(dstId, type);
+
+    //
+    if ( HIT_SRC.color.w > 0.f && dstValidDist && (HIT_DST.direction.w < 10000.f || HIT_DST.color.w <= 0.f)) {
+      accumulate(HIT_DST, cvtRgb16Float(HIT_SRC.color));
+      HIT_DST.actualDirection = vec4(dstPos, distance(dstHitPos, dstPos));
     };
   };
 
 };
 
 //
-void reprojectDiffuse(in PixelSurfaceInfo surface, in PixelHitInfo data, in uint pixelId, in vec3 srcRayDir) {
+void reprojectDiffuse(in uint srcId, in vec3 srcRayDir) {
+  PixelSurfaceInfoRef surface = getPixelSurface(srcId);
+  PixelHitInfoRef data = getPixelHitInfo(srcId, 2);
+
+  //
   const vec3 srcPos = surface.origin.xyz;
   const vec3 srcNormal = surface.normal.xyz;
 
@@ -113,13 +108,17 @@ void reprojectDiffuse(in PixelSurfaceInfo surface, in PixelHitInfo data, in uint
   const ivec2 dstScreenPos = ivec2(dstScreen * vec2(extent));
 
   //
-  const uint dstId = uint(dstScreenPos.x + dstScreenPos.y * extent.x);
-  if (dstScreenPos.x < extent.x && dstScreenPos.y < extent.y && data.color.w > 0.f && (distance( dstSamplePos.xyz, dstPos.xyz) < 0.001f || pixelData.pixels[dstId].diffuse.color.w <= 0.f)) {
-    accumulateDiffuse(dstId, cvtRgb16Float(data.color));
-    accumulateDiffuseTex(dstId, cvtRgb16Float(surface.diffuse));
-    accumulateEmissiveTex(dstId, cvtRgb16Float(surface.emission));
-    pixelData.pixels[dstId].surface.actualOrigin.xyz = dstPos.xyz;
-    pixelData.pixels[dstId].surface.actualNormal.xyz = dstNormal.xyz;
+  if (dstScreenPos.x < extent.x && dstScreenPos.y < extent.y) {
+    const uint dstId = uint(dstScreenPos.x + dstScreenPos.y * extent.x);
+    PixelSurfaceInfoRef dstSurface = getPixelSurface(dstId);
+    PixelHitInfoRef dstData = getPixelHitInfo(dstId, 2);
+    if (data.color.w > 0.f && (distance( dstSamplePos.xyz, dstPos.xyz) < 0.001f || pixelData.pixels[dstId].diffuse.color.w <= 0.f)) {
+      accumulate(dstData, cvtRgb16Float(data.color));
+      accumulateDiffuseTex(dstSurface, cvtRgb16Float(surface.diffuse));
+      accumulateEmissiveTex(dstSurface, cvtRgb16Float(surface.emission));
+      pixelData.pixels[dstId].surface.actualOrigin.xyz = dstPos.xyz;
+      pixelData.pixels[dstId].surface.actualNormal.xyz = dstNormal.xyz;
+    };
   };
 }
 
@@ -135,7 +134,7 @@ void main() {
   const vec3 srcRayDir = normalize(srcRayEnd.xyz - srcRayBegin.xyz);
 
   //
-  reprojectDiffuse(pixelData.pixels[pixelId].surface, pixelData.pixels[pixelId].diffuse, pixelId, srcRayDir);
-  reproject3D(pixelData.pixels[pixelId].surface, pixelData.pixels[pixelId].reflection, pixelId, srcRayDir, 0);
-  reproject3D(pixelData.pixels[pixelId].surface, pixelData.pixels[pixelId].transparency, pixelId, srcRayDir, 1);
+  reprojectDiffuse(pixelId, srcRayDir);
+  reproject3D(pixelId, srcRayDir, 0);
+  reproject3D(pixelId, srcRayDir, 1);
 };

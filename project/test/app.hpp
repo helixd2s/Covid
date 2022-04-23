@@ -64,9 +64,9 @@ struct PixelSurfaceInfo {
 
 //
 struct PixelInfo {
-  PixelHitInfo diffuse;
   PixelHitInfo reflection;
   PixelHitInfo transparency;
+  PixelHitInfo diffuse;
   PixelSurfaceInfo surface;
 };
 
