@@ -106,8 +106,12 @@ void reproject3D(in uint pixelId, in vec3 srcRayDir, in int type) {
     PixelSurfaceInfoRef SURF_SRC = getPixelSurface(srcId), SURF_DST = getPixelSurface(dstId);
     PixelHitInfoRef HIT_SRC = getPixelHitInfo(srcId, type), HIT_DST = getPixelHitInfo(dstId, type);
 
+    //
+    const vec2 pixSize = 1.f/extent;
+    const vec4 dstSamplePos = texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), dstScreen);
+
     // TODO: screen space coordinates
-    const bool dstValidDist = distance(texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), dstScreen.xy, 0).xyz, dstPos.xyz) < 0.01f;
+    const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz-(dstHitPersp.xyz/dstHitPersp.w)), vec3(pixSize, 0.001f)));
     const bool srcValidDist = true;//distance(linearSrcPos(srcScreen), srcHitFoundIntersection.xyz) < 0.01f; // TODO: complex linear interpolation
 
     //
@@ -142,14 +146,18 @@ void reprojectDiffuse(in uint srcId, in vec3 srcRayDir) {
   //
   if (dstScreenPos.x < extent.x && dstScreenPos.y < extent.y) {
     const uint dstId = uint(dstScreenPos.x + dstScreenPos.y * extent.x);
+    const vec2 pixSize = 1.f/extent;
+    const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz-(dstPerspPos.xyz/dstPerspPos.w)), vec3(pixSize, 0.001f)));
+
     PixelSurfaceInfoRef dstSurface = getPixelSurface(dstId);
     PixelHitInfoRef dstData = getPixelHitInfo(dstId, 2);
-    if (data.color.w > 0.f && (distance( dstSamplePos.xyz, dstPos.xyz) < 0.001f || pixelData.pixels[dstId].diffuse.color.w <= 0.f)) {
+
+    if (data.color.w > 0.f && (dstValidDist || dstData.color.w <= 0.f)) {
       accumulate(dstData, cvtRgb16Float(data.color));
       accumulateDiffuseTex(dstSurface, cvtRgb16Float(surface.diffuse));
       accumulateEmissiveTex(dstSurface, cvtRgb16Float(surface.emission));
-      pixelData.pixels[dstId].surface.actualOrigin.xyz = dstPos.xyz;
-      pixelData.pixels[dstId].surface.actualNormal.xyz = dstNormal.xyz;
+      dstSurface.actualOrigin.xyz = dstPos.xyz;
+      dstSurface.actualNormal.xyz = dstNormal.xyz;
     };
   };
 }
