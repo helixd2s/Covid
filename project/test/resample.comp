@@ -79,7 +79,7 @@ void reproject3D(in uint pixelId, in vec3 srcRayDir, in int type) {
     PixelHitInfoRef HIT_SRC = getPixelHitInfo(srcId, type), HIT_DST = getPixelHitInfo(dstId, type);
 
     //
-    if ( HIT_SRC.color.w > 0.f && dstValidDist && (HIT_DST.direction.w < 10000.f || HIT_DST.color.w <= 0.f)) {
+    if ( HIT_SRC.color.w > 0.f && dstValidDist && (HIT_SRC.direction.w < 10000.f || HIT_DST.color.w <= 0.f)) {
       accumulate(HIT_DST, cvtRgb16Float(HIT_SRC.color));
       HIT_DST.actualDirection = vec4(dstPos, distance(dstHitPos, dstPos));
     };

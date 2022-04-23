@@ -29,7 +29,7 @@ RayData handleIntersection(in RayData rayData, in IntersectionInfo intersection,
   //
   mat3x3 tbn = getTBN(attrib);
   MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), texcoord.xy, tbn);
-  const vec3 normals = inRayNormal(rayData.direction, fullTransformNormal(instanceInfo, attrib.data[VERTEX_NORMALS].xyz, intersection.geometryId));//materialPix.color[MATERIAL_NORMAL].xyz;
+  const vec3 normals = inRayNormal(rayData.direction, fullTransformNormal(instanceInfo, materialPix.color[MATERIAL_NORMAL].xyz, intersection.geometryId));//materialPix.color[MATERIAL_NORMAL].xyz;
 
   // 
   vec4 emissiveColor = toLinear(materialPix.color[MATERIAL_EMISSIVE]);

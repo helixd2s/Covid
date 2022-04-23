@@ -17,6 +17,128 @@ layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
 //
 #define ENABLE_CHECKERBOARD
 
+//
+struct PathTraceCommand {
+  RayData rayData;
+  PixelSurfaceInfoRef surface;
+  IntersectionInfo intersection;
+  vec3 normals;
+  vec3 rayDir;
+  vec3 PBR;
+  mat3x3 tbn;
+  uint pixelId;
+  float reflCoef;
+  vec4 diffuseColor;
+  vec3 emissiveColor;
+  bool hasHit;
+};
+
+//
+struct PathTraceOutput {
+  vec3 normals; float hitT;
+  uvec4 indices;
+};
+
+//
+PathTraceOutput pathTraceCommand(in PathTraceCommand cmd, in uint type) {
+  RayData rayData = cmd.rayData;
+
+  //
+  vec3 originSeedXYZ = vec3(random(rayData.launchId.xy), random(rayData.launchId.xy), random(rayData.launchId.xy));
+  PathTraceOutput outp;
+
+  // 
+  if (type == 0) {
+    rayData.direction.xyz = normalize(reflective(originSeedXYZ, rayData.direction.xyz, cmd.normals.xyz, cmd.PBR.g));;
+    rayData.energy = f16vec4(metallicMult(1.f.xxx, cmd.diffuseColor.xyz, cmd.PBR.b), 1.f);
+    rayData.emission = f16vec4(0.f.xxx, 1.f);
+  } else 
+  if (type == 1) {
+    //rayData.direction.xyz = rayData.direction.xyz;
+    rayData.energy = f16vec4(1.f.xxx, 1.f);//f16vec4(metallicMult(1.f.xxx, materialPix.color[MATERIAL_ALBEDO].xyz, metallicFactor), 1.f);
+    rayData.emission = f16vec4(0.f.xxx, 1.f);
+  } else {
+    rayData.direction.xyz = normalize(randomCosineWeightedHemispherePoint(originSeedXYZ, cmd.normals));
+    rayData.energy = f16vec4(1.f.xxx, 1.f);
+    rayData.emission = f16vec4(0.f.xxx, 1.f);
+  };
+
+  //
+  rayData.origin += outRayNormal(rayData.direction.xyz, cmd.tbn[2].xyz) * 0.0001f;
+  rayData = pathTrace(rayData, outp.hitT, outp.normals, outp.indices);
+
+  //
+  vec4 finalColor = vec4(vec3(rayData.emission.xyz), 1.f);
+  finalColor = clamp(finalColor, vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f));
+
+  //
+  float transpCoef = cmd.diffuseColor.a;
+  float reflCoef = cmd.reflCoef;
+
+  // 
+  vec4 additional = vec4(0.f);
+  if (type == 0) { additional = finalColor * vec4(reflCoef.xxx, 1.f); };
+  if (type == 1) { additional = finalColor * vec4(((1.f - reflCoef) * (1.f - transpCoef)).xxx, 1.f); };
+  if (type == 2) { additional = finalColor * vec4(((1.f - reflCoef) * transpCoef).xxx, 1.f); };
+
+  //
+  PixelHitInfoRef hitInfo = getPixelHitInfo(cmd.pixelId, type);
+  hitInfo.color += additional;
+  hitInfo.accum = TYPE(0u);
+  hitInfo.indices = outp.indices;
+  hitInfo.direction = vec4(cmd.rayData.origin.xyz, 0.f);
+  hitInfo.actualDirection = vec4(0.f);
+
+  // 
+  return outp;
+};
+
+//
+void retranslateSurface(in uint pixelId) {
+  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
+  surfaceInfo.indices = uvec4(0u.xxxx);
+  surfaceInfo.origin = surfaceInfo.actualOrigin;
+  surfaceInfo.normal = surfaceInfo.actualNormal;
+  surfaceInfo.emission = cvtRgb16Acc(surfaceInfo.emissionAccum);
+  surfaceInfo.diffuse = cvtRgb16Acc(surfaceInfo.diffuseAccum);
+  surfaceInfo.emissionAccum = TYPE(0u);
+  surfaceInfo.diffuseAccum = TYPE(0u);
+  surfaceInfo.actualOrigin = vec3(0.f);
+  surfaceInfo.actualNormal = vec3(0.f);
+};
+
+// 
+void initialSurface(in PathTraceCommand cmd) {
+  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.pixelId);
+  surfaceInfo.indices = uvec4(cmd.intersection.instanceId, cmd.intersection.geometryId, cmd.intersection.primitiveId, 0u);
+  surfaceInfo.origin = cmd.rayData.origin.xyz;
+  surfaceInfo.normal = cmd.normals;//tbn[2].xyz;
+  surfaceInfo.emission = vec4(cmd.emissiveColor.xyz * (1.f - cmd.reflCoef), 1.f);
+  surfaceInfo.diffuse = vec4(cmd.diffuseColor.xyz, 1.f);
+  surfaceInfo.emissionAccum = TYPE(0u);
+  surfaceInfo.diffuseAccum = TYPE(0u);
+  surfaceInfo.actualOrigin = vec3(0.f);
+  surfaceInfo.actualNormal = vec3(0.f);
+};
+
+//
+void retranslateHit(in uint pixelId, in uint type) {
+  PixelHitInfoRef hitInfo = getPixelHitInfo(pixelId, type);
+  hitInfo.color = cvtRgb16Acc(hitInfo.accum);
+  hitInfo.accum = TYPE(0u);
+  hitInfo.direction = hitInfo.actualDirection;
+  hitInfo.actualDirection = vec4(0.f);
+};
+
+//
+void backgroundHit(in uint pixelId, in uint type, in vec3 rayEnd) {
+  PixelHitInfoRef hitInfo = getPixelHitInfo(pixelId, type);
+  hitInfo.color = ((type == 2) ? vec4(1.f.xxxx) : vec4(0.f.xxx, 1.f));// + ;
+  hitInfo.accum = TYPE(0u);
+  hitInfo.direction = vec4(rayEnd, 10000.f);
+  hitInfo.actualDirection = vec4(0.f);
+};
+
 // 
 void main() {
 #ifdef ENABLE_CHECKERBOARD
@@ -37,7 +159,7 @@ void main() {
     const vec3 rayBegin = divW(vec4(vec3(tCoord, 0.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse;//fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId);
     const vec3 rayEnd = divW(vec4(vec3(tCoord, 1.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse;
     const vec3 rayDir = normalize(rayEnd.xyz - rayBegin.xyz);
-    
+
     //
     RayData rayData;
     rayData.launchId = u16vec2(gcoord.xy);
@@ -60,183 +182,52 @@ void main() {
     GeometryExtAttrib attrib = interpolate(geometry, intersection.barycentric);
 
     //
-    const vec3 rayOrigin = fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId).xyz;
-    const vec4 texcoord = attrib.data[VERTEX_TEXCOORD];
-    const vec4 tangent = attrib.data[VERTEX_TANGENT];
+    PathTraceCommand cmd;
+    cmd.pixelId = pixelId;
+    cmd.rayData = rayData;
+    cmd.rayData.origin = fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId).xyz;
+    cmd.tbn = getTBN(attrib); //cmd.rayData.origin += outRayNormal(cmd.rayData.direction.xyz, cmd.tbn[2].xyz) * 0.0001f;
+    cmd.intersection = intersection;
 
     //
-    mat3x3 tbn = getTBN(attrib);
-    MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), texcoord.xy, tbn);
-    const vec3 mNormal = materialPix.color[MATERIAL_NORMAL].xyz;
-    const vec3 normals = inRayNormal(rayDir, fullTransformNormal(instanceInfo, mNormal, intersection.geometryId));
-    bool hasHit = !all(lessThanEqual(intersection.barycentric, 0.f.xxx));
+    const MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), attrib.data[VERTEX_TEXCOORD].xy, cmd.tbn);
+    const vec4 skyColor = pow(texture(sampler2D(textures[background], samplers[0]), lcts(cmd.rayData.direction.xyz)), vec4(1.f/2.2f.xxx, 1.f));
+
+    //
+    cmd.normals = inRayNormal(cmd.rayData.direction.xyz, fullTransformNormal(instanceInfo, materialPix.color[MATERIAL_NORMAL].xyz, intersection.geometryId));
+    cmd.hasHit = !all(lessThanEqual(intersection.barycentric, 0.f.xxx));
+    cmd.diffuseColor = toLinear(cmd.hasHit ? materialPix.color[MATERIAL_ALBEDO] : vec4(skyColor.xyz, 1.f));
+    cmd.emissiveColor = toLinear(cmd.hasHit ? materialPix.color[MATERIAL_EMISSIVE] : vec4(0.f.xxx, 1.f)).xyz;
+    cmd.PBR = cmd.hasHit ? materialPix.color[MATERIAL_PBR].xyz : 0.f.xxx;
+    cmd.reflCoef = (cmd.PBR.b + (fresnel_schlick(0.f, dot(reflect(cmd.rayData.direction.xyz, cmd.normals), cmd.normals))) * (1.f - cmd.PBR.b)) * (1.f - luminance(cmd.emissiveColor.xyz));
+
+    //
+    //retranslateSurface(pixelId);
+    initialSurface(cmd);
+    retranslateHit(pixelId, 0);
+    retranslateHit(pixelId, 1);
+    retranslateHit(pixelId, 2);
 
     // 
-    vec4 skyColor = pow(texture(sampler2D(textures[background], samplers[0]), lcts(rayDir)), vec4(1.f/2.2f.xxx, 1.f));
-    vec4 diffuseColor = toLinear(hasHit ? materialPix.color[MATERIAL_ALBEDO] : vec4(skyColor.xyz, 1.f));
-    vec4 emissiveColor = toLinear(hasHit ? materialPix.color[MATERIAL_EMISSIVE] : vec4(0.f.xxx, 1.f));
-    float metallicFactor = hasHit ? materialPix.color[MATERIAL_PBR].b : 0.f;
-    float roughnessFactor = hasHit ? materialPix.color[MATERIAL_PBR].g : 0.f;
-    vec3 originSeedXYZ = vec3(random(rayData.launchId.xy), random(rayData.launchId.xy), random(rayData.launchId.xy));
-
-    // 
-    vec4 finalColor = vec4(1.f.xxx, 1.f);
-    vec4 reflColor = vec4(0.f.xxx, 0.f);
-    vec4 transpColor = vec4(0.f.xxx, 0.f);
-
-    //
-    RayData reflRayData = rayData;
-    RayData diffRayData = rayData;
-    RayData transpRayData = rayData;
-
-    //
-    const vec3 reflDir = normalize(reflective(originSeedXYZ, rayDir.xyz, normals.xyz, roughnessFactor));
-    const vec3 diffuseDir = normalize(randomCosineWeightedHemispherePoint(originSeedXYZ, normals));
-
-    //
-    uvec4 reflIndices = uvec4(0u), diffuseIndices = uvec4(0u), transpIndices = uvec4(0u);
-    float reflHit = hasHit ? 0.f : 10000.f, diffuseHit = hasHit ? 0.f : 10000.f, transpHit = hasHit ? 0.f : 10000.f;
-    vec3 reflNorm = 0.f.xxx, diffuseNorm = 0.f.xxx, transpNorm = 0.f.xxx;
-
-    // 
-    if (hasHit) {
-      // 
-      diffRayData.direction.xyz = diffuseDir;
-      diffRayData.origin = rayOrigin.xyz + outRayNormal(diffRayData.direction.xyz, normals.xyz) * 0.0001f;
-      diffRayData.energy = f16vec4(1.f.xxx, 1.f);
-      diffRayData.emission = f16vec4(0.f.xxx, 1.f);
-      diffRayData = luminance(diffuseColor.xyz) >= 0.001f ? pathTrace(diffRayData, diffuseHit, reflNorm, diffuseIndices) : diffRayData;
-
-      // 
-      reflRayData.direction.xyz = reflDir;
-      reflRayData.origin = rayOrigin.xyz + outRayNormal(reflRayData.direction.xyz, normals.xyz) * 0.0001f;
-      reflRayData.energy = f16vec4(metallicMult(1.f.xxx, materialPix.color[MATERIAL_ALBEDO].xyz, metallicFactor), 1.f);
-      reflRayData.emission = f16vec4(0.f.xxx, 1.f);
-      reflRayData = pathTrace(reflRayData, reflHit, diffuseNorm, reflIndices);
-
-      //
-      if (diffuseColor.a < 1.f) {
-        transpRayData.direction.xyz = rayDir;
-        transpRayData.origin = rayOrigin.xyz + outRayNormal(transpRayData.direction.xyz, normals.xyz) * 0.0001f;
-        transpRayData.energy = f16vec4(1.f.xxx, 1.f);//f16vec4(metallicMult(1.f.xxx, materialPix.color[MATERIAL_ALBEDO].xyz, metallicFactor), 1.f);
-        transpRayData.emission = f16vec4(0.f.xxx, 1.f);
-        transpRayData = pathTrace(transpRayData, transpHit, transpNorm, transpIndices);
-      };
-
-      // I currently, have no time for fresnel
-      reflColor = vec4(vec3(reflRayData.emission.xyz), 1.f);
-      finalColor = vec4(vec3(diffRayData.emission.xyz), 1.f);
-      transpColor = vec4(vec3(transpRayData.emission.xyz), 1.f);
-    };
-
-    //
-    float transpCoef = diffuseColor.a;
-    float reflCoef = clamp(hasHit ? (metallicFactor + (fresnel_schlick(0.f, dot(reflDir.xyz, normals))) * (1.f - metallicFactor)) * (1.f - luminance(emissiveColor.xyz)) : 0.f, 0.f, 1.f);
-
-    // 
-    vec4 origRefl = cvtRgb16Acc(pixelData.pixels[pixelId].reflection.accum);
-    vec4 origTransp = cvtRgb16Acc(pixelData.pixels[pixelId].transparency.accum);
-    vec4 origDiffuse = cvtRgb16Acc(pixelData.pixels[pixelId].diffuse.accum);
-
-    //
-    vec4 fRefl = clamp(reflColor * reflCoef, vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f)) * float(luminance(reflColor.xyz) > 0.f);
-    vec4 fTransp = clamp(transpColor * (1.f - reflCoef) * (1.f - transpCoef), vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f)) * float(luminance(transpColor.xyz) > 0.f);
-    vec4 fDiffuse = clamp(finalColor * (1.f - reflCoef) * transpCoef, vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f)) * float(luminance(finalColor.xyz) > 0.f);
-
-    //
-    const float sampleCount = 64.f;
-
-    //
-    //origRefl = mix(origRefl/max(origRefl.w,1.f), fRefl/max(fRefl.w,1.f), origRefl.w > 0.f ? (1.f/sampleCount) : 1.f);
-    //origTransp = mix(origTransp/max(origTransp.w,1.f), fTransp/max(fTransp.w,1.f), origTransp.w > 0.f ? (1.f/sampleCount) : 1.f);
-    //origDiffuse = mix(origDiffuse/max(origDiffuse.w,1.f), fDiffuse/max(fDiffuse.w,1.f), origDiffuse.w > 0.f ? (1.f/sampleCount) : 1.f);
-
-    //
-    origRefl += fRefl;
-    origTransp += fTransp;
-    origDiffuse += fDiffuse;
-
-    //
-    if (luminance(finalColor.xyz) > 0.f || luminance(reflColor.xyz) > 0.f || luminance(transpColor.xyz) > 0.f || luminance(emissiveColor.xyz) > 0.f) {
-      pixelData.pixels[pixelId].surface.origin = rayOrigin.xyz;
-      pixelData.pixels[pixelId].surface.normal = normals;//tbn[2].xyz;
-      pixelData.pixels[pixelId].surface.indices = uvec4(intersection.instanceId, intersection.geometryId, intersection.primitiveId, 0u);
-      pixelData.pixels[pixelId].surface.emission = vec4(emissiveColor.xyz * (1.f - reflCoef), 1.f);
-      pixelData.pixels[pixelId].surface.diffuse = vec4(diffuseColor.xyz, 1.f); //+ cvtRgb16Acc(pixelData.pixels[pixelId].surface.diffuseAccum);
-      pixelData.pixels[pixelId].surface.emissionAccum = TYPE(0u);
-      pixelData.pixels[pixelId].surface.diffuseAccum = TYPE(0u);
-      pixelData.pixels[pixelId].surface.actualOrigin = vec3(0.f);
-      pixelData.pixels[pixelId].surface.actualNormal = vec3(0.f);
-      pixelData.pixels[pixelId].diffuse.color = origDiffuse;
-      pixelData.pixels[pixelId].diffuse.accum = TYPE(0u);
-      pixelData.pixels[pixelId].diffuse.indices = diffuseIndices;
-      pixelData.pixels[pixelId].diffuse.direction = vec4(rayOrigin, 0.f);
-      pixelData.pixels[pixelId].diffuse.actualDirection = vec4(0.f);
-      pixelData.pixels[pixelId].reflection.color = origRefl;
-      pixelData.pixels[pixelId].reflection.accum = TYPE(0u);
-      pixelData.pixels[pixelId].reflection.indices = reflIndices;
-      pixelData.pixels[pixelId].reflection.direction = vec4(rayOrigin, reflHit);
-      pixelData.pixels[pixelId].reflection.actualDirection = vec4(0.f);
-      pixelData.pixels[pixelId].transparency.color = origTransp;
-      pixelData.pixels[pixelId].transparency.accum = TYPE(0u);
-      pixelData.pixels[pixelId].transparency.indices = transpIndices;
-      pixelData.pixels[pixelId].transparency.direction = vec4(rayOrigin, transpHit);
-      pixelData.pixels[pixelId].transparency.actualDirection = vec4(0.f);
+    if (cmd.hasHit) {
+      pathTraceCommand(cmd, 0);
+      pathTraceCommand(cmd, 1);
+      pathTraceCommand(cmd, 2);
     } else {
-      pixelData.pixels[pixelId].surface.emission = cvtRgb16Acc(pixelData.pixels[pixelId].surface.emissionAccum);
-      pixelData.pixels[pixelId].surface.diffuse = cvtRgb16Acc(pixelData.pixels[pixelId].surface.diffuseAccum);
-      pixelData.pixels[pixelId].surface.emissionAccum = TYPE(0u);
-      pixelData.pixels[pixelId].surface.diffuseAccum = TYPE(0u);
-      pixelData.pixels[pixelId].surface.origin = pixelData.pixels[pixelId].surface.actualOrigin;
-      pixelData.pixels[pixelId].surface.normal = pixelData.pixels[pixelId].surface.actualNormal;
-      pixelData.pixels[pixelId].surface.actualOrigin = vec3(0.f);
-      pixelData.pixels[pixelId].surface.actualNormal = vec3(0.f);
-      pixelData.pixels[pixelId].diffuse.direction = pixelData.pixels[pixelId].diffuse.actualDirection;
-      pixelData.pixels[pixelId].diffuse.color = cvtRgb16Acc(pixelData.pixels[pixelId].diffuse.accum);
-      pixelData.pixels[pixelId].diffuse.accum = TYPE(0u);
-      pixelData.pixels[pixelId].diffuse.actualDirection = vec4(0.f);
-      pixelData.pixels[pixelId].reflection.direction = pixelData.pixels[pixelId].reflection.actualDirection;
-      pixelData.pixels[pixelId].reflection.color = cvtRgb16Acc(pixelData.pixels[pixelId].reflection.accum);
-      pixelData.pixels[pixelId].reflection.accum = TYPE(0u);
-      pixelData.pixels[pixelId].reflection.actualDirection = vec4(0.f);
-      pixelData.pixels[pixelId].transparency.direction = pixelData.pixels[pixelId].transparency.actualDirection;
-      pixelData.pixels[pixelId].transparency.color = cvtRgb16Acc(pixelData.pixels[pixelId].transparency.accum);
-      pixelData.pixels[pixelId].transparency.accum = TYPE(0u);
-      pixelData.pixels[pixelId].transparency.actualDirection = vec4(0.f);
+      backgroundHit(pixelId, 0, rayEnd);
+      backgroundHit(pixelId, 1, rayEnd);
+      backgroundHit(pixelId, 2, rayEnd);
     };
-
-    //
-    imageStore(imagesRgba16F[pingpong.images[0]], ivec2(gcoord), diffuseColor);
-    imageStore(imagesRgba16F[pingpong.images[1]], ivec2(gcoord), origDiffuse/origDiffuse.w);
-    imageStore(imagesRgba16F[pingpong.images[2]], ivec2(gcoord), origTransp/origTransp.w);
-    imageStore(imagesRgba16F[pingpong.images[3]], ivec2(gcoord), origRefl/origRefl.w);
   }
 #ifdef ENABLE_CHECKERBOARD
   else {
     const uvec2 gcoord = uvec2(gcoord_.x, (gcoord_.y - (extent.y/2)) * 2u + ((gcoord_.x&1u)^(1u-(frameCounter&1u))));
     const uint pixelId = gcoord.x + extent.x * gcoord.y;
 
-    // actualize
-    pixelData.pixels[pixelId].surface.emission = cvtRgb16Acc(pixelData.pixels[pixelId].surface.emissionAccum);
-    pixelData.pixels[pixelId].surface.diffuse = cvtRgb16Acc(pixelData.pixels[pixelId].surface.diffuseAccum);
-    pixelData.pixels[pixelId].surface.emissionAccum = TYPE(0u);
-    pixelData.pixels[pixelId].surface.diffuseAccum = TYPE(0u);
-    pixelData.pixels[pixelId].surface.origin = pixelData.pixels[pixelId].surface.actualOrigin;
-    pixelData.pixels[pixelId].surface.normal = pixelData.pixels[pixelId].surface.actualNormal;
-    pixelData.pixels[pixelId].surface.actualOrigin = vec3(0.f);
-    pixelData.pixels[pixelId].surface.actualNormal = vec3(0.f);
-    pixelData.pixels[pixelId].diffuse.direction = pixelData.pixels[pixelId].diffuse.actualDirection;
-    pixelData.pixels[pixelId].diffuse.color = cvtRgb16Acc(pixelData.pixels[pixelId].diffuse.accum);
-    pixelData.pixels[pixelId].diffuse.accum = TYPE(0u);
-    pixelData.pixels[pixelId].diffuse.actualDirection = vec4(0.f);
-    pixelData.pixels[pixelId].reflection.direction = pixelData.pixels[pixelId].reflection.actualDirection;
-    pixelData.pixels[pixelId].reflection.color = cvtRgb16Acc(pixelData.pixels[pixelId].reflection.accum);
-    pixelData.pixels[pixelId].reflection.accum = TYPE(0u);
-    pixelData.pixels[pixelId].reflection.actualDirection = vec4(0.f);
-    pixelData.pixels[pixelId].transparency.direction = pixelData.pixels[pixelId].transparency.actualDirection;
-    pixelData.pixels[pixelId].transparency.color = cvtRgb16Acc(pixelData.pixels[pixelId].transparency.accum);
-    pixelData.pixels[pixelId].transparency.accum = TYPE(0u);
-    pixelData.pixels[pixelId].transparency.actualDirection = vec4(0.f);
+    retranslateSurface(pixelId);
+    retranslateHit(pixelId, 0);
+    retranslateHit(pixelId, 1);
+    retranslateHit(pixelId, 2);
   };
 #endif
 };

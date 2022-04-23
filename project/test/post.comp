@@ -116,7 +116,13 @@ void main() {
   //pixelData.pixels[pixelId].reflection.accum = uvec4(0u);
   //finalColor /= finalColor.w;
 
-  vec4 finalColor = vec4(resultTransp.xyz / max(resultTransp.w, 1.f) + resultColor.xyz / max(resultColor.w, 1.f) * (resultDiffuse.xyz / max(resultDiffuse.w, 1.f)) + (resultEmission.xyz / max(resultEmission.w, 1.f)) + resultRefl.xyz / max(resultRefl.w, 1.f), 1.f);
+  const vec4 finalColor = vec4(
+    (max(resultTransp.xyz, 0.f.xxx) / max(resultTransp.w, 1.f)) + 
+    (max(resultColor.xyz, 0.f.xxx) / max(resultColor.w, 1.f) * (max(resultDiffuse.xyz, 0.f.xxx) / max(resultDiffuse.w, 1.f))) + 
+    (max(resultEmission.xyz, 0.f.xxx) / max(resultEmission.w, 1.f)) + 
+    (max(resultRefl.xyz, 0.f.xxx) / max(resultRefl.w, 1.f))
+  , 1.f);
+  //vec4 finalColor = (resultColor / max(resultColor.w, 1.f)) * (resultDiffuse / max(resultDiffuse.w, 1.f));
 
   // final color
   imageStore(images[swapchain.image], ivec2(gcoord.x, extent.y-1-gcoord.y), fromLinear(finalColor));
