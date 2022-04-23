@@ -122,7 +122,6 @@ void main() {
     (max(resultEmission.xyz, 0.f.xxx) / max(resultEmission.w, 1.f)) + 
     (max(resultRefl.xyz, 0.f.xxx) / max(resultRefl.w, 1.f))
   , 1.f);
-  //vec4 finalColor = (resultColor / max(resultColor.w, 1.f)) * (resultDiffuse / max(resultDiffuse.w, 1.f));
 
   // final color
   imageStore(images[swapchain.image], ivec2(gcoord.x, extent.y-1-gcoord.y), fromLinear(finalColor));

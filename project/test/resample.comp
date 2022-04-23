@@ -51,9 +51,10 @@ void reproject3D(in uint pixelId, in vec3 srcRayDir, in int type) {
   const vec3 dstRayDir = normalize(srcRayDir.xyz * toNormalMat(getPreviousInstanceTransform(instancedData.opaqueAddressInfo, surface.indices.x)) * toNormalMat(inverse(getInstanceTransform(instancedData.opaqueAddressInfo, surface.indices.x))));
 
   //
-  const vec3 srcHitFoundIntersection = find_reflection_incident_point( srcPos.xyz, srcHitPos.xyz, dstPos.xyz, normalize(srcNormal.xyz));
-  //const vec3 srcHitFoundIntersection = find_reflection_incident_point( dstPos.xyz, srcHitPos.xyz, srcPos.xyz, normalize(srcNormal.xyz));
-  const vec3 dstHitFoundIntersection = vec4(vec4(dstPos.xyz, 1.f) * inverse(getPreviousInstanceTransform(instancedData.opaqueAddressInfo, data.indices.x)), 1.f) * getInstanceTransform(instancedData.opaqueAddressInfo, data.indices.x);
+  const vec3 srcHitFoundIntersection = find_reflection_incident_point( dstPos.xyz, srcHitPos.xyz, srcPos.xyz, normalize(srcNormal.xyz));
+  //const vec3 srcHitFoundIntersection = find_reflection_incident_point( srcPos.xyz, srcHitPos.xyz, dstPos.xyz, normalize(srcNormal.xyz));
+  //const vec3 dstHitFoundIntersection = vec4(vec4(srcHitFoundIntersection.xyz, 1.f) * inverse(getPreviousInstanceTransform(instancedData.opaqueAddressInfo, data.indices.x)), 1.f) * getInstanceTransform(instancedData.opaqueAddressInfo, data.indices.x);
+  const vec3 dstHitFoundIntersection = dstPos;
 
   //
   const vec4 srcHitPersp = vec4(vec4(srcHitFoundIntersection, 1.f) * constants.previousLookAt, 1.f) * constants.perspective;
