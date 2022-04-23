@@ -97,22 +97,22 @@ PathTraceOutput pathTraceCommand(in PathTraceCommand cmd, in uint type) {
 };
 
 //
+void retranslateSurface(in PathTraceCommand cmd) {
+  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.pixelId);
+  surfaceInfo.indices = uvec4(cmd.intersection.instanceId, cmd.intersection.geometryId, cmd.intersection.primitiveId, 0u);
+  surfaceInfo.origin = cmd.rayData.origin, surfaceInfo.actualOrigin = vec3(0.f);
+  surfaceInfo.normal = cmd.normals, surfaceInfo.actualNormal = vec3(0.f);
+  surfaceInfo.emission = vec4(cmd.emissiveColor.xyz, 1.f), surfaceInfo.emissionAccum = TYPE(0u);
+  surfaceInfo.diffuse = vec4(cmd.diffuseColor.xyz, 1.f), surfaceInfo.diffuseAccum = TYPE(0u);
+};
+
+//
 void retranslateSurface(in uint pixelId) {
   PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
   surfaceInfo.origin = surfaceInfo.actualOrigin, surfaceInfo.actualOrigin = vec3(0.f);
   surfaceInfo.normal = surfaceInfo.actualNormal, surfaceInfo.actualNormal = vec3(0.f);
   surfaceInfo.emission = cvtRgb16Acc(surfaceInfo.emissionAccum), surfaceInfo.emissionAccum = TYPE(0u);
   surfaceInfo.diffuse = cvtRgb16Acc(surfaceInfo.diffuseAccum), surfaceInfo.diffuseAccum = TYPE(0u);
-};
-
-// 
-void initialSurface(in PathTraceCommand cmd) {
-  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.pixelId);
-  surfaceInfo.indices = uvec4(cmd.intersection.instanceId, cmd.intersection.geometryId, cmd.intersection.primitiveId, 0u);
-  surfaceInfo.origin = cmd.rayData.origin.xyz, surfaceInfo.actualOrigin = vec3(0.f);
-  surfaceInfo.normal = cmd.normals, surfaceInfo.actualNormal = vec3(0.f);
-  surfaceInfo.emission = vec4(cmd.emissiveColor.xyz, 1.f), surfaceInfo.emissionAccum = TYPE(0u);
-  surfaceInfo.diffuse = vec4(cmd.diffuseColor.xyz, 1.f), surfaceInfo.diffuseAccum = TYPE(0u);
 };
 
 //
@@ -126,7 +126,7 @@ void retranslateHit(in uint pixelId, in uint type) {
 void backgroundHit(in uint pixelId, in uint type, in vec3 rayEnd) {
   PixelHitInfoRef hitInfo = getPixelHitInfo(pixelId, type);
   hitInfo.indices = uvec4(0u);
-  hitInfo.color = ((type == 2) ? vec4(1.f.xxxx) : vec4(0.f.xxx, 1.f));// + ;
+  hitInfo.color = ((type == 2) ? vec4(1.f.xxxx) : vec4(0.f.xxx, 1.f));
   hitInfo.accum = TYPE(0u);
   hitInfo.direction = vec4(rayEnd, 10000.f);
   hitInfo.actualDirection = vec4(0.f);
@@ -136,15 +136,17 @@ void backgroundHit(in uint pixelId, in uint type, in vec3 rayEnd) {
 void main() {
 #ifdef ENABLE_CHECKERBOARD
   const uvec2 gcoord_ = gl_GlobalInvocationID.xy;
-  if (gcoord_.y < (extent.y/2)) 
 #endif
   {
 #ifdef ENABLE_CHECKERBOARD
-    const uvec2 gcoord = uvec2(gcoord_.x, gcoord_.y * 2 + ((gcoord_.x&1)^(frameCounter&1)));
+    const bool firstPart = gcoord_.y < (extent.y/2);
+    const uvec2 gcoord = firstPart ? uvec2(gcoord_.x, gcoord_.y * 2 + ((gcoord_.x&1)^(frameCounter&1))) : uvec2(gcoord_.x, (gcoord_.y - (extent.y/2)) * 2u + ((gcoord_.x&1u)^(1u-(frameCounter&1u))));
 #else
+    const bool firstPart = true;
     const uvec2 gcoord = gl_GlobalInvocationID.xy;
 #endif
 
+    // 
     const vec2 tCoord = vec2(gcoord)/vec2(extent);
     const uint pixelId = gcoord.x + extent.x * gcoord.y;
 
@@ -195,32 +197,22 @@ void main() {
     cmd.reflCoef = (cmd.PBR.b + mix(fresnel_schlick(0.f, dot(reflect(cmd.rayData.direction.xyz, cmd.normals), cmd.normals)), 0.f, cmd.PBR.g) * (1.f - cmd.PBR.b)) * (1.f - luminance(cmd.emissiveColor.xyz));
 
     //
-    //retranslateSurface(pixelId);
-    initialSurface(cmd);
+    retranslateSurface(cmd);
     retranslateHit(pixelId, 0);
     retranslateHit(pixelId, 1);
     retranslateHit(pixelId, 2);
 
     // 
-    if (cmd.hasHit) {
-      if (cmd.reflCoef > 0.f) { pathTraceCommand(cmd, 0); };
-      if (cmd.diffuseColor.a < 1.f) { pathTraceCommand(cmd, 1); };
-      if (luminance(cmd.diffuseColor.xyz) >= 0.001f && cmd.diffuseColor.a > 0.f) { pathTraceCommand(cmd, 2); };
-    } else {
-      backgroundHit(pixelId, 0, rayEnd);
-      backgroundHit(pixelId, 1, rayEnd);
-      backgroundHit(pixelId, 2, rayEnd);
+    if (firstPart) {
+      if (cmd.hasHit) {
+        if (cmd.reflCoef > 0.f) { pathTraceCommand(cmd, 0); };
+        if (cmd.diffuseColor.a < 1.f) { pathTraceCommand(cmd, 1); };
+        if (luminance(cmd.diffuseColor.xyz) >= 0.001f && cmd.diffuseColor.a > 0.f) { pathTraceCommand(cmd, 2); };
+      } else {
+        backgroundHit(pixelId, 0, rayEnd);
+        backgroundHit(pixelId, 1, rayEnd);
+        backgroundHit(pixelId, 2, rayEnd);
+      };
     };
-  }
-#ifdef ENABLE_CHECKERBOARD
-  else {
-    const uvec2 gcoord = uvec2(gcoord_.x, (gcoord_.y - (extent.y/2)) * 2u + ((gcoord_.x&1u)^(1u-(frameCounter&1u))));
-    const uint pixelId = gcoord.x + extent.x * gcoord.y;
-
-    retranslateSurface(pixelId);
-    retranslateHit(pixelId, 0);
-    retranslateHit(pixelId, 1);
-    retranslateHit(pixelId, 2);
   };
-#endif
 };

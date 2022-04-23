@@ -66,7 +66,7 @@ RayData handleIntersection(in RayData rayData, in IntersectionInfo intersection,
   };
 
   // 
-  rayData.origin.xyz = vertice.xyz + outRayNormal(rayData.direction.xyz, normals.xyz) * 0.0001f;
+  rayData.origin.xyz = vertice.xyz + outRayNormal(rayData.direction.xyz, tbn[2]) * 0.0001f;
 
   // 
   return rayData;

@@ -34,6 +34,36 @@ vec3 find_reflection_incident_point(in vec3 p0, in vec3 p1, in vec3 v0, in vec3 
 };
 
 //
+vec3 fetchSrcPos(in ivec2 srcInt) {
+  PixelSurfaceInfoRef surf = getPixelSurface(uint(srcInt.x + srcInt.y * extent.x));
+  return surf.origin.xyz;
+};
+
+//
+vec3 texSrcPos(in vec2 srcScreen) {
+  //return fetchSrcPos(ivec2(ceil(fract(srcScreen) * (extent) - 0.5f)));
+  //return fetchSrcPos(ivec2(round(fract(srcScreen) * (extent) - 0.49999f)));
+  return fetchSrcPos(ivec2(round(clamp(srcScreen, 0.f, 0.99999f) * (extent) - 0.49999f)));
+};
+
+//
+vec3 linearSrcPos(in vec2 txy) {
+  const vec2 txs = extent;
+  const vec2 txd = 1.f/extent;
+  const vec2 ttf = fract(txy*txs.xy-0.5f);
+  const vec2 px = vec2(1.f-ttf.x,ttf.x), py = vec2(1.f-ttf.y,ttf.y);
+  const mat2x2 i2 = outerProduct(px,py);
+  const vec2 pix = txy-(ttf*txd)+0.0001f;
+  const mat4x3 texels = mat4x3(
+    texSrcPos(pix+vec2(0.f  ,0.f)), texSrcPos(pix+vec2(txd.x,0.f  )),
+    texSrcPos(pix+vec2(txd.y,0.f)), texSrcPos(pix+vec2(txd.x,txd.y))
+  );
+  return texels*vec4(i2[0],i2[1]);
+};
+
+
+
+//
 //void reproject3D(in PixelSurfaceInfo surface, in PixelHitInfo data, in uint pixelId, in vec3 srcRayDir, in int type) {
 void reproject3D(in uint pixelId, in vec3 srcRayDir, in int type) {
   PixelSurfaceInfoRef surface = getPixelSurface(pixelId);
@@ -72,15 +102,16 @@ void reproject3D(in uint pixelId, in vec3 srcRayDir, in int type) {
 
   // 
   if (srcValid && dstValid) {
-    // 
-    const bool dstValidDist = distance(texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), dstScreen.xy, 0).xyz, dstPos.xyz) < 0.001f;
-
     //
     PixelSurfaceInfoRef SURF_SRC = getPixelSurface(srcId), SURF_DST = getPixelSurface(dstId);
     PixelHitInfoRef HIT_SRC = getPixelHitInfo(srcId, type), HIT_DST = getPixelHitInfo(dstId, type);
 
+    // 
+    const bool dstValidDist = distance(texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), dstScreen.xy, 0).xyz, dstPos.xyz) < 0.001f;
+    const bool srcValidDist = distance(linearSrcPos(srcScreen), srcHitFoundIntersection.xyz) < 0.001f; // TODO: complex linear interpolation
+
     //
-    if ( HIT_SRC.color.w > 0.f && dstValidDist && (HIT_SRC.direction.w < 10000.f || HIT_DST.color.w <= 0.f)) {
+    if ( HIT_SRC.color.w > 0.f && dstValidDist && (HIT_SRC.direction.w < 10000.f && srcValidDist || HIT_DST.color.w <= 0.f) ) {
       accumulate(HIT_DST, cvtRgb16Float(HIT_SRC.color));
       HIT_DST.actualDirection = vec4(dstPos, distance(dstHitPos, dstPos));
     };
