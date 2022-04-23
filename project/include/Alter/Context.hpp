@@ -62,7 +62,7 @@ namespace ANAMED {
   };
 
   //
-  inline std::optional<std::unordered_map<uintptr_t, std::shared_ptr<BaseObj>>::iterator> BaseObj::destroy(Handle const& parent, HMAP_S parentMap) {
+  inline HMAP_I BaseObj::destroy(Handle const& parent, HMAP_S parentMap) {
     //
     if (parent.value == this->base.value && this->alive) {
       this->tickProcessing();
@@ -72,14 +72,13 @@ namespace ANAMED {
       while (map != this->handleObjectMap->end()) {
         std::decay_t<decltype(*(map->second))>& mapc = *(map->second);
         std::decay_t<decltype(*mapc)>::iterator pair = (*mapc).begin();
-        while (pair != mapc->end() && pair->second && pair->second->alive) {
-          decltype(auto) optPair = pair->second->destroy(this->handle, this->handleObjectMap);
-          if (optPair) { pair = optPair.value(); } else { pair++; };
-          //if (pair != mapc->end()) { pair++; };
-          //pair = mapc.erase(pair);
+        while (pair != mapc->end()) {
+          decltype(auto) optPair = pair->second && pair->second->isAlive() ? pair->second->destroy(this->handle, this->handleObjectMap) : HMAP_I{};
+          if (optPair) 
+            { pair = optPair.value(); } else 
+            { pair = pair++; };
         };
-        map = this->handleObjectMap->erase(map);
-        //if (map != this->handleObjectMap->end()) { map++; };
+        map = this->handleObjectMap->erase(map); // always remove the first elements
       };
 
       // needs only before deleting main object...

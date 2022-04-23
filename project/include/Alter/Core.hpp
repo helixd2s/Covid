@@ -1437,6 +1437,7 @@ namespace ANAMED {
   using HMAP_C = cpp21::map_of_shared<uintptr_t, BaseObj>;
   using HMAP_T = std::map<HandleType, std::shared_ptr<HMAP_C>>;
   using HMAP_S = std::shared_ptr<HMAP_T>;
+  using HMAP_I = std::optional<std::unordered_map<uintptr_t, std::shared_ptr<BaseObj>>::iterator>;
 
   //
   class BaseObj : public std::enable_shared_from_this<BaseObj> {
@@ -1493,7 +1494,7 @@ namespace ANAMED {
     virtual Handle const& getBase() const { return this->base; };
 
     //
-    virtual std::optional<std::unordered_map<uintptr_t, std::shared_ptr<BaseObj>>::iterator> destroy(Handle const& parent, HMAP_S parentMap = {});
+    virtual HMAP_I destroy(Handle const& parent, HMAP_S parentMap = {});
 
     //
     virtual void tickProcessing() {
