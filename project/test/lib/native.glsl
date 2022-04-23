@@ -81,46 +81,34 @@ struct Constants
 
 // but may not to be...
 layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer PixelHitInfoRef {
-  vec4 color;
-  vec4 direction;
-  vec4 actualDirection;
-  TYPE accum;
-  uvec4 indices;
+  vec4 color; TYPE accum;
+  uvec4 indices; uvec4 actualIndices;
+  vec4 origin; vec4 actualOrigin;
 };
 
-// TODO: add actualIndices
+// 
 struct PixelHitInfo {
-  vec4 color;
-  vec4 direction;
-  vec4 actualDirection;
-  TYPE accum;
-  uvec4 indices;
+  vec4 color; TYPE accum;
+  uvec4 indices; uvec4 actualIndices;
+  vec4 direction; vec4 actualDirection;
 };
 
 // but may not to be...
 layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer PixelSurfaceInfoRef {
-  vec3 origin;
-  vec3 normal;
-  vec3 actualOrigin;
-  vec3 actualNormal;
-  uvec4 indices;
-  vec4 emission;
-  vec4 diffuse;
-  TYPE emissionAccum;
-  TYPE diffuseAccum;
+  uvec4 indices; uvec4 actualIndices;
+  vec3 origin; vec3 actualNormal;
+  vec3 normal; vec3 actualOrigin;
+  vec4 emission; TYPE emissionAccum;
+  vec4 diffuse; TYPE diffuseAccum;
 };
 
 //
 struct PixelSurfaceInfo {
-  vec3 origin;
-  vec3 normal;
-  vec3 actualOrigin;
-  vec3 actualNormal;
-  uvec4 indices;
-  vec4 emission;
-  vec4 diffuse;
-  TYPE emissionAccum;
-  TYPE diffuseAccum;
+  uvec4 indices; uvec4 actualIndices;
+  vec3 origin; vec3 actualNormal;
+  vec3 normal; vec3 actualOrigin;
+  vec4 emission; TYPE emissionAccum;
+  vec4 diffuse; TYPE diffuseAccum;
 };
 
 // but may not to be...

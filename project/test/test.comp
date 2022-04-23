@@ -86,29 +86,29 @@ PathTraceOutput pathTraceCommand(in PathTraceCommand cmd, in uint type) {
 
   //
   PixelHitInfoRef hitInfo = getPixelHitInfo(cmd.pixelId, type);
-  hitInfo.color += additional;
-  hitInfo.accum = TYPE(0u);
-  hitInfo.indices = outp.indices;
-  hitInfo.direction = vec4(cmd.rayData.origin.xyz, outp.hitT);
-  hitInfo.actualDirection = vec4(0.f);
+  hitInfo.color += additional; hitInfo.accum = TYPE(0u);
+  hitInfo.indices = outp.indices; hitInfo.actualIndices = uvec4(0u);
+  hitInfo.origin = vec4(cmd.rayData.origin.xyz, outp.hitT); hitInfo.actualOrigin = vec4(0.f);
 
   // 
   return outp;
 };
 
 
-// TODO: add actualIndices
+// 
 void retranslateHit(in uint pixelId, in uint type) {
   PixelHitInfoRef hitInfo = getPixelHitInfo(pixelId, type);
+  hitInfo.indices = hitInfo.actualIndices, hitInfo.actualIndices = uvec4(0u);
   hitInfo.color = cvtRgb16Acc(hitInfo.accum), hitInfo.accum = TYPE(0u);
-  hitInfo.direction = hitInfo.actualDirection, hitInfo.actualDirection = vec4(0.f);
+  hitInfo.origin = hitInfo.actualOrigin, hitInfo.actualOrigin = vec4(0.f);
 };
 
-// TODO: add actualIndices
+// 
 void blankHit(in PathTraceCommand cmd, in uint type) {
   PixelHitInfoRef hitInfo = getPixelHitInfo(cmd.pixelId, type);
+  hitInfo.indices = hitInfo.actualIndices, hitInfo.actualIndices = uvec4(0u);
   hitInfo.color = cvtRgb16Acc(hitInfo.accum) + vec4(0.f.xxx, 1.f), hitInfo.accum = TYPE(0u);
-  hitInfo.direction = hitInfo.actualDirection, hitInfo.direction.xyz = cmd.rayData.origin.xyz, hitInfo.actualDirection = vec4(0.f);
+  hitInfo.origin = hitInfo.actualOrigin, hitInfo.origin.xyz = cmd.rayData.origin.xyz, hitInfo.actualOrigin = vec4(0.f);
 };
 
 // 
@@ -116,13 +116,14 @@ void backgroundHit(in uint pixelId, in uint type, in vec3 rayEnd) {
   PixelHitInfoRef hitInfo = getPixelHitInfo(pixelId, type);
   hitInfo.indices = uvec4(0u);
   hitInfo.color = ((type == 2) ? vec4(1.f.xxxx) : vec4(0.f.xxx, 1.f)), hitInfo.accum = TYPE(0u);
-  hitInfo.direction = vec4(rayEnd, 10000.f), hitInfo.actualDirection = vec4(0.f);
+  hitInfo.origin = vec4(rayEnd, 10000.f), hitInfo.actualOrigin = vec4(0.f);
 };
 
 
 //
 void retranslateSurface(in uint pixelId) {
   PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
+  surfaceInfo.indices = surfaceInfo.actualIndices, surfaceInfo.actualIndices = uvec4(0u);
   surfaceInfo.origin = surfaceInfo.actualOrigin, surfaceInfo.actualOrigin = vec3(0.f);
   surfaceInfo.normal = surfaceInfo.actualNormal, surfaceInfo.actualNormal = vec3(0.f);
   surfaceInfo.emission = cvtRgb16Acc(surfaceInfo.emissionAccum), surfaceInfo.emissionAccum = TYPE(0u);

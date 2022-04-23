@@ -42,24 +42,18 @@ struct UniformData {
 
 //
 struct PixelHitInfo {
-  glm::vec4 color;
-  glm::vec4 direction;
-  glm::vec4 actualDirection;
-  glm::uvec4 accum;
-  glm::uvec4 indices;
+  glm::vec4 color; glm::uvec4 accum;
+  glm::uvec4 indices; glm::uvec4 actualIndices;
+  glm::vec4 direction; glm::vec4 actualDirection;
 };
 
 //
 struct PixelSurfaceInfo {
-  glm::vec3 origin;
-  glm::vec3 normal;
-  glm::vec3 actualOrigin;
-  glm::vec3 actualNormal;
-  glm::uvec4 indices;
-  glm::vec4 emission;
-  glm::vec4 diffuse;
-  glm::uvec4 emissionAccum;
-  glm::uvec4 diffuseAccum;
+  glm::uvec4 indices; glm::uvec4 actualIndices;
+  glm::vec3 origin; glm::vec3 actualOrigin;
+  glm::vec3 normal; glm::vec3 actualNormal;
+  glm::vec4 emission; glm::uvec4 emissionAccum;
+  glm::vec4 diffuse; glm::uvec4 diffuseAccum;
 };
 
 //
