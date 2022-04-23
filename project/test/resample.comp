@@ -107,8 +107,8 @@ void reproject3D(in uint pixelId, in vec3 srcRayDir, in int type) {
     PixelHitInfoRef HIT_SRC = getPixelHitInfo(srcId, type), HIT_DST = getPixelHitInfo(dstId, type);
 
     // 
-    const bool dstValidDist = distance(texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), dstScreen.xy, 0).xyz, dstPos.xyz) < 0.001f;
-    const bool srcValidDist = distance(linearSrcPos(srcScreen), srcHitFoundIntersection.xyz) < 0.001f; // TODO: complex linear interpolation
+    const bool dstValidDist = distance(texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), dstScreen.xy, 0).xyz, dstPos.xyz) < 0.01f;
+    const bool srcValidDist = true;//distance(linearSrcPos(srcScreen), srcHitFoundIntersection.xyz) < 0.01f; // TODO: complex linear interpolation
 
     //
     if ( HIT_SRC.color.w > 0.f && dstValidDist && (HIT_SRC.direction.w < 10000.f && srcValidDist || HIT_DST.color.w <= 0.f) ) {
