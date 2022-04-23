@@ -106,7 +106,7 @@ void reproject3D(in uint pixelId, in vec3 srcRayDir, in int type) {
     PixelSurfaceInfoRef SURF_SRC = getPixelSurface(srcId), SURF_DST = getPixelSurface(dstId);
     PixelHitInfoRef HIT_SRC = getPixelHitInfo(srcId, type), HIT_DST = getPixelHitInfo(dstId, type);
 
-    // 
+    // TODO: screen space coordinates
     const bool dstValidDist = distance(texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), dstScreen.xy, 0).xyz, dstPos.xyz) < 0.01f;
     const bool srcValidDist = true;//distance(linearSrcPos(srcScreen), srcHitFoundIntersection.xyz) < 0.01f; // TODO: complex linear interpolation
 
