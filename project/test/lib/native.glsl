@@ -88,7 +88,7 @@ layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer Pix
   uvec4 indices;
 };
 
-//
+// TODO: add actualIndices
 struct PixelHitInfo {
   vec4 color;
   vec4 direction;

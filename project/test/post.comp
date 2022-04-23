@@ -112,9 +112,8 @@ void main() {
   vec4 resultEmission = readAndNeighborEmission(pixelId);
   vec4 resultDiffuse = readAndNeighborSurfaceDiffuse(pixelId);
 
-  //vec4 finalColor = cvtRgb16Acc(pixelData.pixels[pixelId].reflection.accum);
-  //pixelData.pixels[pixelId].reflection.accum = uvec4(0u);
-  //finalColor /= finalColor.w;
+  //
+  //vec4 finalColor = cvtRgb16Acc(pixelData.pixels[pixelId].reflection.accum); finalColor /= finalColor.w;
 
   const vec4 finalColor = vec4(
     (max(resultTransp.xyz, 0.f.xxx) / max(resultTransp.w, 1.f)) + 
@@ -122,6 +121,11 @@ void main() {
     (max(resultEmission.xyz, 0.f.xxx) / max(resultEmission.w, 1.f)) + 
     (max(resultRefl.xyz, 0.f.xxx) / max(resultRefl.w, 1.f))
   , 1.f);
+
+  //
+  pixelData.pixels[pixelId].reflection.accum = TYPE(0u);
+  pixelData.pixels[pixelId].diffuse.accum = TYPE(0u);
+  pixelData.pixels[pixelId].transparency.accum = TYPE(0u);
 
   // final color
   imageStore(images[swapchain.image], ivec2(gcoord.x, extent.y-1-gcoord.y), fromLinear(finalColor));
