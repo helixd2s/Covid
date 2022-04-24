@@ -88,7 +88,7 @@ PathTraceOutput pathTraceCommand(in PathTraceCommand cmd, in uint type) {
   PixelHitInfoRef hitInfo = getPixelHitInfo(cmd.pixelId, type);
   hitInfo.color += additional; hitInfo.accum = TYPE(0u);
   hitInfo.indices = outp.indices; hitInfo.actualIndices = uvec4(0u);
-  hitInfo.origin = vec4(cmd.rayData.origin.xyz, outp.hitT); hitInfo.actualOrigin = vec4(0.f);
+  hitInfo.origin = vec4(outp.hitT >= 10000.f ? vec4(0.f.xxx, 1.f) * constants.lookAtInverse : cmd.rayData.origin.xyz, outp.hitT); hitInfo.actualOrigin = vec4(0.f);
 
   // 
   return outp;
@@ -108,7 +108,7 @@ void blankHit(in PathTraceCommand cmd, in uint type) {
   PixelHitInfoRef hitInfo = getPixelHitInfo(cmd.pixelId, type);
   hitInfo.indices = hitInfo.actualIndices, hitInfo.actualIndices = uvec4(0u);
   hitInfo.color = cvtRgb16Acc(hitInfo.accum) + vec4(0.f.xxx, 1.f), hitInfo.accum = TYPE(0u);
-  hitInfo.origin = hitInfo.actualOrigin, hitInfo.origin.xyz = cmd.rayData.origin.xyz, hitInfo.actualOrigin = vec4(0.f);
+  hitInfo.origin = hitInfo.actualOrigin, hitInfo.origin.xyz = cmd.rayData.origin.xyz, hitInfo.origin.w = 0.f, hitInfo.actualOrigin = vec4(0.f);
 };
 
 // 
@@ -116,7 +116,7 @@ void backgroundHit(in uint pixelId, in uint type, in vec3 origin) {
   PixelHitInfoRef hitInfo = getPixelHitInfo(pixelId, type);
   hitInfo.indices = uvec4(0u);
   hitInfo.color = ((type == 2) ? vec4(1.f.xxxx) : vec4(0.f.xxx, 1.f)), hitInfo.accum = TYPE(0u);
-  hitInfo.origin = vec4(origin, 10000.f), hitInfo.actualOrigin = vec4(0.f);
+  hitInfo.origin = vec4(vec4(0.f.xxx, 1.f) * constants.lookAtInverse, 10000.f), hitInfo.actualOrigin = vec4(0.f);
 };
 
 
@@ -191,7 +191,7 @@ void main() {
     cmd.intersection = intersection;
     cmd.hasHit = !all(lessThanEqual(cmd.intersection.barycentric, 0.f.xxx));
     cmd.rayData = rayData;
-    cmd.rayData.origin = cmd.hasHit ? fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId).xyz : (cmd.rayData.origin + cmd.rayData.direction * 10000.f);
+    cmd.rayData.origin = cmd.hasHit ? fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId).xyz : (vec4(0.f.xxx, 1.f) * constants.lookAtInverse + cmd.rayData.direction * 10000.f);
     cmd.tbn = getTBN(attrib); //cmd.rayData.origin += outRayNormal(cmd.rayData.direction.xyz, cmd.tbn[2].xyz) * 0.0001f;
 
     //

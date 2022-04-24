@@ -118,8 +118,7 @@ RayData pathTrace(in RayData rayData, inout float hitDist, inout vec3 firstNorma
       };
 
     } else {
-      const vec3 hitOrigin = rayData.origin.xyz * rayData.direction.xyz * (10000.f - currentT);
-      rayData.origin.xyz = hitOrigin;
+      rayData.origin.xyz = vec4(0.f.xxx, 1.f) * constants.lookAtInverse + rayData.direction.xyz * (10000.f - currentT);
       rayData.emission.xyz += f16vec3(trueMultColor(rayData.energy.xyz, pow(toLinear(texture(sampler2D(textures[background], samplers[0]), lcts(rayData.direction.xyz)).xyz), 1.f/2.2f.xxx)));
       rayData.energy.xyz *= f16vec3(0.f.xxx);
       if (!surfaceFound) {
