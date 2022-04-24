@@ -15,30 +15,14 @@
 layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
 
 //
-vec4 readAndNeighborDiffuse(in uint pixelId) {
-  vec4 center = pixelData.pixels[pixelId].diffuse.color;
-  if (center.w <= 0.f && (pixelId + extent.x) < (extent.y * extent.x) && ((pixelId.x%extent.x) < extent.x-1)) { center = pixelData.pixels[pixelId + extent.x].diffuse.color + pixelData.pixels[pixelId + 1].diffuse.color; };
-  return center;
-};
-
-//
-vec4 readAndNeighborSurfaceDiffuse(in uint pixelId) {
-  vec4 center = pixelData.pixels[pixelId].surface.diffuse;
-  if (center.w <= 0.f && (pixelId + extent.x) < (extent.y * extent.x) && ((pixelId.x%extent.x) < extent.x-1)) { center = pixelData.pixels[pixelId + extent.x].surface.diffuse + pixelData.pixels[pixelId + 1].surface.diffuse; };
-  return center;
-};
-
-//
-vec4 readAndNeighborReflect(in uint pixelId) {
-  vec4 center = pixelData.pixels[pixelId].reflection.color;
-  if (center.w <= 0.f && (pixelId + extent.x) < (extent.y * extent.x) && ((pixelId.x%extent.x) < extent.x-1)) { center = pixelData.pixels[pixelId + extent.x].reflection.color + pixelData.pixels[pixelId + 1].reflection.color; };
-  return center;
-};
-
-//
-vec4 readAndNeighborTransp(in uint pixelId) {
-  vec4 center = pixelData.pixels[pixelId].transparency.color;
-  if (center.w <= 0.f && (pixelId + extent.x) < (extent.y * extent.x) && ((pixelId.x%extent.x) < extent.x-1)) { center = pixelData.pixels[pixelId + extent.x].transparency.color + pixelData.pixels[pixelId + 1].transparency.color; };
+vec4 readAndNeighborColor(in uint pixelId, in uint type) {
+  PixelHitInfoRef hitInfo = getPixelHitInfo(pixelId, type);
+  vec4 center = hitInfo.color;
+  if (center.w <= 0.f && (pixelId + extent.x) < (extent.y * extent.x) && ((pixelId.x%extent.x) < extent.x-1)) { 
+    PixelHitInfoRef hitInfoX1 = getPixelHitInfo(pixelId + extent.x, type);
+    PixelHitInfoRef hitInfoY1 = getPixelHitInfo(pixelId + 1, type);
+    center = hitInfoX1.color + hitInfoY1.color; 
+  };
   return center;
 };
 
@@ -56,65 +40,27 @@ vec4 readAndNeighborEmission(in uint pixelId) {
   return center;
 };
 
+//
+vec4 readAndNeighborSurfaceDiffuse(in uint pixelId) {
+  vec4 center = pixelData.pixels[pixelId].surface.diffuse;
+  if (center.w <= 0.f && (pixelId + extent.x) < (extent.y * extent.x) && ((pixelId.x%extent.x) < extent.x-1)) { center = pixelData.pixels[pixelId + extent.x].surface.diffuse + pixelData.pixels[pixelId + 1].surface.diffuse; };
+  return center;
+};
+
 // 
 void main() {
   const uvec2 gcoord = gl_GlobalInvocationID.xy;
   const vec2 tCoord = vec2(gcoord)/vec2(extent);
   const uint pixelId = gcoord.x + extent.x * gcoord.y;
 
-  //
-  const vec3 rayBegin = divW(vec4(vec3(tCoord, 0.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse;//fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId);
-  const vec3 rayEnd = divW(vec4(vec3(tCoord, 1.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse;
-  const vec3 rayDir = normalize(rayEnd.xyz - rayBegin.xyz);
-  
-  //
-  RayData rayData;
-  rayData.launchId = u16vec2(gcoord.xy);
-  rayData.origin = rayBegin.xyz;
-  rayData.direction = rayDir;
-  rayData.energy = f16vec4(1.f.xxx, 1.f);
-  rayData.emission = f16vec4(0.f.xxx, 1.f);
-
-  //
-#ifdef USE_RASTERIZE_PASS
-  IntersectionInfo intersection = rasterize(instancedData.opaqueAddressInfo, rayData, 10000.f);
-#else
-  IntersectionInfo intersection = traceRaysOpaque(instancedData.opaqueAddressInfo, rayData, 10000.f);
-#endif
+  // 
+  const vec4 resultRefl = readAndNeighborColor(pixelId, 0);
+  const vec4 resultTransp = readAndNeighborColor(pixelId, 1);
+  const vec4 resultColor = readAndNeighborColor(pixelId, 2);
+  const vec4 resultEmission = readAndNeighborEmission(pixelId);
+  const vec4 resultDiffuse = readAndNeighborSurfaceDiffuse(pixelId);
 
   // 
-  InstanceInfo instanceInfo = getInstance(instancedData.opaqueAddressInfo, intersection.instanceId);
-  GeometryInfo geometryInfo = getGeometry(instanceInfo, intersection.geometryId);
-  GeometryExtData geometry = getGeometryData(geometryInfo, intersection.primitiveId);
-  GeometryExtAttrib attrib = interpolate(geometry, intersection.barycentric);
-
-  //
-  const vec3 rayOrigin = fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId).xyz;
-  const vec4 texcoord = attrib.data[VERTEX_TEXCOORD];
-  const vec4 tangent = attrib.data[VERTEX_TANGENT];
-
-  //
-  mat3x3 tbn = getTBN(attrib);
-  MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), texcoord.xy, tbn);
-  const vec3 mNormal = materialPix.color[MATERIAL_NORMAL].xyz;
-  const vec3 normals = inRayNormal(rayDir, fullTransformNormal(instanceInfo, mNormal, intersection.geometryId));
-
-  // 
-  bool hasHit = !all(lessThanEqual(intersection.barycentric, 0.f.xxx));
-  float metallicFactor = hasHit ? materialPix.color[MATERIAL_PBR].b : 0.f;
-  float roughnessFactor = hasHit ? materialPix.color[MATERIAL_PBR].g : 0.f;
-
-  // 
-  vec4 resultRefl = readAndNeighborReflect(pixelId);
-  vec4 resultTransp = readAndNeighborTransp(pixelId);
-  vec4 resultColor = readAndNeighborDiffuse(pixelId);
-  vec3 reflDir = reflect(rayDir, normals);//readAndNeighborReflectDir(pixelId).xyz;
-  vec4 resultEmission = readAndNeighborEmission(pixelId);
-  vec4 resultDiffuse = readAndNeighborSurfaceDiffuse(pixelId);
-
-  //
-  //vec4 finalColor = cvtRgb16Acc(pixelData.pixels[pixelId].reflection.accum); finalColor /= finalColor.w;
-
   const vec4 finalColor = vec4(
     (max(resultTransp.xyz, 0.f.xxx) / max(resultTransp.w, 1.f)) + 
     trueMultColor(max(resultColor.xyz, 0.f.xxx) / max(resultColor.w, 1.f), (max(resultDiffuse.xyz, 0.f.xxx) / max(resultDiffuse.w, 1.f))) + 
@@ -122,14 +68,11 @@ void main() {
     (max(resultRefl.xyz, 0.f.xxx) / max(resultRefl.w, 1.f))
   , 1.f);
 
-  //
-  pixelData.pixels[pixelId].reflection.accum = TYPE(0u);
-  pixelData.pixels[pixelId].diffuse.accum = TYPE(0u);
-  pixelData.pixels[pixelId].transparency.accum = TYPE(0u);
+  // for debug only
+  //pixelData.pixels[pixelId].reflection.accum = TYPE(0u);
+  //pixelData.pixels[pixelId].diffuse.accum = TYPE(0u);
+  //pixelData.pixels[pixelId].transparency.accum = TYPE(0u);
 
   // final color
   imageStore(images[swapchain.image], ivec2(gcoord.x, extent.y-1-gcoord.y), fromLinear(finalColor));
-
-  //vec4 reflDebug = cvtRgb16Acc(readSplit(pingpong.images[5], ivec2(gcoord)));
-  //imageStore(images[swapchain.image], ivec2(gcoord.x, extent.y-1-gcoord.y), vec4(fromLinear(reflDebug.xyz/reflDebug.w), 1.f));
 };

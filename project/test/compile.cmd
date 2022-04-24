@@ -9,12 +9,12 @@ glslangValidator --target-env spirv1.6 --client vulkan100 rasterize.vert -DTRANS
 echo "Let's optimize?"
 pause
 
-spirv-opt --skip-validation -O test.comp.spv -o test.comp.spv
-spirv-opt --skip-validation -O post.comp.spv -o post.comp.spv
-spirv-opt --skip-validation -O resample.comp.spv -o resample.comp.spv
-spirv-opt --skip-validation -O opaque.frag.spv -o opaque.frag.spv
-spirv-opt --skip-validation -O opaque.vert.spv -o opaque.vert.spv
-spirv-opt --skip-validation -O translucent.frag.spv -o translucent.frag.spv
-spirv-opt --skip-validation -O translucent.vert.spv -o translucent.vert.spv
+spirv-opt --skip-validation -O -Os test.comp.spv -o test.comp.spv
+spirv-opt --skip-validation -O -Os post.comp.spv -o post.comp.spv
+spirv-opt --skip-validation -O -Os resample.comp.spv -o resample.comp.spv
+spirv-opt --skip-validation -O -Os opaque.frag.spv -o opaque.frag.spv
+spirv-opt --skip-validation -O -Os opaque.vert.spv -o opaque.vert.spv
+spirv-opt --skip-validation -O -Os translucent.frag.spv -o translucent.frag.spv
+spirv-opt --skip-validation -O -Os translucent.vert.spv -o translucent.vert.spv
 
 pause
