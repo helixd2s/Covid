@@ -10,6 +10,7 @@ Some functionality still WIP, but almost ready to ***MVP***...
 - Ray tracing support
 - Minimal requirements
 - Vulkan API 1.3
+- Reprojections (such as reflections, diffuse, transparency)
 
 ## Planned
 
@@ -17,6 +18,8 @@ Some functionality still WIP, but almost ready to ***MVP***...
 - Implementation to some games
 - Multi-Draw for instances (TLAS)
 - Pre-defined shader packages
+- Motion-vectors and animations
+- Physics interactive demo
 
 ## Future names...
 

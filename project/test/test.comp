@@ -120,7 +120,7 @@ void backgroundHit(in uint pixelId, in uint type, in vec3 origin) {
 };
 
 
-//
+// 
 void retranslateSurface(in uint pixelId) {
   PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
   surfaceInfo.indices = surfaceInfo.actualIndices, surfaceInfo.actualIndices = uvec4(0u);
