@@ -67,11 +67,11 @@ file(GLOB_RECURSE _source_list
   "${_src_root_path}/src/Alter/*.cpp"
   "${_src_root_path}/src/Alter/*.c"
   
+  "${_src_root_path}/test/*.cpp"
   "${_src_root_path}/test/test.cpp"
   "${_src_root_path}/test/hdrloader.cpp"
   "${_src_root_path}/test/*.hpp"
   "${_src_root_path}/test/*.h"
-  "${_src_root_path}/test/*"
 )
 
 #
@@ -117,7 +117,7 @@ target_link_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS} ${Vulkan_LIBRARIES} glfw)
 
 # 
 if (MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++2b /d1FastFail /std:c17 /fsanitize=address /std:c++latest /bigobj /MD /MP /EHa /O0 /Od /Ob0 /Zc:threadSafeInit /errorReport /arch:AVX2")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++2b /d1FastFail /std:c17 /fsanitize=address /std:c++latest /bigobj /MD /MP /O0 /Od /Ob0 /Zc:threadSafeInit /errorReport /arch:AVX2")
     set(CMAKE_EXE_LINKER_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj /MD /MP /MAP /incremental /debug:fastlink /experimental /errorReport /LTCG:PGInstrument")
 endif()
 

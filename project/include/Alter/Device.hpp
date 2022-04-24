@@ -322,9 +322,8 @@ namespace ANAMED {
       // 
       auto deAllocation = [device, fence, commandPool, commandBuffers]() {
         if (fence && *fence) {
-          device.destroyFence(*fence);
+          device.destroyFence(cpp21::exchange(*fence, vk::Fence{}));
           device.freeCommandBuffers(commandPool, commandBuffers);
-          *fence = vk::Fence{};
         };
       };
 
@@ -338,8 +337,8 @@ namespace ANAMED {
       };
 
       //
-      fences.push_back(std::make_shared<FenceStatus>(getStatus, onDone));
-      auto status = fences.back();
+      auto status = std::make_shared<FenceStatus>(getStatus, onDone);
+      fences.push_back(status);
 
       // clean and call events
       this->tickProcessing();

@@ -50,6 +50,7 @@ int main(int argc, char** argv) {
   try { parser.ParseCLI(argc, argv); }
   catch (args::Help) { std::cout << parser; glfwTerminate(); exit(1); };
 
+  /*
   // Be sure to enable "Yes with SEH Exceptions (/EHa)" in C++ / Code Generation;
   _set_se_translator([](unsigned int u, EXCEPTION_POINTERS* pExp) {
     std::string error = "SE Exception: ";
@@ -64,6 +65,7 @@ int main(int argc, char** argv) {
     };
     throw std::exception(error.c_str());
   });
+  */
 
 #ifdef ENABLE_RENDERDOC
   //
