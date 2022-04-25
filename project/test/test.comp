@@ -95,7 +95,7 @@ PathTraceOutput pathTraceCommand(in PathTraceCommand cmd, in uint type) {
 
   // avoid critical error for skyboxed, also near have more priority... also, transparency may incorrect, so doing some exception
   if (outp.hitT > 0.f && 
-    (hitInfo.origin.w <= 0.f || 
+    (hitInfo.origin.w <= 0.f || hitInfo.origin.w >= 10000.f || 
       (
         type == 0 && outp.hitT <= hitInfo.origin.w && outp.hitT < 10000.f || 
         type == 1 && outp.hitT >= hitInfo.origin.w && outp.hitT < 10000.f || 
