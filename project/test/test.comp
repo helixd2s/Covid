@@ -93,8 +93,16 @@ PathTraceOutput pathTraceCommand(in PathTraceCommand cmd, in uint type) {
   PixelHitInfoRef hitInfo = getPixelHitInfo(cmd.pixelId, type);
   hitInfo.color += additional; hitInfo.accum = TYPE(0u);
 
-  // avoid critical error for skyboxed, also near have more priority...
-  if (outp.hitT > 0.f && (hitInfo.origin.w <= 0.f || outp.hitT <= hitInfo.origin.w && outp.hitT < 10000.f && hitInfo.origin.w > 0.f)) {
+  // avoid critical error for skyboxed, also near have more priority... also, transparency may incorrect, so doing some exception
+  if (outp.hitT > 0.f && 
+    (hitInfo.origin.w <= 0.f || 
+      (
+        type == 0 && outp.hitT <= hitInfo.origin.w && outp.hitT < 10000.f || 
+        type == 1 && outp.hitT >= hitInfo.origin.w && outp.hitT < 10000.f || 
+        type == 2
+      ) && 
+      hitInfo.origin.w > 0.f)
+    ) {
     hitInfo.indices = outp.indices; hitInfo.actualIndices = uvec4(0u);
     hitInfo.origin = vec4(outp.hitT >= 10000.f ? vec4(0.f.xxx, 1.f) * constants.lookAtInverse : cmd.rayData.origin.xyz, outp.hitT); hitInfo.actualOrigin = vec4(0.f);
   };
@@ -210,13 +218,19 @@ void main() {
     cmd.rayData = rayData;
     cmd.rayData.origin = cmd.hasHit ? fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId).xyz : (vec4(0.f.xxx, 1.f) * constants.lookAtInverse + cmd.rayData.direction * 10000.f);
     cmd.tbn = getTBN(attrib); //cmd.rayData.origin += outRayNormal(cmd.rayData.direction.xyz, cmd.tbn[2].xyz) * 0.0001f;
+    cmd.tbn[0] = fullTransformNormal(instanceInfo, cmd.tbn[0], intersection.geometryId);
+    cmd.tbn[1] = fullTransformNormal(instanceInfo, cmd.tbn[1], intersection.geometryId);
+    cmd.tbn[2] = fullTransformNormal(instanceInfo, cmd.tbn[2], intersection.geometryId);
+
+    //
+    const bool inner = dot(cmd.tbn[2], cmd.rayData.direction.xyz) > 0.f;
 
     //
     const MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), attrib.data[VERTEX_TEXCOORD].xy, cmd.tbn);
     const vec4 skyColor = pow(texture(sampler2D(textures[background], samplers[0]), lcts(cmd.rayData.direction.xyz)), vec4(1.f/2.2f.xxx, 1.f));
 
     //
-    cmd.normals = inRayNormal(cmd.rayData.direction.xyz, fullTransformNormal(instanceInfo, materialPix.color[MATERIAL_NORMAL].xyz, intersection.geometryId));
+    cmd.normals = inRayNormal(cmd.rayData.direction.xyz, materialPix.color[MATERIAL_NORMAL].xyz);
     cmd.diffuseColor = toLinear(cmd.hasHit ? materialPix.color[MATERIAL_ALBEDO] : vec4(skyColor.xyz, 1.f));
     cmd.emissiveColor = toLinear(cmd.hasHit ? materialPix.color[MATERIAL_EMISSIVE] : vec4(0.f.xxx, 1.f)).xyz;
     cmd.PBR = cmd.hasHit ? materialPix.color[MATERIAL_PBR].xyz : 0.f.xxx;

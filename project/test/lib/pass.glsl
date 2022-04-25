@@ -28,8 +28,14 @@ RayData handleIntersection(in RayData rayData, in IntersectionInfo intersection,
 
   //
   mat3x3 tbn = getTBN(attrib);
+  tbn[0] = fullTransformNormal(instanceInfo, tbn[0], intersection.geometryId);
+  tbn[1] = fullTransformNormal(instanceInfo, tbn[1], intersection.geometryId);
+  tbn[2] = fullTransformNormal(instanceInfo, tbn[2], intersection.geometryId);
+
+  //
+  const bool inner = dot(tbn[2], rayData.direction.xyz) > 0.f;
   MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), texcoord.xy, tbn);
-  const vec3 normals = inRayNormal(rayData.direction, fullTransformNormal(instanceInfo, materialPix.color[MATERIAL_NORMAL].xyz, intersection.geometryId));//materialPix.color[MATERIAL_NORMAL].xyz;
+  const vec3 normals = inRayNormal(rayData.direction, materialPix.color[MATERIAL_NORMAL].xyz);//materialPix.color[MATERIAL_NORMAL].xyz;
 
   // 
   vec4 emissiveColor = toLinear(materialPix.color[MATERIAL_EMISSIVE]);
@@ -38,7 +44,7 @@ RayData handleIntersection(in RayData rayData, in IntersectionInfo intersection,
   float roughnessFactor = materialPix.color[MATERIAL_PBR].g;
 
   //
-  float reflFactor = (metallicFactor + fresnel_schlick(0.f, dot(-rayData.direction.xyz, normals)) * (1.f - metallicFactor)) * (1.f - luminance(emissiveColor.xyz));
+  float reflFactor = (metallicFactor + fresnel_schlick(0.f, dot(-rayData.direction.xyz, normals)) * (1.f - metallicFactor)) * (1.f - luminance(emissiveColor.xyz)) * (inner ? 0.f : 1.f);
   vec3 originSeedXYZ = vec3(random(rayData.launchId.xy), random(rayData.launchId.xy), random(rayData.launchId.xy));
 
   //
@@ -51,7 +57,7 @@ RayData handleIntersection(in RayData rayData, in IntersectionInfo intersection,
     rayData.direction.xyz = reflective(originSeedXYZ, rayData.direction.xyz, normals, roughnessFactor);
     rayData.energy.xyz = f16vec3(metallicMult(rayData.energy.xyz, diffuseColor.xyz, metallicFactor));
   } else 
-  if (random(rayData.launchId.xy) >= diffuseColor.a) {
+  if (random(rayData.launchId.xy) >= (diffuseColor.a * (inner ? 0.f : 1.f))) { // wrong diffuse if inner
     rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, mix(passed.alphaColor.xyz, 1.f.xxx, diffuseColor.a)));
     passed.alphaPassed = true;
   } else
