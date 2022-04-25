@@ -49,6 +49,7 @@ PathTraceOutput pathTraceCommand(in PathTraceCommand cmd, in uint type) {
   outp.hitT = 0.f;
   outp.indices = uvec4(0u);
   outp.normals = cmd.normals.xyz;
+  outp.indices.w = type;
 
   // 
   if (type == 0) {
@@ -66,6 +67,9 @@ PathTraceOutput pathTraceCommand(in PathTraceCommand cmd, in uint type) {
     rayData.emission = f16vec4(0.f.xxx, 1.f);
   };
 
+  // enforce typic indice
+  outp.indices.w = type;
+
   //
   rayData.origin += outRayNormal(rayData.direction.xyz, cmd.tbn[2].xyz) * 0.0001f;
   rayData = pathTrace(rayData, outp.hitT, outp.normals, outp.indices);
@@ -80,15 +84,20 @@ PathTraceOutput pathTraceCommand(in PathTraceCommand cmd, in uint type) {
 
   // 
   vec4 additional = vec4(0.f);
-  if (type == 0) { additional = finalColor * vec4(reflCoef.xxx, 1.f); };
-  if (type == 1) { additional = finalColor * vec4(((1.f - reflCoef) * (1.f - transpCoef)).xxx, 1.f); };
-  if (type == 2) { additional = finalColor * vec4(((1.f - reflCoef) * transpCoef).xxx, 1.f); };
+  if (type == 0) { additional = finalColor * vec4(reflCoef.xxx, 1.f) * (outp.hitT > 0.f ? 1.f : 0.f); };
+  if (type == 1) { additional = finalColor * vec4(((1.f - reflCoef) * (1.f - transpCoef)).xxx, 1.f) * (outp.hitT > 0.f ? 1.f : 0.f); };
+  if (type == 2) { additional = finalColor * vec4(((1.f - reflCoef) * transpCoef).xxx, 1.f) * (outp.hitT > 0.f ? 1.f : 0.f); };
 
   //
+  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.pixelId);
   PixelHitInfoRef hitInfo = getPixelHitInfo(cmd.pixelId, type);
   hitInfo.color += additional; hitInfo.accum = TYPE(0u);
-  hitInfo.indices = outp.indices; hitInfo.actualIndices = uvec4(0u);
-  hitInfo.origin = vec4(outp.hitT >= 10000.f ? vec4(0.f.xxx, 1.f) * constants.lookAtInverse : cmd.rayData.origin.xyz, outp.hitT); hitInfo.actualOrigin = vec4(0.f);
+
+  // avoid critical error for skyboxed, also near have more priority...
+  if (outp.hitT > 0.f && (hitInfo.origin.w <= 0.f || outp.hitT <= hitInfo.origin.w && outp.hitT < 10000.f && hitInfo.origin.w > 0.f)) {
+    hitInfo.indices = outp.indices; hitInfo.actualIndices = uvec4(0u);
+    hitInfo.origin = vec4(outp.hitT >= 10000.f ? vec4(0.f.xxx, 1.f) * constants.lookAtInverse : cmd.rayData.origin.xyz, outp.hitT); hitInfo.actualOrigin = vec4(0.f);
+  };
 
   // 
   return outp;
@@ -114,9 +123,17 @@ void blankHit(in PathTraceCommand cmd, in uint type) {
 // 
 void backgroundHit(in uint pixelId, in uint type, in vec3 origin) {
   PixelHitInfoRef hitInfo = getPixelHitInfo(pixelId, type);
-  hitInfo.indices = uvec4(0u);
+  hitInfo.indices = uvec4(0u.xxx, 4);
   hitInfo.color = ((type == 2) ? vec4(1.f.xxxx) : vec4(0.f.xxx, 1.f)), hitInfo.accum = TYPE(0u);
   hitInfo.origin = vec4(vec4(0.f.xxx, 1.f) * constants.lookAtInverse, 10000.f), hitInfo.actualOrigin = vec4(0.f);
+};
+
+//
+void blankHit(in uint pixelId, in uint type, in vec3 origin) {
+  PixelHitInfoRef hitInfo = getPixelHitInfo(pixelId, type);
+  hitInfo.indices = uvec4(0u.xxx, 4);
+  hitInfo.color = vec4(0.f.xxx, 1.f), hitInfo.accum = TYPE(0u);
+  hitInfo.origin = vec4(vec4(0.f.xxx, 1.f) * constants.lookAtInverse, 0.f), hitInfo.actualOrigin = vec4(0.f);
 };
 
 
@@ -218,8 +235,8 @@ void main() {
         if (cmd.diffuseColor.a < 1.f) { pathTraceCommand(cmd, 1); } else { blankHit(cmd, 1); };
         if (luminance(cmd.diffuseColor.xyz) >= 0.001f && cmd.diffuseColor.a > 0.f) { pathTraceCommand(cmd, 2); } else { blankHit(cmd, 2); };
       } else {
-        backgroundHit(pixelId, 0, rayData.origin);
-        backgroundHit(pixelId, 1, rayData.origin);
+        blankHit(pixelId, 0, rayData.origin);
+        blankHit(pixelId, 1, rayData.origin);
         backgroundHit(pixelId, 2, rayData.origin);
       };
     };

@@ -117,11 +117,11 @@ void reproject3D(in uint pixelId, in vec3 srcRayDir, in int type) {
     const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz       -(dstHitPersp.xyz/dstHitPersp.w)), vec3(4.f/extent, 0.004f)));// && distance(dstPos, dstHitFoundIntersection) < 0.001f;
     const bool srcValidDist = all(lessThan(abs(linearSrcPos(srcScreen)-(srcHitPersp.xyz/srcHitPersp.w)), vec3(8.f/extent, 0.008f)));
 
-    //
-    if ( HIT_SRC.color.w > 0.f && dstValidDist && (srcValidDist || HIT_DST.color.w <= 0.f) ) {
-      accumulate(HIT_DST, cvtRgb16Float(HIT_SRC.color));
-      HIT_DST.actualOrigin = vec4(dstHitFoundIntersection, distance(dstHitPos, dstHitFoundIntersection));
-      HIT_DST.actualIndices = HIT_SRC.indices;
+    // copy to dest, and nullify source
+    if ( HIT_SRC.origin.w > 0.f && HIT_SRC.color.w > 0.f && dstValidDist && (srcValidDist || HIT_DST.color.w <= 0.f) ) {
+      accumulate(HIT_DST, cvtRgb16Float(HIT_SRC.color)); HIT_SRC.color = vec4(0.f.xxxx);
+      HIT_DST.actualOrigin = vec4(dstHitFoundIntersection, distance(dstHitPos, dstHitFoundIntersection)); HIT_SRC.origin = vec4(0.f.xxxx);
+      HIT_DST.actualIndices = HIT_SRC.indices; HIT_SRC.indices = uvec4(0u);
     };
   };
 };
@@ -150,13 +150,21 @@ void reprojectDiffuse(in uint srcId, in vec3 srcRayDir) {
     const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz-(dstPerspPos.xyz/dstPerspPos.w)), vec3(2.f/extent, 0.001f)));
     PixelSurfaceInfoRef dstSurface = getPixelSurface(dstId);
     PixelHitInfoRef dstHit = getPixelHitInfo(dstId, 2);
-    if (srcHit.color.w > 0.f && dstValidDist && (true || dstHit.color.w <= 0.f)) {
+    if (srcHit.origin.w > 0.f && srcHit.color.w > 0.f && dstValidDist && (true || dstHit.color.w <= 0.f)) {
       accumulate(dstHit, cvtRgb16Float(srcHit.color));
       accumulateDiffuseTex(dstSurface, cvtRgb16Float(srcSurface.diffuse));
       accumulateEmissiveTex(dstSurface, cvtRgb16Float(srcSurface.emission));
       dstSurface.actualOrigin.xyz = dstPos.xyz;
       dstSurface.actualNormal.xyz = dstNormal.xyz;
       dstSurface.actualIndices = srcHit.indices;
+
+      // nullify source
+      srcHit.color = vec4(0.f.xxxx);
+      srcSurface.diffuse = vec4(0.f.xxxx);
+      srcSurface.emission = vec4(0.f.xxxx);
+      srcSurface.origin = vec3(0.f);
+      srcSurface.normal = vec3(0.f);
+      srcSurface.indices = uvec4(0u);
     };
   };
 };
@@ -172,8 +180,8 @@ void main() {
   const vec3 srcRayEnd = divW(vec4(vec3(tCoord, 1.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.previousLookAtInverse;
   const vec3 srcRayDir = normalize(srcRayEnd.xyz - srcRayBegin.xyz);
 
-  //
-  reprojectDiffuse(pixelId, srcRayDir);
-  reproject3D(pixelId, srcRayDir, 0);
-  reproject3D(pixelId, srcRayDir, 1);
+  // using barrier for partially avoid some problems
+  reproject3D(pixelId, srcRayDir, 0); barrier();
+  reproject3D(pixelId, srcRayDir, 1); barrier();
+  reprojectDiffuse(pixelId, srcRayDir); barrier();
 };
