@@ -12,7 +12,7 @@
 #include "lib/pass.glsl"
 
 //
-layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+layout (local_size_x = 32, local_size_y = 8, local_size_z = 1) in;
 
 //
 #define ENABLE_CHECKERBOARD
@@ -141,7 +141,7 @@ void blankHit(in uint pixelId, in uint type, in vec3 origin) {
   PixelHitInfoRef hitInfo = getPixelHitInfo(pixelId, type);
   hitInfo.indices = uvec4(0u.xxx, 4);
   hitInfo.color = vec4(0.f.xxx, 1.f), hitInfo.accum = TYPE(0u);
-  hitInfo.origin = vec4(vec4(0.f.xxx, 1.f) * constants.lookAtInverse, 0.f), hitInfo.actualOrigin = vec4(0.f);
+  hitInfo.origin = vec4(vec4(0.f.xxx, 1.f) * constants.lookAtInverse, 10000.f), hitInfo.actualOrigin = vec4(0.f);
 };
 
 
