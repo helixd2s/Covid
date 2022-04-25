@@ -243,16 +243,13 @@ void main() {
     retranslateHit(pixelId, 2, cmd.rayData.origin);
 
     // 
-    if (firstPart) {
-      if (cmd.hasHit) {
-        if (cmd.reflCoef > 0.f) { pathTraceCommand(cmd, 0); } else { blankHit(cmd, 0); };
-        if (cmd.diffuseColor.a < 1.f) { pathTraceCommand(cmd, 1); } else { blankHit(cmd, 1); };
-        if (luminance(cmd.diffuseColor.xyz) >= 0.001f && cmd.diffuseColor.a > 0.f) { pathTraceCommand(cmd, 2); } else { blankHit(cmd, 2); };
-      } else {
-        blankHit(pixelId, 0, rayData.origin);
-        blankHit(pixelId, 1, rayData.origin);
-        backgroundHit(pixelId, 2, rayData.origin);
-      };
+    if (cmd.hasHit) {
+      pathTraceCommand(cmd, firstPart && (cmd.diffuseColor.a >= 0.01f && luminance(cmd.diffuseColor.xyz) >= 0.001f) ? 2 : 0);
+      if (cmd.diffuseColor.a < 1.f) { pathTraceCommand(cmd, 1); } else { blankHit(cmd, 1); };
+    } else {
+      blankHit(pixelId, 0, rayData.origin);
+      blankHit(pixelId, 1, rayData.origin);
+      backgroundHit(pixelId, 2, rayData.origin);
     };
   };
 };
