@@ -135,7 +135,7 @@ layout(buffer_reference, scalar, buffer_reference_align = 1) coherent buffer Pix
 // 
 layout(set = 0, binding = 0, scalar) uniform MatrixBlock
 {
-  uint32_t framebufferAttachments[4]; // framebuffers
+  uint32_t framebufferAttachments[8]; // framebuffers
   uvec2 extent; uint frameCounter, reserved0;
   Constants constants;
   PixelData pixelData;

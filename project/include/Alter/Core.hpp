@@ -664,14 +664,21 @@ namespace ANAMED {
     vk::ClearValue depthClearValue = vk::ClearValue{ .depthStencil = vk::ClearDepthStencilValue{.depth = 1.f, .stencil = 0u} };
     vk::ClearValue stencilClearValue = vk::ClearValue{ .depthStencil = vk::ClearDepthStencilValue{.depth = 1.f, .stencil = 0u} };
     std::vector<vk::ClearValue> colorClearValues = { 
-      vk::ClearValue{.color = vk::ClearColorValue{.float32 = std::array<float, 4>{0.f,0.f,0.f,0.f}} }, 
       vk::ClearValue{.color = vk::ClearColorValue{.uint32 = std::array<uint32_t, 4>{0u,0u,0u,0u}}},
+      vk::ClearValue{.color = vk::ClearColorValue{.float32 = std::array<float, 4>{0.f,0.f,0.f,0.f}} },
+      vk::ClearValue{.color = vk::ClearColorValue{.float32 = std::array<float, 4>{0.f,0.f,0.f,0.f}} },
+      vk::ClearValue{.color = vk::ClearColorValue{.float32 = std::array<float, 4>{0.f,0.f,0.f,0.f}} },
       vk::ClearValue{.color = vk::ClearColorValue{.float32 = std::array<float, 4>{0.f,0.f,0.f,0.f}} }
     };
-
     vk::Format depthAttachmentFormat = vk::Format::eD32SfloatS8Uint;//eD32Sfloat;
     vk::Format stencilAttachmentFormat = vk::Format::eD32SfloatS8Uint;//eS8Uint;
-    std::vector<vk::Format> colorAttachmentFormats = { vk::Format::eR32G32B32A32Sfloat, vk::Format::eR32G32B32A32Uint, vk::Format::eR32G32B32A32Sfloat };
+    std::vector<vk::Format> colorAttachmentFormats = { 
+      vk::Format::eR32G32B32A32Uint, 
+      vk::Format::eR32G32B32A32Sfloat, 
+      vk::Format::eR32G32B32A32Sfloat, 
+      vk::Format::eR32G32B32A32Sfloat, 
+      vk::Format::eR32G32B32A32Sfloat 
+    };
     std::vector<vk::PipelineColorBlendAttachmentState> blendStates = {
       vk::PipelineColorBlendAttachmentState{
         .blendEnable = false,
@@ -687,6 +694,26 @@ namespace ANAMED {
         .blendEnable = false,
         .srcColorBlendFactor = vk::BlendFactor::eOne, // needs pre-mult
         .dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha, 
+        .colorBlendOp = vk::BlendOp::eAdd,
+        .srcAlphaBlendFactor = vk::BlendFactor::eOne,
+        .dstAlphaBlendFactor = vk::BlendFactor::eOne,
+        .alphaBlendOp = vk::BlendOp::eMax,
+        .colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
+      },
+      vk::PipelineColorBlendAttachmentState{
+        .blendEnable = false,
+        .srcColorBlendFactor = vk::BlendFactor::eOne, // needs pre-mult
+        .dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
+        .colorBlendOp = vk::BlendOp::eAdd,
+        .srcAlphaBlendFactor = vk::BlendFactor::eOne,
+        .dstAlphaBlendFactor = vk::BlendFactor::eOne,
+        .alphaBlendOp = vk::BlendOp::eMax,
+        .colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
+      },
+      vk::PipelineColorBlendAttachmentState{
+        .blendEnable = false,
+        .srcColorBlendFactor = vk::BlendFactor::eOne, // needs pre-mult
+        .dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
         .colorBlendOp = vk::BlendOp::eAdd,
         .srcAlphaBlendFactor = vk::BlendFactor::eOne,
         .dstAlphaBlendFactor = vk::BlendFactor::eOne,

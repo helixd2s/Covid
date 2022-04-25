@@ -33,7 +33,7 @@ struct Constants
 
 //
 struct UniformData {
-  uint32_t framebufferAttachments[4] = { 0u,0u,0u,0u };
+  uint32_t framebufferAttachments[8] = { 0u,0u,0u,0u };
   glm::uvec2 extent = {}; uint32_t frameCounter, reserved;
   Constants constants = {};
   uint64_t pixelData = 0ull;
@@ -343,7 +343,7 @@ public:
 
     // 
     decltype(auto) framebufferAttachments = framebufferObj->getImageViewIndices();
-    memcpy(uniformData.framebufferAttachments, framebufferAttachments.data(), std::min(framebufferAttachments.size(), 4ull) * sizeof(uint32_t));
+    memcpy(uniformData.framebufferAttachments, framebufferAttachments.data(), std::min(framebufferAttachments.size(), 8ull) * sizeof(uint32_t));
   };
 
   //

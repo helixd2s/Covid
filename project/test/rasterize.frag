@@ -12,10 +12,12 @@ layout(location = 1) in vec3 pBary;
 layout(location = 2) flat in uvec4 pIndices;
 layout(location = 3) in vec4 pScreen;
 
-//
-layout(location = 0) out vec4 baryData;
-layout(location = 1) out uvec4 indices;
+// needed for linear interpolation...
+layout(location = 0) out uvec4 indices;
+layout(location = 1) out vec4 baryData;
 layout(location = 2) out vec4 position;
+layout(location = 3) out vec4 texcoord;
+layout(location = 4) out vec4 normals;
 
 //
 #ifndef TRANSLUCENT
@@ -46,8 +48,7 @@ void main() {
   GeometryExtAttrib attrib = interpolate(geometry, pBary);
 
   //
-  const vec4 vertice = vec4(attrib.data[VERTEX_VERTICES].xyz, 1.f);
-  const vec4 texcoord = vec4(attrib.data[VERTEX_TEXCOORD].xyz, 1.f);
+  vec4 texcoord_ = vec4(attrib.data[VERTEX_TEXCOORD].xyz, 1.f);
 
   //
 #ifdef TRANSLUCENT
@@ -65,6 +66,7 @@ void main() {
 
   //
   baryData = vec4(pBary, 1.f);
-  position = pScreen/pScreen.w;//vec4(fullTransform(instanceInfo, vertice, geometryIndex).xyz, 1.f);
+  position = pScreen/pScreen.w;
   indices = pIndices;
+  texcoord = texcoord_;
 };
