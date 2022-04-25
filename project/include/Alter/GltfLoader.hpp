@@ -536,23 +536,19 @@ namespace ANAMED
       };
 
       //
+      uintptr_t iter = 0ull;
+      uintptr_t s = 0u;;
       for (decltype(auto) scene : gltf->model.scenes) {
-        
-
-        decltype(auto) inst = std::make_shared<GltfInstanced>();
-        decltype(auto) iter = 0ull;
-        for (decltype(auto) node : scene.nodes) {
-          this->updateInstance(iter, gltfModels.size() - 1ull, inst, gltf->model, gltf->model.nodes[node], glm::dmat4(1.f)* glm::scale(glm::dmat4(1.0f), glm::dvec3(1.f * scale, 1.f * scale, 1.f * scale)));
-        };
+        uintptr_t sceneId = s++;
+        decltype(auto) preTransform = glm::dmat4(1.f) * glm::scale(glm::dmat4(1.0f), glm::dvec3(1.f * scale, 1.f * scale, 1.f * scale));
+        decltype(auto) inst = std::make_shared<GltfInstanced>(); gltf->scenes.push_back(inst);
+        this->updateNodes(preTransform, true);
 
         //
         inst->instanced = ANAMED::InstanceLevelObj::make(handle, ANAMED::InstanceLevelCreateInfo{
           .instances = inst->instances,
           .uploader = this->cInfo->uploader,
-          });
-
-        //
-        gltf->scenes.push_back(inst);
+        });
       };
 
       //
@@ -568,49 +564,59 @@ namespace ANAMED
       //
       return this->gltfModels.back();
     };
-    
 
     //
-    virtual void updateInstances(uintptr_t const& model = 0u, glm::dmat4x4 preTransform = glm::dmat4x4(1.f)) {
-      decltype(auto) gltf = this->gltfModels[model];
+    virtual void updateNodes(glm::dmat4x4 preTransform = glm::dmat4x4(1.f), bool isCreate = false) {
+      decltype(auto) gltf = this->gltfModels[0u];
       uintptr_t i = 0; for (decltype(auto) scene : gltf->model.scenes) {
-        decltype(auto) inst = this->getScene(model, i++);
+        decltype(auto) inst = this->getScene(i++);
         decltype(auto) iter = 0ull;
-        //inst->instances.clear();
         for (decltype(auto) node : scene.nodes) {
-          this->updateInstance(iter, model, inst, gltf->model, gltf->model.nodes[node], preTransform);
+          this->updateNode(inst, iter, gltf->model.nodes[node], preTransform, isCreate);
         };
-        inst->instanced->buildStructure();
+        if (!isCreate) {
+          inst->instanced->buildStructure();
+        };
       };
     };
 
     //
-    virtual void updateInstance(uintptr_t& iter, uintptr_t const& modelId, std::shared_ptr<GltfInstanced> inst, tinygltf::Model& model, tinygltf::Node& node, glm::dmat4 transform = glm::dmat4(1.f)) {
-      // 
-      decltype(auto) gltf = this->gltfModels[modelId];
-      decltype(auto) useMesh = [=, &iter, this](std::shared_ptr<GltfInstanced> inst, tinygltf::Model& model, intptr_t const& meshId, glm::dmat4 transform = glm::dmat4()) {
-        decltype(auto) mesh = model.meshes[meshId];
-        decltype(auto) transposed = glm::mat4(glm::transpose(transform));
-        decltype(auto) devInfo = InstanceDevInfo{
-          .transform = reinterpret_cast<vk::TransformMatrixKHR&>(transposed),
-          .instanceCustomIndex = 0u,
-          .mask = 0xFFu,
-          .instanceShaderBindingTableRecordOffset = 0u,
-          .flags = uint8_t(vk::GeometryInstanceFlagBitsKHR{}),
-          .accelerationStructureReference = gltf->meshes[meshId]->getDeviceAddress()
-        };
-        // if equal - add, if less - replace
-        if (iter >= inst->instances->size()) {
-          inst->instances.add(InstanceDataInfo{ .instanceDevInfo = devInfo });
-          iter++;
-        } else {
-          inst->instances[iter++].instanceDevInfo = devInfo;
-        }
+    virtual void updateInstance(std::shared_ptr<GltfInstanced> inst, uintptr_t& iter, intptr_t const& meshId, glm::dmat4 transform = glm::dmat4(1.f)) {
+      decltype(auto) gltf = this->gltfModels[0u];
+      decltype(auto) mesh = gltf->model.meshes[meshId];
+      decltype(auto) transposed = glm::mat4(glm::transpose(transform));
+      
+      inst->instances[iter].instanceInfo.prevTransform = inst->instances[iter].instanceInfo.transform;
+      inst->instances[iter].instanceInfo.transform = glm::mat3x4(transposed);
+    };
+
+    //
+    virtual void createInstance(std::shared_ptr<GltfInstanced> inst, uintptr_t& iter, uintptr_t const& meshId, glm::dmat4 transform = glm::dmat4(1.f)) {
+      decltype(auto) gltf = this->gltfModels[0u];
+      decltype(auto) mesh = gltf->model.meshes[meshId];
+      decltype(auto) transposed = glm::mat4(glm::transpose(transform));
+      decltype(auto) devInfo = InstanceDevInfo{
+        .instanceCustomIndex = 0u,
+        .mask = 0xFFu,
+        .instanceShaderBindingTableRecordOffset = 0u,
+        .flags = uint8_t(vk::GeometryInstanceFlagBitsKHR{}),
+        .accelerationStructureReference = gltf->meshes[meshId]->getDeviceAddress()
       };
+      decltype(auto) instanceInfo = InstanceInfo{
+        .transform = glm::mat3x4(transposed),
+        .prevTransform = glm::mat3x4(transposed)
+      };
+      inst->instances.add(InstanceDataInfo{ .instanceDevInfo = devInfo, .instanceInfo = instanceInfo });
+    };
+
+    //
+    virtual void updateNode(std::shared_ptr<GltfInstanced> inst, uintptr_t& iter, tinygltf::Node& node, glm::dmat4 transform = glm::dmat4(1.f), bool isCreate = false) {
+      // 
+      decltype(auto) gltf = this->gltfModels[0u];
 
       //
-      std::function<void(std::shared_ptr<GltfInstanced>, tinygltf::Model&, tinygltf::Node&, glm::dmat4 parentTransform)> handleNodes = {};
-      handleNodes = [=, &handleNodes, this](std::shared_ptr<GltfInstanced> inst, tinygltf::Model& model, tinygltf::Node& node, glm::dmat4 transform = glm::dmat4(1.f)) {
+      std::function<void(tinygltf::Node&, glm::dmat4 parentTransform)> handleNodes = {};
+      handleNodes = [=, &handleNodes, &iter, this](tinygltf::Node& node, glm::dmat4 transform = glm::dmat4(1.f)) {
         // 
         auto localTransform = glm::dmat4(1.0);
         localTransform *= node.matrix.size() >= 16 ? glm::make_mat4(node.matrix.data()) : glm::dmat4(1.0);
@@ -619,42 +625,36 @@ namespace ANAMED
         localTransform *= node.rotation.size() >= 4 ? glm::mat4_cast(glm::dquat(node.rotation[3], node.rotation[0], node.rotation[1], node.rotation[2])) : glm::dmat4(1.0);
 
         //
-        //if (node.rotation.size() >= 4) {
-          //glm::dvec3 rot = glm::dvec3(0.0);
-          //double angle = 0;
-          //QuatToAngleAxis(node.rotation, angle, (double*)&rot);
-          //localTransform *= glm::rotate(glm::dmat4(1.0), angle, rot);
-        //};
-
-        //
-        if ((node.mesh >= 0) && (node.mesh < model.meshes.size())) {
-          useMesh(inst, model, node.mesh, transform * localTransform);
+        if ((node.mesh >= 0) && (node.mesh < gltf->model.meshes.size())) {
+          if (isCreate) { createInstance(inst, iter, node.mesh, transform * localTransform); }
+          else { updateInstance(inst, iter, node.mesh, transform * localTransform); };
+          iter++;
         };
 
         //
         for (size_t i = 0; i < node.children.size(); i++) {
-          assert((node.children[i] >= 0) && (node.children[i] < model.nodes.size()));
-          handleNodes(inst, model, model.nodes[node.children[i]], transform * localTransform);
+          assert((node.children[i] >= 0) && (node.children[i] < gltf->model.nodes.size()));
+          handleNodes(gltf->model.nodes[node.children[i]], transform * localTransform);
         };
       };
 
       //
-      handleNodes(inst, gltf->model, node, transform);
+      handleNodes(node, transform);
     };
 
     //
-    virtual std::shared_ptr<GltfInstanced> getDefaultScene(uintptr_t const& model = 0ull) {
-      return this->gltfModels[model]->getDefaultScene();
+    virtual std::shared_ptr<GltfInstanced> getDefaultScene() {
+      return this->gltfModels[0u]->getDefaultScene();
     };
 
     //
-    virtual std::shared_ptr<GltfInstanced> getScene(uintptr_t const& model, uintptr_t const& scene) {
-      return this->gltfModels[model]->getScene(scene);
+    virtual std::shared_ptr<GltfInstanced> getScene(uintptr_t const& scene) {
+      return this->gltfModels[0u]->getScene(scene);
     };
 
     //
-    virtual std::shared_ptr<GltfInstanced> getScene(uintptr_t const& model = 0ull) {
-      return this->gltfModels[model]->getScene();
+    virtual std::shared_ptr<GltfInstanced> getScene() {
+      return this->gltfModels[0u]->getScene();
     };
 
     

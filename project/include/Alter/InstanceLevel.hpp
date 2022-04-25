@@ -45,7 +45,7 @@ namespace ANAMED {
     cpp21::shared_vector<InstanceDraw> instanceDraw = std::vector<InstanceDraw>{};
     cpp21::shared_vector<InstanceDevInfo> instanceDevInfo = std::vector<InstanceDevInfo>{};
     cpp21::shared_vector<InstanceInfo> instanceInfo = std::vector<InstanceInfo>{};
-    cpp21::shared_vector<bool> firstUpdate = std::vector<bool>{};
+    //cpp21::shared_vector<bool> firstUpdate = std::vector<bool>{};
 
     //
     vk::AccelerationStructureKHR accelStruct = {};
@@ -150,7 +150,7 @@ namespace ANAMED {
           this->instanceDraw->push_back(InstanceDraw{});
           this->instanceInfo->push_back(InstanceInfo{});
           this->instanceDevInfo->push_back(InstanceDevInfo{});
-          this->firstUpdate->push_back(true);
+          //this->firstUpdate->push_back(true);
         };
       };
 
@@ -175,8 +175,9 @@ namespace ANAMED {
         };
 
         // 
-        instanceInfo.prevTransform = this->firstUpdate[idx] ? reinterpret_cast<glm::mat3x4&>(instanceDevInfo.transform) : instanceInfo.transform;
-        instanceInfo.transform = reinterpret_cast<glm::mat3x4&>(instanceDevInfo.transform);
+        //instanceInfo.prevTransform = this->firstUpdate[idx] ? reinterpret_cast<glm::mat3x4&>(instanceDevInfo.transform) : instanceInfo.transform;
+        //instanceInfo.transform = reinterpret_cast<glm::mat3x4&>(instanceDevInfo.transform);
+        instanceDevInfo.transform = reinterpret_cast<vk::TransformMatrixKHR&>(instanceInfo.transform);
         instanceInfo.geometryCount = geometryLevel->getGeometries().size();
         instanceInfo.geometryReference = geometryLevel->getGeometryDeviceAddress();
 
@@ -185,7 +186,7 @@ namespace ANAMED {
         instances.instanceDevInfo = instanceDevInfo;
 
         //
-        this->firstUpdate[idx] = false;
+        //this->firstUpdate[idx] = false;
       };
 
       {
