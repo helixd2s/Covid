@@ -18,32 +18,36 @@ layout (local_size_x = 32, local_size_y = 8, local_size_z = 1) in;
 vec4 readAndNeighborColor(in uint pixelId, in uint type) {
   PixelHitInfoRef hitInfo = getPixelHitInfo(pixelId, type);
   vec4 center = hitInfo.color;
-  if (center.w <= 0.f && (pixelId + extent.x) < (extent.y * extent.x) && ((pixelId.x%extent.x) < extent.x-1)) { 
-    PixelHitInfoRef hitInfoX1 = getPixelHitInfo(pixelId + extent.x, type);
-    PixelHitInfoRef hitInfoY1 = getPixelHitInfo(pixelId + 1, type);
-    center = hitInfoX1.color + hitInfoY1.color; 
+  if (center.w <= 0.f) {
+    if ((pixelId + extent.x) < (extent.y * extent.x)) { PixelHitInfoRef info = getPixelHitInfo(pixelId + extent.x, type); center += info.color; };
+    if ((pixelId.x%extent.x) < extent.x-1)            { PixelHitInfoRef info = getPixelHitInfo(pixelId + 1, type); center += info.color; };
+    if (pixelId >= extent.x)                          { PixelHitInfoRef info = getPixelHitInfo(pixelId - extent.x, type); center += info.color; };
+    if ((pixelId.x%extent.x) >= 1)                    { PixelHitInfoRef info = getPixelHitInfo(pixelId - 1, type); center += info.color; };
   };
-  return center;
-};
-
-//
-vec4 readAndNeighborReflectDir(in uint pixelId) {
-  vec4 center = pixelData.pixels[pixelId].reflection.direction;
-  if (center.w <= 0.f && (pixelId + extent.x) < (extent.y * extent.x) && ((pixelId.x%extent.x) < extent.x-1)) { center = (pixelData.pixels[pixelId + extent.x].reflection.direction + pixelData.pixels[pixelId + 1].reflection.direction)/2.f; center.xyz = normalize(center.xyz); };
   return center;
 };
 
 //
 vec4 readAndNeighborEmission(in uint pixelId) {
   vec4 center = pixelData.pixels[pixelId].surface.emission;
-  if (center.w <= 0.f && (pixelId + extent.x) < (extent.y * extent.x) && ((pixelId.x%extent.x) < extent.x-1)) { center = pixelData.pixels[pixelId + extent.x].surface.emission + pixelData.pixels[pixelId + 1].surface.emission; };
+  if (center.w <= 0.f) {
+    if ((pixelId + extent.x) < (extent.y * extent.x)) { center += pixelData.pixels[pixelId + extent.x].surface.emission; };
+    if ((pixelId.x%extent.x) < extent.x-1)            { center += pixelData.pixels[pixelId + 1].surface.emission; };
+    if (pixelId >= extent.x)                          { center += pixelData.pixels[pixelId - extent.x].surface.emission; };
+    if ((pixelId.x%extent.x) >= 1)                    { center += pixelData.pixels[pixelId - 1].surface.emission; };
+  };
   return center;
 };
 
 //
 vec4 readAndNeighborSurfaceDiffuse(in uint pixelId) {
   vec4 center = pixelData.pixels[pixelId].surface.diffuse;
-  if (center.w <= 0.f && (pixelId + extent.x) < (extent.y * extent.x) && ((pixelId.x%extent.x) < extent.x-1)) { center = pixelData.pixels[pixelId + extent.x].surface.diffuse + pixelData.pixels[pixelId + 1].surface.diffuse; };
+  if (center.w <= 0.f) {
+    if ((pixelId + extent.x) < (extent.y * extent.x)) { center += pixelData.pixels[pixelId + extent.x].surface.diffuse; };
+    if ((pixelId.x%extent.x) < extent.x-1)            { center += pixelData.pixels[pixelId + 1].surface.diffuse; };
+    if (pixelId >= extent.x)                          { center += pixelData.pixels[pixelId - extent.x].surface.diffuse; };
+    if ((pixelId.x%extent.x) >= 1)                    { center += pixelData.pixels[pixelId - 1].surface.diffuse; };
+  };
   return center;
 };
 

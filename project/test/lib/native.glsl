@@ -90,7 +90,7 @@ layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer Pix
 struct PixelHitInfo {
   vec4 color; TYPE accum;
   uvec4 indices; uvec4 actualIndices;
-  vec4 direction; vec4 actualDirection;
+  vec4 origin; vec4 actualOrigin;
 };
 
 // but may not to be...
