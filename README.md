@@ -23,7 +23,7 @@ Some functionality still WIP, but almost ready to ***MVP***…
 
 ## Planned features 
 
-  - [ ] 🧩 Distances support 
+  - [ ] 🧩 Distances, MIP and LoD support 
   - [ ] 🧩 Short-range SSRT support
   - [ ] 🧩 More extensions support
   - [ ] 🧩️ OpenGL support (interop)
