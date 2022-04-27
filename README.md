@@ -11,48 +11,48 @@ Some functionality still WIP, but almost ready to ***MVP***…
 
 ## Features
 
-  - [x] Minimal and extensible interface (Open Source, SDK)
-  - [x] Lightweight renderer as prior
-  - [x] Some automatizations (smart)
-  - [x] Ray tracing support
-  - [x] Minimal requirements
-  - [x] Vulkan API 1.3
-  - [x] Reprojections (such as reflections, diffuse, transparency)
-  - [x] Test shaders (currently, not a library)
-  - [x] Checkerboard optimization
+  - [x] ♟️ Minimal and extensible interface (Open Source, SDK)
+  - [x] ♟️ Lightweight renderer as prior
+  - [x] ♟️ Some automatizations (smart)
+  - [x] ♟️ Ray tracing support
+  - [x] ♟️ Minimal requirements
+  - [x] ♟️ Vulkan API 1.3
+  - [x] ♟️ Reprojections (such as reflections, diffuse, transparency)
+  - [x] ♟️ Test shaders (currently, not a library)
+  - [x] ♟️ Checkerboard optimization
 
 ## Planned features 
 
-  - [ ] More extensions support
-  - [ ] OpenGL support (interop)
-  - [ ] Multi-Draw for instances (TLAS)
-  - [ ] Pre-defined shader packages
-  - [ ] Motion-vectors and animations
-  - [ ] Implementation to some games
+  - [ ] 🏙️ More extensions support
+  - [ ] 🏙️ OpenGL support (interop)
+  - [ ] 🏙️ Multi-Draw for instances (TLAS)
+  - [ ] 🏙️ Pre-defined shader packages
+  - [ ] 🏙️ Motion-vectors and animations
+  - [ ] 🏙️ Implementation to some games
 
 ## Testing and demo initialive 
 
-  - [x] Argument passing for app
-  - [x] Basic controller (camera moving)
-  - [x] Basic GLTF support (single model, PBR)
-  - [ ] Basic OBJ support
-  - [ ] Physics demo (interactive, dynamic)
-  - [ ] Advanced GLTF support (more than one model, more features)
-  - [ ] GLTF animations support
-  - [ ] GUI controllers and better interactivity
+  - [x] ☄️ Argument passing for app
+  - [x] ☄️ Basic controller (camera moving)
+  - [x] ☄️ Basic GLTF support (single model, PBR)
+  - [ ] ☄️ Basic OBJ support
+  - [ ] ☄️ Physics demo (interactive, dynamic)
+  - [ ] ☄️ Advanced GLTF support (more than one model, more features)
+  - [ ] ☄️ GLTF animations support
+  - [ ] ☄️ GUI controllers and better interactivity
 
 ## Minecraft and Java 16 spec-operation (Alpha)…
 
-  - [ ] JNI, JavaCPP and Java support (lossless)
-  - [ ] Correct Kotlin support (subset of Java)
-  - [ ] OpenGL interop and compatibility
-  - [ ] Interop with VMA (almost done)
-  - [ ] Minecraft mod itself (Forge)
-  - [ ] Support for Optifine (Forge)
-  - [ ] SUpport for Forge (mod, library)
-  - [ ] Support for Immersive Portals Mod (Forge)
-  - [ ] Support for 1.18.2 and/or beyond
-  - [ ] Support for Rendering API and Blaze 3D
+  - [ ] ☕ JNI, JavaCPP and Java support (lossless)
+  - [ ] ☕ Correct Kotlin support (subset of Java)
+  - [ ] ☕ OpenGL interop and compatibility
+  - [ ] ☕ Interop with VMA (almost done)
+  - [ ] ☕ Minecraft mod itself (Forge)
+  - [ ] ☕ Support for Optifine (Forge)
+  - [ ] ☕ SUpport for Forge (mod, library)
+  - [ ] ☕ Support for Immersive Portals Mod (Forge)
+  - [ ] ☕ Support for 1.18.2 and/or beyond
+  - [ ] ☕ Support for Rendering API and Blaze 3D
 
 ## If you have issues…
 
