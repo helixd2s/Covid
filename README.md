@@ -51,10 +51,10 @@ Some functionality still WIP, but almost ready to ***MVP***…
   - [ ] ☕ Minecraft mod itself (Forge)
   - [ ] ☕ Support for Fabric (mod, library, api)
   - [ ] ☕ Support for 1.18.2 and/or beyond
+  - [ ] 👑 Support for Rendering API and Blaze 3D
   - [ ] 👑 Support for OptiFabric (Fabric)
   - [ ] 👑 Support for Immersive Portals Mod (Fabric)
   - [ ] 👑 Support for Forge (mod, library)
-  - [ ] 👑 Support for Rendering API and Blaze 3D
   - [ ] 👑 Support for Optifine (Forge)
 
 ## If you have issues…
