@@ -46,6 +46,7 @@ Some functionality still WIP, but almost ready to ***MVP***…
 
 ## Minecraft and Java 16 spec-operation (project `Alpha`)…
 
+  - [ ] ☕ Latest LWJGL loading, interop and support
   - [ ] ☕ JNI, JavaCPP and Java support (lossless)
   - [ ] ☕ Correct Kotlin support (subset of Java)
   - [ ] ☕ OpenGL interop and compatibility
