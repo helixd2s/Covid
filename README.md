@@ -23,6 +23,8 @@ Some functionality still WIP, but almost ready to ***MVP***…
 
 ## Planned features 
 
+  - [ ] 🧩 Distances support 
+  - [ ] 🧩 Short-range SSRT support
   - [ ] 🧩 More extensions support
   - [ ] 🧩️ OpenGL support (interop)
   - [ ] 🧩️ Multi-Draw for instances (TLAS)
