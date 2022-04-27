@@ -28,8 +28,8 @@ Some functionality still WIP, but almost ready to ***MVP***…
   - [ ] 🧩️ Multi-Draw for instances (TLAS)
   - [ ] 🧩️ Pre-defined shader packages
   - [ ] 🧩 Motion-vectors and animations
-  - [ ] 🧩️ Implementation to some games
   - [ ] 🧩 Full and native ReShade support
+  - [ ] 👑️ Implementation to some games
 
 ## Testing and demo initialive 
 
