@@ -19,6 +19,7 @@ Some functionality still WIP, but almost ready to ***MVP***…
   - [x] Vulkan API 1.3
   - [x] Reprojections (such as reflections, diffuse, transparency)
   - [x] Test shaders (currently, not a library)
+  - [x] Checkerboard optimization
 
 ## Planned features 
 

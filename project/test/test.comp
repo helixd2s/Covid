@@ -130,7 +130,7 @@ void blankHit(in PathTraceCommand cmd, in uint type) {
 // 
 void backgroundHit(in uint pixelId, in uint type, in vec3 origin) {
   PixelHitInfoRef hitInfo = getPixelHitInfo(pixelId, type);
-  hitInfo.indices = uvec4(0u.xxx, 4);
+  hitInfo.indices = uvec4(0u.xxx, type);
   hitInfo.color = ((type == 2) ? vec4(1.f.xxxx) : vec4(0.f.xxx, 1.f)), hitInfo.accum = TYPE(0u);
   hitInfo.origin = vec4(vec4(0.f.xxx, 1.f) * constants.lookAtInverse, 10000.f), hitInfo.actualOrigin = vec4(0.f);
 };
@@ -138,7 +138,7 @@ void backgroundHit(in uint pixelId, in uint type, in vec3 origin) {
 //
 void blankHit(in uint pixelId, in uint type, in vec3 origin) {
   PixelHitInfoRef hitInfo = getPixelHitInfo(pixelId, type);
-  hitInfo.indices = uvec4(0u.xxx, 4);
+  hitInfo.indices = uvec4(0u.xxx, type);
   hitInfo.color = vec4(0.f.xxx, 1.f), hitInfo.accum = TYPE(0u);
   hitInfo.origin = vec4(vec4(0.f.xxx, 1.f) * constants.lookAtInverse, 10000.f), hitInfo.actualOrigin = vec4(0.f);
 };
