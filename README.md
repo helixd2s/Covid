@@ -23,7 +23,8 @@ Some functionality still WIP, but almost ready to ***MVP***…
 
 ## Planned features 
 
-  - [ ] 🧩 Distances, MIP and LoD support 
+  - [ ] 🧩 Rewrite to HLSL (needs features)
+  - [ ] 🧩 Distances, MIP and LoD support
   - [ ] 🧩 Short-range SSRT support
   - [ ] 🧩 More extensions support
   - [ ] 🧩️ OpenGL support (interop)
@@ -31,7 +32,14 @@ Some functionality still WIP, but almost ready to ***MVP***…
   - [ ] 🧩️ Pre-defined shader packages
   - [ ] 🧩 Motion-vectors and animations
   - [ ] 🧩 Full and native ReShade support
+  - [ ] 🧩 Interop with CUDA and OpenCL (**not** AMD)
+  - [ ] 👑 Interop with DirectX 12
+  - [ ] 👑 DirectX 12 underlayer of Vulkan
   - [ ] 👑️ Implementation to some games
+
+## Planned specific libraries
+
+  - [ ] 👑 Radix sort for all GPU (GLSL and HLSL)
 
 ## Testing and demo initialive 
 
