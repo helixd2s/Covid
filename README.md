@@ -48,11 +48,11 @@ Some functionality still WIP, but almost ready to ***MVP***…
   - [ ] ☕ OpenGL interop and compatibility
   - [ ] ☕ Interop with VMA (almost done)
   - [ ] ☕ Minecraft mod itself (Forge)
-  - [ ] ☕ Support for Optifine (Forge)
-  - [ ] ☕ SUpport for Forge (mod, library)
-  - [ ] ☕ Support for Immersive Portals Mod (Forge)
+  - [ ] ☕ Support for Forge (mod, library)
   - [ ] ☕ Support for 1.18.2 and/or beyond
-  - [ ] ☕ Support for Rendering API and Blaze 3D
+  - [ ] 👑 Support for Rendering API and Blaze 3D
+  - [ ] 👑 Support for Optifine (Forge)
+  - [ ] 👑 Support for Immersive Portals Mod (Forge)
 
 ## If you have issues…
 
