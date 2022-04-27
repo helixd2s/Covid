@@ -845,6 +845,12 @@ vec3 trueMultColor(in vec3 rayColor, in vec3 material) {
   return sqrt((rfactor * max(material,0.f.xxx)) * (mfactor * max(rayColor,0.f.xxx)));
 };
 
+//directLighting(rayData.origin.xyz, normals, vec2(random(rayData.launchId.xy), random(rayData.launchId.xy)), 10000.f)
+
+vec4 trueMultColor(in vec4 rayColor, in vec4 material) {
+  return vec4(trueMultColor(rayColor.xyz, material.xyz), material.w * rayColor.w);
+};
+
 // for metallic reflection
 vec3 metallicMult(in vec3 rayColor, in vec3 materialColor, in float factor) {
   return mix(rayColor, trueMultColor(rayColor, materialColor), factor);

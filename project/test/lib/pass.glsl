@@ -15,6 +15,70 @@ struct PassData {
   vec3 origin;
 };
 
+//
+void genTB(in vec3 N, out vec3 T, out vec3 B) {
+    const float s = N.z < 0.0 ? -1.0 : 1.0;
+    const float a = -1.0 / (s + N.z);
+    const float b = N.x * N.y * a;
+    T = vec3(1.0 + s * N.x * N.x * a, s * b, -s * N.x);
+    B = vec3(b, s + N.y * N.y * a, -N.y);
+};
+
+//
+vec3 coneSample(in vec3 N, in float cosTmax, in vec2 r) {
+    vec3 T, B; genTB(N, T, B);
+    r.x *= 2.0 * PI;
+    r.y = 1.0 - r.y * (1.0 - cosTmax);
+    const float s = sqrt(1.0 - r.y * r.y);
+    return T * (cos(r.x) * s) + B * (sin(r.x) * s) + N * r.y;
+};
+
+//
+bool intersect(in vec4 sphere, in vec3 O, in vec3 D, inout float tmax) {
+    const vec3 L = sphere.xyz - O;
+    const float tc = dot(D, L);
+    const float t = tc - sqrt(sphere.w * sphere.w + tc * tc - dot(L, L));
+    if (t > 0.0 && t < tmax) {
+        tmax = t; return true;
+    }
+    return false;
+};
+
+//
+const vec4 sunSphere = vec4(1000.f, 5000.f, 1000.f, 200.f);
+const vec3 sunColor = vec3(0.95f, 0.9f, 0.8f) * 1000.f;
+
+//
+vec4 directLighting(in vec3 O, in vec3 N, in vec3 r, in float t) {
+    const vec3 SO = sunSphere.xyz + (vec4(0.f.xxx, 1.f) * constants.lookAtInverse);
+    const vec3 LC = SO - O;
+    const float dt = dot(LC, LC);
+    const float cosL = sqrt(1.f - clamp((sunSphere.w * sunSphere.w) / dt, 0.f, 1.f));
+    const float weight = 2.f * (1.f - cosL);
+
+    //
+    RayData rayData;
+    rayData.direction.xyz = coneSample(LC * inversesqrt(dt), cosL, r.xy);
+    rayData.origin.xyz = O;
+    rayData.energy.xyzw = f16vec4(1.f.xxx, 0.f);
+    rayData.emission.xyzw = f16vec4(0.f.xxx, 0.f);
+
+    // 
+    const bool hasIntersection = intersect(vec4(SO, sunSphere.w), rayData.origin.xyz, rayData.direction.xyz, t);
+    IntersectionInfo opaqueIntersection = traceRaysOpaque(instancedData.opaqueAddressInfo, rayData, t);
+    IntersectionInfo translucentIntersection = traceRaysTransparent(instancedData.opaqueAddressInfo, rayData, opaqueIntersection.hitT);
+    IntersectionInfo intersection = translucentIntersection.hitT <= opaqueIntersection.hitT ? translucentIntersection : opaqueIntersection;
+
+    //
+    if (hasIntersection && intersection.hitT >= t && t > 0.f) {
+      rayData.emission.xyz += f16vec3(sunColor * (weight * clamp(dot( rayData.direction.xyz, N ), 0.f, 1.f)));
+      //rayData.emission.w += float16_t(1.f);
+    };
+
+    //
+    return rayData.emission;
+};
+
 // 
 RayData handleIntersection(in RayData rayData, in IntersectionInfo intersection, inout PassData passed) {
   InstanceInfo instanceInfo = getInstance(instancedData.opaqueAddressInfo, intersection.instanceId);
@@ -63,12 +127,13 @@ RayData handleIntersection(in RayData rayData, in IntersectionInfo intersection,
   } else
   {
     if (luminance(emissiveColor.xyz) > 0.001f) {
-      rayData.emission.xyz += f16vec3(trueMultColor(rayData.energy.xyz, emissiveColor.xyz));
+      rayData.emission += f16vec4(trueMultColor(rayData.energy.xyz, emissiveColor.xyz), 1.f);
       rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, 1.f-emissiveColor.xyz));
     };
     passed.diffusePass = true;
     rayData.direction.xyz = randomCosineWeightedHemispherePoint(originSeedXYZ, normals);
     rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, diffuseColor.xyz));
+    rayData.emission += f16vec4(trueMultColor(directLighting(rayData.origin.xyz, normals, vec3(random(rayData.launchId.xy), random(rayData.launchId.xy), random(rayData.launchId.xy)), 10000.f), vec4(rayData.energy.xyz, 1.f)));
   };
 
   // 
@@ -88,7 +153,7 @@ RayData pathTrace(in RayData rayData, inout float hitDist, inout vec3 firstNorma
 
     // 
     IntersectionInfo opaqueIntersection = traceRaysOpaque(instancedData.opaqueAddressInfo, rayData, 10000.f);
-    IntersectionInfo translucentIntersection = traceRaysTransparent(instancedData.opaqueAddressInfo, rayData, 10000.f);
+    IntersectionInfo translucentIntersection = traceRaysTransparent(instancedData.opaqueAddressInfo, rayData, opaqueIntersection.hitT);
     IntersectionInfo intersection = translucentIntersection.hitT <= opaqueIntersection.hitT ? translucentIntersection : opaqueIntersection;
 
     //
@@ -124,8 +189,8 @@ RayData pathTrace(in RayData rayData, inout float hitDist, inout vec3 firstNorma
       };
 
     } else {
-      rayData.origin.xyz = vec4(0.f.xxx, 1.f) * constants.lookAtInverse + rayData.direction.xyz * (10000.f - currentT);
-      rayData.emission.xyz += f16vec3(trueMultColor(rayData.energy.xyz, pow(toLinear(texture(sampler2D(textures[background], samplers[0]), lcts(rayData.direction.xyz)).xyz), 1.f/2.2f.xxx)));
+      rayData.origin.xyz = vec4(0.f.xxx, 1.f) * constants.lookAtInverse + rayData.direction.xyz * 10000.f;
+      rayData.emission += f16vec4(trueMultColor(rayData.energy.xyz, pow(toLinear(texture(sampler2D(textures[background], samplers[0]), lcts(rayData.direction.xyz)).xyz), 1.f/2.2f.xxx)), 1.f);
       rayData.energy.xyz *= f16vec3(0.f.xxx);
       if (!surfaceFound) {
         hitDist = currentT = 10000.f;

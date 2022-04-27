@@ -52,6 +52,9 @@ PathTraceOutput pathTraceCommand(in PathTraceCommand cmd, in uint type) {
   outp.indices.w = type;
 
   // 
+  rayData.origin += outRayNormal(rayData.direction.xyz, cmd.tbn[2].xyz) * 0.0001f;
+
+  //
   if (type == 0) {
     rayData.direction.xyz = normalize(reflective(originSeedXYZ, rayData.direction.xyz, cmd.normals.xyz, cmd.PBR.g));;
     rayData.energy = f16vec4(metallicMult(1.f.xxx, cmd.diffuseColor.xyz, cmd.PBR.b), 1.f);
@@ -64,18 +67,14 @@ PathTraceOutput pathTraceCommand(in PathTraceCommand cmd, in uint type) {
   } else {
     rayData.direction.xyz = normalize(randomCosineWeightedHemispherePoint(originSeedXYZ, cmd.normals));
     rayData.energy = f16vec4(1.f.xxx, 1.f);
-    rayData.emission = f16vec4(0.f.xxx, 1.f);
+    rayData.emission = f16vec4(directLighting(rayData.origin.xyz, cmd.normals.xyz, vec3(random(rayData.launchId.xy), random(rayData.launchId.xy), random(rayData.launchId.xy)), 10000.f));
   };
 
   // enforce typic indice
-  outp.indices.w = type;
-
-  //
-  rayData.origin += outRayNormal(rayData.direction.xyz, cmd.tbn[2].xyz) * 0.0001f;
   rayData = pathTrace(rayData, outp.hitT, outp.normals, outp.indices);
 
   //
-  vec4 finalColor = vec4(vec3(rayData.emission.xyz), 1.f);
+  vec4 finalColor = vec4(rayData.emission/rayData.emission.w);
   finalColor = clamp(finalColor, vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f));
 
   //

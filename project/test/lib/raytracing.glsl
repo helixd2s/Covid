@@ -33,7 +33,7 @@ IntersectionInfo traceRaysOpaque(in InstanceAddressInfo instance, in RayData ray
     IntersectionInfo result;
     {
         result.barycentric = vec3(0.f.xxx);
-        result.hitT = maxT;
+        result.hitT = 10000.f;
         result.instanceId = 0u;
         result.geometryId = 0u;
         result.primitiveId = 0u;
@@ -88,7 +88,7 @@ IntersectionInfo traceRaysTransparent(in InstanceAddressInfo instance, in RayDat
     IntersectionInfo result;
     {
         result.barycentric = vec3(0.f.xxx);
-        result.hitT = maxT;
+        result.hitT = 10000.f;
         result.instanceId = 0u;
         result.geometryId = 0u;
         result.primitiveId = 0u;
