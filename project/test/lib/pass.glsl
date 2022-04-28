@@ -112,17 +112,17 @@ RayData handleIntersection(in RayData rayData, in IntersectionInfo intersection,
   vec3 originSeedXYZ = vec3(random(rayData.launchId.xy), random(rayData.launchId.xy), random(rayData.launchId.xy));
 
   //
-  passed.alphaColor = vec4(1.f.xxx, diffuseColor.a);
+  passed.alphaColor = vec4(mix(diffuseColor.xyz, 1.f.xxx, diffuseColor.a), diffuseColor.a);
   passed.normals = normals;
   passed.origin = vertice.xyz;
 
   //
-  if (random(rayData.launchId.xy) <= reflFactor && diffuseColor.a >= 0.001f) { // I currently, have no time for fresnel
+  if (random(rayData.launchId.xy) <= reflFactor && passed.alphaColor.a >= 0.001f) { // I currently, have no time for fresnel
     rayData.direction.xyz = reflective(originSeedXYZ, rayData.direction.xyz, normals, roughnessFactor);
     rayData.energy.xyz = f16vec3(metallicMult(rayData.energy.xyz, diffuseColor.xyz, metallicFactor));
   } else 
-  if (random(rayData.launchId.xy) >= (diffuseColor.a * (inner ? 0.f : 1.f))) { // wrong diffuse if inner
-    rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, mix(passed.alphaColor.xyz, 1.f.xxx, diffuseColor.a)));
+  if (random(rayData.launchId.xy) >= (passed.alphaColor.a * (inner ? 0.f : 1.f))) { // wrong diffuse if inner
+    rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, passed.alphaColor.xyz));
     passed.alphaPassed = true;
   } else
   {
@@ -159,7 +159,8 @@ RayData pathTrace(in RayData rayData, inout float hitDist, inout vec3 firstNorma
     IntersectionInfo intersection = translucentIntersection.hitT <= opaqueIntersection.hitT ? translucentIntersection : opaqueIntersection;
 
     //
-    if (!all(lessThanEqual(intersection.barycentric, 0.f.xxx))) {
+    //if (!all(lessThanEqual(intersection.barycentric, 0.f.xxx))) {
+    if (intersection.hitT < 10000.f) {
       PassData opaquePass, pass;
       opaquePass.alphaColor = vec4(1.f.xxx, 1.f);
       opaquePass.alphaPassed = false;
@@ -174,15 +175,12 @@ RayData pathTrace(in RayData rayData, inout float hitDist, inout vec3 firstNorma
 
       // if translucent over opaque (decals)
       if (pass.alphaPassed && opaqueIntersection.hitT <= (intersection.hitT + 0.0001f)) {
-        rayData = opaqueRayData;
-        rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, pass.alphaColor.xyz));
-        intersection = opaqueIntersection, pass = opaquePass;
+        opaqueRayData.energy.xyz = f16vec3(trueMultColor(opaqueRayData.energy.xyz, pass.alphaColor.xyz));
+        rayData = opaqueRayData, intersection = opaqueIntersection, pass = opaquePass;
       };
 
       //
       if (pass.alphaPassed) { T++; } else { R++; };
-
-      //
       currentT += intersection.hitT;
 
       // 

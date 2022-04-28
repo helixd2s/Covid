@@ -82,48 +82,44 @@ struct Constants
 // but may not to be...
 layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer PixelHitInfoRef {
   vec4 color; TYPE accum;
-  uvec4 indices; uvec4 actualIndices;
-  vec4 origin; vec4 actualOrigin;
+  uvec4 indices, actualIndices;
+  vec4 origin, actualOrigin;
 };
 
 // 
 struct PixelHitInfo {
   vec4 color; TYPE accum;
-  uvec4 indices; uvec4 actualIndices;
-  vec4 origin; vec4 actualOrigin;
+  uvec4 indices, actualIndices;
+  vec4 origin, actualOrigin;
 };
 
 // but may not to be...
 layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer PixelSurfaceInfoRef {
-  uvec4 indices; uvec4 actualIndices;
-  vec3 origin; vec3 actualNormal;
-  vec3 normal; vec3 actualOrigin;
+  uvec4 indices, actualIndices;
+  vec3 origin, actualNormal;
+  vec3 normal, actualOrigin;
   vec4 emission; TYPE emissionAccum;
   vec4 diffuse; TYPE diffuseAccum;
 };
 
 //
 struct PixelSurfaceInfo {
-  uvec4 indices; uvec4 actualIndices;
-  vec3 origin; vec3 actualNormal;
-  vec3 normal; vec3 actualOrigin;
+  uvec4 indices, actualIndices;
+  vec3 origin, actualNormal;
+  vec3 normal, actualOrigin;
   vec4 emission; TYPE emissionAccum;
   vec4 diffuse; TYPE diffuseAccum;
 };
 
 // but may not to be...
 layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer PixelInfoRef {
-  PixelHitInfo reflection;
-  PixelHitInfo transparency;
-  PixelHitInfo diffuse;
+  PixelHitInfo hits[3u];
   PixelSurfaceInfo surface;
 };
 
 //
 struct PixelInfo {
-  PixelHitInfo reflection;
-  PixelHitInfo transparency;
-  PixelHitInfo diffuse;
+  PixelHitInfo hits[3u];
   PixelSurfaceInfo surface;
 };
 

@@ -156,12 +156,15 @@ void retranslateSurface(in uint pixelId) {
 
 //
 void retranslateSurface(in PathTraceCommand cmd) {
-  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.pixelId);
-  surfaceInfo.indices = uvec4(cmd.intersection.instanceId, cmd.intersection.geometryId, cmd.intersection.primitiveId, 0u);
-  surfaceInfo.origin = surfaceInfo.actualOrigin, surfaceInfo.origin.xyz = cmd.rayData.origin.xyz, surfaceInfo.actualOrigin = vec3(0.f);
-  surfaceInfo.normal = cmd.normals, surfaceInfo.actualNormal = vec3(0.f);
-  surfaceInfo.emission = vec4(cmd.emissiveColor.xyz, 1.f), surfaceInfo.emissionAccum = TYPE(0u);
-  surfaceInfo.diffuse = vec4(cmd.diffuseColor.xyz, 1.f), surfaceInfo.diffuseAccum = TYPE(0u);
+  retranslateSurface(cmd.pixelId);
+  if (cmd.diffuseColor.a >= 0.001f) {
+    PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.pixelId);
+    surfaceInfo.indices = uvec4(cmd.intersection.instanceId, cmd.intersection.geometryId, cmd.intersection.primitiveId, 0u);
+    surfaceInfo.origin.xyz = cmd.rayData.origin.xyz, surfaceInfo.actualOrigin = vec3(0.f);
+    surfaceInfo.normal = cmd.normals;
+    surfaceInfo.emission = vec4(cmd.emissiveColor.xyz, 1.f);
+    surfaceInfo.diffuse = vec4(cmd.diffuseColor.xyz, 1.f);
+  };
 };
 
 
@@ -243,7 +246,7 @@ void main() {
 
     // 
     if (cmd.hasHit) {
-      pathTraceCommand(cmd, firstPart && (cmd.diffuseColor.a >= 0.01f && luminance(cmd.diffuseColor.xyz) >= 0.001f) ? 2 : 0);
+      pathTraceCommand(cmd, firstPart && (cmd.diffuseColor.a >= 0.001f && luminance(cmd.diffuseColor.xyz) > 0.f) ? 2 : 0);
       if (cmd.diffuseColor.a < 1.f) { pathTraceCommand(cmd, 1); } else { blankHit(cmd, 1); };
     } else {
       blankHit(pixelId, 0, rayData.origin);

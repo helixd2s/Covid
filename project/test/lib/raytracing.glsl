@@ -25,15 +25,20 @@ IntersectionInfo traceRaysOpaque(in InstanceAddressInfo instance, in RayData ray
     rayQueryInitializeEXT(rayQuery, accelerationStructureEXT(instance.accelStruct), gl_RayFlagsOpaqueEXT, 0xff, rays.origin.xyz, 0.001f, rays.direction.xyz, maxT);
 
     // 
+    float currentT = 10000.f;
     while(rayQueryProceedEXT(rayQuery)) {
-        rayQueryConfirmIntersectionEXT(rayQuery);
+        const float fT = rayQueryGetIntersectionTEXT(rayQuery, false);
+        if (fT <= currentT) {
+            currentT = fT;
+            rayQueryConfirmIntersectionEXT(rayQuery);
+        };
     };
 
     //
     IntersectionInfo result;
     {
         result.barycentric = vec3(0.f.xxx);
-        result.hitT = 10000.f;
+        result.hitT = currentT;
         result.instanceId = 0u;
         result.geometryId = 0u;
         result.primitiveId = 0u;
@@ -59,23 +64,33 @@ IntersectionInfo traceRaysTransparent(in InstanceAddressInfo instance, in RayDat
     rayQueryInitializeEXT(rayQuery, accelerationStructureEXT(instance.accelStruct), gl_RayFlagsNoOpaqueEXT, 0xff, rays.origin.xyz, 0.001f, rays.direction.xyz, maxT);
 
     // 
+    float currentT = 10000.f;
     while(rayQueryProceedEXT(rayQuery)) {
         bool isOpaque = true;
 
         {   // compute intersection opacity
-            uint instanceId = rayQueryGetIntersectionInstanceIdEXT(rayQuery, false);
-            uint geometryId = rayQueryGetIntersectionGeometryIndexEXT(rayQuery, false);
-            uint primitiveId = rayQueryGetIntersectionPrimitiveIndexEXT(rayQuery, false);
-            GeometryInfo geometryInfo = getGeometry(instance, instanceId, geometryId);
-            uvec3 indices = readTriangleIndices(geometryInfo.indices, primitiveId);
-            vec2 attribs = rayQueryGetIntersectionBarycentricsEXT(rayQuery, false);
-            GeometryExtData geometry = getGeometryData(geometryInfo, primitiveId);
-            GeometryExtAttrib interpol = interpolate(geometry, attribs);
-            mat3x3 tbn = getTBN(interpol);
-            MaterialPixelInfo material = handleMaterial(getMaterialInfo(geometryInfo), interpol.data[VERTEX_TEXCOORD].xy, tbn);
+            const float fT = rayQueryGetIntersectionTEXT(rayQuery, false);
+            if (fT <= currentT) {
+                const uint instanceId = rayQueryGetIntersectionInstanceIdEXT(rayQuery, false);
+                const uint geometryId = rayQueryGetIntersectionGeometryIndexEXT(rayQuery, false);
+                const uint primitiveId = rayQueryGetIntersectionPrimitiveIndexEXT(rayQuery, false);
+                InstanceInfo instanceInfo = getInstance(instance, instanceId);
+                GeometryInfo geometryInfo = getGeometry(instance, instanceId, geometryId);
+                const uvec3 indices = readTriangleIndices(geometryInfo.indices, primitiveId);
+                const vec2 attribs = rayQueryGetIntersectionBarycentricsEXT(rayQuery, false);
+                GeometryExtData geometry = getGeometryData(geometryInfo, primitiveId);
+                GeometryExtAttrib interpol = interpolate(geometry, attribs);
+                mat3x3 tbn = getTBN(interpol);
+                tbn[0] = fullTransformNormal(instanceInfo, tbn[0], geometryId);
+                tbn[1] = fullTransformNormal(instanceInfo, tbn[1], geometryId);
+                tbn[2] = fullTransformNormal(instanceInfo, tbn[2], geometryId);
+                MaterialPixelInfo material = handleMaterial(getMaterialInfo(geometryInfo), interpol.data[VERTEX_TEXCOORD].xy, tbn);
 
-            if (material.color[MATERIAL_ALBEDO].a < 0.001f) {
-                isOpaque = false;
+                if (material.color[MATERIAL_ALBEDO].a < 0.001f) {
+                    isOpaque = false;
+                } else {
+                    currentT = fT;
+                };
             };
         };
 
@@ -88,7 +103,7 @@ IntersectionInfo traceRaysTransparent(in InstanceAddressInfo instance, in RayDat
     IntersectionInfo result;
     {
         result.barycentric = vec3(0.f.xxx);
-        result.hitT = 10000.f;
+        result.hitT = currentT;
         result.instanceId = 0u;
         result.geometryId = 0u;
         result.primitiveId = 0u;

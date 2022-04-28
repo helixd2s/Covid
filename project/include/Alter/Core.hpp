@@ -383,7 +383,8 @@ namespace ANAMED {
       "VK_KHR_pipeline_library",
       "VK_EXT_graphics_pipeline_library",
       "VK_EXT_shader_atomic_float",
-      "VK_EXT_shader_atomic_float2"
+      "VK_EXT_shader_atomic_float2",
+      "VK_EXT_depth_range_unrestricted"
     };
     cpp21::shared_vector<std::string> layerList = std::vector<std::string>{
     };
@@ -682,52 +683,52 @@ namespace ANAMED {
     std::vector<vk::PipelineColorBlendAttachmentState> blendStates = {
       vk::PipelineColorBlendAttachmentState{
         .blendEnable = false,
-        .srcColorBlendFactor = vk::BlendFactor::eOne, // needs pre-mult
+        .srcColorBlendFactor = vk::BlendFactor::eSrcAlpha, // needs pre-mult
+        .dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
+        .colorBlendOp = vk::BlendOp::eAdd,
+        .srcAlphaBlendFactor = vk::BlendFactor::eOne,
+        .dstAlphaBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
+        .alphaBlendOp = vk::BlendOp::eAdd,
+        .colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
+      },
+      vk::PipelineColorBlendAttachmentState{
+        .blendEnable = false,
+        .srcColorBlendFactor = vk::BlendFactor::eSrcAlpha, // needs pre-mult
         .dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha, 
         .colorBlendOp = vk::BlendOp::eAdd,
         .srcAlphaBlendFactor = vk::BlendFactor::eOne,
-        .dstAlphaBlendFactor = vk::BlendFactor::eOne,
-        .alphaBlendOp = vk::BlendOp::eMax,
+        .dstAlphaBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
+        .alphaBlendOp = vk::BlendOp::eAdd,
         .colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
       },
       vk::PipelineColorBlendAttachmentState{
         .blendEnable = false,
-        .srcColorBlendFactor = vk::BlendFactor::eOne, // needs pre-mult
-        .dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha, 
-        .colorBlendOp = vk::BlendOp::eAdd,
-        .srcAlphaBlendFactor = vk::BlendFactor::eOne,
-        .dstAlphaBlendFactor = vk::BlendFactor::eOne,
-        .alphaBlendOp = vk::BlendOp::eMax,
-        .colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
-      },
-      vk::PipelineColorBlendAttachmentState{
-        .blendEnable = false,
-        .srcColorBlendFactor = vk::BlendFactor::eOne, // needs pre-mult
+        .srcColorBlendFactor = vk::BlendFactor::eSrcAlpha, // needs pre-mult
         .dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
         .colorBlendOp = vk::BlendOp::eAdd,
         .srcAlphaBlendFactor = vk::BlendFactor::eOne,
-        .dstAlphaBlendFactor = vk::BlendFactor::eOne,
-        .alphaBlendOp = vk::BlendOp::eMax,
+        .dstAlphaBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
+        .alphaBlendOp = vk::BlendOp::eAdd,
         .colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
       },
       vk::PipelineColorBlendAttachmentState{
         .blendEnable = false,
-        .srcColorBlendFactor = vk::BlendFactor::eOne, // needs pre-mult
+        .srcColorBlendFactor = vk::BlendFactor::eSrcAlpha, // needs pre-mult
         .dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
         .colorBlendOp = vk::BlendOp::eAdd,
         .srcAlphaBlendFactor = vk::BlendFactor::eOne,
-        .dstAlphaBlendFactor = vk::BlendFactor::eOne,
-        .alphaBlendOp = vk::BlendOp::eMax,
+        .dstAlphaBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
+        .alphaBlendOp = vk::BlendOp::eAdd,
         .colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
       },
       vk::PipelineColorBlendAttachmentState{
         .blendEnable = false,
-        .srcColorBlendFactor = vk::BlendFactor::eOne, // needs pre-mult
+        .srcColorBlendFactor = vk::BlendFactor::eSrcAlpha, // needs pre-mult
         .dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
         .colorBlendOp = vk::BlendOp::eAdd,
         .srcAlphaBlendFactor = vk::BlendFactor::eOne,
-        .dstAlphaBlendFactor = vk::BlendFactor::eOne,
-        .alphaBlendOp = vk::BlendOp::eMax,
+        .dstAlphaBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
+        .alphaBlendOp = vk::BlendOp::eAdd,
         .colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
       }
     };

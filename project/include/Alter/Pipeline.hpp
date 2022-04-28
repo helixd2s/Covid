@@ -187,7 +187,7 @@ namespace ANAMED {
 
       //
       decltype(auto) pColorBlend = infoMap->set(vk::StructureType::ePipelineColorBlendStateCreateInfo, vk::PipelineColorBlendStateCreateInfo{
-        .logicOpEnable = false,
+        .logicOpEnable = true,
         .logicOp = vk::LogicOp::eCopy
       });
 
