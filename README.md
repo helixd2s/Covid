@@ -46,6 +46,7 @@ Some functionality still WIP, but almost ready to ***MVP***…
   - [ ] 🧩️ OpenGL support (interop)
   - [ ] 🧩️ Pre-defined shader packages
   - [ ] 🧩 Motion-vectors and animations
+  - [ ] 🧩 Advanced shadow maps (with RT)
   - [ ] 🧩 Full and native ReShade support
   - [ ] 🧩 Interop with CUDA and OpenCL (**not** AMD)
   - [ ] 👑 Interop with DirectX 12
