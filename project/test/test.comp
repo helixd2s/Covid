@@ -82,7 +82,7 @@ PathTraceOutput pathTraceCommand(in PathTraceCommand cmd, in uint type) {
   float reflCoef = cmd.reflCoef;
 
   // 
-  vec4 additional = vec4(0.f);
+  vec4 additional = vec4(0.f.xxx, 1.f);
   if (type == 0) { additional = finalColor * vec4(reflCoef.xxx, 1.f) * (outp.hitT > 0.f ? 1.f : 0.f); };
   if (type == 1) { additional = finalColor * vec4(((1.f - reflCoef) * (1.f - transpCoef)).xxx, 1.f) * (outp.hitT > 0.f ? 1.f : 0.f); };
   if (type == 2) { additional = finalColor * vec4(((1.f - reflCoef) * transpCoef).xxx, 1.f) * (outp.hitT > 0.f ? 1.f : 0.f); };
@@ -157,14 +157,14 @@ void retranslateSurface(in uint pixelId) {
 //
 void retranslateSurface(in PathTraceCommand cmd) {
   retranslateSurface(cmd.pixelId);
-  if (cmd.diffuseColor.a >= 0.001f) {
+  //if (cmd.diffuseColor.a >= 0.001f) {
     PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.pixelId);
     surfaceInfo.indices = uvec4(cmd.intersection.instanceId, cmd.intersection.geometryId, cmd.intersection.primitiveId, 0u);
     surfaceInfo.origin.xyz = cmd.rayData.origin.xyz, surfaceInfo.actualOrigin = vec3(0.f);
     surfaceInfo.normal = cmd.normals;
     surfaceInfo.emission = vec4(cmd.emissiveColor.xyz, 1.f);
     surfaceInfo.diffuse = vec4(cmd.diffuseColor.xyz, 1.f);
-  };
+  //};
 };
 
 
