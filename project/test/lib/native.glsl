@@ -167,6 +167,18 @@ vec3 toLinear(in vec3 sRGB) { return mix(pow((sRGB + vec3(0.055))/vec3(1.055), v
 vec4 toLinear(in vec4 sRGB) { return vec4(toLinear(sRGB.xyz), sRGB.w); }
 
 //
+vec3 gamma(in vec3 c) { return pow(c.rgb, 1.f.xxx/HDR_GAMMA); };
+vec3 ungamma(in vec3 c) { return pow(c.rgb, HDR_GAMMA.xxx); };
+vec4 gamma(in vec4 c) { return vec4(gamma(c.rgb), c.a); };
+vec4 ungamma(in vec4 c) { return vec4(ungamma(c.rgb), c.a); };
+
+//
+vec3 gamma3(in vec3 c) { return gamma(c.rgb) * 3.f; };
+vec3 ungamma3(in vec3 c) { return ungamma(c.rgb) * 3.f; };
+vec4 gamma3(in vec4 c) { return vec4(gamma3(c.rgb), c.a); };
+vec4 ungamma3(in vec4 c) { return vec4(ungamma3(c.rgb), c.a); };
+
+//
 vec4 divW(in vec4 coord) {
   return coord.xyzw/coord.w;
 };
@@ -836,10 +848,11 @@ float luminance(in vec3 color) {
 
 // for metallic reflection (true-multiply)
 vec3 trueMultColor(in vec3 rayColor, in vec3 material) {
-  float rfactor = clamp(luminance(max(rayColor,0.f.xxx)), 0.f, 16.f);
-  float mfactor = clamp(luminance(max(material,0.f.xxx)), 0.f, 16.f);
+  const float rfactor = clamp(luminance(max(rayColor,0.f.xxx)), 0.f, 16.f);
+  const float mfactor = clamp(luminance(max(material,0.f.xxx)), 0.f, 16.f);
   //return rfactor * materialColor + mfactor * rayColor;
-  return sqrt((rfactor * max(material,0.f.xxx)) * (mfactor * max(rayColor,0.f.xxx)));
+  return sqrt((rfactor * clamp(material,0.f.xxx,16.f.xxx)) * (mfactor * clamp(rayColor,0.f.xxx,16.f.xxx)));
+  //return rayColor * material;
 };
 
 //directLighting(rayData.origin.xyz, normals, vec2(random(rayData.launchId.xy), random(rayData.launchId.xy)), 10000.f)
@@ -886,7 +899,7 @@ uvec4 cvtRgb16Float(in vec4 sampled) {
 
 
 vec4 clampCol(in vec4 col) {
-  return clamp(max(col,0.f.xxxx)/max(col.w, 1.f), vec4(0.f.xxx, 1.f), 16.f.xxxx);
+  return clamp(max(col,0.f.xxxx)/max(col.w, 1.f), vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f));
 };
 
 

@@ -5,11 +5,9 @@
 
 //
 #include "lib/native.glsl"
-#include "lib/raytracing.glsl"
+#include "lib/fresnel.glsl"
 #include "lib/random.glsl"
 #include "lib/sphere.glsl"
-#include "lib/fresnel.glsl"
-#include "lib/pass.glsl"
 
 //
 layout (local_size_x = 32, local_size_y = 8, local_size_z = 1) in;

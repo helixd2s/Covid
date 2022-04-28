@@ -4,167 +4,14 @@
 #extension GL_GOOGLE_include_directive : require
 
 //
-#include "lib/native.glsl"
+#define ENABLE_CHECKERBOARD
+#define USE_RASTERIZE_PASS
+
+//
 #include "lib/raytracing.glsl"
-#include "lib/random.glsl"
-#include "lib/sphere.glsl"
-#include "lib/fresnel.glsl"
-#include "lib/pass.glsl"
 
 //
 layout (local_size_x = 32, local_size_y = 8, local_size_z = 1) in;
-
-//
-#define ENABLE_CHECKERBOARD
-
-//
-struct PathTraceCommand {
-  RayData rayData;
-  PixelSurfaceInfoRef surface;
-  IntersectionInfo intersection;
-  vec3 normals;
-  vec3 rayDir;
-  vec3 PBR;
-  mat3x3 tbn;
-  uint pixelId;
-  float reflCoef;
-  vec4 diffuseColor;
-  vec3 emissiveColor;
-  bool hasHit;
-};
-
-//
-struct PathTraceOutput {
-  vec3 normals; float hitT;
-  uvec4 indices;
-};
-
-
-
-// 
-void retranslateHit(in uint pixelId, in uint type, in vec3 origin) {
-  PixelHitInfoRef hitInfo = getPixelHitInfo(pixelId, type);
-  hitInfo.indices = hitInfo.actualIndices, hitInfo.actualIndices = uvec4(0u);
-  hitInfo.color = cvtRgb16Acc(hitInfo.accum), hitInfo.accum = TYPE(0u);
-  hitInfo.origin = hitInfo.actualOrigin, hitInfo.origin.xyz = origin, hitInfo.actualOrigin = vec4(0.f);
-};
-
-//
-void blankHit(in uint pixelId, in uint type, in vec3 origin) {
-  PixelHitInfoRef hitInfo = getPixelHitInfo(pixelId, type);
-  hitInfo.indices = uvec4(0u.xxx, type);
-  hitInfo.color += vec4(0.f.xxx, 1.f), hitInfo.accum = TYPE(0u);
-  hitInfo.origin = vec4(vec4(0.f.xxx, 1.f) * constants.lookAtInverse, 10000.f);
-};
-
-// 
-void retranslateSurface(in uint pixelId) {
-  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
-  surfaceInfo.indices = surfaceInfo.actualIndices, surfaceInfo.actualIndices = uvec4(0u);
-  surfaceInfo.origin = surfaceInfo.actualOrigin, surfaceInfo.actualOrigin = vec3(0.f);
-  surfaceInfo.normal = surfaceInfo.actualNormal, surfaceInfo.actualNormal = vec3(0.f);
-  surfaceInfo.emission = cvtRgb16Acc(surfaceInfo.emissionAccum), surfaceInfo.emissionAccum = TYPE(0u);
-  surfaceInfo.diffuse = cvtRgb16Acc(surfaceInfo.diffuseAccum), surfaceInfo.diffuseAccum = TYPE(0u);
-};
-
-// 
-void backgroundHit(in uint pixelId, in uint type, in vec3 origin) {
-  PixelHitInfoRef hitInfo = getPixelHitInfo(pixelId, type);
-  hitInfo.indices = uvec4(0u.xxx, type);
-  hitInfo.color += ((type == 2) ? vec4(1.f.xxxx) : vec4(0.f.xxx, 1.f)), hitInfo.accum = TYPE(0u);
-  hitInfo.origin = vec4(vec4(0.f.xxx, 1.f) * constants.lookAtInverse, 10000.f);
-};
-
-
-
-//
-void retranslateSurface(in PathTraceCommand cmd) {
-  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.pixelId);
-  surfaceInfo.indices = uvec4(cmd.intersection.instanceId, cmd.intersection.geometryId, cmd.intersection.primitiveId, 0u);
-  surfaceInfo.origin.xyz = cmd.rayData.origin.xyz;
-  surfaceInfo.normal = cmd.normals;
-  surfaceInfo.emission = vec4(cmd.emissiveColor.xyz, 1.f);
-  surfaceInfo.diffuse = vec4(cmd.diffuseColor.xyz, 1.f);
-};
-
-// 
-void blankHit(in PathTraceCommand cmd, in uint type) {
-  PixelHitInfoRef hitInfo = getPixelHitInfo(cmd.pixelId, type);
-  hitInfo.color += vec4(0.f.xxx, 1.f);
-  hitInfo.origin = vec4(cmd.rayData.origin.xyz, 0.f);
-};
-
-//
-PathTraceOutput pathTraceCommand(in PathTraceCommand cmd, in uint type) {
-  RayData rayData = cmd.rayData;
-
-  //
-  vec3 originSeedXYZ = vec3(random(rayData.launchId.xy), random(rayData.launchId.xy), random(rayData.launchId.xy));
-  PathTraceOutput outp;
-  outp.hitT = 0.f;
-  outp.indices = uvec4(0u);
-  outp.normals = cmd.normals.xyz;
-  outp.indices.w = type;
-
-  //
-  if (type == 0) {
-    rayData.direction.xyz = normalize(reflective(originSeedXYZ, rayData.direction.xyz, cmd.normals.xyz, cmd.PBR.g));;
-    rayData.energy = f16vec4(metallicMult(1.f.xxx, cmd.diffuseColor.xyz, cmd.PBR.b), 1.f);
-    rayData.emission = f16vec4(0.f.xxx, 1.f);
-  } else 
-  if (type == 1) {
-    //rayData.direction.xyz = rayData.direction.xyz;
-    rayData.energy = f16vec4(1.f.xxx, 1.f);//f16vec4(metallicMult(1.f.xxx, materialPix.color[MATERIAL_ALBEDO].xyz, metallicFactor), 1.f);
-    rayData.emission = f16vec4(0.f.xxx, 1.f);
-  } else {
-    rayData.direction.xyz = normalize(randomCosineWeightedHemispherePoint(originSeedXYZ, cmd.normals));
-    rayData.energy = f16vec4(1.f.xxx, 1.f);
-    rayData.emission = f16vec4(directLighting(rayData.origin.xyz, cmd.normals.xyz, cmd.tbn[2], vec3(random(rayData.launchId.xy), random(rayData.launchId.xy), random(rayData.launchId.xy)), 10000.f));
-    rayData.emission.w = 1.hf;
-  };
-
-  // enforce typic indice
-  rayData.origin += outRayNormal(rayData.direction.xyz, cmd.tbn[2].xyz) * 0.0001f;
-  rayData = pathTrace(rayData, outp.hitT, outp.normals, outp.indices);
-
-  //
-  vec4 finalColor = clampCol(rayData.emission);
-  finalColor = clamp(finalColor, vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f));
-
-  //
-  float transpCoef = clamp(1.f - cmd.diffuseColor.a, 0.f, 1.f);
-  float reflCoef = clamp(cmd.reflCoef, 0.f, 1.f);
-
-  // 
-  vec4 additional = vec4(0.f.xxx, 1.f);
-  if (type == 0) { additional = finalColor * vec4(reflCoef.xxx, 1.f); };
-  if (type == 1) { additional = finalColor * vec4(((1.f - reflCoef) * transpCoef ).xxx, 1.f); };
-  if (type == 2) { additional = finalColor * vec4(((1.f - reflCoef) * (1.f - transpCoef)).xxx, 1.f); };
-
-  //
-  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.pixelId);
-  PixelHitInfoRef hitInfo = getPixelHitInfo(cmd.pixelId, type);
-  hitInfo.color += additional; hitInfo.accum = TYPE(0u);
-
-  // avoid critical error for skyboxed, also near have more priority... also, transparency may incorrect, so doing some exception
-  if (outp.hitT > 0.f && 
-    (hitInfo.origin.w <= 0.f || hitInfo.origin.w >= 10000.f || 
-      (
-        type == 0 && outp.hitT <= hitInfo.origin.w && outp.hitT < 10000.f || 
-        type == 1 && outp.hitT >= hitInfo.origin.w && outp.hitT < 10000.f || 
-        type == 2
-      ) && 
-      hitInfo.origin.w > 0.f)
-    ) {
-    hitInfo.indices = outp.indices;
-    hitInfo.origin = vec4(outp.hitT >= 10000.f ? vec4(0.f.xxx, 1.f) * constants.lookAtInverse : cmd.rayData.origin.xyz, outp.hitT);
-  };
-
-  // 
-  return outp;
-};
-
-
 
 // 
 void main() {
@@ -227,12 +74,14 @@ void main() {
 
     //
     const MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), attrib.data[VERTEX_TEXCOORD].xy, cmd.tbn);
-    const vec4 skyColor = vec4(pow( (texture(sampler2D(textures[background], samplers[0]), lcts(cmd.rayData.direction.xyz))), vec4(1.f/2.2f.xxx, 1.f)).xyz * 2.f, 1.f);
+    const vec4 skyColor = gamma3(vec4(texture(sampler2D(textures[background], samplers[0]), lcts(cmd.rayData.direction.xyz)).xyz, 1.f));
 
     //
     cmd.normals = inRayNormal(cmd.rayData.direction.xyz, materialPix.color[MATERIAL_NORMAL].xyz);
     cmd.diffuseColor = toLinear(cmd.hasHit ? materialPix.color[MATERIAL_ALBEDO] : vec4(skyColor.xyz, 1.f));
-    cmd.emissiveColor = toLinear(cmd.hasHit ? materialPix.color[MATERIAL_EMISSIVE] : vec4(0.f.xxx, 1.f)).xyz;
+    cmd.emissiveColor = toLinear(cmd.hasHit ? materialPix.color[MATERIAL_EMISSIVE] : vec4(0.f.xxx, 1.f)).xyz * 2.f;
+
+    //
     cmd.PBR = cmd.hasHit ? materialPix.color[MATERIAL_PBR].xyz : 0.f.xxx;
     cmd.reflCoef = (cmd.PBR.b + mix(fresnel_schlick(0.f, dot(reflect(cmd.rayData.direction.xyz, cmd.normals), cmd.normals)), 0.f, cmd.PBR.g) * (1.f - cmd.PBR.b)) * (1.f - luminance(cmd.emissiveColor.xyz));
 
