@@ -257,11 +257,12 @@ struct MaterialPixelInfo {
 
 //
 vec4 sampleTex(CTexture tex, in vec2 texcoord, int lod) {
-  return textureLod(
+  //nonuniformEXT float flod = float(lod)/float(textureQueryLevels(textures[nonuniformEXT(tex.textureId)]));
+  return texture(
     nonuniformEXT(sampler2D(
-      nonuniformEXT(textures[nonuniformEXT(tex.textureId)]), 
-      nonuniformEXT(samplers[nonuniformEXT(tex.samplerId)])
-    )), vec2(texcoord.x,texcoord.y), float(lod)/float(textureQueryLevels(nonuniformEXT(textures[nonuniformEXT(tex.textureId)]))));
+      textures[nonuniformEXT(tex.textureId)], 
+      samplers[nonuniformEXT(tex.samplerId)]
+    )), vec2(texcoord.x,texcoord.y));
 };
 
 //

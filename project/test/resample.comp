@@ -181,7 +181,7 @@ void main() {
   const vec3 srcRayDir = normalize(srcRayEnd.xyz - srcRayBegin.xyz);
 
   // using barrier for partially avoid some problems
-  reproject3D(pixelId, srcRayDir, 0); barrier();
   reproject3D(pixelId, srcRayDir, 1); barrier();
+  reproject3D(pixelId, srcRayDir, 0); barrier();
   reprojectDiffuse(pixelId, srcRayDir); barrier();
 };

@@ -148,7 +148,9 @@ RayData pathTrace(in RayData rayData, inout float hitDist, inout vec3 firstNorma
   //
   bool surfaceFound = false;
   float currentT = 0.f;
-  for (uint32_t i=0;i<3;i++) {
+  //for (uint32_t i=0;i<3;i++) {
+  uint R=0, T=0;
+  while (R<3 && T<3) {
     if (luminance(rayData.energy.xyz) < 0.001f) { break; };
 
     // 
@@ -176,6 +178,9 @@ RayData pathTrace(in RayData rayData, inout float hitDist, inout vec3 firstNorma
         rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, pass.alphaColor.xyz));
         intersection = opaqueIntersection, pass = opaquePass;
       };
+
+      //
+      if (pass.alphaPassed) { T++; } else { R++; };
 
       //
       currentT += intersection.hitT;
