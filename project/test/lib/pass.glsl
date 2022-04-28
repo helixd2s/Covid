@@ -12,7 +12,7 @@ struct PassData {
   bool alphaPassed;
   bool diffusePass;
   vec3 normals;
-  vec3 origin;
+  //vec3 origin;
 };
 
 //
@@ -46,10 +46,10 @@ bool intersect(in vec4 sphere, in vec3 O, in vec3 D, inout float tmax) {
 
 //
 const vec4 sunSphere = vec4(1000.f, 5000.f, 1000.f, 200.f);
-const vec3 sunColor = vec3(0.95f, 0.9f, 0.8f) * 1000.f;
+const vec3 sunColor = vec3(0.95f, 0.9f, 0.8f) * 10000.f;
 
 //
-vec4 directLighting(in vec3 O, in vec3 N, in vec3 r, in float t) {
+vec4 directLighting(in vec3 O, in vec3 N, in vec3 tN, in vec3 r, in float t) {
     const vec3 SO = sunSphere.xyz + (vec4(0.f.xxx, 1.f) * constants.lookAtInverse);
     const vec3 LC = SO - O;
     const float dt = dot(LC, LC);
@@ -59,7 +59,7 @@ vec4 directLighting(in vec3 O, in vec3 N, in vec3 r, in float t) {
     //
     RayData rayData;
     rayData.direction.xyz = coneSample(LC * inversesqrt(dt), cosL, r.xy);
-    rayData.origin.xyz = O;
+    rayData.origin.xyz = O + outRayNormal(rayData.direction.xyz, tN) * 0.0001f;
     rayData.energy.xyzw = f16vec4(1.f.xxx, 0.f);
     rayData.emission.xyzw = f16vec4(0.f.xxx, 0.f);
 
@@ -108,36 +108,40 @@ RayData handleIntersection(in RayData rayData, in IntersectionInfo intersection,
   float roughnessFactor = materialPix.color[MATERIAL_PBR].g;
 
   //
-  float reflFactor = (metallicFactor + fresnel_schlick(0.f, dot(-rayData.direction.xyz, normals)) * (1.f - metallicFactor)) * (1.f - luminance(emissiveColor.xyz)) * (inner ? 0.f : 1.f);
+  float transpCoef = clamp(1.f - diffuseColor.a, 0.f, 1.f);
+  float reflFactor = clamp((metallicFactor + mix(fresnel_schlick(0.f, dot(reflect(rayData.direction.xyz, normals), normals)), 0.f, roughnessFactor) * (1.f - metallicFactor)) * (1.f - luminance(emissiveColor.xyz)), 0.f, 1.f);
   vec3 originSeedXYZ = vec3(random(rayData.launchId.xy), random(rayData.launchId.xy), random(rayData.launchId.xy));
 
   //
   passed.alphaColor = vec4(mix(diffuseColor.xyz, 1.f.xxx, diffuseColor.a), diffuseColor.a);
   passed.normals = normals;
-  passed.origin = vertice.xyz;
+  //passed.origin = vertice.xyz;
 
   //
-  if (random(rayData.launchId.xy) <= reflFactor && passed.alphaColor.a >= 0.001f) { // I currently, have no time for fresnel
+  rayData.origin.xyz = vertice.xyz;
+
+  //
+  if (random(rayData.launchId.xy) <= reflFactor && transpCoef < 1.f) { // I currently, have no time for fresnel
     rayData.direction.xyz = reflective(originSeedXYZ, rayData.direction.xyz, normals, roughnessFactor);
     rayData.energy.xyz = f16vec3(metallicMult(rayData.energy.xyz, diffuseColor.xyz, metallicFactor));
   } else 
-  if (random(rayData.launchId.xy) >= (passed.alphaColor.a * (inner ? 0.f : 1.f))) { // wrong diffuse if inner
+  if (random(rayData.launchId.xy) <= max(transpCoef, inner ? 1.f : 0.f)) { // wrong diffuse if inner
     rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, passed.alphaColor.xyz));
     passed.alphaPassed = true;
   } else
   {
     if (luminance(emissiveColor.xyz) > 0.001f) {
-      rayData.emission += f16vec4(trueMultColor(rayData.energy.xyz, emissiveColor.xyz), 1.f);
+      rayData.emission += f16vec4(trueMultColor(rayData.energy.xyz, emissiveColor.xyz), 0.f);
       rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, 1.f-emissiveColor.xyz));
     };
     passed.diffusePass = true;
     rayData.direction.xyz = randomCosineWeightedHemispherePoint(originSeedXYZ, normals);
     rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, diffuseColor.xyz));
-    rayData.emission += f16vec4(trueMultColor(directLighting(rayData.origin.xyz, normals, vec3(random(rayData.launchId.xy), random(rayData.launchId.xy), random(rayData.launchId.xy)), 10000.f), vec4(rayData.energy.xyz, 1.f)));
+    rayData.emission += f16vec4(trueMultColor(directLighting(rayData.origin.xyz, normals, tbn[2], vec3(random(rayData.launchId.xy), random(rayData.launchId.xy), random(rayData.launchId.xy)), 10000.f), vec4(rayData.energy.xyz, 0.f)).xyz, 0.f);
   };
 
   // 
-  rayData.origin.xyz = vertice.xyz + outRayNormal(rayData.direction.xyz, tbn[2]) * 0.0001f;
+  rayData.origin.xyz += outRayNormal(rayData.direction.xyz, tbn[2]) * 0.0001f;
 
   // 
   return rayData;
@@ -166,7 +170,6 @@ RayData pathTrace(in RayData rayData, inout float hitDist, inout vec3 firstNorma
       opaquePass.alphaPassed = false;
       opaquePass.diffusePass = false;
       opaquePass.normals = vec3(0.f.xxx);
-      opaquePass.origin = vec3(0.f.xxx);
       pass = opaquePass;
 
       //
@@ -192,8 +195,10 @@ RayData pathTrace(in RayData rayData, inout float hitDist, inout vec3 firstNorma
       };
 
     } else {
+      const vec4 skyColor = vec4(pow( (texture(sampler2D(textures[background], samplers[0]), lcts(rayData.direction.xyz))), vec4(1.f/2.2f.xxx, 1.f)).xyz * 2.f, 1.f);
+      
       rayData.origin.xyz = vec4(0.f.xxx, 1.f) * constants.lookAtInverse + rayData.direction.xyz * 10000.f;
-      rayData.emission += f16vec4(trueMultColor(rayData.energy.xyz, pow(toLinear(texture(sampler2D(textures[background], samplers[0]), lcts(rayData.direction.xyz)).xyz), 1.f/2.2f.xxx)), 1.f);
+      rayData.emission += f16vec4(skyColor);
       rayData.energy.xyz *= f16vec3(0.f.xxx);
       if (!surfaceFound) {
         hitDist = currentT = 10000.f;

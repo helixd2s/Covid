@@ -884,4 +884,10 @@ uvec4 cvtRgb16Float(in vec4 sampled) {
 };
 #endif
 
+
+vec4 clampCol(in vec4 col) {
+  return clamp(max(col,0.f.xxxx)/max(col.w, 1.f), vec4(0.f.xxx, 1.f), 16.f.xxxx);
+};
+
+
 #endif
