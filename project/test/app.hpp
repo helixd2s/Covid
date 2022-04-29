@@ -37,7 +37,7 @@ struct UniformData {
   glm::uvec2 extent = {}; uint32_t frameCounter, reserved;
   Constants constants = {};
   uint64_t pixelData = 0ull;
-  uint32_t background = 0u;
+  uint32_t backgroundObj = 0u;
 };
 
 //
@@ -73,17 +73,17 @@ protected:
   ANAMED::WrapShared<ANAMED::MemoryAllocatorObj> memoryAllocatorVma = {};
   ANAMED::WrapShared<ANAMED::DescriptorsObj> descriptorsObj = {};
   ANAMED::WrapShared<ANAMED::UploaderObj> uploaderObj = {};
-  ANAMED::WrapShared<ANAMED::GltfLoaderObj> gltfLoader = {};
+  ANAMED::WrapShared<ANAMED::GltfLoaderObj> gltfLoaderObj = {};
   ANAMED::WrapShared<ANAMED::PipelineObj> resampleObj = {};
-  ANAMED::WrapShared<ANAMED::PipelineObj> computeObj = {};
+  ANAMED::WrapShared<ANAMED::PipelineObj> pathTracerObj = {};
   ANAMED::WrapShared<ANAMED::PipelineObj> opaqueObj = {};
   ANAMED::WrapShared<ANAMED::PipelineObj> postObj = {};
   ANAMED::WrapShared<ANAMED::PipelineObj> translucentObj = {};
   ANAMED::WrapShared<ANAMED::SwapchainObj> swapchainObj = {};
   ANAMED::WrapShared<ANAMED::FramebufferObj> framebufferObj = {};
   ANAMED::WrapShared<ANAMED::PingPongObj> pingPongObj = {};
-  ANAMED::WrapShared<ANAMED::ResourceObj> background = {};
-  ANAMED::WrapShared<ANAMED::ResourceObj> pixelData = {};
+  ANAMED::WrapShared<ANAMED::ResourceObj> backgroundObj = {};
+  ANAMED::WrapShared<ANAMED::ResourceObj> pixelDataObj = {};
 
   //
   UniformData uniformData = {};
@@ -139,8 +139,8 @@ public:
     uniformData.frameCounter = 0u;
 
     // 
-    //gltfLoader->updateInstances(0u, glm::dmat4(1.f) * glm::scale(glm::dmat4(1.0f), glm::dvec3(1.f * scale, 1.f * scale, 1.f * scale)) * glm::rotate(glm::dmat4(1.0f), (controller->time - controller->beginTime) * 0.01, glm::dvec3(0.f, 1.f, 0.f)));
-    //gltfLoader->updateNodes(glm::dmat4(1.f) * glm::scale(glm::dmat4(1.0f), glm::dvec3(1.f * scale, 1.f * scale, 1.f * scale)));
+    //gltfLoaderObj->updateInstances(0u, glm::dmat4(1.f) * glm::scale(glm::dmat4(1.0f), glm::dvec3(1.f * scale, 1.f * scale, 1.f * scale)) * glm::rotate(glm::dmat4(1.0f), (controller->time - controller->beginTime) * 0.01, glm::dvec3(0.f, 1.f, 0.f)));
+    //gltfLoaderObj->updateNodes(glm::dmat4(1.f) * glm::scale(glm::dmat4(1.0f), glm::dvec3(1.f * scale, 1.f * scale, 1.f * scale)));
 
     //
 //#ifdef ENABLE_RENDERDOC
@@ -247,7 +247,7 @@ public:
       });
 
     //
-    decltype(auto) computeFence = computeObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
+    decltype(auto) computeFence = pathTracerObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
       // # yet another std::optional problem (implicit)
       .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
         .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 32u), cpp21::tiled(renderArea.extent.height, 8u), 1u},
@@ -310,7 +310,7 @@ public:
     renderArea = swapchainObj->getRenderArea();
 
     //
-    pixelData = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
+    pixelDataObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
       .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
       .bufferInfo = ANAMED::BufferCreateInfo{
         .size = sizeof(PixelInfo) * renderArea.extent.width * renderArea.extent.height,
@@ -319,7 +319,7 @@ public:
       });
 
     //
-    uniformData.pixelData = pixelData->getDeviceAddress();
+    uniformData.pixelData = pixelDataObj->getDeviceAddress();
 
     //
     framebufferObj = ANAMED::FramebufferObj::make(deviceObj.with(0u), ANAMED::FramebufferCreateInfo{
@@ -349,7 +349,7 @@ public:
   //
   void loadModel(std::string model, float scale = 1.f) {
     instanceAddressBlock = ANAMED::InstanceAddressBlock{
-      .opaqueAddressInfo = (modelObj = gltfLoader->load(model, this->scale = scale))->getDefaultScene()->instanced->getAddressInfo()
+      .opaqueAddressInfo = (modelObj = gltfLoaderObj->load(model, this->scale = scale))->getDefaultScene()->instanced->getAddressInfo()
     };
   };
 
@@ -386,16 +386,16 @@ protected:
     });
 
     //
-    gltfLoader = ANAMED::GltfLoaderObj::make(deviceObj, ANAMED::GltfLoaderCreateInfo{
+    gltfLoaderObj = ANAMED::GltfLoaderObj::make(deviceObj, ANAMED::GltfLoaderCreateInfo{
       .uploader = uploaderObj.as<uintptr_t>(),
       .descriptors = descriptorsObj.as<vk::PipelineLayout>()
     });
 
     //
-    computeObj = ANAMED::PipelineObj::make(deviceObj.with(0u), ANAMED::PipelineCreateInfo{
+    pathTracerObj = ANAMED::PipelineObj::make(deviceObj.with(0u), ANAMED::PipelineCreateInfo{
       .layout = descriptorsObj.as<vk::PipelineLayout>(),
       .compute = ANAMED::ComputePipelineCreateInfo{
-        .code = cpp21::readBinaryU32("./test.comp.spv")
+        .code = cpp21::readBinaryU32("./path-tracer.comp.spv")
       }
     });
 
@@ -454,7 +454,7 @@ protected:
     float* data = (float*)stbi_loadf("./HDR_111_Parking_Lot_2_Ref.hdr", &w, &h, &c, STBI_rgb_alpha);
 
     //
-    background = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
+    backgroundObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
       .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
       .imageInfo = ANAMED::ImageCreateInfo{
         .format = vk::Format::eR32G32B32A32Sfloat,
@@ -464,7 +464,7 @@ protected:
     });
 
     //
-    decltype(auto) pair = background->createImageView(ANAMED::ImageViewCreateInfo{
+    decltype(auto) pair = backgroundObj->createImageView(ANAMED::ImageViewCreateInfo{
       .viewType = vk::ImageViewType::e2D
     });
 
@@ -475,7 +475,7 @@ protected:
       .host = cpp21::data_view<char8_t>((char8_t*)data, 0ull, h * w * 16ull),
       .writeInfo = ANAMED::UploadCommandWriteInfo{
         // # yet another std::optional problem (implicit)
-        .dstImage = std::optional<ANAMED::ImageRegion>(ANAMED::ImageRegion{.image = background.as<vk::Image>(), .region = ANAMED::ImageDataRegion{.extent = vk::Extent3D{uint32_t(w), uint32_t(h), 1u}}}),
+        .dstImage = std::optional<ANAMED::ImageRegion>(ANAMED::ImageRegion{.image = backgroundObj.as<vk::Image>(), .region = ANAMED::ImageDataRegion{.extent = vk::Extent3D{uint32_t(w), uint32_t(h), 1u}}}),
       }
     });
 
@@ -483,7 +483,7 @@ protected:
     descriptorsObj->updateDescriptors();
 
     //
-    uniformData.background = std::get<1u>(pair);
+    uniformData.backgroundObj = std::get<1u>(pair);
   };
 
 };
