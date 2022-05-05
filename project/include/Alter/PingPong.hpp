@@ -303,7 +303,7 @@ namespace ANAMED {
       decltype(auto) imageObj = ResourceObj::make(this->base, ResourceCreateInfo{
         .descriptors = this->cInfo->layout,
         .imageInfo = ImageCreateInfo{
-          .format = this->cInfo->split[index] ? vk::Format::eR32Uint : this->cInfo->formats[index],
+          .format = this->cInfo->formats[index],
           .extent = extent3D,
           .layout = imageLayout,
           .info = this->cInfo->info ? this->cInfo->info : QueueGetInfo{0u, 0u},

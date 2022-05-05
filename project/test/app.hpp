@@ -37,7 +37,18 @@ struct UniformData {
   glm::uvec2 extent = {}; uint32_t frameCounter, reserved;
   Constants constants = {};
   uint64_t pixelData = 0ull;
+  uint64_t writeData = 0ull;
+  uint64_t rasterData = 0ull;
+  uint64_t surfaceData = 0ull;
   uint32_t backgroundObj = 0u;
+};
+
+//
+struct CounterData {
+  uint32_t pixelCounter = 0u;
+  uint32_t writeCounter = 0u;
+  uint32_t rasterCounter = 0u;
+  uint32_t surfaceCounter = 0u;
 };
 
 //
@@ -64,6 +75,11 @@ struct PixelInfo {
   PixelSurfaceInfo surface;
 };
 
+//
+struct RasterInfo {
+  glm::uvec4 indices = glm::uvec4(0u); // indlude .W are pNext
+  glm::vec4 barycentric = glm::vec4(0.f);
+};
 
 // 
 class App {
@@ -78,15 +94,22 @@ protected:
   ANAMED::WrapShared<ANAMED::PipelineObj> pathTracerObj = {};
   ANAMED::WrapShared<ANAMED::PipelineObj> opaqueObj = {};
   ANAMED::WrapShared<ANAMED::PipelineObj> postObj = {};
+  ANAMED::WrapShared<ANAMED::PipelineObj> controlObj = {};
   ANAMED::WrapShared<ANAMED::PipelineObj> translucentObj = {};
   ANAMED::WrapShared<ANAMED::SwapchainObj> swapchainObj = {};
   ANAMED::WrapShared<ANAMED::FramebufferObj> framebufferObj = {};
   ANAMED::WrapShared<ANAMED::PingPongObj> pingPongObj = {};
   ANAMED::WrapShared<ANAMED::ResourceObj> backgroundObj = {};
   ANAMED::WrapShared<ANAMED::ResourceObj> pixelDataObj = {};
+  ANAMED::WrapShared<ANAMED::ResourceObj> writeDataObj = {};
+  ANAMED::WrapShared<ANAMED::ResourceObj> rasterDataObj = {};
+  ANAMED::WrapShared<ANAMED::ResourceObj> surfaceDataObj = {};
 
   //
   UniformData uniformData = {};
+  CounterData counterData = {};
+
+  //
   ANAMED::InstanceAddressBlock instanceAddressBlock = {};
   ANAMED::QueueGetInfo qfAndQueue = ANAMED::QueueGetInfo{ 0u, 0u };
   vk::Rect2D renderArea = {};
@@ -192,6 +215,35 @@ public:
         .info = qfAndQueue,
       }
     });
+
+    //
+    decltype(auto) controlFence = controlObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
+      // # yet another std::optional problem (implicit)
+      .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
+        .dispatch = vk::Extent3D{1u, 1u, 1u},
+        .layout = descriptorsObj.as<vk::PipelineLayout>(),
+        .swapchain = swapchainObj.as<uintptr_t>(),
+        .pingpong = pingPongObj.as<uintptr_t>(),
+        .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
+      }),
+      .submission = ANAMED::SubmissionInfo{
+        .info = qfAndQueue
+      }
+    });
+
+    // 
+    /*decltype(auto) counterFence = descriptorsObj->executeCacheUpdateOnce(ANAMED::CacheDataSet{
+      // # yet another std::optional problem (implicit)
+      .writeInfo = std::optional<ANAMED::CacheDataWriteSet>(ANAMED::CacheDataWriteSet{
+        .region = ANAMED::DataRegion{0ull, 4ull, sizeof(CounterData)},
+        .data = cpp21::data_view<char8_t>((char8_t*)&counterData, 0ull, sizeof(CounterData)),
+        .page = 0u
+      }),
+      .submission = ANAMED::SubmissionInfo{
+        .info = qfAndQueue,
+      }
+    });*/
+
 
     //
     framebufferObj->clearAttachments(qfAndQueue);
@@ -309,7 +361,7 @@ public:
     //
     renderArea = swapchainObj->getRenderArea();
 
-    //
+    // TODO: make rasterData, writeData, surfaceData, pixelData, bind with counters
     pixelDataObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
       .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
       .bufferInfo = ANAMED::BufferCreateInfo{
@@ -336,8 +388,8 @@ public:
 
       // first image is accumulation, second image is back buffer, third image is index buffer, fourth image is position buffer
       // 5th for reflection buffer, 6th for reflection back buffer, 7th for transparency, 8th for transparency back
-      .split = std::vector<bool>{false, false, false, false},
-      .formats = std::vector<vk::Format>{ vk::Format::eR16G16B16A16Sfloat, vk::Format::eR16G16B16A16Sfloat, vk::Format::eR16G16B16A16Sfloat, vk::Format::eR16G16B16A16Sfloat },
+      .split = std::vector<bool>{true, true, true, true},
+      .formats = std::vector<vk::Format>{ vk::Format::eR32Uint, vk::Format::eR32Uint, vk::Format::eR32Uint, vk::Format::eR32Uint },
       .info = qfAndQueue
     });
 
@@ -412,6 +464,14 @@ protected:
       .layout = descriptorsObj.as<vk::PipelineLayout>(),
       .compute = ANAMED::ComputePipelineCreateInfo{
         .code = cpp21::readBinaryU32("./post.comp.spv")
+      }
+    });
+
+    //
+    controlObj = ANAMED::PipelineObj::make(deviceObj.with(0u), ANAMED::PipelineCreateInfo{
+      .layout = descriptorsObj.as<vk::PipelineLayout>(),
+      .compute = ANAMED::ComputePipelineCreateInfo{
+        .code = cpp21::readBinaryU32("./control.comp.spv")
       }
     });
 

@@ -427,7 +427,19 @@ namespace ANAMED {
 
       // 
       auto properties2 = PDInfoMap->set(vk::StructureType::ePhysicalDeviceProperties2, vk::PhysicalDeviceProperties2{
+        .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceVulkan11Properties, vk::PhysicalDeviceVulkan11Properties{
+        .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceVulkan12Properties, vk::PhysicalDeviceVulkan12Properties{
+        .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceVulkan13Properties, vk::PhysicalDeviceVulkan13Properties{
+        .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceConservativeRasterizationPropertiesEXT, vk::PhysicalDeviceConservativeRasterizationPropertiesEXT{
+        .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceAccelerationStructurePropertiesKHR, vk::PhysicalDeviceAccelerationStructurePropertiesKHR{
+        .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceMultiDrawPropertiesEXT, vk::PhysicalDeviceMultiDrawPropertiesEXT{
         .pNext = nullptr
+        })
+        })
+        })
+        })
+        })
+        })
       });
 
       //

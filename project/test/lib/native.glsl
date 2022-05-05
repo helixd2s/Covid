@@ -135,12 +135,24 @@ layout(set = 0, binding = 0, scalar) uniform MatrixBlock
   uvec2 extent; uint frameCounter, reserved0;
   Constants constants;
   PixelData pixelData;
-  //uint64_t pixelData;
+  uint64_t writeData;
+  uint64_t rasterData;
+  uint64_t surfaceData;
   uint32_t background;
+};
 
-  //TestVertices vertices;
-  // for test
-  //uint64_t verticesAddress;
+// 
+layout(set = 0, binding = 1, scalar) buffer CounterBlock
+{
+  uint32_t pixelCounter;
+  uint32_t writeCounter;
+  uint32_t rasterCounter;
+  uint32_t surfaceCounter;
+
+  uint32_t pixelCounterPrevious;
+  uint32_t writeCounterPrevious;
+  uint32_t rasterCounterPrevious;
+  uint32_t surfaceCounterPrevious;
 };
 
 //

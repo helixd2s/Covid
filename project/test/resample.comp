@@ -118,6 +118,8 @@ void reproject3D(in uint pixelId, in vec3 srcRayDir, in int type) {
     // copy to dest, and nullify source
     if ( HIT_SRC.origin.w > 0.f && HIT_SRC.color.w > 0.f && dstValidDist && (srcValidDist || HIT_DST.color.w <= 0.f) ) {
       accumulate(HIT_DST, cvtRgb16Float(HIT_SRC.color)); HIT_SRC.color = vec4(0.f.xxxx);
+
+      // 
       HIT_DST.actualOrigin = vec4(dstHitFoundIntersection, distance(dstHitPos, dstHitFoundIntersection)); HIT_SRC.origin = vec4(0.f.xxxx);
       HIT_DST.actualIndices = HIT_SRC.indices; HIT_SRC.indices = uvec4(0u);
     };
@@ -149,9 +151,12 @@ void reprojectDiffuse(in uint srcId, in vec3 srcRayDir) {
     PixelSurfaceInfoRef dstSurface = getPixelSurface(dstId);
     PixelHitInfoRef dstHit = getPixelHitInfo(dstId, 2);
     if (srcHit.origin.w > 0.f && srcHit.color.w > 0.f && dstValidDist && (true || dstHit.color.w <= 0.f)) {
+      // 
       accumulate(dstHit, cvtRgb16Float(srcHit.color));
       accumulateDiffuseTex(dstSurface, cvtRgb16Float(srcSurface.diffuse));
       accumulateEmissiveTex(dstSurface, cvtRgb16Float(srcSurface.emission));
+
+      // 
       dstSurface.actualOrigin.xyz = dstPos.xyz;
       dstSurface.actualNormal.xyz = dstNormal.xyz;
       dstSurface.actualIndices = srcHit.indices;
