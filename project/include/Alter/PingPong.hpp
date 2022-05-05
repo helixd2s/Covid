@@ -299,7 +299,7 @@ namespace ANAMED {
       decltype(auto) imageLayout = vk::ImageLayout::eGeneral;
 
       //
-      decltype(auto) extent3D = vk::Extent3D{ this->cInfo->extent.width * (this->cInfo->split[index] ? 4u : 1u), this->cInfo->extent.height, 1u};
+      decltype(auto) extent3D = vk::Extent3D{ this->cInfo->extent.width * this->cInfo->split[index], this->cInfo->extent.height, 1u};
       decltype(auto) imageObj = ResourceObj::make(this->base, ResourceCreateInfo{
         .descriptors = this->cInfo->layout,
         .imageInfo = ImageCreateInfo{

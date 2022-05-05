@@ -1157,7 +1157,7 @@ namespace ANAMED {
     vk::PipelineLayout layout = {};
     vk::Extent2D extent = {1u, 1u};
     uint32_t minImageCount = 1u;
-    std::vector<bool> split = {};
+    std::vector<uint32_t> split = {};
     std::vector<vk::Format> formats = {};
     std::optional<QueueGetInfo> info = {};
   };
