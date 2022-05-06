@@ -66,7 +66,7 @@ vec3 linearSrcPos(in vec2 txy) {
 //void reproject3D(in PixelSurfaceInfo surface, in PixelHitInfo data, in uint pixelId, in vec3 srcRayDir, in int type) {
 void reproject3D(in uint pixelId, in vec3 srcRayDir, in int type) {
   PixelSurfaceInfoRef surface = getPixelSurface(pixelId);
-  PixelHitInfoRef data = getPixelHitInfo(pixelId, type);
+  PixelHitInfoRef data = getNewHit(pixelId, type);
 
   // 
   const vec3 srcHitPos = data.origin.xyz + data.origin.w * srcRayDir;
@@ -98,30 +98,31 @@ void reproject3D(in uint pixelId, in vec3 srcRayDir, in int type) {
   const vec2 srcScreen = (srcHitPersp.xy/srcHitPersp.w * 0.5f + 0.5f);
   const ivec2 srcInt = ivec2(srcScreen * vec2(extent));
   const uint srcId = uint(srcInt.x + srcInt.y * extent.x);
-  const bool srcValid = srcInt.x < extent.x && srcInt.y < extent.y;
+  const bool srcValid = srcInt.x >= 0 && srcInt.y >= 0 && srcInt.x < extent.x && srcInt.y < extent.y;
 
   // 
   const vec4 dstHitPersp = vec4(vec4(dstHitFoundIntersection, 1.f) * constants.lookAt, 1.f) * constants.perspective;
   const vec2 dstScreen = (dstHitPersp.xy/dstHitPersp.w * 0.5f + 0.5f);
   const ivec2 dstInt = ivec2(dstScreen * vec2(extent));
   const uint dstId = uint(dstInt.x + dstInt.y * extent.x);
-  const bool dstValid = dstInt.x < extent.x && dstInt.y < extent.y;
+  const bool dstValid = dstInt.x >= 0 && dstInt.y >= 0 && dstInt.x < extent.x && dstInt.y < extent.y;
 
   // 
   if (srcValid && dstValid) {
     //
-    PixelHitInfoRef HIT_SRC = getPixelHitInfo(srcId, type), HIT_DST = getPixelHitInfo(dstId, type);
+    PixelSurfaceInfoRef SURF_SRC = getPixelSurface(srcId), SURF_DST = getPixelSurface(dstId);
+    PixelHitInfoRef HIT_SRC = getNewHit(srcId, type), HIT_DST = getRpjHit(dstId, type);
     const vec4 dstSamplePos = texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), dstScreen);
     const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz       -(dstHitPersp.xyz/dstHitPersp.w)), vec3(4.f/extent, 0.004f)));// && distance(dstPos, dstHitFoundIntersection) < 0.001f;
     const bool srcValidDist = all(lessThan(abs(linearSrcPos(srcScreen)-(srcHitPersp.xyz/srcHitPersp.w)), vec3(8.f/extent, 0.008f)));
 
     // copy to dest, and nullify source
-    if ( HIT_SRC.origin.w > 0.f && HIT_SRC.color.w > 0.f && dstValidDist && (srcValidDist || HIT_DST.color.w <= 0.f) ) {
-      accumulate(HIT_DST, cvtRgb16Float(HIT_SRC.color)); HIT_SRC.color = vec4(0.f.xxxx);
+    if ( HIT_SRC.origin.w > 0.f && SURF_SRC.color[type].w > 0.f && dstValidDist && (srcValidDist || SURF_DST.color[type].w <= 0.f) ) {
+      accumulate(SURF_DST, type, cvtRgb16Float(SURF_SRC.color[type])); SURF_SRC.color[type] = vec4(0.f.xxxx);
 
       // 
-      HIT_DST.actualOrigin = vec4(dstHitFoundIntersection, distance(dstHitPos, dstHitFoundIntersection)); HIT_SRC.origin = vec4(0.f.xxxx);
-      HIT_DST.actualIndices = HIT_SRC.indices; HIT_SRC.indices = uvec4(0u);
+      HIT_DST.origin = vec4(dstHitFoundIntersection, distance(dstHitPos, dstHitFoundIntersection)); HIT_SRC.origin = vec4(0.f.xxxx);
+      HIT_DST.indices = HIT_SRC.indices; HIT_SRC.indices = uvec4(0u);
     };
   };
 };
@@ -129,7 +130,7 @@ void reproject3D(in uint pixelId, in vec3 srcRayDir, in int type) {
 //
 void reprojectDiffuse(in uint srcId, in vec3 srcRayDir) {
   PixelSurfaceInfoRef srcSurface = getPixelSurface(srcId);
-  PixelHitInfoRef srcHit = getPixelHitInfo(srcId, 2);
+  PixelHitInfoRef srcHit = getNewHit(srcId, 2);
 
   //
   const vec3 srcPos = srcSurface.origin.xyz;
@@ -145,29 +146,17 @@ void reprojectDiffuse(in uint srcId, in vec3 srcRayDir) {
   const ivec2 dstScreenPos = ivec2(dstScreen * vec2(extent));
 
   //
-  if (dstScreenPos.x < extent.x && dstScreenPos.y < extent.y) {
+  if (dstScreenPos.x >= 0 && dstScreenPos.y >= 0 && dstScreenPos.x < extent.x && dstScreenPos.y < extent.y) {
     const uint dstId = uint(dstScreenPos.x + dstScreenPos.y * extent.x);
-    const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz-(dstPerspPos.xyz/dstPerspPos.w)), vec3(2.f/extent, 0.001f)));
+    const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz-(dstPerspPos.xyz/dstPerspPos.w)), vec3(1.f/extent, 0.001f)));
     PixelSurfaceInfoRef dstSurface = getPixelSurface(dstId);
-    PixelHitInfoRef dstHit = getPixelHitInfo(dstId, 2);
-    if (srcHit.origin.w > 0.f && srcHit.color.w > 0.f && dstValidDist && (true || dstHit.color.w <= 0.f)) {
+    PixelHitInfoRef dstHit = getRpjHit(dstId, 2);
+    if (srcHit.origin.w > 0.f && srcSurface.color[2].w > 0.f && dstValidDist && (true || srcSurface.color[2].w <= 0.f)) {
       // 
-      accumulate(dstHit, cvtRgb16Float(srcHit.color));
-      accumulateDiffuseTex(dstSurface, cvtRgb16Float(srcSurface.diffuse));
-      accumulateEmissiveTex(dstSurface, cvtRgb16Float(srcSurface.emission));
-
-      // 
-      dstSurface.actualOrigin.xyz = dstPos.xyz;
-      dstSurface.actualNormal.xyz = dstNormal.xyz;
-      dstSurface.actualIndices = srcHit.indices;
+      accumulate(dstSurface, 2, cvtRgb16Float(srcSurface.color[2]));
 
       // nullify source
-      srcHit.color = vec4(0.f.xxxx);
-      srcSurface.diffuse = vec4(0.f.xxxx);
-      srcSurface.emission = vec4(0.f.xxxx);
-      srcSurface.origin = vec3(0.f);
-      srcSurface.normal = vec3(0.f);
-      srcSurface.indices = uvec4(0u);
+      srcSurface.color[2] = vec4(0.f.xxxx);
     };
   };
 };
@@ -175,7 +164,7 @@ void reprojectDiffuse(in uint srcId, in vec3 srcRayDir) {
 // 
 void main() {
   const uvec2 gcoord = gl_GlobalInvocationID.xy;
-  const vec2 tCoord = vec2(gcoord)/vec2(extent);
+  const vec2 tCoord = (vec2(gcoord) + 0.5f)/vec2(extent);
   const uint pixelId = gcoord.x + extent.x * gcoord.y;
 
   //

@@ -139,7 +139,7 @@ int main(int argc, char** argv) {
   while (!glfwWindowShouldClose(window)) { // 
     glfwPollEvents();
     app->tickProcessing();
-    _CrtDumpMemoryLeaks();
+    //_CrtDumpMemoryLeaks();
 
     //
     if (iterator == rendering.end()) { rendering = app->renderGen(), iterator = rendering.begin(); };

@@ -14,40 +14,28 @@ layout (local_size_x = 32, local_size_y = 8, local_size_z = 1) in;
 
 //
 vec4 readAndNeighborColor(in uint pixelId, in uint type) {
-  PixelHitInfoRef hitInfo = getPixelHitInfo(pixelId, type);
-  vec4 center = hitInfo.color;
+  PixelSurfaceInfoRef hitInfo = getPixelSurface(pixelId);
+  vec4 center = hitInfo.color[type];
   if (center.w <= 0.f) {
     center = vec4(0.f);
-    if ((pixelId + extent.x) < (extent.y * extent.x)) { PixelHitInfoRef info = getPixelHitInfo(pixelId + extent.x, type); center += info.color; };
-    if ((pixelId.x%extent.x) < extent.x-1)            { PixelHitInfoRef info = getPixelHitInfo(pixelId + 1, type); center += info.color; };
-    if (pixelId >= extent.x)                          { PixelHitInfoRef info = getPixelHitInfo(pixelId - extent.x, type); center += info.color; };
-    if ((pixelId.x%extent.x) >= 1)                    { PixelHitInfoRef info = getPixelHitInfo(pixelId - 1, type); center += info.color; };
+    if ((pixelId + extent.x) < (extent.y * extent.x)) { PixelSurfaceInfoRef info = getPixelSurface(pixelId + extent.x); center += info.color[type]; };
+    if ((pixelId.x%extent.x) < extent.x-1)            { PixelSurfaceInfoRef info = getPixelSurface(pixelId + 1); center += info.color[type]; };
+    if (pixelId >= extent.x)                          { PixelSurfaceInfoRef info = getPixelSurface(pixelId - extent.x); center += info.color[type]; };
+    if ((pixelId.x%extent.x) >= 1)                    { PixelSurfaceInfoRef info = getPixelSurface(pixelId - 1); center += info.color[type]; };
   };
   return center;
 };
 
 //
-vec4 readAndNeighborEmission(in uint pixelId) {
-  vec4 center = pixelData.pixels[pixelId].surface.emission;
+vec4 readAndNeighborTex(in uint pixelId, in uint tex) {
+  PixelSurfaceInfoRef hitInfo = getPixelSurface(pixelId);
+  vec4 center = hitInfo.tex[tex];
   if (center.w <= 0.f) {
     center = vec4(0.f);
-    if ((pixelId + extent.x) < (extent.y * extent.x)) { center += pixelData.pixels[pixelId + extent.x].surface.emission; };
-    if ((pixelId.x%extent.x) < extent.x-1)            { center += pixelData.pixels[pixelId + 1].surface.emission; };
-    if (pixelId >= extent.x)                          { center += pixelData.pixels[pixelId - extent.x].surface.emission; };
-    if ((pixelId.x%extent.x) >= 1)                    { center += pixelData.pixels[pixelId - 1].surface.emission; };
-  };
-  return center;
-};
-
-//
-vec4 readAndNeighborSurfaceDiffuse(in uint pixelId) {
-  vec4 center = pixelData.pixels[pixelId].surface.diffuse;
-  if (center.w <= 0.f) {
-    center = vec4(0.f);
-    if ((pixelId + extent.x) < (extent.y * extent.x)) { center += pixelData.pixels[pixelId + extent.x].surface.diffuse; };
-    if ((pixelId.x%extent.x) < extent.x-1)            { center += pixelData.pixels[pixelId + 1].surface.diffuse; };
-    if (pixelId >= extent.x)                          { center += pixelData.pixels[pixelId - extent.x].surface.diffuse; };
-    if ((pixelId.x%extent.x) >= 1)                    { center += pixelData.pixels[pixelId - 1].surface.diffuse; };
+    if ((pixelId + extent.x) < (extent.y * extent.x)) { PixelSurfaceInfoRef info = getPixelSurface(pixelId + extent.x); center += info.tex[tex]; };
+    if ((pixelId.x%extent.x) < extent.x-1)            { PixelSurfaceInfoRef info = getPixelSurface(pixelId + 1); center += info.tex[tex]; };
+    if (pixelId >= extent.x)                          { PixelSurfaceInfoRef info = getPixelSurface(pixelId - extent.x); center += info.tex[tex]; };
+    if ((pixelId.x%extent.x) >= 1)                    { PixelSurfaceInfoRef info = getPixelSurface(pixelId - 1); center += info.tex[tex]; };
   };
   return center;
 };
@@ -62,8 +50,8 @@ void main() {
   const vec4 resultRefl = readAndNeighborColor(pixelId, 0);
   const vec4 resultTransp = readAndNeighborColor(pixelId, 1);
   const vec4 resultColor = readAndNeighborColor(pixelId, 2);
-  const vec4 resultEmission = readAndNeighborEmission(pixelId);
-  const vec4 resultDiffuse = readAndNeighborSurfaceDiffuse(pixelId);
+  const vec4 resultEmission = readAndNeighborTex(pixelId, EMISSION_TEX);
+  const vec4 resultDiffuse = readAndNeighborTex(pixelId, DIFFUSE_TEX);
 
   // 
   const vec4 finalColor = vec4(clampCol(
@@ -72,11 +60,6 @@ void main() {
     clampCol(resultEmission) + 
     clampCol(resultRefl)
   ).xyz, 1.f);
-
-  // for debug only
-  //pixelData.pixels[pixelId].reflection.accum = TYPE(0u);
-  //pixelData.pixels[pixelId].diffuse.accum = TYPE(0u);
-  //pixelData.pixels[pixelId].transparency.accum = TYPE(0u);
 
   // final color
   imageStore(images[swapchain.image], ivec2(gcoord.x, extent.y-1-gcoord.y), fromLinear(finalColor));

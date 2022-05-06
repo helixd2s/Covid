@@ -418,10 +418,10 @@ PathTraceOutput pathTraceCommand(in PathTraceCommand cmd, in uint type) {
 
   //
   PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.pixelId);
-  PixelHitInfoRef hitInfo = getPixelHitInfo(cmd.pixelId, type);
-  hitInfo.color += additional; hitInfo.accum = TYPE(0u);
+  surfaceInfo.color[type] += additional;
 
   // avoid critical error for skyboxed, also near have more priority... also, transparency may incorrect, so doing some exception
+  PixelHitInfoRef hitInfo = getNewHit(cmd.pixelId, type);
   if (outp.hitT > 0.f && 
     (hitInfo.origin.w <= 0.f || hitInfo.origin.w >= 10000.f || 
       (
@@ -431,7 +431,7 @@ PathTraceOutput pathTraceCommand(in PathTraceCommand cmd, in uint type) {
       ) && 
       hitInfo.origin.w > 0.f)
     ) {
-    hitInfo.indices = outp.indices;
+    hitInfo.indices = uvec4(outp.indices.xyz, type);
     hitInfo.origin = vec4(outp.hitT >= 10000.f ? vec4(0.f.xxx, 1.f) * constants.lookAtInverse : cmd.rayData.origin.xyz, outp.hitT);
   };
 
@@ -445,49 +445,42 @@ void retranslateSurface(in PathTraceCommand cmd) {
   surfaceInfo.indices = uvec4(cmd.intersection.instanceId, cmd.intersection.geometryId, cmd.intersection.primitiveId, 0u);
   surfaceInfo.origin.xyz = cmd.rayData.origin.xyz;
   surfaceInfo.normal = cmd.normals;
-  surfaceInfo.emission = vec4(cmd.emissiveColor.xyz, 1.f);
-  surfaceInfo.diffuse = vec4(cmd.diffuseColor.xyz, 1.f);
+  surfaceInfo.tex[EMISSION_TEX] = vec4(cmd.emissiveColor.xyz, 1.f);
+  surfaceInfo.tex[DIFFUSE_TEX] = vec4(cmd.diffuseColor.xyz, 1.f);
 };
 
 // 
 void blankHit(in PathTraceCommand cmd, in uint type) {
-  PixelHitInfoRef hitInfo = getPixelHitInfo(cmd.pixelId, type);
-  hitInfo.color += vec4(0.f.xxx, 1.f);
+  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.pixelId);
+  surfaceInfo.color[type] += vec4(0.f.xxx, 1.f);
+
+  //
+  PixelHitInfoRef hitInfo = getNewHit(cmd.pixelId, type);
   hitInfo.origin = vec4(cmd.rayData.origin.xyz, 0.f);
 };
 
 
 // 
 void retranslateHit(in uint pixelId, in uint type, in vec3 origin) {
-  PixelHitInfoRef hitInfo = getPixelHitInfo(pixelId, type);
-  hitInfo.indices = hitInfo.actualIndices, hitInfo.actualIndices = uvec4(0u);
-  hitInfo.color = cvtRgb16Acc(hitInfo.accum), hitInfo.accum = TYPE(0u);
-  hitInfo.origin = hitInfo.actualOrigin, hitInfo.origin.xyz = origin, hitInfo.actualOrigin = vec4(0.f);
-};
-
-//
-void blankHit(in uint pixelId, in uint type, in vec3 origin) {
-  PixelHitInfoRef hitInfo = getPixelHitInfo(pixelId, type);
-  hitInfo.indices = uvec4(0u.xxx, type);
-  hitInfo.color += vec4(0.f.xxx, 1.f), hitInfo.accum = TYPE(0u);
-  hitInfo.origin = vec4(vec4(0.f.xxx, 1.f) * constants.lookAtInverse, 10000.f);
-};
-
-// 
-void retranslateSurface(in uint pixelId) {
   PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
-  surfaceInfo.indices = surfaceInfo.actualIndices, surfaceInfo.actualIndices = uvec4(0u);
-  surfaceInfo.origin = surfaceInfo.actualOrigin, surfaceInfo.actualOrigin = vec3(0.f);
-  surfaceInfo.normal = surfaceInfo.actualNormal, surfaceInfo.actualNormal = vec3(0.f);
-  surfaceInfo.emission = cvtRgb16Acc(surfaceInfo.emissionAccum), surfaceInfo.emissionAccum = TYPE(0u);
-  surfaceInfo.diffuse = cvtRgb16Acc(surfaceInfo.diffuseAccum), surfaceInfo.diffuseAccum = TYPE(0u);
+  surfaceInfo.color[type] = cvtRgb16Acc(surfaceInfo.accum[type]); 
+  surfaceInfo.accum[type] = TYPE(0u);
+
+  //
+  PixelHitInfoRef newHitInfo = getNewHit(pixelId, type);
+  PixelHitInfoRef hitInfo = getRpjHit(pixelId, type);
+  newHitInfo.indices = hitInfo.indices, hitInfo.indices = uvec4(0u);
+  newHitInfo.origin = hitInfo.origin, hitInfo.origin = vec4(0.f.xxxx);
 };
 
 // 
 void backgroundHit(in uint pixelId, in uint type, in vec3 origin) {
-  PixelHitInfoRef hitInfo = getPixelHitInfo(pixelId, type);
+  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
+  surfaceInfo.color[type] = ((type == 2) ? vec4(1.f.xxxx) : vec4(0.f.xxx, 1.f));
+
+  //
+  PixelHitInfoRef hitInfo = getNewHit(pixelId, type);
   hitInfo.indices = uvec4(0u.xxx, type);
-  hitInfo.color += ((type == 2) ? vec4(1.f.xxxx) : vec4(0.f.xxx, 1.f)), hitInfo.accum = TYPE(0u);
   hitInfo.origin = vec4(vec4(0.f.xxx, 1.f) * constants.lookAtInverse, 10000.f);
 };
 

@@ -28,7 +28,7 @@ void main() {
 #endif
 
     // 
-    const vec2 tCoord = vec2(gcoord)/vec2(extent);
+    const vec2 tCoord = (vec2(gcoord)+0.5f)/vec2(extent);
     const uint pixelId = gcoord.x + extent.x * gcoord.y;
 
     //
@@ -96,8 +96,8 @@ void main() {
       pathTraceCommand(cmd, firstPart && (cmd.diffuseColor.a >= 0.001f && luminance(cmd.diffuseColor.xyz) > 0.f) ? 2 : 0);
       if (cmd.diffuseColor.a < 1.f) { pathTraceCommand(cmd, 1); } else { blankHit(cmd, 1); };
     } else {
-      blankHit(pixelId, 0, rayData.origin);
-      blankHit(pixelId, 1, rayData.origin);
+      backgroundHit(pixelId, 0, rayData.origin);
+      backgroundHit(pixelId, 1, rayData.origin);
       backgroundHit(pixelId, 2, rayData.origin);
     };
   };
