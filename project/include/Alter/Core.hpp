@@ -323,7 +323,7 @@ namespace ANAMED {
     uint32_t appVersion = VK_MAKE_VERSION(1, 0, 0);
     cpp21::shared_vector<std::string> extensionList = std::vector<std::string>{ 
       "VK_KHR_surface", 
-      //"VK_EXT_debug_utils", 
+      "VK_EXT_debug_utils", 
       "VK_KHR_get_surface_capabilities2",
 #ifdef _WIN32
       "VK_KHR_win32_surface"

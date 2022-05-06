@@ -22,6 +22,10 @@
 // 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#ifdef ENABLE_RENDERDOC
+#include "renderdoc_app.h"
+#include <eh.h>
+#endif
 
 //
 #include <args/args.hxx>
@@ -62,6 +66,36 @@ int main(int argc, char** argv) {
     throw std::exception(error.c_str());
   });
   */
+
+#ifdef ENABLE_RENDERDOC
+  //
+  RENDERDOC_API_1_1_2* rdoc_api = NULL;
+
+#ifdef _WIN32
+  // At init, on windows
+  if (HMODULE mod = GetModuleHandleA("renderdoc.dll"))
+  {
+    pRENDERDOC_GetAPI RENDERDOC_GetAPI =
+      (pRENDERDOC_GetAPI)GetProcAddress(mod, "RENDERDOC_GetAPI");
+    int ret = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_1_2, (void**)&rdoc_api);
+    assert(ret == 1);
+  }
+#else
+#ifdef __linux__
+  // At init, on linux/android.
+  // For android replace librenderdoc.so with libVkLayer_GLES_RenderDoc.so
+  if (void* mod = dlopen("librenderdoc.so", RTLD_NOW | RTLD_NOLOAD))
+  {
+    pRENDERDOC_GetAPI RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)dlsym(mod, "RENDERDOC_GetAPI");
+    int ret = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_1_2, (void**)&rdoc_api);
+    assert(ret == 1);
+  }
+#endif
+#endif
+
+  //
+  if (rdoc_api) rdoc_api->SetCaptureOptionU32(eRENDERDOC_Option_DebugOutputMute, true);
+#endif
 
   //
   ANAMED::initialize();
@@ -105,7 +139,7 @@ int main(int argc, char** argv) {
   while (!glfwWindowShouldClose(window)) { // 
     glfwPollEvents();
     app->tickProcessing();
-    //_CrtDumpMemoryLeaks();
+    _CrtDumpMemoryLeaks();
 
     //
     if (iterator == rendering.end()) { rendering = app->renderGen(), iterator = rendering.begin(); };

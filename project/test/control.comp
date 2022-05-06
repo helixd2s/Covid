@@ -10,12 +10,9 @@
 #include "lib/sphere.glsl"
 
 //
-layout (local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+layout (local_size_x = 32, local_size_y = 8, local_size_z = 1) in;
 
 // 
 void main() {
-  if (gl_GlobalInvocationID.x < 4u) {
-    previousCounters[gl_GlobalInvocationID.x] = counters[gl_GlobalInvocationID.x];
-    counters[gl_GlobalInvocationID.x] = 0u;
-  };
+
 };

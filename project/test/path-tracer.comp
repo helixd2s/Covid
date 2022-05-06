@@ -28,7 +28,7 @@ void main() {
 #endif
 
     // 
-    const vec2 tCoord = (vec2(gcoord) + 0.5f)/vec2(extent);
+    const vec2 tCoord = vec2(gcoord)/vec2(extent);
     const uint pixelId = gcoord.x + extent.x * gcoord.y;
 
     //
@@ -100,10 +100,5 @@ void main() {
       blankHit(pixelId, 1, rayData.origin);
       backgroundHit(pixelId, 2, rayData.origin);
     };
-
-    //
-    closeSurface(pixelId, 0);
-    closeSurface(pixelId, 1);
-    closeSurface(pixelId, 2);
   };
 };

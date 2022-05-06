@@ -204,12 +204,12 @@ namespace ANAMED {
       //VULKAN_HPP_DEFAULT_DISPATCHER.init(this->handle.as<vk::Instance>());
       
       // 
-      //this->debugMessenger = this->handle.as<vk::Instance>().createDebugUtilsMessengerEXT(vk::DebugUtilsMessengerCreateInfoEXT{
-        //.messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo,
-        //.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation,
-        //.pfnUserCallback = &callbackFn,
-        //.pUserData = this
-      //}, nullptr, this->dispatch);
+      this->debugMessenger = this->handle.as<vk::Instance>().createDebugUtilsMessengerEXT(vk::DebugUtilsMessengerCreateInfoEXT{
+        .messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo,
+        .messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation,
+        .pfnUserCallback = &callbackFn,
+        .pUserData = this
+      }, nullptr, this->dispatch);
 
       // 
       //return SFT();

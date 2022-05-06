@@ -416,16 +416,23 @@ PathTraceOutput pathTraceCommand(in PathTraceCommand cmd, in uint type) {
   if (type == 1) { additional = clampCol(rayData.emission * vec4(((1.f - reflCoef) * transpCoef ).xxx, 1.f)); };
   if (type == 2) { additional = clampCol(rayData.emission * vec4(((1.f - reflCoef) * (1.f - transpCoef)).xxx, 1.f)); };
 
+  //
+  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.pixelId);
+  PixelHitInfoRef hitInfo = getPixelHitInfo(cmd.pixelId, type);
+  hitInfo.color += additional; hitInfo.accum = TYPE(0u);
+
   // avoid critical error for skyboxed, also near have more priority... also, transparency may incorrect, so doing some exception
-  if (outp.hitT > 0.f) {
-    bool found = false, overhead = false;
-    PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.pixelId);
-    PixelHitInfoRef hitInfo = newToSurface(cmd.pixelId, type, overhead);
-    hitInfo.color = additional;
-    hitInfo.indices = uvec4(outp.indices.xyz, type);
+  if (outp.hitT > 0.f && 
+    (hitInfo.origin.w <= 0.f || hitInfo.origin.w >= 10000.f || 
+      (
+        type == 0 && outp.hitT <= hitInfo.origin.w && outp.hitT < 10000.f || 
+        type == 1 && outp.hitT >= hitInfo.origin.w && outp.hitT < 10000.f || 
+        type == 2
+      ) && 
+      hitInfo.origin.w > 0.f)
+    ) {
+    hitInfo.indices = outp.indices;
     hitInfo.origin = vec4(outp.hitT >= 10000.f ? vec4(0.f.xxx, 1.f) * constants.lookAtInverse : cmd.rayData.origin.xyz, outp.hitT);
-    hitInfo.idata.y = cmd.pixelId;
-    surfaceInfo.accum[type] += cvtRgb16Float(hitInfo.color);
   };
 
   // 
@@ -435,68 +442,53 @@ PathTraceOutput pathTraceCommand(in PathTraceCommand cmd, in uint type) {
 //
 void retranslateSurface(in PathTraceCommand cmd) {
   PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.pixelId);
-  //for (uint i=0;i<3;i++) { surfaceInfo.newIdx[i] = 0u; };
   surfaceInfo.indices = uvec4(cmd.intersection.instanceId, cmd.intersection.geometryId, cmd.intersection.primitiveId, 0u);
   surfaceInfo.origin.xyz = cmd.rayData.origin.xyz;
   surfaceInfo.normal = cmd.normals;
-  surfaceInfo.tex[EMISSION_TEX] = vec4(cmd.emissiveColor.xyz, 1.f);
-  surfaceInfo.tex[DIFFUSE_TEX] = vec4(cmd.diffuseColor.xyz, 1.f);
+  surfaceInfo.emission = vec4(cmd.emissiveColor.xyz, 1.f);
+  surfaceInfo.diffuse = vec4(cmd.diffuseColor.xyz, 1.f);
 };
 
 // 
 void blankHit(in PathTraceCommand cmd, in uint type) {
-  bool found = false, overhead = false;
-  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.pixelId);
-  PixelHitInfoRef hitInfo = newToSurface(cmd.pixelId, type, overhead);
-  hitInfo.indices = uvec4(0u.xxx, type);
-  hitInfo.color = vec4(0.f.xxx, 1.f);
+  PixelHitInfoRef hitInfo = getPixelHitInfo(cmd.pixelId, type);
+  hitInfo.color += vec4(0.f.xxx, 1.f);
   hitInfo.origin = vec4(cmd.rayData.origin.xyz, 0.f);
-  hitInfo.idata.y = cmd.pixelId;
 };
+
 
 // 
 void retranslateHit(in uint pixelId, in uint type, in vec3 origin) {
-  bool found = false, overhead = false;
-  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
-  PixelHitInfoRef hitInfo = getRpjHitInfo(pixelId, type, found);
-  PixelHitInfoRef newHitInfo = newToSurface(pixelId, type, overhead);
-  newHitInfo.indices = hitInfo.indices;
-  newHitInfo.indices.w = type;
-  newHitInfo.color = hitInfo.color;
-  newHitInfo.origin = hitInfo.origin;
-  newHitInfo.idata.y = pixelId;
-};
-
-//
-void closeSurface(in uint pixelId, in uint type) {
-  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
-  surfaceInfo.color[type] = cvtRgb16Acc(surfaceInfo.accum[type]);
-  surfaceInfo.accum[type] = TYPE(0u);
-  //for (uint i=0;i<3;i++) { surfaceInfo.rpjIdx[i] = 0u; };
+  PixelHitInfoRef hitInfo = getPixelHitInfo(pixelId, type);
+  hitInfo.indices = hitInfo.actualIndices, hitInfo.actualIndices = uvec4(0u);
+  hitInfo.color = cvtRgb16Acc(hitInfo.accum), hitInfo.accum = TYPE(0u);
+  hitInfo.origin = hitInfo.actualOrigin, hitInfo.origin.xyz = origin, hitInfo.actualOrigin = vec4(0.f);
 };
 
 //
 void blankHit(in uint pixelId, in uint type, in vec3 origin) {
-  bool found = false, overhead = false;
-  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
-  PixelHitInfoRef hitInfo = newToSurface(pixelId, type, overhead);
+  PixelHitInfoRef hitInfo = getPixelHitInfo(pixelId, type);
   hitInfo.indices = uvec4(0u.xxx, type);
-  hitInfo.color = vec4(0.f.xxx, 1.f);
+  hitInfo.color += vec4(0.f.xxx, 1.f), hitInfo.accum = TYPE(0u);
   hitInfo.origin = vec4(vec4(0.f.xxx, 1.f) * constants.lookAtInverse, 10000.f);
-  hitInfo.idata.y = pixelId;
-  surfaceInfo.accum[type] += cvtRgb16Float(hitInfo.color);
+};
+
+// 
+void retranslateSurface(in uint pixelId) {
+  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
+  surfaceInfo.indices = surfaceInfo.actualIndices, surfaceInfo.actualIndices = uvec4(0u);
+  surfaceInfo.origin = surfaceInfo.actualOrigin, surfaceInfo.actualOrigin = vec3(0.f);
+  surfaceInfo.normal = surfaceInfo.actualNormal, surfaceInfo.actualNormal = vec3(0.f);
+  surfaceInfo.emission = cvtRgb16Acc(surfaceInfo.emissionAccum), surfaceInfo.emissionAccum = TYPE(0u);
+  surfaceInfo.diffuse = cvtRgb16Acc(surfaceInfo.diffuseAccum), surfaceInfo.diffuseAccum = TYPE(0u);
 };
 
 // 
 void backgroundHit(in uint pixelId, in uint type, in vec3 origin) {
-  bool found = false, overhead = false;
-  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
-  PixelHitInfoRef hitInfo = newToSurface(pixelId, type, overhead);
+  PixelHitInfoRef hitInfo = getPixelHitInfo(pixelId, type);
   hitInfo.indices = uvec4(0u.xxx, type);
-  hitInfo.color = ((type == 2) ? vec4(1.f.xxxx) : vec4(0.f.xxx, 1.f));
+  hitInfo.color += ((type == 2) ? vec4(1.f.xxxx) : vec4(0.f.xxx, 1.f)), hitInfo.accum = TYPE(0u);
   hitInfo.origin = vec4(vec4(0.f.xxx, 1.f) * constants.lookAtInverse, 10000.f);
-  hitInfo.idata.y = pixelId;
-  surfaceInfo.accum[type] += cvtRgb16Float(hitInfo.color);
 };
 
 
