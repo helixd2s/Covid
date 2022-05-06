@@ -28,7 +28,7 @@ void main() {
 #endif
 
     // 
-    const vec2 tCoord = vec2(gcoord)/vec2(extent);
+    const vec2 tCoord = (vec2(gcoord) + 0.5f)/vec2(extent);
     const uint pixelId = gcoord.x + extent.x * gcoord.y;
 
     //

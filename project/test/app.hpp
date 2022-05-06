@@ -40,15 +40,14 @@ struct UniformData {
   uint64_t writeData = 0ull;
   uint64_t rasterData = 0ull;
   uint64_t surfaceData = 0ull;
+  uint64_t counterData = 0ull;
   uint32_t backgroundObj = 0u;
 };
 
 //
 struct CounterData {
-  uint32_t pixelCounter = 0u;
-  uint32_t writeCounter = 0u;
-  uint32_t rasterCounter = 0u;
-  uint32_t surfaceCounter = 0u;
+  uint32_t counters[4] = { 0u };
+  uint32_t previousCounters[4] = { 0u };
 };
 
 //
@@ -62,7 +61,8 @@ struct PixelHitInfo {
 //
 struct PixelSurfaceInfo {
   glm::uvec4 indices; // instanceId, geometryId, primitiveId
-  glm::uvec4 idata; // currentId, preprojId
+  uint32_t newIdx[3];
+  uint32_t rpjIdx[3];
   glm::vec3 origin;
   glm::vec3 normal;
   glm::vec4 tex[2];
@@ -100,6 +100,7 @@ protected:
   ANAMED::WrapShared<ANAMED::ResourceObj> pixelDataObj = {};
   ANAMED::WrapShared<ANAMED::ResourceObj> writeDataObj = {};
   ANAMED::WrapShared<ANAMED::ResourceObj> rasterDataObj = {};
+  ANAMED::WrapShared<ANAMED::ResourceObj> counterDataObj = {};
   ANAMED::WrapShared<ANAMED::ResourceObj> surfaceDataObj = {};
 
   //
@@ -398,11 +399,21 @@ public:
       }
       });
 
+    // 
+    counterDataObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
+      .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
+      .bufferInfo = ANAMED::BufferCreateInfo{
+        .size = sizeof(CounterData),
+        .type = ANAMED::BufferType::eStorage,
+      }
+    });
+
     //
     uniformData.writeData = writeDataObj->getDeviceAddress();
     uniformData.pixelData = pixelDataObj->getDeviceAddress();
     uniformData.surfaceData = surfaceDataObj->getDeviceAddress();
     uniformData.rasterData = rasterDataObj->getDeviceAddress();
+    uniformData.counterData = counterDataObj->getDeviceAddress();
 
     //
     framebufferObj = ANAMED::FramebufferObj::make(deviceObj.with(0u), ANAMED::FramebufferCreateInfo{
@@ -422,6 +433,19 @@ public:
       .split = std::vector<uint32_t>{ 4, 4, 4, 4, 4},
       .formats = std::vector<vk::Format>{ vk::Format::eR32Uint, vk::Format::eR32Uint, vk::Format::eR32Uint, vk::Format::eR32Uint, vk::Format::eR32Uint },
       .info = qfAndQueue
+    });
+
+    //
+    decltype(auto) counterFence = descriptorsObj->executeCacheUpdateOnce(ANAMED::CacheDataSet{
+      // # yet another std::optional problem (implicit)
+      .writeInfo = std::optional<ANAMED::CacheDataWriteSet>(ANAMED::CacheDataWriteSet{
+        .region = ANAMED::DataRegion{0ull, sizeof(CounterData), sizeof(CounterData)},
+        .data = cpp21::data_view<char8_t>((char8_t*)&counterData, 0ull, sizeof(CounterData)),
+        .page = 0u
+      }),
+      .submission = ANAMED::SubmissionInfo{
+        .info = qfAndQueue,
+      }
     });
 
     // 

@@ -116,7 +116,8 @@ struct RasterInfo {
 // but may not to be...
 layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer PixelSurfaceInfoRef {
   uvec4 indices; // instanceId, geometryId, primitiveId
-  uvec4 idata; // currentId, preprojId
+  uint32_t newIdx[3];
+  uint32_t rpjIdx[3];
   vec3 origin;
   vec3 normal;
   vec4 tex[2];
@@ -127,7 +128,8 @@ layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer Pix
 //
 struct PixelSurfaceInfo {
   uvec4 indices; // instanceId, geometryId, primitiveId
-  uvec4 idata; // currentId, preprojId
+  uint32_t newIdx[3];
+  uint32_t rpjIdx[3];
   vec3 origin;
   vec3 normal;
   vec4 tex[2];
@@ -135,6 +137,12 @@ struct PixelSurfaceInfo {
   vec4 color[3];
 };
 
+
+// but may not to be...
+layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer CounterDataRef {
+  uint32_t counters[4];
+  uint32_t previousCounters[4];
+};
 
 // 
 layout(set = 0, binding = 0, scalar) uniform MatrixBlock
@@ -146,6 +154,7 @@ layout(set = 0, binding = 0, scalar) uniform MatrixBlock
   uint64_t writeData;
   uint64_t rasterData;
   uint64_t surfaceData;
+  CounterDataRef counterData;
   uint32_t background;
 };
 
@@ -174,15 +183,8 @@ PixelHitInfoRef getNewHitInfo(in uint hitId) { return PixelHitInfoRef(uint64_t(p
 PixelHitInfoRef getNewHitInfo(PixelSurfaceInfoRef surfaceInfo, in uint type, inout bool found) {
   const uint hitInfoLimit = extent.x * extent.y * 3;
   const uint rasterInfoLimit = extent.x * extent.y * 4;
-  PixelHitInfoRef hitInfo = PixelHitInfoRef(0ul);
-  uint32_t pNext = surfaceInfo.idata.x < hitInfoLimit ? surfaceInfo.idata.x : 0u;
-  PixelHitInfoRef iterator = getNewHitInfo(pNext);
-  for (uint32_t i=0;i<4;i++) {
-    if (pNext == 0u) { break; };
-    if (iterator.indices.w == type) { found = true, hitInfo = iterator; break; };
-    pNext = iterator.idata.x < hitInfoLimit ? iterator.idata.x : 0u, iterator = getNewHitInfo(pNext);
-  };
-  return hitInfo;
+  found = true;//surfaceInfo.newIdx[type] > 0 && surfaceInfo.newIdx[type] < hitInfoLimit;
+  return getNewHitInfo(surfaceInfo.newIdx[type]);
 };
 
 // 
@@ -195,15 +197,8 @@ PixelHitInfoRef getNewHitInfo(in uint pixelId, in uint type, inout bool found) {
 PixelHitInfoRef getRpjHitInfo(PixelSurfaceInfoRef surfaceInfo, in uint type, inout bool found) {
   const uint hitInfoLimit = extent.x * extent.y * 3;
   const uint rasterInfoLimit = extent.x * extent.y * 4;
-  PixelHitInfoRef hitInfo = PixelHitInfoRef(0ul);
-  uint32_t pNext = surfaceInfo.idata.y < hitInfoLimit ? surfaceInfo.idata.y : 0u;
-  PixelHitInfoRef iterator = getRpjHitInfo(pNext);
-  for (uint32_t i=0;i<4;i++) {
-    if (pNext == 0u) { break; };
-    if (iterator.indices.w == type) { found = true, hitInfo = iterator; break; };
-    pNext = iterator.idata.x < hitInfoLimit ? iterator.idata.x : 0u, iterator = getRpjHitInfo(pNext);
-  };
-  return hitInfo;
+  found = true;//surfaceInfo.rpjIdx[type] > 0 && surfaceInfo.rpjIdx[type] < hitInfoLimit;
+  return getRpjHitInfo(surfaceInfo.rpjIdx[type]);
 };
 
 // 
@@ -214,20 +209,22 @@ PixelHitInfoRef getRpjHitInfo(in uint pixelId, in uint type, inout bool found) {
 
 //
 uint subgroupAtomicAdd(in uint counterId) {
-  const uint sum = subgroupBallotBitCount(subgroupBallot(true));
+  const uvec4 allc = subgroupBallot(true);
+  const uint sum = subgroupBallotBitCount(allc);
   uint latest = 0u;
   if (subgroupElect()) { latest = atomicAdd(counters[counterId], sum); };
-  latest = subgroupBroadcastFirst(latest);
-  return (latest + subgroupBallotBitCount(subgroupBallot(true) & gl_SubgroupLtMask));
+  latest = subgroupBroadcast(latest, subgroupBallotFindLSB(allc));
+  return (latest + subgroupBallotExclusiveBitCount(allc));
 };
 
 //
-PixelHitInfoRef newToSurface(inout PixelSurfaceInfoRef surfaceInfo, in uint type, inout bool overhead) {
+PixelHitInfoRef newToSurface(in uint pixelId, in uint type, inout bool overhead) {
+  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
   const uint hitInfoLimit = extent.x * extent.y * 3;
   const uint rasterInfoLimit = extent.x * extent.y * 4;
-  const uint hitIndex = subgroupAtomicAdd(PIXEL_COUNTER);
-  const uint oldIndex = atomicExchange(surfaceInfo.idata.x, hitIndex);
-  overhead = hitIndex >= hitInfoLimit;
+  const uint hitIndex = pixelId + (extent.x * extent.y) * type;//subgroupAtomicAdd(PIXEL_COUNTER);
+  const uint oldIndex = atomicExchange(surfaceInfo.newIdx[type], hitIndex);
+  overhead = false;//hitIndex >= hitInfoLimit;
   PixelHitInfoRef hitInfo = getNewHitInfo(hitIndex);
   if (!overhead) {
     hitInfo.indices.w = type;
@@ -238,12 +235,13 @@ PixelHitInfoRef newToSurface(inout PixelSurfaceInfoRef surfaceInfo, in uint type
 };
 
 //
-PixelHitInfoRef rpjToSurface(inout PixelSurfaceInfoRef surfaceInfo, in uint type, inout bool overhead) {
+PixelHitInfoRef rpjToSurface(in uint pixelId, in uint type, inout bool overhead) {
+  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
   const uint hitInfoLimit = extent.x * extent.y * 3;
   const uint rasterInfoLimit = extent.x * extent.y * 4;
-  const uint hitIndex = subgroupAtomicAdd(WRITE_COUNTER);
-  const uint oldIndex = atomicExchange(surfaceInfo.idata.y, hitIndex);
-  overhead = hitIndex >= hitInfoLimit;
+  const uint hitIndex = pixelId + (extent.x * extent.y) * type;//subgroupAtomicAdd(WRITE_COUNTER);
+  const uint oldIndex = atomicExchange(surfaceInfo.rpjIdx[type], hitIndex);
+  overhead = false;//hitIndex >= hitInfoLimit;
   PixelHitInfoRef hitInfo = getRpjHitInfo(hitIndex);
   if (!overhead) {
     hitInfo.indices.w = type;

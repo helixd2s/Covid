@@ -67,6 +67,7 @@ namespace ANAMED {
 
     //
     WrapShared<ResourceObj> uniformBufferObj = {};
+    //WrapShared<ResourceObj> cacheBufferObj = {};
     WrapShared<ResourceSparseObj> cacheBufferObj = {};
 
     //
@@ -183,7 +184,7 @@ namespace ANAMED {
         .flags = vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool
         })->setBindings(layoutBindingStack->bindings);
       this->layouts.push_back(device.createDescriptorSetLayout(layoutInfo));
-      this->descriptorCounts.push_back(maxPageCount);
+      this->descriptorCounts.push_back(maxPageCount.value());
     };
 
     // 
@@ -268,7 +269,7 @@ namespace ANAMED {
         writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[0u]).setDstBinding(0u).setDescriptorType(vk::DescriptorType::eUniformBuffer).setPBufferInfo(&this->uniformBufferDesc.value()).setDescriptorCount(1u));
       };
       if (this->cacheBufferDescs.size() > 0) {
-        writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[0u]).setDstBinding(1u).setDescriptorType(vk::DescriptorType::eStorageBuffer).setBufferInfo(this->cacheBufferDescs));
+        writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[0u]).setDstBinding(1u).setDescriptorType(vk::DescriptorType::eStorageBuffer).setBufferInfo(this->cacheBufferDescs).setDescriptorCount(uint32_t(this->cacheBufferDescs.size())));
       };
       if (this->textures->size() > 0ull) { writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[1u]).setPImageInfo(this->textures.data()).setDescriptorCount(uint32_t(this->textures.size())).setDescriptorType(vk::DescriptorType::eSampledImage)); };
       if (this->samplers->size() > 0ull) { writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[2u]).setPImageInfo(this->samplers.data()).setDescriptorCount(uint32_t(this->samplers.size())).setDescriptorType(vk::DescriptorType::eSampler)); };
