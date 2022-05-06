@@ -424,7 +424,7 @@ PathTraceOutput pathTraceCommand(in PathTraceCommand cmd, in uint type) {
     PixelHitInfoRef hitInfo = getNewHitInfo(surfaceInfo, type, found);
     if (!found) { hitInfo = newToSurface(surfaceInfo, type, overhead); };
     if (found || !overhead) {
-      hitInfo.color += additional;
+      hitInfo.color = additional;
       hitInfo.indices = outp.indices;
       hitInfo.origin = vec4(outp.hitT >= 10000.f ? vec4(0.f.xxx, 1.f) * constants.lookAtInverse : cmd.rayData.origin.xyz, outp.hitT);
       hitInfo.idata.y = cmd.pixelId;
@@ -455,7 +455,7 @@ void blankHit(in PathTraceCommand cmd, in uint type) {
   if (!found) { hitInfo = newToSurface(surfaceInfo, type, overhead); };
   if (found || !overhead) {
     hitInfo.indices = uvec4(0u.xxx, type);
-    hitInfo.color += vec4(0.f.xxx, 1.f);
+    hitInfo.color = vec4(0.f.xxx, 1.f);
     hitInfo.origin = vec4(cmd.rayData.origin.xyz, 0.f);
     hitInfo.idata.y = cmd.pixelId;
   };
@@ -472,7 +472,7 @@ void retranslateHit(in uint pixelId, in uint type, in vec3 origin) {
     PixelHitInfoRef newHitInfo = newToSurface(surfaceInfo, type, overhead);
     if (!overhead) {
       newHitInfo.indices = hitInfo.indices;
-      newHitInfo.color += hitInfo.color;
+      newHitInfo.color = hitInfo.color;
       newHitInfo.origin = hitInfo.origin;
       newHitInfo.idata.y = pixelId;
     };
@@ -495,7 +495,7 @@ void blankHit(in uint pixelId, in uint type, in vec3 origin) {
   if (!found) { hitInfo = newToSurface(surfaceInfo, type, overhead); };
   if (found || !overhead) {
     hitInfo.indices = uvec4(0u.xxx, type);
-    hitInfo.color += vec4(0.f.xxx, 1.f);
+    hitInfo.color = vec4(0.f.xxx, 1.f);
     hitInfo.origin = vec4(vec4(0.f.xxx, 1.f) * constants.lookAtInverse, 10000.f);
     hitInfo.idata.y = pixelId;
   };
@@ -509,9 +509,10 @@ void backgroundHit(in uint pixelId, in uint type, in vec3 origin) {
   if (!found) { hitInfo = newToSurface(surfaceInfo, type, overhead); };
   if (found || !overhead) {
     hitInfo.indices = uvec4(0u.xxx, type);
-    hitInfo.color += ((type == 2) ? vec4(1.f.xxxx) : vec4(0.f.xxx, 1.f)),
+    hitInfo.color = ((type == 2) ? vec4(1.f.xxxx) : vec4(0.f.xxx, 1.f));
     hitInfo.origin = vec4(vec4(0.f.xxx, 1.f) * constants.lookAtInverse, 10000.f);
     hitInfo.idata.y = pixelId;
+    surfaceInfo.accum[type] += cvtRgb16Float(hitInfo.color);
   };
 };
 

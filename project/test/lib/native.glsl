@@ -30,7 +30,7 @@ const float INV_TWO_PI = 0.15915494309189535f;
 #extension GL_EXT_ray_query : enable
 #extension GL_EXT_ray_tracing : enable
 #extension GL_ARB_gpu_shader_int64 : require
-#extension GL_EXT_debug_printf : require
+//#extension GL_EXT_debug_printf : require
 #extension GL_EXT_control_flow_attributes : require
 #extension GL_EXT_shader_realtime_clock : require
 #extension GL_KHR_shader_subgroup_ballot : require
