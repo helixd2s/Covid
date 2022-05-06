@@ -167,9 +167,10 @@ layout(set = 0, binding = 1, scalar) buffer CounterBlock
 
 //
 PixelSurfaceInfoRef getPixelSurface(in uint pixelId)  { return PixelSurfaceInfoRef(uint64_t(surfaceData) + uint64_t(pixelId) * sizeof(PixelSurfaceInfoRef)); };
+PixelHitInfoRef getRpjHitInfo(in uint hitId) { return PixelHitInfoRef(uint64_t(writeData) + uint64_t(hitId) * sizeof(PixelHitInfoRef)); };
+PixelHitInfoRef getNewHitInfo(in uint hitId) { return PixelHitInfoRef(uint64_t(pixelData) + uint64_t(hitId) * sizeof(PixelHitInfoRef)); };
 
 // 
-PixelHitInfoRef getNewHitInfo(in uint hitId) { return PixelHitInfoRef(uint64_t(pixelData) + uint64_t(hitId) * sizeof(PixelHitInfoRef)); };
 PixelHitInfoRef getNewHitInfo(PixelSurfaceInfoRef surfaceInfo, in uint type, inout bool found) {
   const uint hitInfoLimit = extent.x * extent.y * 3;
   const uint rasterInfoLimit = extent.x * extent.y * 4;
@@ -186,11 +187,11 @@ PixelHitInfoRef getNewHitInfo(PixelSurfaceInfoRef surfaceInfo, in uint type, ino
 
 // 
 PixelHitInfoRef getNewHitInfo(in uint pixelId, in uint type, inout bool found) {
-  return getNewHitInfo(getPixelSurface(pixelId), type, found);
+  PixelSurfaceInfoRef surf = getPixelSurface(pixelId);
+  return getNewHitInfo(surf, type, found);
 };
 
 // 
-PixelHitInfoRef getRpjHitInfo(in uint hitId) { return PixelHitInfoRef(uint64_t(writeData) + uint64_t(hitId) * sizeof(PixelHitInfoRef)); };
 PixelHitInfoRef getRpjHitInfo(PixelSurfaceInfoRef surfaceInfo, in uint type, inout bool found) {
   const uint hitInfoLimit = extent.x * extent.y * 3;
   const uint rasterInfoLimit = extent.x * extent.y * 4;
@@ -200,16 +201,15 @@ PixelHitInfoRef getRpjHitInfo(PixelSurfaceInfoRef surfaceInfo, in uint type, ino
   for (uint32_t i=0;i<4;i++) {
     if (pNext == 0u) { break; };
     if (iterator.indices.w == type) { found = true, hitInfo = iterator; break; };
-    if (pNext < hitInfoLimit) {
-      pNext = iterator.idata.x < hitInfoLimit ? iterator.idata.x : 0u, iterator = getRpjHitInfo(pNext);
-    } else { break; };
+    pNext = iterator.idata.x < hitInfoLimit ? iterator.idata.x : 0u, iterator = getRpjHitInfo(pNext);
   };
   return hitInfo;
 };
 
 // 
 PixelHitInfoRef getRpjHitInfo(in uint pixelId, in uint type, inout bool found) {
-  return getRpjHitInfo(getPixelSurface(pixelId), type, found);
+  PixelSurfaceInfoRef surf = getPixelSurface(pixelId);
+  return getRpjHitInfo(surf, type, found);
 };
 
 //

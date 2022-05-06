@@ -68,7 +68,7 @@ void reproject3D(in uint hitId, in int type) {
   PixelSurfaceInfoRef surface = getPixelSurface(data.idata.y);
 
   //
-  const ivec2 tCoord = ivec2(data.idata.y % extent.x, data.idata.y / extent.x);
+  const vec2 tCoord = vec2(data.idata.y % extent.x, data.idata.y / extent.x) / vec2(extent);
 
   //
   const vec3 srcRayBegin = divW(vec4(vec3(tCoord, 0.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.previousLookAtInverse;//fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId);
@@ -119,7 +119,7 @@ void reproject3D(in uint hitId, in int type) {
 
     //
     PixelSurfaceInfoRef HIT_SRC_SURF = getPixelSurface(srcId), HIT_DST_SURF = getPixelSurface(dstId);
-    PixelHitInfoRef HIT_SRC = getNewHitInfo(srcId, type, srcFound), HIT_DST = rpjToSurface(HIT_DST_SURF, type, dstOverhead);
+    PixelHitInfoRef HIT_SRC = getNewHitInfo(HIT_SRC_SURF, type, srcFound), HIT_DST = rpjToSurface(HIT_DST_SURF, type, dstOverhead);
 
     //
     if (srcFound && !dstOverhead) {
@@ -128,7 +128,7 @@ void reproject3D(in uint hitId, in int type) {
       const bool srcValidDist = all(lessThan(abs(linearSrcPos(srcScreen)-(srcHitPersp.xyz/srcHitPersp.w)), vec3(8.f/extent, 0.008f)));
 
       // copy to dest, and nullify source
-      if ( HIT_SRC.origin.w > 0.f && HIT_SRC.color.w > 0.f && dstValidDist && (srcValidDist || HIT_DST.color.w <= 0.f) ) {
+      if ( dstValidDist && (srcValidDist || HIT_DST.color.w <= 0.f) ) {
         HIT_DST.color = HIT_SRC.color;
         HIT_DST.origin = vec4(dstPos.xyz, distance(dstHitFoundIntersection.xyz, dstPos.xyz));
         HIT_DST.indices = HIT_SRC.indices;
@@ -144,8 +144,8 @@ void main() {
   const uint threadId = gl_GlobalInvocationID.x;
   const uint threadCount = gl_WorkGroupSize.x*gl_NumWorkGroups.x;
   const uint hitInfoLimit = extent.x * extent.y * 3;
-  for (uint T=0;T<previousCounters[PIXEL_COUNTER];T+=threadCount) {
-    const uint hitId = (T + threadId);
+  for (uint T=threadId;T<previousCounters[PIXEL_COUNTER];T+=threadCount) {
+    const uint hitId = T;
     if (hitId < hitInfoLimit) {
       reproject3D(hitId, 0); //barrier();
       reproject3D(hitId, 1); //barrier();
