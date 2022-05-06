@@ -283,7 +283,7 @@ public:
     decltype(auto) resampleFence = resampleObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
       // # yet another std::optional problem (implicit)
       .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
-        .dispatch = vk::Extent3D{40u, 1u},//vk::Extent3D{cpp21::tiled(renderArea.extent.width, 32u), cpp21::tiled(renderArea.extent.height, 8u), 1u},
+        .dispatch = vk::Extent3D{40u, 1u, 1u},//vk::Extent3D{cpp21::tiled(renderArea.extent.width, 32u), cpp21::tiled(renderArea.extent.height, 8u), 1u},
         .layout = descriptorsObj.as<vk::PipelineLayout>(),
         .swapchain = swapchainObj.as<uintptr_t>(),
         .pingpong = pingPongObj.as<uintptr_t>(),

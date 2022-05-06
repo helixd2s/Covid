@@ -484,6 +484,7 @@ void closeSurface(in uint pixelId, in uint type) {
   PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
   surfaceInfo.color[type] = cvtRgb16Acc(surfaceInfo.accum[type]);
   surfaceInfo.accum[type] = TYPE(0u);
+  surfaceInfo.idata.y = 0u;
 };
 
 //

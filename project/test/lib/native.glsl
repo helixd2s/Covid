@@ -171,13 +171,15 @@ PixelSurfaceInfoRef getPixelSurface(in uint pixelId)  { return PixelSurfaceInfoR
 // 
 PixelHitInfoRef getNewHitInfo(in uint hitId) { return PixelHitInfoRef(uint64_t(pixelData) + uint64_t(hitId) * sizeof(PixelHitInfoRef)); };
 PixelHitInfoRef getNewHitInfo(PixelSurfaceInfoRef surfaceInfo, in uint type, inout bool found) {
+  const uint hitInfoLimit = extent.x * extent.y * 3;
+  const uint rasterInfoLimit = extent.x * extent.y * 4;
   PixelHitInfoRef hitInfo = PixelHitInfoRef(0ul);
-  uint32_t pNext = surfaceInfo.idata.y;
+  uint32_t pNext = surfaceInfo.idata.x < hitInfoLimit ? surfaceInfo.idata.x : 0u;
   PixelHitInfoRef iterator = getNewHitInfo(pNext);
   for (uint32_t i=0;i<4;i++) {
     if (pNext == 0u) { break; };
     if (iterator.indices.w == type) { found = true, hitInfo = iterator; break; };
-    pNext = iterator.idata.x, iterator = getNewHitInfo(pNext);
+    pNext = iterator.idata.x < hitInfoLimit ? iterator.idata.x : 0u, iterator = getNewHitInfo(pNext);
   };
   return hitInfo;
 };
@@ -190,13 +192,17 @@ PixelHitInfoRef getNewHitInfo(in uint pixelId, in uint type, inout bool found) {
 // 
 PixelHitInfoRef getRpjHitInfo(in uint hitId) { return PixelHitInfoRef(uint64_t(writeData) + uint64_t(hitId) * sizeof(PixelHitInfoRef)); };
 PixelHitInfoRef getRpjHitInfo(PixelSurfaceInfoRef surfaceInfo, in uint type, inout bool found) {
+  const uint hitInfoLimit = extent.x * extent.y * 3;
+  const uint rasterInfoLimit = extent.x * extent.y * 4;
   PixelHitInfoRef hitInfo = PixelHitInfoRef(0ul);
-  uint32_t pNext = surfaceInfo.idata.y;
+  uint32_t pNext = surfaceInfo.idata.y < hitInfoLimit ? surfaceInfo.idata.y : 0u;
   PixelHitInfoRef iterator = getRpjHitInfo(pNext);
   for (uint32_t i=0;i<4;i++) {
     if (pNext == 0u) { break; };
     if (iterator.indices.w == type) { found = true, hitInfo = iterator; break; };
-    pNext = iterator.idata.x, iterator = getRpjHitInfo(pNext);
+    if (pNext < hitInfoLimit) {
+      pNext = iterator.idata.x < hitInfoLimit ? iterator.idata.x : 0u, iterator = getRpjHitInfo(pNext);
+    } else { break; };
   };
   return hitInfo;
 };
@@ -239,7 +245,7 @@ PixelHitInfoRef rpjToSurface(inout PixelSurfaceInfoRef surfaceInfo, in uint type
   const uint oldIndex = atomicExchange(surfaceInfo.idata.y, hitIndex);
   overhead = hitIndex >= hitInfoLimit;
   PixelHitInfoRef hitInfo = getRpjHitInfo(hitIndex);
-  if (!overhead) { 
+  if (!overhead) {
     hitInfo.indices.w = type;
     hitInfo.idata.x = oldIndex;
     hitInfo.color = vec4(0.f);
