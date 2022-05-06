@@ -53,26 +53,23 @@ struct CounterData {
 
 //
 struct PixelHitInfo {
-  glm::vec4 color; glm::uvec4 accum;
-  glm::uvec4 indices; glm::uvec4 actualIndices;
-  glm::vec4 direction; glm::vec4 actualDirection;
+  glm::uvec4 indices; // instanceId, geometryId, primitiveId, type
+  glm::uvec4 idata; // pNext, surfaceIndex
+  glm::vec4 color;
+  glm::vec4 origin;
 };
 
 //
 struct PixelSurfaceInfo {
-  glm::uvec4 indices; glm::uvec4 actualIndices;
-  glm::vec3 origin; glm::vec3 actualOrigin;
-  glm::vec3 normal; glm::vec3 actualNormal;
-  glm::vec4 emission; glm::uvec4 emissionAccum;
-  glm::vec4 diffuse; glm::uvec4 diffuseAccum;
-};
-
-//
-struct PixelInfo {
-  PixelHitInfo reflection;
-  PixelHitInfo transparency;
-  PixelHitInfo diffuse;
-  PixelSurfaceInfo surface;
+  glm::uvec4 indices; // instanceId, geometryId, primitiveId
+  glm::uvec4 idata; // currentId, preprojId
+  glm::vec3 origin;
+  glm::vec3 normal;
+  glm::vec4 tex[2];
+  glm::uvec4 accum[3];
+  glm::vec4 color[3];
+  //glm::vec4 emissionTex, diffuseTex;
+  //glm::uvec4 diffuseAccum, reflectionAccum, transparencyAccum;
 };
 
 //
@@ -286,7 +283,7 @@ public:
     decltype(auto) resampleFence = resampleObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
       // # yet another std::optional problem (implicit)
       .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
-        .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 32u), cpp21::tiled(renderArea.extent.height, 8u), 1u},
+        .dispatch = vk::Extent3D{40u, 1u},//vk::Extent3D{cpp21::tiled(renderArea.extent.width, 32u), cpp21::tiled(renderArea.extent.height, 8u), 1u},
         .layout = descriptorsObj.as<vk::PipelineLayout>(),
         .swapchain = swapchainObj.as<uintptr_t>(),
         .pingpong = pingPongObj.as<uintptr_t>(),
@@ -361,17 +358,51 @@ public:
     //
     renderArea = swapchainObj->getRenderArea();
 
-    // TODO: make rasterData, writeData, surfaceData, pixelData, bind with counters
-    pixelDataObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
+    //
+    uintptr_t hitInfoLimit = renderArea.extent.width * renderArea.extent.height * 3;
+    uintptr_t rasterInfoLimit = renderArea.extent.width * renderArea.extent.height * 4;
+
+    //
+    writeDataObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
       .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
       .bufferInfo = ANAMED::BufferCreateInfo{
-        .size = sizeof(PixelInfo) * renderArea.extent.width * renderArea.extent.height,
+        .size = sizeof(PixelHitInfo) * hitInfoLimit,
         .type = ANAMED::BufferType::eStorage,
       }
       });
 
     //
+    pixelDataObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
+      .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
+      .bufferInfo = ANAMED::BufferCreateInfo{
+        .size = sizeof(PixelHitInfo) * hitInfoLimit,
+        .type = ANAMED::BufferType::eStorage,
+      }
+      });
+
+    // 
+    surfaceDataObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
+      .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
+      .bufferInfo = ANAMED::BufferCreateInfo{
+        .size = sizeof(PixelSurfaceInfo) * renderArea.extent.width * renderArea.extent.height,
+        .type = ANAMED::BufferType::eStorage,
+      }
+      });
+
+    // 
+    rasterDataObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
+      .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
+      .bufferInfo = ANAMED::BufferCreateInfo{
+        .size = sizeof(RasterInfo) * rasterInfoLimit,
+        .type = ANAMED::BufferType::eStorage,
+      }
+      });
+
+    //
+    uniformData.writeData = writeDataObj->getDeviceAddress();
     uniformData.pixelData = pixelDataObj->getDeviceAddress();
+    uniformData.surfaceData = surfaceDataObj->getDeviceAddress();
+    uniformData.rasterData = rasterDataObj->getDeviceAddress();
 
     //
     framebufferObj = ANAMED::FramebufferObj::make(deviceObj.with(0u), ANAMED::FramebufferCreateInfo{

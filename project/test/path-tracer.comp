@@ -100,5 +100,10 @@ void main() {
       blankHit(pixelId, 1, rayData.origin);
       backgroundHit(pixelId, 2, rayData.origin);
     };
+
+    //
+    closeSurface(pixelId, 0);
+    closeSurface(pixelId, 1);
+    closeSurface(pixelId, 2);
   };
 };
