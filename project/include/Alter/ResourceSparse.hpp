@@ -37,7 +37,7 @@ namespace ANAMED {
   protected:
     //using BaseObj;
     friend DeviceObj;
-    friend DescriptorsObj;
+    friend PipelineLayoutObj;
     friend UploaderObj;
     friend FramebufferObj;
     friend SwapchainObj;
@@ -257,7 +257,7 @@ namespace ANAMED {
   };
 
   //
-  inline vk::Buffer& DescriptorsObj::createCacheBuffer() {
+  inline vk::Buffer& PipelineLayoutObj::createCacheBuffer() {
     this->cacheBuffer = (this->cacheBufferObj = ResourceSparseObj::make(this->base, ResourceCreateInfo{
       .bufferInfo = BufferCreateInfo{
         .size = this->cachePages * this->cachePageSize,

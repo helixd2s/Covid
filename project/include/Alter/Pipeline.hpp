@@ -4,7 +4,7 @@
 #ifdef __cplusplus
 #include "./Core.hpp"
 #include "./Device.hpp"
-#include "./Descriptors.hpp"
+#include "./PipelineLayout.hpp"
 #include "./Framebuffer.hpp"
 #include "./Swapchain.hpp"
 #include "./PingPong.hpp"
@@ -21,7 +21,7 @@ namespace ANAMED {
   protected:
     friend DeviceObj;
     friend FramebufferObj;
-    friend DescriptorsObj;
+    friend PipelineLayoutObj;
 
     //
     std::vector<vk::Pipeline> secondaryPipelines = {};
@@ -75,7 +75,7 @@ namespace ANAMED {
     
     //
     virtual void createCompute(cpp21::const_wrap_arg<ComputePipelineCreateInfo> compute = {}) {
-      decltype(auto) descriptors = ANAMED::context->get<DeviceObj>(this->base)->get<DescriptorsObj>(this->cInfo->layout);
+      decltype(auto) descriptors = ANAMED::context->get<DeviceObj>(this->base)->get<PipelineLayoutObj>(this->cInfo->layout);
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) crInfo = makeComputePipelineStageInfo(device, *compute->code); this->pipelineStages.push_back(crInfo);
       decltype(auto) cmInfo = infoMap->set(vk::StructureType::eComputePipelineCreateInfo, vk::ComputePipelineCreateInfo{
@@ -97,7 +97,7 @@ namespace ANAMED {
       //
       //ANAMED::context->get(this->base)->registerObj(this->handle, shared_from_this());
       //return this->SFT();
-      decltype(auto) descriptors = ANAMED::context->get<DeviceObj>(this->base)->get<DescriptorsObj>(this->cInfo->layout);
+      decltype(auto) descriptors = ANAMED::context->get<DeviceObj>(this->base)->get<PipelineLayoutObj>(this->cInfo->layout);
       decltype(auto) device = this->base.as<vk::Device>();
 
       //
@@ -244,7 +244,7 @@ namespace ANAMED {
     virtual tType writeComputeCommand(cpp21::const_wrap_arg<WriteComputeInfo> exec = WriteComputeInfo{}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
-      decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(exec->layout ? exec->layout : this->cInfo->layout);
+      decltype(auto) descriptorsObj = deviceObj->get<PipelineLayoutObj>(exec->layout ? exec->layout : this->cInfo->layout);
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
 
       //
@@ -295,7 +295,7 @@ namespace ANAMED {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) pipelineLayout = exec->layout ? exec->layout : this->cInfo->layout;
-      decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(pipelineLayout);
+      decltype(auto) descriptorsObj = deviceObj->get<PipelineLayoutObj>(pipelineLayout);
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
       decltype(auto) framebuffer = deviceObj->get<FramebufferObj>(exec->framebuffer).shared();
 

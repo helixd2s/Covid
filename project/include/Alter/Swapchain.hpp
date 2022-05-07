@@ -6,7 +6,7 @@
 #include "./Instance.hpp"
 #include "./Device.hpp"
 #include "./Resource.hpp"
-#include "./Descriptors.hpp"
+#include "./PipelineLayout.hpp"
 #include "./Semaphore.hpp"
 
 // 
@@ -169,7 +169,7 @@ namespace ANAMED {
     virtual vk::SwapchainKHR& updateSwapchain() {
       //decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
-      decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
+      decltype(auto) descriptorsObj = deviceObj->get<PipelineLayoutObj>(this->cInfo->layout);
       auto& device = this->base.as<vk::Device>();
 
       //
@@ -256,7 +256,7 @@ namespace ANAMED {
     virtual void createImage(cpp21::const_wrap_arg<vk::Image> image, cpp21::const_wrap_arg<ImageType> imageType = ImageType::eSwapchain, cpp21::const_wrap_arg<vk::SurfaceFormat2KHR> surfaceFormat2 = {}, cpp21::const_wrap_arg<ImageSwapchainInfo> swapchainInfo = {}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
-      decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
+      decltype(auto) descriptorsObj = deviceObj->get<PipelineLayoutObj>(this->cInfo->layout);
       decltype(auto) imageLayout = vk::ImageLayout::eGeneral;
       decltype(auto) format = surfaceFormat2->surfaceFormat.format;
 

@@ -18,9 +18,9 @@ struct DescriptorBindings {
 namespace ANAMED {
   
   // 
-  class DescriptorsObj : public BaseObj {
+  class PipelineLayoutObj : public BaseObj {
   public: 
-    using tType = WrapShared<DescriptorsObj>;
+    using tType = WrapShared<PipelineLayoutObj>;
     using BaseObj::BaseObj;
     //using BaseObj;
 
@@ -90,12 +90,12 @@ namespace ANAMED {
   public:
 
     // 
-    DescriptorsObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
+    PipelineLayoutObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
       //this->construct(deviceObj, cInfo);
     };
 
     // 
-    DescriptorsObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
+    PipelineLayoutObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
       //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
@@ -136,7 +136,7 @@ namespace ANAMED {
 
     //
     inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) {
-      auto shared = std::make_shared<DescriptorsObj>(handle, cInfo);
+      auto shared = std::make_shared<PipelineLayoutObj>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle), cInfo);
       auto wrap = shared->registerSelf();
       wrap->createNullImages();

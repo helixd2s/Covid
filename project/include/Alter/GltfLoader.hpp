@@ -10,7 +10,7 @@
 #include "./QueueFamily.hpp"
 #include "./Resource.hpp"
 #include "./Sampler.hpp"
-#include "./Descriptors.hpp"
+#include "./PipelineLayout.hpp"
 #include "./Framebuffer.hpp"
 #include "./Pipeline.hpp"
 #include "./Uploader.hpp"
@@ -225,7 +225,7 @@ namespace ANAMED
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(handle);
       decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(Handle(this->cInfo->uploader, HandleType::eUploader));
-      decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->descriptors);
+      decltype(auto) descriptorsObj = deviceObj->get<PipelineLayoutObj>(this->cInfo->descriptors);
 
       // 
       bool ret = loader.LoadASCIIFromFile(&gltf->model, &gltf->err, &gltf->warn, filename);

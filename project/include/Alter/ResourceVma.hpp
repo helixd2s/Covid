@@ -5,7 +5,7 @@
 #include "./Core.hpp"
 #include "./Device.hpp"
 #include "./MemoryAllocatorVma.hpp"
-#include "./Descriptors.hpp"
+#include "./PipelineLayout.hpp"
 
 // 
 namespace ANAMED {

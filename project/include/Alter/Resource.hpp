@@ -5,7 +5,7 @@
 #include "./Core.hpp"
 #include "./Device.hpp"
 #include "./MemoryAllocator.hpp"
-#include "./Descriptors.hpp"
+#include "./PipelineLayout.hpp"
 #include "./Sampler.hpp"
 
 // 
@@ -20,7 +20,7 @@ namespace ANAMED {
   protected:
     //using BaseObj;
     friend DeviceObj;
-    friend DescriptorsObj;
+    friend PipelineLayoutObj;
     friend UploaderObj;
     friend FramebufferObj;
     friend SwapchainObj;
@@ -154,7 +154,7 @@ namespace ANAMED {
     std::tuple<vk::ImageView, uint32_t> createImageView(cpp21::const_wrap_arg<ImageViewCreateInfo> info = {}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
-      decltype(auto) descriptorsObj = this->cInfo->descriptors ? deviceObj->get<DescriptorsObj>(this->cInfo->descriptors) : WrapShared<DescriptorsObj>{};
+      decltype(auto) descriptorsObj = this->cInfo->descriptors ? deviceObj->get<PipelineLayoutObj>(this->cInfo->descriptors) : WrapShared<PipelineLayoutObj>{};
       decltype(auto) imageInfo = this->cInfo->imageInfo;
 
       // 
@@ -596,7 +596,7 @@ namespace ANAMED {
   };
 
   //
-  inline void DescriptorsObj::createNullImages() {
+  inline void PipelineLayoutObj::createNullImages() {
     //
     decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
 
@@ -640,7 +640,7 @@ namespace ANAMED {
   };
 
   //
-  inline vk::Buffer& DescriptorsObj::createUniformBuffer() {
+  inline vk::Buffer& PipelineLayoutObj::createUniformBuffer() {
     this->uniformBuffer = (this->uniformBufferObj = ResourceObj::make(this->base, ResourceCreateInfo{
       .bufferInfo = BufferCreateInfo{
         .size = uniformSize,

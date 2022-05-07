@@ -5,7 +5,7 @@
 #include "./Core.hpp"
 #include "./Device.hpp"
 #include "./MemoryAllocator.hpp"
-#include "./Descriptors.hpp"
+#include "./PipelineLayout.hpp"
 
 // 
 namespace ANAMED {
@@ -18,7 +18,7 @@ namespace ANAMED {
 
   protected:
     friend DeviceObj;
-    friend DescriptorsObj;
+    friend PipelineLayoutObj;
     friend UploaderObj;
     friend FramebufferObj;
     friend SwapchainObj;
@@ -78,7 +78,7 @@ namespace ANAMED {
       this->handle = device.createSampler(samplerInfo.ref());
 
       //
-      decltype(auto) descriptorsObj = this->cInfo->descriptors ? deviceObj->get<DescriptorsObj>(this->cInfo->descriptors) : WrapShared<DescriptorsObj>{};
+      decltype(auto) descriptorsObj = this->cInfo->descriptors ? deviceObj->get<PipelineLayoutObj>(this->cInfo->descriptors) : WrapShared<PipelineLayoutObj>{};
       if (descriptorsObj) {
         descriptorId = descriptorsObj->getSamplerDescriptors().add(vk::DescriptorImageInfo{.sampler = this->handle.as<vk::Sampler>()});
       };

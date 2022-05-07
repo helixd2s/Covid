@@ -77,7 +77,7 @@ protected:
   ANAMED::WrapShared<ANAMED::InstanceObj> instanceObj = {};
   ANAMED::WrapShared<ANAMED::DeviceObj> deviceObj = {};
   ANAMED::WrapShared<ANAMED::MemoryAllocatorObj> memoryAllocatorVma = {};
-  ANAMED::WrapShared<ANAMED::DescriptorsObj> descriptorsObj = {};
+  ANAMED::WrapShared<ANAMED::PipelineLayoutObj> descriptorsObj = {};
   ANAMED::WrapShared<ANAMED::UploaderObj> uploaderObj = {};
   ANAMED::WrapShared<ANAMED::GltfLoaderObj> gltfLoaderObj = {};
   ANAMED::WrapShared<ANAMED::PipelineObj> resampleObj = {};
@@ -448,7 +448,7 @@ protected:
     });
 
     // 
-    descriptorsObj = ANAMED::DescriptorsObj::make(deviceObj.with(0u), ANAMED::DescriptorsCreateInfo{
+    descriptorsObj = ANAMED::PipelineLayoutObj::make(deviceObj.with(0u), ANAMED::DescriptorsCreateInfo{
 
     });
 

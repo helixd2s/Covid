@@ -129,7 +129,7 @@ namespace ANAMED {
     //ePingPong, // useless
     eSurface, // useless?!
     eSemaphore,
-    eDescriptors,
+    ePipelineLayout,
     eCommandBuffer,
     eQueueFamily,
     eQueue,
@@ -265,7 +265,7 @@ namespace ANAMED {
   class DeviceObj;
   class ResourceObj;
   class QueueFamilyObj;
-  class DescriptorsObj;
+  class PipelineLayoutObj;
   class PipelineObj;
   class UploaderObj;
   class FramebufferObj;
@@ -1290,7 +1290,7 @@ namespace ANAMED {
     ANAMED::handleTypeMap[std::type_index(typeid(vk::Buffer))] = HandleType::eBuffer;
     ANAMED::handleTypeMap[std::type_index(typeid(vk::Image))] = HandleType::eImage;
     ANAMED::handleTypeMap[std::type_index(typeid(vk::Pipeline))] = HandleType::ePipeline;
-    ANAMED::handleTypeMap[std::type_index(typeid(vk::PipelineLayout))] = HandleType::eDescriptors;
+    ANAMED::handleTypeMap[std::type_index(typeid(vk::PipelineLayout))] = HandleType::ePipelineLayout;
     ANAMED::handleTypeMap[std::type_index(typeid(vk::AccelerationStructureKHR))] = HandleType::eAccelerationStructure;
     ANAMED::handleTypeMap[std::type_index(typeid(vk::Semaphore))] = HandleType::eSemaphore;
     ANAMED::handleTypeMap[std::type_index(typeid(vk::DeviceMemory))] = HandleType::eDeviceMemory;

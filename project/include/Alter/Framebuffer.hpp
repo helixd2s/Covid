@@ -6,7 +6,7 @@
 #include "./Instance.hpp"
 #include "./Device.hpp"
 #include "./Resource.hpp"
-#include "./Descriptors.hpp"
+#include "./PipelineLayout.hpp"
 
 // 
 namespace ANAMED {
@@ -24,7 +24,7 @@ namespace ANAMED {
     friend PipelineObj;
     friend ResourceObj;
     friend PipelineObj;
-    friend DescriptorsObj;
+    friend PipelineLayoutObj;
 
     //
     std::optional<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{};
@@ -125,7 +125,7 @@ namespace ANAMED {
     virtual tType writeClearAttachments(cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
-      decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
+      decltype(auto) descriptorsObj = deviceObj->get<PipelineLayoutObj>(this->cInfo->layout);
       decltype(auto) attachment = descriptorsObj->cInfo->attachments[uint32_t(this->cInfo->type)];
 
       //
@@ -214,7 +214,7 @@ namespace ANAMED {
     virtual void createImage(cpp21::const_wrap_arg<ImageType> imageType = ImageType::eColorAttachment) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
-      decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
+      decltype(auto) descriptorsObj = deviceObj->get<PipelineLayoutObj>(this->cInfo->layout);
       decltype(auto) attachment = descriptorsObj->cInfo->attachments[uint32_t(this->cInfo->type)];
       decltype(auto) lastDepthFormat = attachment.depthAttachmentFormat;
       decltype(auto) lastStencilFormat = attachment.stencilAttachmentFormat;
@@ -299,7 +299,7 @@ namespace ANAMED {
     //
     virtual void updateFramebuffer() {
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
-      decltype(auto) descriptorsObj = deviceObj->get<DescriptorsObj>(this->cInfo->layout);
+      decltype(auto) descriptorsObj = deviceObj->get<PipelineLayoutObj>(this->cInfo->layout);
 
       {
         this->colorAttachments = {};
