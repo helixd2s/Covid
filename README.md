@@ -23,6 +23,7 @@ Some functionality still WIP, but almost ready to ***MVP***…
   - [x] ♟️ Using same pipelines for rendering
   - [x] ♟️ Almost fully bindless model
   - [x] ♟️ Basic two-level rendering model
+  - [ ] 🧩 Resource independent uploader (with full VMA support, and sparse memory)
   - [ ] 🧩 More extensions support
   - [ ] 🧩️ OpenGL support (interop)
   - [ ] 🧩 Full subgroups support (incl. variable)
@@ -44,7 +45,7 @@ Some functionality still WIP, but almost ready to ***MVP***…
   - [x] ♟️ Dynamic vertex pulling and rendering
   - [x] ♟️ Checkerboard optimization (for diffuse/reflection)
   - [x] ♟️ Temporal screen-space reprojection (accumulation)
-  - [ ] 🧩 Software rasterization misc (barycentrics, vector-sampling)
+  - [x] ♟️ Software rasterization misc (barycentrics, vector-sampling)
   - [ ] 🧩 Rewrite to HLSL (needs features)
   - [ ] 🧩 Distances, MIP and LoD support
   - [ ] 🧩 Full vulkan memory model support
