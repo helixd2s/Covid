@@ -54,8 +54,8 @@ Some functionality still WIP, but almost ready to ***MVP***…
 
 ## Integrations
 
-  - [x] ☄️ KTX-2 format support
   - [x] ☄️ Basic GLTF support (single model, PBR)
+  - [ ] ☄️ KTX-2 format support
   - [ ] 👑 Radix sort for all GPU (GLSL and HLSL)
 
 ## Testing and demo initialive 
