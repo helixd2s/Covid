@@ -9,19 +9,13 @@ Some functionality still WIP, but almost ready to ***MVP***…
   - 🥀 [VK паблик](https://vk.com/helixd2s)
   - 🥀 [Наш сайт](http://about.helixd2s.su/) (там просто редирект пока что)
 
-## Features (WIP)
+## Renderer features
 
   - [x] ♟️ Almost full Vulkan API 1.3
   - [x] ♟️ Minimal and extensible interface (Open Source, SDK)
-  - [x] ♟️ Lightweight renderer as prior
-  - [x] ♟️ Some automatizations (incl. barriers, etc.)
   - [x] ♟️ Native ray tracing support (HW/RT cores, ray-query)
-  - [x] ♟️ Temporal screen-space reprojection (accumulation)
-  - [x] ♟️ Reprojection of reflections and transparency
-  - [x] ♟️ Test shaders (currently, not a library)
-  - [x] ♟️ Checkerboard optimization (for diffuse/reflection)
-  - [x] ♟️ Multi-draw of geometries or meshes 
-  - [x] ♟️ Dynamic vertex pulling and rendering
+  - [x] ♟️ Some automatizations (incl. barriers, etc.)
+  - [x] ♟️ Multi-draw of geometries or meshes
   - [x] ♟️ Graphics and compute shaders support
   - [x] ♟️ Async-model support, with sort of GC (alike JS)
   - [x] ♟️ Input lockless and independent rendering
@@ -29,32 +23,39 @@ Some functionality still WIP, but almost ready to ***MVP***…
   - [x] ♟ Using same pipelines for rendering
   - [x] ♟ Almost fully bindless model
   - [x] ♟ Basic two-level rendering model
-
-## Planned features 
-
+  - [ ] 🧩 More extensions support
+  - [ ] 🧩️ OpenGL support (interop)
+  - [ ] 🧩 Full subgroups support (incl. variable)
   - [ ] 🧩 Interface wrapper and SDK (for C/C++)
   - [ ] 🧩 Better instancing support (reusing, indexing)
   - [ ] 🧩️ Multi-draw with instances (TLAS)
-  - [ ] 🧩 Full subgroups support (incl. variable)
-  - [ ] 🧩 Full vulkan memory model support
   - [ ] 🧩 Secondary or alternative pipelines
   - [ ] 🧩 Ray-tracing pipelines (currently ray-query)
-  - [ ] 🧩 Rewrite to HLSL (needs features)
-  - [ ] 🧩 Distances, MIP and LoD support
-  - [ ] 🧩 Short-range SSRT support
-  - [ ] 🧩 More extensions support
-  - [ ] 🧩️ OpenGL support (interop)
-  - [ ] 🧩️ Pre-defined shader packages
-  - [ ] 🧩 Motion-vectors and animations
-  - [ ] 🧩 Advanced shadow maps (with RT)
-  - [ ] 🧩 Full and native ReShade support
-  - [ ] 🧩 Interop with CUDA and OpenCL (**not** AMD)
+  - [ ] 👑 Full and native ReShade support
+  - [ ] 👑 Interop with CUDA and OpenCL (**not** AMD)
   - [ ] 👑 Interop with DirectX 12
   - [ ] 👑 DirectX 12 underlayer of Vulkan
   - [ ] 👑️ Implementation for some games
 
-## Planned specific libraries
+## Built-in shaders SDK features
 
+  - [x] ♟️ Test shaders (currently, not a library)
+  - [x] ♟️ Reprojection of reflections and transparency
+  - [x] ♟️ Dynamic vertex pulling and rendering
+  - [x] ♟️ Checkerboard optimization (for diffuse/reflection)
+  - [x] ♟️ Temporal screen-space reprojection (accumulation)
+  - [ ] 🧩 Software rasterization misc (barycentrics, vector-sampling)
+  - [ ] 🧩 Rewrite to HLSL (needs features)
+  - [ ] 🧩 Distances, MIP and LoD support
+  - [ ] 🧩 Full vulkan memory model support
+  - [ ] 🧩️ Pre-defined shader packages
+  - [ ] 🧩 Short-range SSRT support
+  - [ ] 🧩 Advanced shadow maps (with simpler RT)
+
+## Integrations
+
+  - [x] ☄️ KTX-2 format support
+  - [x] ☄️ Basic GLTF support (single model, PBR)
   - [ ] 👑 Radix sort for all GPU (GLSL and HLSL)
 
 ## Testing and demo initialive 
@@ -62,13 +63,13 @@ Some functionality still WIP, but almost ready to ***MVP***…
   - [x] ☄ Env. map testing
   - [x] ☄️ Argument passing for app
   - [x] ☄️ Basic controller (camera moving)
-  - [x] ☄️ Basic GLTF support (single model, PBR)
   - [ ] ☄️ Basic OBJ support
   - [ ] ☄️ Physics demo (interactive, dynamic)
   - [ ] ☄️ Advanced GLTF support (more than one model, more features)
   - [ ] ☄️ GLTF animations support
   - [ ] ☄️ GUI controllers and better interactivity
-
+  - [ ] ☄ Motion-vectors and animations
+  
 ## Minecraft and Java 16 spec-operation (project `Alpha`)…
 
   - [ ] ☕ Latest LWJGL loading, interop and support
