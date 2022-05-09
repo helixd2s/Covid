@@ -35,6 +35,7 @@ IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayDat
   intersection.geometryId = 0u;
   intersection.primitiveId = 0u;
 
+/*
   vec3 viewOrigin = vec4(rayData.origin.xyz, 1.f) * constants.lookAt;
   vec3 viewEnd = vec4(rayData.origin.xyz+rayData.direction.xyz, 1.f) * constants.lookAt;
   vec3 viewDir = normalize(viewEnd - viewOrigin);
@@ -72,13 +73,13 @@ IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayDat
     };
 
     indice = rasterInfo.indices.w;
-  };
+  };*/
 
   // sorry, but my barycentric isn't want to working correctly
   // probably, really needs triangle intersection
-  //IntersectionInfo opaqueIntersection = traceRaysOpaque(addressInfo, rayData, maxT);
-  //IntersectionInfo translucentIntersection = traceRaysTransparent(addressInfo, rayData, opaqueIntersection.hitT);
-  //intersection = translucentIntersection.hitT <= opaqueIntersection.hitT ? translucentIntersection : opaqueIntersection;
+  IntersectionInfo opaqueIntersection = traceRaysOpaque(addressInfo, rayData, maxT);
+  IntersectionInfo translucentIntersection = traceRaysTransparent(addressInfo, rayData, opaqueIntersection.hitT);
+  intersection = translucentIntersection.hitT <= opaqueIntersection.hitT ? translucentIntersection : opaqueIntersection;
 
   return intersection;
 };
