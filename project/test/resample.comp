@@ -80,18 +80,18 @@ void reproject3D(in uint pixelId, in vec3 srcRayDir, in int type) {
   const vec3 dstRayDir = normalize(srcRayDir.xyz * toNormalMat(getPreviousInstanceTransform(instancedData.opaqueAddressInfo, surface.indices.x)) * toNormalMat(inverse(getInstanceTransform(instancedData.opaqueAddressInfo, surface.indices.x))));
 
   // 
-  const vec3 dstHitFoundIntersection = vec4(
+  const vec3 dstHitFoundIntersection = type == 2 ? dstPos : (type == 1 ? dstHitPos : vec4(
     find_reflection_incident_point( 
       vec4(dstPos.xyz, 1.f) * constants.lookAt, 
       vec4(srcHitPos.xyz, 1.f) * constants.previousLookAt, 
       vec4(srcPos.xyz, 1.f) * constants.previousLookAt, 
       normalize(srcNormal.xyz)
-    ), 1.f) * constants.lookAtInverse;
+    ), 1.f) * constants.lookAtInverse);
 
   // 
   const vec3 srcHitFoundIntersection = vec4(vec4(dstHitFoundIntersection, 1.f)
-    * inverse(getInstanceTransform(instancedData.opaqueAddressInfo, surface.indices.x)), 1.f) 
-    * getPreviousInstanceTransform(instancedData.opaqueAddressInfo, surface.indices.x);
+    * inverse(getInstanceTransform(instancedData.opaqueAddressInfo, data.indices.x)), 1.f) 
+    * getPreviousInstanceTransform(instancedData.opaqueAddressInfo, data.indices.x);
 
   // 
   const vec4 srcHitPersp = vec4(vec4(srcHitFoundIntersection, 1.f) * constants.previousLookAt, 1.f) * constants.perspective;
@@ -117,7 +117,7 @@ void reproject3D(in uint pixelId, in vec3 srcRayDir, in int type) {
     const bool srcValidDist = all(lessThan(abs(linearSrcPos(srcScreen)-(srcHitPersp.xyz/srcHitPersp.w)), vec3(8.f/extent, 0.008f)));
 
     // copy to dest, and nullify source
-    if ( HIT_SRC.origin.w > 0.f && SURF_SRC.color[type].w > 0.f && dstValidDist && (srcValidDist || SURF_DST.color[type].w <= 0.f) ) {
+    if ( data.origin.w >= 0.f && SURF_SRC.color[type].w > 0.f && dstValidDist && (srcValidDist || SURF_DST.color[type].w <= 0.f) ) {
       accumulate(SURF_DST, type, cvtRgb16Float(SURF_SRC.color[type])); SURF_SRC.color[type] = vec4(0.f.xxxx);
 
       // 
@@ -151,7 +151,7 @@ void reprojectDiffuse(in uint srcId, in vec3 srcRayDir) {
     const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz-(dstPerspPos.xyz/dstPerspPos.w)), vec3(1.f/extent, 0.001f)));
     PixelSurfaceInfoRef dstSurface = getPixelSurface(dstId);
     PixelHitInfoRef dstHit = getRpjHit(dstId, 2);
-    if (srcHit.origin.w > 0.f && srcSurface.color[2].w > 0.f && dstValidDist && (true || srcSurface.color[2].w <= 0.f)) {
+    if (srcSurface.color[2].w > 0.f && dstValidDist) {
       // 
       accumulate(dstSurface, 2, cvtRgb16Float(srcSurface.color[2]));
 
@@ -173,7 +173,8 @@ void main() {
   const vec3 srcRayDir = normalize(srcRayEnd.xyz - srcRayBegin.xyz);
 
   // using barrier for partially avoid some problems
-  reproject3D(pixelId, srcRayDir, 1); barrier();
-  reproject3D(pixelId, srcRayDir, 0); barrier();
-  reprojectDiffuse(pixelId, srcRayDir); barrier();
+  reproject3D(pixelId, srcRayDir, 0);
+  reproject3D(pixelId, srcRayDir, 1);
+  reprojectDiffuse(pixelId, srcRayDir);
+  //reproject3D(pixelId, srcRayDir, 2);
 };

@@ -418,22 +418,26 @@ PathTraceOutput pathTraceCommand(in PathTraceCommand cmd, in uint type) {
 
   //
   PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.pixelId);
-  surfaceInfo.color[type] += additional;
 
   // avoid critical error for skyboxed, also near have more priority... also, transparency may incorrect, so doing some exception
   PixelHitInfoRef hitInfo = getNewHit(cmd.pixelId, type);
+  surfaceInfo.color[type] += additional;
+
+  // 
+  hitInfo.indices = uvec4(outp.indices.xyz, type);
+  hitInfo.origin.xyz = outp.hitT >= 10000.f ? vec4(0.f.xxx, 1.f) * constants.lookAtInverse : cmd.rayData.origin.xyz;
+
+  //
   if (outp.hitT > 0.f && 
     (hitInfo.origin.w <= 0.f || hitInfo.origin.w >= 10000.f || 
-      (
-        type == 0 && outp.hitT <= hitInfo.origin.w && outp.hitT < 10000.f || 
+      hitInfo.origin.w > 0.f && (
         type == 1 && outp.hitT >= hitInfo.origin.w && outp.hitT < 10000.f || 
+        type == 0 && outp.hitT <= hitInfo.origin.w || 
         type == 2
-      ) && 
-      hitInfo.origin.w > 0.f)
-    ) {
-    hitInfo.indices = uvec4(outp.indices.xyz, type);
-    hitInfo.origin = vec4(outp.hitT >= 10000.f ? vec4(0.f.xxx, 1.f) * constants.lookAtInverse : cmd.rayData.origin.xyz, outp.hitT);
-  };
+      )
+    )) {
+      hitInfo.origin.w = outp.hitT;
+    };
 
   // 
   return outp;
@@ -476,7 +480,7 @@ void retranslateHit(in uint pixelId, in uint type, in vec3 origin) {
 // 
 void backgroundHit(in uint pixelId, in uint type, in vec3 origin) {
   PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
-  surfaceInfo.color[type] = ((type == 2) ? vec4(1.f.xxxx) : vec4(0.f.xxx, 1.f));
+  surfaceInfo.color[type] += ((type == 2) ? vec4(1.f.xxxx) : vec4(0.f.xxx, 1.f));
 
   //
   PixelHitInfoRef hitInfo = getNewHit(pixelId, type);
