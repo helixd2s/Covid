@@ -24,14 +24,14 @@ Some functionality still WIP, but almost ready to ***MVP***…
   - [x] ♟️ Almost fully bindless model
   - [x] ♟️ Basic two-level rendering model
   - [ ] 🧩 Resource independent uploader (with full VMA support, and sparse memory)
-  - [ ] 🧩 More extensions support
-  - [ ] 🧩️ OpenGL support (interop)
-  - [ ] 🧩 Full subgroups support (incl. variable)
-  - [ ] 🧩 Interface wrapper and SDK (for C/C++)
-  - [ ] 🧩 Better instancing support (reusing, indexing)
   - [ ] 🧩️ Multi-draw with instances (TLAS)
+  - [ ] 🧩 Better instancing support (reusing, indexing)
+  - [ ] 🧩 Full subgroups support (incl. variable)
   - [ ] 🧩 Secondary or alternative pipelines
   - [ ] 🧩 Ray-tracing pipelines (currently ray-query)
+  - [ ] 🧩 More extensions support
+  - [ ] 🧩️ OpenGL support (interop)
+  - [ ] 🧩 Interface wrapper and SDK (for C/C++)
   - [ ] 👑 Full and native ReShade support
   - [ ] 👑 Interop with CUDA and OpenCL (**not** AMD)
   - [ ] 👑 Interop with DirectX 12
