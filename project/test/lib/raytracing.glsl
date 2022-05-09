@@ -361,7 +361,7 @@ RayData pathTrace(in RayData rayData, inout float hitDist, inout vec3 firstNorma
 };
 
 //
-IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayData, in float maxT) {
+/*IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayData, in float maxT) {
   const uvec4 indices = texelFetch(texturesU[framebufferAttachments[0]], ivec2(rayData.launchId), 0);
   const vec3 bary = texelFetch(textures[framebufferAttachments[1]], ivec2(rayData.launchId), 0).xyz;
 
@@ -371,7 +371,7 @@ IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayDat
   intersection.geometryId = indices[1];
   intersection.primitiveId = indices[2];
   return intersection;
-};
+};*/
 
 //
 PathTraceOutput pathTraceCommand(in PathTraceCommand cmd, in uint type) {

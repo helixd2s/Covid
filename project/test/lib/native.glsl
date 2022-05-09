@@ -120,6 +120,24 @@ struct PixelSurfaceInfo {
   vec4 color[3];
 };
 
+//
+layout(buffer_reference, scalar, buffer_reference_align = 1) buffer RasterInfoRef {
+  uvec4 indices;
+  vec4 barycentric;
+};
+
+//
+struct RasterInfo {
+  uvec4 indices;
+  vec4 barycentric;
+};
+
+
+const uint PIXEL_COUNTER = 0u;
+const uint WRITE_COUNTER = 1u;
+const uint RASTER_COUNTER = 2u;
+const uint SURFACE_COUNTER = 3u;
+
 // 
 layout(set = 0, binding = 0, scalar) uniform MatrixBlock
 {
@@ -157,6 +175,12 @@ PixelHitInfoRef getRpjHit(in uint pixelId, in uint type) {
   const uint hitId = pixelId + extent.x * extent.y * type;
   return PixelHitInfoRef(uint64_t(writeData) + uint64_t(hitId) * sizeof(PixelHitInfoRef));
 };
+
+//
+RasterInfoRef getRasterInfo(in uint rasterId)  { return RasterInfoRef(uint64_t(rasterData) + uint64_t(rasterId) * sizeof(RasterInfoRef)); };
+
+
+
 
 //
 vec2 lcts(in vec3 direct) { return vec2(fma(atan(direct.z,direct.x),INV_TWO_PI,0.5f), acos(direct.y)*INV_PI); };
@@ -872,5 +896,20 @@ vec4 clampCol(in vec4 col) {
   return clamp(max(col,0.f.xxxx)/max(col.w, 1.f), vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f));
 };
 
+float absmax(in float val, in float mn) {
+  float sig = sign(val); return mix(mn, sig * max(abs(val), abs(mn)), abs(sig) > 0.f);
+};
+
+vec2 absmax(in vec2 val, in vec2 mn) {
+  vec2 sig = sign(val); return mix(mn, sig * max(abs(val), abs(mn)), greaterThan(abs(sig), 0.f.xx));
+};
+
+vec3 absmax(in vec3 val, in vec3 mn) {
+  vec3 sig = sign(val); return mix(mn, sig * max(abs(val), abs(mn)), greaterThan(abs(sig), 0.f.xxx));
+};
+
+vec4 absmax(in vec4 val, in vec4 mn) {
+  vec4 sig = sign(val); return mix(mn, sig * max(abs(val), abs(mn)), greaterThan(abs(sig), 0.f.xxxx));
+};
 
 #endif

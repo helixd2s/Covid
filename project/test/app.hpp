@@ -176,7 +176,7 @@ public:
     decltype(auto) pingPong = pingPongObj->acquireImage(qfAndQueue);
 
     //
-    //pingPongObj->clearImage(qfAndQueue, 1u, glm::uintBitsToFloat(glm::uvec4(0u)));
+    pingPongObj->clearImage(qfAndQueue, 0u, glm::uintBitsToFloat(glm::uvec4(0u)));
     //pingPongObj->clearImage(qfAndQueue, 5u, glm::uintBitsToFloat(glm::uvec4(0u)));
     //pingPongObj->clearImage(qfAndQueue, 7u, glm::uintBitsToFloat(glm::uvec4(0u)));
 
@@ -382,7 +382,7 @@ public:
     rasterDataObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
       .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
       .bufferInfo = ANAMED::BufferCreateInfo{
-        .size = sizeof(RasterInfo) * renderArea.extent.width * renderArea.extent.height * 4u,
+        .size = sizeof(RasterInfo) * renderArea.extent.width * renderArea.extent.height * 16u,
         .type = ANAMED::BufferType::eStorage,
       }
     });
