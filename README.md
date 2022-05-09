@@ -19,10 +19,10 @@ Some functionality still WIP, but almost ready to ***MVP***…
   - [x] ♟️ Graphics and compute shaders support
   - [x] ♟️ Async-model support, with sort of GC (alike JS)
   - [x] ♟️ Input lockless and independent rendering
-  - [x] ♟ Partial basic multi-threading support
-  - [x] ♟ Using same pipelines for rendering
-  - [x] ♟ Almost fully bindless model
-  - [x] ♟ Basic two-level rendering model
+  - [x] ♟️ Partial basic multi-threading support
+  - [x] ♟️ Using same pipelines for rendering
+  - [x] ♟️ Almost fully bindless model
+  - [x] ♟️ Basic two-level rendering model
   - [ ] 🧩 More extensions support
   - [ ] 🧩️ OpenGL support (interop)
   - [ ] 🧩 Full subgroups support (incl. variable)
@@ -60,7 +60,7 @@ Some functionality still WIP, but almost ready to ***MVP***…
 
 ## Testing and demo initialive 
 
-  - [x] ☄ Env. map testing
+  - [x] ☄️ Env. map testing
   - [x] ☄️ Argument passing for app
   - [x] ☄️ Basic controller (camera moving)
   - [ ] ☄️ Basic OBJ support
@@ -68,7 +68,7 @@ Some functionality still WIP, but almost ready to ***MVP***…
   - [ ] ☄️ Advanced GLTF support (more than one model, more features)
   - [ ] ☄️ GLTF animations support
   - [ ] ☄️ GUI controllers and better interactivity
-  - [ ] ☄ Motion-vectors and animations
+  - [ ] ☄️ Motion-vectors and animations
   
 ## Minecraft and Java 16 spec-operation (project `Alpha`)…
 
