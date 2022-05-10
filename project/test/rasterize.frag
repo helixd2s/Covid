@@ -57,12 +57,16 @@ void main() {
   MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), pTexcoord.xy, tbn);
 #endif
 
-  // alpha test failure
+  // alpha and depth depth test fail
+
+  if (
 #ifdef TRANSLUCENT
-  if (materialPix.color[MATERIAL_ALBEDO].a < 0.001f) { 
+    materialPix.color[MATERIAL_ALBEDO].a < 0.001f || 
+#endif
+    texelFetch(textures[framebufferAttachments[5]], ivec2(gl_FragCoord.xy), 0).r <= (gl_FragCoord.z - 0.0001f)
+  ) {
     discard;
   } else 
-#endif
   {
     //
     indices = pIndices;
