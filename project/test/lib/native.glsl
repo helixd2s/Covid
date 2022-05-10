@@ -217,11 +217,6 @@ vec4 gamma3(in vec4 c) { return vec4(gamma3(c.rgb), c.a); };
 vec4 ungamma3(in vec4 c) { return vec4(ungamma3(c.rgb), c.a); };
 
 //
-vec4 divW(in vec4 coord) {
-  return coord.xyzw/coord.w;
-};
-
-//
 uint sgn(in uint val) { return uint(0 < val) - uint(val < 0); }
 uint tiled(in uint sz, in uint gmaxtile) {
   return sz <= 0 ? 0 : (sz / gmaxtile + sgn(sz % gmaxtile));
@@ -922,5 +917,11 @@ vec3 absmax(in vec3 val, in vec3 mn) {
 vec4 absmax(in vec4 val, in vec4 mn) {
   vec4 sig = sign(val); return mix(mn, sig * max(abs(val), abs(mn)), greaterThan(abs(sig), 0.f.xxxx));
 };
+
+//
+vec4 divW(in vec4 coord) {
+  return coord.xyzw/absmax(coord.w, 1e-9);
+};
+
 
 #endif

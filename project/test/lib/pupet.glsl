@@ -7,8 +7,8 @@
 float edgeFunction(in vec3 a, in vec3 b, in vec3 c) { return (c.x - a.x) * (b.y - a.y) - (c.y - a.y) * (b.x - a.x); }
 
 //
-vec3 computeBary(in vec3 vo, in mat3 M, in mat3x4 vt) {
-  mat3x3 vt3 = M * mat3x3(vt[0].xyz-vo, vt[1].xyz-vo, vt[2].xyz-vo);
+vec3 computeBary(in vec4 vo, in mat3 M, in mat3x4 vt) {
+  mat3x3 vt3 = M * mat3x3(vt[0].xyz-vo.xyz, vt[1].xyz-vo.xyz, vt[2].xyz-vo.xyz);
   vec3 UVW = vec3(
     vt3[2].x*vt3[1].y-vt3[2].y*vt3[1].x,
     vt3[0].x*vt3[2].y-vt3[0].y*vt3[2].x,
@@ -16,23 +16,22 @@ vec3 computeBary(in vec3 vo, in mat3 M, in mat3x4 vt) {
   );
   float T = dot(UVW, transpose(vt3)[2].xyz);
   float det = UVW.x + UVW.y + UVW.z;
-  return abs(det) > 0.f ? UVW/det : vec3(0.f);
+  return abs(det) > 0.f ? UVW/absmax(det, 1e-9) : vec3(0.f);
 };
 
 //
-vec3 computeBary(in vec3 vo, in mat3x4 vt) {
-  mat3x3 vt3 = mat3x3(vec3(vt[0].xy/vt[0].w, 1.f), vec3(vt[1].xy/vt[1].w, 1.f), vec3(vt[2].xy/vt[2].w, 1.f));
+vec3 computeBary(in vec4 vo, in mat3x4 vt) {
+  mat3x3 vt3 = mat3x3(vec3(vt[0].xy/absmax(vt[0].w, 1e-9), 1.f), vec3(vt[1].xy/absmax(vt[1].w, 1e-9), 1.f), vec3(vt[2].xy/absmax(vt[2].w, 1e-9), 1.f));
   float det = determinant(vt3);
-  vec3 UVW = inverse(vt3)*vec3(vo.xy,1.f);
-  UVW /= transpose(vt)[3].xyz;
-  UVW /= (UVW.x+UVW.y+UVW.z);
+  vec3 UVW = inverse(vt3)*vec3(vo.xy/absmax(vo.w, 1e-9),1.f);
+  UVW /= absmax(transpose(vt)[3].xyz, 1e-9.xxx);
+  UVW /= absmax(UVW.x+UVW.y+UVW.z, 1e-9);
   return abs(det) > 0.f ? UVW : vec3(0.f);
 };
 
 // too expensive method of rasterization
 // vector sampling is generally expensive
 // but it's really required
-/*
 IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayData, in float maxT) {
   IntersectionInfo intersection;
   intersection.barycentric = vec3(0.f.xxx);
@@ -41,13 +40,14 @@ IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayDat
   intersection.primitiveId = 0u;
 
   //
-  vec3 viewOrigin = vec4(rayData.origin.xyz, 1.f) * constants.lookAt;
-  vec3 viewEnd = vec4(rayData.origin.xyz+rayData.direction.xyz, 1.f) * constants.lookAt;
-  vec3 viewDir = normalize(viewEnd - viewOrigin);
+  vec4 viewOrigin = vec4(vec4(rayData.origin.xyz, 1.f) * constants.lookAt, 1.f);
+  vec4 viewEnd = vec4(vec4(rayData.origin.xyz+rayData.direction.xyz, 1.f) * constants.lookAt, 1.f);
+  vec4 viewDir = (viewEnd - viewOrigin);
+  viewDir.xyz = normalize(viewDir.xyz);
 
   //
-  vec4 ss = divW(vec4(viewOrigin, 1.f) * constants.perspective);
-  ivec2 sc = ivec2(((ss).xy * 0.5f + 0.5f) * extent.xy);
+  vec4 ss = (viewOrigin * constants.perspective);
+  ivec2 sc = ivec2((divW(ss).xy * 0.5f + 0.5f) * extent.xy);
   uint indice = imageLoad(imagesR32UI[pingpong.images[0]], sc).x;
 
   //
@@ -73,14 +73,13 @@ IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayDat
       //geometry.triData[VERTEX_VERTICES][i] = vec4(geometry.triData[VERTEX_VERTICES][i] * constants.lookAt, 1.f);
     };
 
-    //vec3 bary = computeBary(viewOrigin.xyz, M, geometry.triData[VERTEX_VERTICES]);
-    vec3 bary = computeBary(ss.xyz, geometry.triData[VERTEX_VERTICES]);
-
+    //
+    vec3 bary = computeBary(ss, geometry.triData[VERTEX_VERTICES]);
     //vec4 pos = divW((geometry.triData[VERTEX_VERTICES] * bary) * constants.perspective);
     vec4 pos = divW(geometry.triData[VERTEX_VERTICES] * bary);
 
     //
-    if (any(greaterThan(bary, 0.f.xxx)) && all(greaterThanEqual(bary, 0.f.xxx)) && all(lessThan(bary, 1.f.xxx)) && pos.z <= currentZ) {
+    if (any(greaterThan(bary, 0.f.xxx)) && all(greaterThan(bary, 1e-9.xxx)) && all(lessThan(bary, 1.f.xxx+1e-9)) && pos.z <= currentZ) {
       intersection.instanceId = rasterInfo.indices.x;
       intersection.geometryId = rasterInfo.indices.y;
       intersection.primitiveId = rasterInfo.indices.z;
@@ -99,7 +98,8 @@ IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayDat
 
   return intersection;
 };
-*/
+
+/*
 // very cheap way - NOT RECOMMENDED!
 IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayData, in float maxT) {
   const uvec4 indices = texelFetch(texturesU[framebufferAttachments[0]], ivec2(rayData.launchId), 0);
@@ -112,6 +112,6 @@ IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayDat
   intersection.primitiveId = indices[2];
   return intersection;
 };
-
+*/
 
 #endif

@@ -140,7 +140,7 @@ public:
 
     // set perspective
     controller->handleFrame();
-    auto persp = glm::perspective(60.f / 180 * glm::pi<float>(), float(renderArea.extent.width) / float(renderArea.extent.height), 0.001f, 20000.f);
+    auto persp = glm::perspective(60.f / 180 * glm::pi<float>(), float(renderArea.extent.width) / float(renderArea.extent.height), 0.002f, 20000.f);
     auto lkat = glm::lookAt(controller->viewPos, controller->viewCnt, controller->viewUp);
     uniformData.constants.perspective = glm::transpose(persp);
     uniformData.constants.perspectiveInverse = glm::transpose(glm::inverse(persp));
