@@ -23,7 +23,7 @@ Some functionality still WIP, but almost ready to ***MVP***…
   - [x] ♟️ Using same pipelines for rendering
   - [x] ♟️ Almost fully bindless model
   - [x] ♟️ Basic two-level rendering model
-  - [ ] 🧩 Resource independent uploader (with full VMA support, and sparse memory)
+  - [x] ♟️ Resource independent uploader (with full VMA support, and sparse memory)
   - [ ] 🧩️ Multi-draw with instances (TLAS)
   - [ ] 🧩 Better instancing support (reusing, indexing)
   - [ ] 🧩 Full subgroups support (incl. variable)
