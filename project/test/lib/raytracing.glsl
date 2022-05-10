@@ -133,10 +133,11 @@ IntersectionInfo traceRaysOpaque(in InstanceAddressInfo instance, in RayData ray
   return result;
 };
 
-// 
+// version without over-phasing
 IntersectionInfo traceRaysTransparent(in InstanceAddressInfo instance, in RayData rays, in float maxT) {
   rayQueryEXT rayQuery;
-  rayQueryInitializeEXT(rayQuery, accelerationStructureEXT(instance.accelStruct), gl_RayFlagsNoOpaqueEXT, 0xff, rays.origin.xyz, 0.001f, rays.direction.xyz, maxT);
+  rayQueryInitializeEXT(rayQuery, accelerationStructureEXT(instance.accelStruct), 0u, 0xff, rays.origin.xyz, 0.001f, rays.direction.xyz, maxT);
+  //rayQueryInitializeEXT(rayQuery, accelerationStructureEXT(instance.accelStruct), gl_RayFlagsNoOpaqueEXT, 0xff, rays.origin.xyz, 0.001f, rays.direction.xyz, maxT);
 
   // 
   float currentT = 10000.f;
@@ -297,7 +298,62 @@ RayData handleIntersection(in RayData rayData, in IntersectionInfo intersection,
   return rayData;
 };
 
+// version without over-phasing
+RayData pathTrace(in RayData rayData, inout float hitDist, inout vec3 firstNormal, inout uvec4 firstIndices) {
+  //
+  bool surfaceFound = false;
+  float currentT = 0.f;
+  //for (uint32_t i=0;i<3;i++) {
+  uint R=0, T=0;
+  while (R<3 && T<3) {
+    if (luminance(rayData.energy.xyz) < 0.001f) { break; };
+
+    // 
+    IntersectionInfo intersection = traceRaysTransparent(instancedData.opaqueAddressInfo, rayData, 10000.f);
+
+    //
+    if (!all(lessThanEqual(intersection.barycentric, 0.f.xxx)) && intersection.hitT < 10000.f) {
+      PassData pass;
+      pass.alphaColor = vec4(1.f.xxx, 1.f);
+      pass.alphaPassed = false;
+      pass.diffusePass = false;
+      pass.normals = vec3(0.f.xxx);
+
+      //
+      rayData = handleIntersection(rayData, intersection, pass);
+
+      //
+      //if (pass.alphaPassed) { T++; } else { R++; };
+      R++; currentT += intersection.hitT;
+
+      // 
+      if (pass.diffusePass && !surfaceFound) { 
+        hitDist = currentT;
+        surfaceFound = true;
+        firstIndices = uvec4(intersection.instanceId, intersection.geometryId, intersection.primitiveId, 0u);
+        firstNormal = pass.normals.xyz;
+      };
+
+    } else 
+    {
+      const vec4 skyColor = gamma3(vec4(texture(sampler2D(textures[background], samplers[0]), lcts(rayData.direction.xyz)).xyz, 0.f));
+      
+      rayData.origin.xyz = vec4(0.f.xxx, 1.f) * constants.lookAtInverse + rayData.direction.xyz * 10000.f;
+      rayData.emission += f16vec4(trueMultColor(rayData.energy.xyz, skyColor.xyz), 0.f);
+      rayData.energy.xyz *= f16vec3(0.f.xxx);
+      if (!surfaceFound) {
+        hitDist = currentT = 10000.f;
+        surfaceFound = true;
+      };
+      break;
+    }
+  };
+  return rayData;
+};
+
+
 //
+/*
 RayData pathTrace(in RayData rayData, inout float hitDist, inout vec3 firstNormal, inout uvec4 firstIndices) {
   //
   bool surfaceFound = false;
@@ -358,19 +414,6 @@ RayData pathTrace(in RayData rayData, inout float hitDist, inout vec3 firstNorma
     }
   };
   return rayData;
-};
-
-//
-/*IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayData, in float maxT) {
-  const uvec4 indices = texelFetch(texturesU[framebufferAttachments[0]], ivec2(rayData.launchId), 0);
-  const vec3 bary = texelFetch(textures[framebufferAttachments[1]], ivec2(rayData.launchId), 0).xyz;
-
-  IntersectionInfo intersection;
-  intersection.barycentric = bary.xyz;
-  intersection.instanceId = indices[0];
-  intersection.geometryId = indices[1];
-  intersection.primitiveId = indices[2];
-  return intersection;
 };*/
 
 //

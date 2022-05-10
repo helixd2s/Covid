@@ -32,6 +32,7 @@ vec3 computeBary(in vec3 vo, in mat3x4 vt) {
 // too expensive method of rasterization
 // vector sampling is generally expensive
 // but it's really required
+/*
 IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayData, in float maxT) {
   IntersectionInfo intersection;
   intersection.barycentric = vec3(0.f.xxx);
@@ -98,5 +99,19 @@ IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayDat
 
   return intersection;
 };
+*/
+// very cheap way - NOT RECOMMENDED!
+IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayData, in float maxT) {
+  const uvec4 indices = texelFetch(texturesU[framebufferAttachments[0]], ivec2(rayData.launchId), 0);
+  const vec3 bary = texelFetch(textures[framebufferAttachments[1]], ivec2(rayData.launchId), 0).xyz;
+
+  IntersectionInfo intersection;
+  intersection.barycentric = bary.xyz;
+  intersection.instanceId = indices[0];
+  intersection.geometryId = indices[1];
+  intersection.primitiveId = indices[2];
+  return intersection;
+};
+
 
 #endif

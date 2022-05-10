@@ -33,6 +33,7 @@ const float INV_TWO_PI = 0.15915494309189535f;
 #extension GL_EXT_debug_printf : require
 #extension GL_EXT_control_flow_attributes : require
 #extension GL_EXT_shader_realtime_clock : require
+#extension GL_KHR_shader_subgroup_ballot : require
 #ifdef USE_ATOMIC_FLOAT
 #extension GL_EXT_shader_atomic_float : require
 #endif
@@ -156,6 +157,16 @@ layout(set = 0, binding = 1, scalar) buffer CounterBlock
 {
   uint32_t counters[4];
   uint32_t previousCounters[4];
+};
+
+//
+uint subgroupAtomicAdd(in uint counterId) {
+  const uvec4 allc = subgroupBallot(true);
+  const uint sum = subgroupBallotBitCount(allc);
+  uint latest = 0u;
+  if (subgroupElect()) { latest = atomicAdd(counters[counterId], sum); };
+  latest = subgroupBroadcast(latest, subgroupBallotFindLSB(allc));
+  return (latest + subgroupBallotExclusiveBitCount(allc));
 };
 
 //

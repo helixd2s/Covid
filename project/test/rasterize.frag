@@ -75,7 +75,7 @@ void main() {
     texcoord = vec4(pTexcoord.xyz,1.f);
 
     // 
-    const uint rasterId = atomicAdd(counters[RASTER_COUNTER], 1);
+    const uint rasterId = atomicAdd(counters[RASTER_COUNTER], 1);//subgroupAtomicAdd(RASTER_COUNTER);
     const uint oldId = imageAtomicExchange(imagesR32UI[pingpong.images[0]], ivec2(gl_FragCoord.xy), rasterId+1);
     if (rasterId < extent.x * extent.y * 16) {
       RasterInfoRef rasterInfo = getRasterInfo(rasterId);
