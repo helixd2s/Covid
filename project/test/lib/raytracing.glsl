@@ -433,7 +433,7 @@ PathTraceOutput pathTraceCommand(in PathTraceCommand cmd, in uint type) {
       hitInfo.origin.w > 0.f && (
         type == 1 && outp.hitT >= hitInfo.origin.w && outp.hitT < 10000.f || 
         type == 0 && outp.hitT <= hitInfo.origin.w || 
-        type == 2
+        type == 2 && outp.hitT <= hitInfo.origin.w
       )
     )) {
       hitInfo.origin.w = outp.hitT;
