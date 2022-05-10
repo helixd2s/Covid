@@ -258,6 +258,7 @@ namespace ANAMED {
 
 
   //
+  class BaseObj;
   class GeometryLevelObj;
   class InstanceLevelObj;
   class ContextObj;
@@ -794,7 +795,7 @@ namespace ANAMED {
     // 
     ResourceCreateInfo use(cpp21::const_wrap_arg<ExtensionName> extName = ExtensionName::eMemoryAllocator) {
 
-      decltype(auto) copy = *this; if (copy.extUsed) { (*copy.extUsed)[ExtensionInfoName::eMemoryAllocator] = extName; }; return copy;
+      decltype(auto) copy = *this; if (!copy.extUsed) { copy.extUsed = std::make_shared<EXIP>(); }; if (copy.extUsed) { (*copy.extUsed)[ExtensionInfoName::eMemoryAllocator] = extName; }; return copy;
     };
   };
 
@@ -813,6 +814,11 @@ namespace ANAMED {
     vk::DeviceMemory memory = {};
     uintptr_t offset = 0ull;
     size_t size = 0ull;
+    void* mapped = nullptr;
+    uintptr_t allocation = 0ull;
+
+    //
+    std::function<void(BaseObj const*)> destructor = {};
   };
 
   //
@@ -1066,6 +1072,7 @@ namespace ANAMED {
   //
   struct UploadCommandWriteInfo : BaseCreateInfo {
     vk::CommandBuffer cmdBuf = {};
+    vk::Buffer bunchBuffer = {};
     uintptr_t hostMapOffset = 0ull;
 
     // 
@@ -1073,20 +1080,21 @@ namespace ANAMED {
     std::optional<BufferRegion> dstBuffer = {};
 
     //
-    decltype(auto) with(cpp21::const_wrap_arg<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
+    decltype(auto) with(cpp21::const_wrap_arg<vk::CommandBuffer> cmd, cpp21::const_wrap_arg<vk::Buffer> buffer = {}) const { auto copy = *this; copy.cmdBuf = cmd; if (buffer && *buffer) { copy.bunchBuffer = buffer; }; return copy; };
     decltype(auto) mapOffset(cpp21::const_wrap_arg<uintptr_t> offset) const { auto copy = *this; copy.hostMapOffset = offset; return copy; };
   };
 
   //
   struct DownloadCommandWriteInfo : BaseCreateInfo {
     vk::CommandBuffer cmdBuf = {};
+    vk::Buffer bunchBuffer = {};
     uintptr_t hostMapOffset = 0ull;
 
     // 
     std::optional<BufferRegion> srcBuffer = {};
 
     //
-    decltype(auto) with(cpp21::const_wrap_arg<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
+    decltype(auto) with(cpp21::const_wrap_arg<vk::CommandBuffer> cmd, cpp21::const_wrap_arg<vk::Buffer> buffer = {}) const { auto copy = *this; copy.cmdBuf = cmd; if (buffer && *buffer) { copy.bunchBuffer = buffer; }; return copy; };
     decltype(auto) mapOffset(cpp21::const_wrap_arg<uintptr_t> offset) const { auto copy = *this; copy.hostMapOffset = offset; return copy; };
   };
 
@@ -1117,6 +1125,12 @@ namespace ANAMED {
   struct UploaderCreateInfo : BaseCreateInfo {
     std::optional<QueueGetInfo> info = QueueGetInfo{};
     size_t cacheSize = 8192ull * 8192ull * 4ull;
+
+    // 
+    UploaderCreateInfo use(cpp21::const_wrap_arg<ExtensionName> extName = ExtensionName::eMemoryAllocator) {
+
+      decltype(auto) copy = *this; if (!copy.extUsed) { copy.extUsed = std::make_shared<EXIP>(); }; if (copy.extUsed) { (*copy.extUsed)[ExtensionInfoName::eMemoryAllocator] = extName; }; return copy;
+    };
   };
 
   //
@@ -1160,6 +1174,33 @@ namespace ANAMED {
     std::vector<uint32_t> split = {};
     std::vector<vk::Format> formats = {};
     std::optional<QueueGetInfo> info = {};
+  };
+
+  //
+  struct SparseMemoryPage {
+    vk::Buffer bunchBuffer = {};
+    vk::SparseMemoryBind bind = {};
+    void* mapped = nullptr;
+    std::function<void()> destructor = {};
+    std::shared_ptr<AllocatedMemory> allocated = {};
+
+    //
+    SparseMemoryPage(vk::SparseMemoryBind const& bind = {}, std::function<void()> const& destructor = {}) : bind(bind), destructor(destructor) {
+
+    };
+
+    //
+    SparseMemoryPage(vk::SparseMemoryBind const& bind, void* mapped = nullptr, std::function<void()> const& destructor = {}) : bind(bind), mapped(mapped), destructor(destructor) {
+
+    };
+
+    //
+    ~SparseMemoryPage() {
+      if (this->destructor) {
+        this->destructor();
+      };
+      this->destructor = {};
+    };
   };
 
   //
@@ -1455,11 +1496,6 @@ namespace ANAMED {
       };
     }
   };
-
-  
-
-  //
-  class BaseObj;
 
   //
   using HMAP_C = cpp21::map_of_shared<uintptr_t, BaseObj>;

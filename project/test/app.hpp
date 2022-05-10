@@ -455,7 +455,7 @@ protected:
     //
     uploaderObj = ANAMED::UploaderObj::make(deviceObj, ANAMED::UploaderCreateInfo{
 
-    });
+    }.use(ANAMED::ExtensionName::eMemoryAllocatorVma));
 
     //
     gltfLoaderObj = ANAMED::GltfLoaderObj::make(deviceObj, ANAMED::GltfLoaderCreateInfo{

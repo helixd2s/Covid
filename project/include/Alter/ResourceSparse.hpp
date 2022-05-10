@@ -9,24 +9,7 @@
 // 
 namespace ANAMED {
 
-  //
-  struct SparseMemoryPage {
-    vk::SparseMemoryBind bind = {};
-    std::function<void()> destructor = {};
-
-    //
-    SparseMemoryPage(vk::SparseMemoryBind const& bind, std::function<void()> const& destructor = {}) : bind(bind), destructor(destructor) {
-
-    };
-
-    //
-    ~SparseMemoryPage() {
-      if (this->destructor) {
-        this->destructor();
-      };
-      this->destructor = {};
-    };
-  };
+  
 
   // 
   class ResourceSparseObj : public ResourceObj {
@@ -75,7 +58,7 @@ namespace ANAMED {
       decltype(auto) bufferUsage = this->handleBufferUsage(cInfo->type);
       decltype(auto) bufferInfo = infoMap->set(vk::StructureType::eBufferCreateInfo, vk::BufferCreateInfo{
         .pNext = memoryUsage == MemoryUsage::eGpuOnly ? externalInfo.get() : nullptr,
-        .flags = vk::BufferCreateFlagBits::eSparseResidency | vk::BufferCreateFlagBits::eSparseBinding,
+        .flags = vk::BufferCreateFlagBits::eSparseBinding | vk::BufferCreateFlagBits::eSparseResidency | vk::BufferCreateFlagBits::eSparseAliased,
         .size = cpp21::tiled(cInfo->size, pageSize) * pageSize,
         .usage = bufferUsage,
         .sharingMode = vk::SharingMode::eExclusive
@@ -151,7 +134,7 @@ namespace ANAMED {
 
       // 
       decltype(auto) memReq = memoryRequirements; memReq.size = pageSize;
-      decltype(auto) allocated = this->allocateMemory(this->mReqs = MemoryRequirements{
+      decltype(auto) allocated = this->allocateMemory(MemoryRequirements{
         .memoryUsage = memoryUsage,
         .requirements = memReq,
         .hasDeviceAddress = false,
@@ -164,10 +147,15 @@ namespace ANAMED {
         .size = pageSize,
         .memory = allocated->memory,
         .memoryOffset = allocated->offset
-      }, [device, allocated](){
+      }, allocated->mapped, [device, allocated](){
         device.waitIdle();
-        device.freeMemory(allocated->memory);
+        if (allocated && allocated->destructor) {
+          allocated->destructor(nullptr);
+        };
       }));
+
+      //
+      this->sparseMemoryPages->back()->allocated = allocated;
 
       //
       return this->sparseMemoryPages->back();
@@ -207,10 +195,11 @@ namespace ANAMED {
         signalSemaphores.push_back(semInfo.semaphore);
       };
 
-      //
+      // 
       for (auto& pageInfo : (*sparseMemoryPages)) {
         sparseMemoryBinds.push_back(pageInfo->bind);
       };
+      sparseMemoryPages = std::vector<std::shared_ptr<SparseMemoryPage>>{};
 
       // 
       sparseBufferBindInfo[0].setBinds(sparseMemoryBinds);

@@ -210,7 +210,7 @@ namespace ANAMED {
     };
 
     //
-    virtual vk::CommandBuffer const& writeBuildStructureCmd(cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf = {}, uintptr_t const& instanceDevOffset = 0ull, uintptr_t const& instanceOffset = 0ull) {
+    virtual vk::CommandBuffer const& writeBuildStructureCmd(cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf = {}, vk::Buffer const& instanceDevOffset = {}, vk::Buffer const& instanceOffset = {}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(Handle(this->cInfo->uploader, HandleType::eUploader));
@@ -219,14 +219,14 @@ namespace ANAMED {
       // 
       uploaderObj->writeUploadToResourceCmd(UploadCommandWriteInfo{
         .cmdBuf = cmdBuf,
-        .hostMapOffset = instanceDevOffset,
+        .bunchBuffer = instanceDevOffset,
         .dstBuffer = BufferRegion{this->instanceBuffer, DataRegion{ 0ull, sizeof(InstanceDevInfo), this->cInfo->instances->size() * sizeof(InstanceDevInfo) }}
       });
 
       // parallelize by offset
       uploaderObj->writeUploadToResourceCmd(UploadCommandWriteInfo{
         .cmdBuf = cmdBuf,
-        .hostMapOffset = instanceOffset,
+        .bunchBuffer = instanceOffset,
         .dstBuffer = BufferRegion{this->instanceExtBuffer, DataRegion{ 0ull, sizeof(InstanceInfo), this->cInfo->instances->size() * sizeof(InstanceInfo) }}
       });
 
@@ -309,23 +309,30 @@ namespace ANAMED {
       decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(Handle(this->cInfo->uploader, HandleType::eUploader));
 
       //
+      decltype(auto) memReqs = uploaderObj->getMemoryRequirements();
+      uintptr_t instanceDevSize = cpp21::tiled(this->cInfo->instances->size() * sizeof(InstanceDevInfo), memReqs.alignment)* memReqs.alignment;
+      uintptr_t instanceSize = cpp21::tiled(this->cInfo->instances->size() * sizeof(InstanceInfo), memReqs.alignment)* memReqs.alignment;
+
+      //
       uintptr_t instanceDevOffset = 0ull;
-      uintptr_t instanceOffset = this->cInfo->instances->size() * sizeof(InstanceDevInfo);
+      uintptr_t instanceOffset = instanceDevSize;
 
       //
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
-      decltype(auto) instanceDevAlloc = uploaderObj->allocateMappedTemp(this->cInfo->instances->size() * sizeof(InstanceDevInfo), instanceDevOffset);
-      decltype(auto) instanceAlloc = uploaderObj->allocateMappedTemp(this->cInfo->instances->size() * sizeof(InstanceInfo), instanceOffset);
+      decltype(auto) instanceDevAlloc = uploaderObj->allocateMappedTemp(instanceDevSize, instanceDevOffset);
+      decltype(auto) instanceAlloc = uploaderObj->allocateMappedTemp(instanceSize, instanceOffset);
       decltype(auto) mappedBlock = uploaderObj->getMappedBlock();
+      decltype(auto) instancePage = uploaderObj->allocatePage(instanceOffset, instanceSize);
+      decltype(auto) instanceDevPage = uploaderObj->allocatePage(instanceDevOffset, instanceDevSize);
 #endif
 
       // 
-      memcpy(uploaderObj->getMappedMemory(instanceDevOffset), this->instanceDevInfo->data(), this->instanceDevInfo->size() * sizeof(InstanceDevInfo));
-      memcpy(uploaderObj->getMappedMemory(instanceOffset), this->instanceInfo->data(), this->instanceInfo->size() * sizeof(InstanceInfo));
+      memcpy(instanceDevPage->mapped, this->instanceDevInfo->data(), this->instanceDevInfo->size() * sizeof(InstanceDevInfo));
+      memcpy(instancePage->mapped, this->instanceInfo->data(), this->instanceInfo->size() * sizeof(InstanceInfo));
 
       // TODO: Acceleration Structure Build Barriers per Buffers
-      submission.commandInits.push_back([instanceDevOffset, instanceOffset, dispatch = deviceObj->getDispatch(), this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
-        return this->writeBuildStructureCmd(cmdBuf, instanceDevOffset, instanceOffset);
+      submission.commandInits.push_back([instanceDevOffset, instanceOffset, instancePage, instanceDevPage, dispatch = deviceObj->getDispatch(), this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+        return this->writeBuildStructureCmd(cmdBuf, instanceDevPage->bunchBuffer, instancePage->bunchBuffer);
       });
 
       //
@@ -337,6 +344,7 @@ namespace ANAMED {
 #endif
 
       //
+      uploaderObj->bindMemoryPages(submission.submission);
       return ANAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
     };
 

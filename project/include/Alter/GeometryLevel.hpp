@@ -141,7 +141,7 @@ namespace ANAMED {
     };
 
     //
-    virtual vk::CommandBuffer const& writeBuildStructureCmd(cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf = {}, uintptr_t const& geometryOffset = 0ull) {
+    virtual vk::CommandBuffer const& writeBuildStructureCmd(cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf = {}, vk::Buffer const& geometryOffset = {}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(Handle(this->cInfo->uploader, HandleType::eUploader));
@@ -206,7 +206,7 @@ namespace ANAMED {
       // 
       uploaderObj->writeUploadToResourceCmd(UploadCommandWriteInfo{
         .cmdBuf = cmdBuf,
-        .hostMapOffset = geometryOffset,
+        .bunchBuffer = geometryOffset,
         .dstBuffer = BufferRegion{this->geometryBuffer, DataRegion{ 0ull, sizeof(GeometryInfo), this->cInfo->geometries->size() * sizeof(GeometryInfo) }}
       });
 
@@ -232,29 +232,34 @@ namespace ANAMED {
       decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(Handle(this->cInfo->uploader, HandleType::eUploader));
 
       //
+      decltype(auto) memReqs = uploaderObj->getMemoryRequirements();
       uintptr_t geometryOffset = 0ull;
+      uintptr_t geometrySize = cpp21::tiled(this->cInfo->geometries->size() * sizeof(GeometryInfo), memReqs.alignment) * memReqs.alignment;
 
       //
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
-      decltype(auto) geometryAlloc = uploaderObj->allocateMappedTemp(this->cInfo->geometries->size() * sizeof(GeometryInfo), geometryOffset);
+      decltype(auto) geometryAlloc = uploaderObj->allocateMappedTemp(geometrySize, geometryOffset);
+      decltype(auto) memPage = uploaderObj->allocatePage(geometryOffset, geometrySize);//allocatePage
 #endif
 
       // 
-      memcpy(uploaderObj->getMappedMemory(geometryOffset), this->cInfo->geometries->data(), this->cInfo->geometries->size() * sizeof(GeometryInfo));
+      memcpy(memPage->mapped, this->cInfo->geometries->data(), geometrySize);
 
       // TODO: Acceleration Structure Build Barriers per Buffers
-      submission.commandInits.push_back([geometryOffset,dispatch=deviceObj->getDispatch(), this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
-        return this->writeBuildStructureCmd(cmdBuf, geometryOffset);
+      submission.commandInits.push_back([geometryOffset,dispatch=deviceObj->getDispatch(), memPage, this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+        return this->writeBuildStructureCmd(cmdBuf, memPage->bunchBuffer);
       });
 
       //
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
-      submission.submission.onDone.push_back([mappedBlock = uploaderObj->getMappedBlock(), geometryAlloc](cpp21::const_wrap_arg<vk::Result> result) {
+      submission.submission.onDone.push_back([memPage, mappedBlock = uploaderObj->getMappedBlock(), geometryAlloc](cpp21::const_wrap_arg<vk::Result> result) {
         vmaVirtualFree(mappedBlock, geometryAlloc);
+        memPage->destructor();
       });
 #endif
 
       //
+      uploaderObj->bindMemoryPages(submission.submission);
       return ANAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
     };
 

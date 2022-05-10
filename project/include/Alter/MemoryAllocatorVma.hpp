@@ -45,10 +45,14 @@ namespace ANAMED {
     inline decltype(auto) SFT() const { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::const_pointer_cast<T>(std::dynamic_pointer_cast<T const>(shared_from_this()))); };
 
     // 
-     void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) override {
+    void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) override {
+      if (!this->cInfo->extInfoMap) {
+        this->cInfo->extInfoMap = std::make_shared<EXIF>();
+      };
+
       //
        if (this->cInfo->extInfoMap) {
-         if ((*this->cInfo->extInfoMap)->find(ExtensionInfoName::eMemoryAllocatorVma) != (*this->cInfo->extInfoMap)->end()) {
+         if ((*this->cInfo->extInfoMap)->find(ExtensionInfoName::eMemoryAllocatorVma) == (*this->cInfo->extInfoMap)->end()) {
            this->cInfo->extInfoMap->set(ExtensionInfoName::eMemoryAllocatorVma, VmaAllocatorExtension{});
          };
        };
@@ -136,7 +140,7 @@ namespace ANAMED {
   public:
 
     //
-     std::optional<AllocatedMemory>& allocateMemory(cpp21::const_wrap_arg<MemoryRequirements> requirements, std::optional<AllocatedMemory>& allocated, ExtHandle& extHandle, std::shared_ptr<EXIF> extInfoMap, void*& mapped, std::vector<std::function<void(BaseObj const*)>>& destructors) override {
+    std::shared_ptr<AllocatedMemory> allocateMemory(cpp21::const_wrap_arg<MemoryRequirements> requirements, std::shared_ptr<AllocatedMemory> allocated, ExtHandle& extHandle, std::shared_ptr<EXIF> extInfoMap, void*& mapped, std::vector<std::function<void(BaseObj const*)>>& destructors) override {
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       auto& device = this->base.as<vk::Device>();
       auto& physicalDevice = deviceObj->getPhysicalDevice();
@@ -158,34 +162,37 @@ namespace ANAMED {
       };
 
       //
-      if ((*this->cInfo->extInfoMap)->find(ExtensionInfoName::eMemoryAllocationVma) == (*this->cInfo->extInfoMap)->end()) {
-        this->cInfo->extInfoMap->set(ExtensionInfoName::eMemoryAllocationVma, VmaAllocationExtension{});
-      };
-
-      //
-      decltype(auto) vmaAllocExt = this->cInfo->extInfoMap->get<VmaAllocationExtension>(ExtensionInfoName::eMemoryAllocationVma);
+      //decltype(auto) vmaAllocExt = this->cInfo->extInfoMap->get<VmaAllocationExtension>(ExtensionInfoName::eMemoryAllocationVma);
+      VmaAllocation allocation = {};
+      VmaAllocationInfo allocationInfo = {};
 
       // 
       if (requirements->dedicated) {
-        if (requirements->dedicated->buffer) { vmaAllocateMemoryForBuffer(this->handle.as<VmaAllocator>(), requirements->dedicated->buffer, &vmaCreateInfo, &vmaAllocExt->allocation, &vmaAllocExt->allocationInfo); };
-        if (requirements->dedicated->image) { vmaAllocateMemoryForImage(this->handle.as<VmaAllocator>(), requirements->dedicated->image, &vmaCreateInfo, &vmaAllocExt->allocation, &vmaAllocExt->allocationInfo); };
+        if (requirements->dedicated->buffer) { vmaAllocateMemoryForBuffer(this->handle.as<VmaAllocator>(), requirements->dedicated->buffer, &vmaCreateInfo, &allocation, &allocationInfo); };
+        if (requirements->dedicated->image) { vmaAllocateMemoryForImage(this->handle.as<VmaAllocator>(), requirements->dedicated->image, &vmaCreateInfo, &allocation, &allocationInfo); };
       } else {
-        vmaAllocateMemory(this->handle.as<VmaAllocator>(), (VkMemoryRequirements*)&requirements->requirements, &vmaCreateInfo, &vmaAllocExt->allocation, &vmaAllocExt->allocationInfo);
+        vmaAllocateMemory(this->handle.as<VmaAllocator>(), (VkMemoryRequirements*)&requirements->requirements, &vmaCreateInfo, &allocation, &allocationInfo);
       };
 
       //
+      *allocated = AllocatedMemory{ allocationInfo.deviceMemory, allocationInfo.offset, allocationInfo.size };
+      allocated->allocation = uintptr_t(allocation);
+
+      //
       if (requirements->needsDestructor) {
-        destructors.push_back([device, allocator=this->handle.as<VmaAllocator>(), allocation=vmaAllocExt->allocation](BaseObj const*) {
+        destructors.push_back(allocated->destructor = [device, allocator=this->handle.as<VmaAllocator>(), &allocation=allocated->allocation](BaseObj const*) {
           device.waitIdle();
-          vmaFreeMemory(allocator, allocation);
+          if (allocation) {
+            vmaFreeMemory(allocator, reinterpret_cast<VmaAllocation&>(allocation)); allocation = {};
+          };
         });
       };
 
       // 
-      mapped = vmaAllocExt->allocationInfo.pMappedData;
+      allocated->mapped = mapped = allocationInfo.pMappedData;
 
       // 
-      return (allocated = AllocatedMemory{ vmaAllocExt->allocationInfo.deviceMemory, vmaAllocExt->allocationInfo.offset, vmaAllocExt->allocationInfo.size });
+      return allocated;
     };
 
   };

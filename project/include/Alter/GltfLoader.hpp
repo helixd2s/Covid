@@ -277,11 +277,11 @@ namespace ANAMED
           });
 
         //
-        device.waitIdle();
-        deviceObj->tickProcessing();
+        //device.waitIdle();
+        //deviceObj->tickProcessing();
 
         //
-        while (!status->checkStatus()) { deviceObj->tickProcessing(); };
+        //while (!status->checkStatus()) { deviceObj->tickProcessing(); };
         deviceObj->tickProcessing();
 
         //
@@ -385,11 +385,11 @@ namespace ANAMED
         });
 
         //
-        device.waitIdle();
-        deviceObj->tickProcessing();
+        //device.waitIdle();
+        //deviceObj->tickProcessing();
 
         //
-        while (!status->checkStatus()) { deviceObj->tickProcessing(); };
+        //while (!status->checkStatus()) { deviceObj->tickProcessing(); };
         deviceObj->tickProcessing();
 
         // 
@@ -435,11 +435,11 @@ namespace ANAMED
         });
 
         //
-        device.waitIdle();
-        deviceObj->tickProcessing();
+        //device.waitIdle();
+        //deviceObj->tickProcessing();
 
         //
-        while (!status->checkStatus()) { deviceObj->tickProcessing(); };
+        //while (!status->checkStatus()) { deviceObj->tickProcessing(); };
         deviceObj->tickProcessing();
         
       };

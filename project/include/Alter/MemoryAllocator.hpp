@@ -77,7 +77,7 @@ namespace ANAMED {
   public:
 
     //
-    virtual std::optional<AllocatedMemory>& allocateMemory(cpp21::const_wrap_arg<MemoryRequirements> requirements, std::optional<AllocatedMemory>& allocated, ExtHandle& extHandle, std::shared_ptr<EXIF> extInfoMap, void*& mapped, std::vector<std::function<void(BaseObj const*)>>& destructors) {
+    virtual std::shared_ptr<AllocatedMemory> allocateMemory(cpp21::const_wrap_arg<MemoryRequirements> requirements, std::shared_ptr<AllocatedMemory> allocated, ExtHandle& extHandle, std::shared_ptr<EXIF> extInfoMap, void*& mapped, std::vector<std::function<void(BaseObj const*)>>& destructors) {
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       auto& device = this->base.as<vk::Device>();
       auto& physicalDevice = deviceObj->getPhysicalDevice();
@@ -91,7 +91,7 @@ namespace ANAMED {
 
       // 
       //auto& allocated = (this->allocated = AllocatedMemory{}).value();
-      allocated = AllocatedMemory{
+      *allocated = AllocatedMemory{
         .memory = device.allocateMemory(infoMap->set(vk::StructureType::eMemoryAllocateInfo, vk::MemoryAllocateInfo{
           .pNext = infoMap->set(vk::StructureType::eMemoryAllocateFlagsInfo, vk::MemoryAllocateFlagsInfo{
             .pNext = infoMap->set(vk::StructureType::eMemoryDedicatedAllocateInfo, vk::MemoryDedicatedAllocateInfo{
@@ -121,17 +121,21 @@ namespace ANAMED {
 
       //
       if (requirements->memoryUsage != MemoryUsage::eGpuOnly) {
-        mapped = device.mapMemory(allocated->memory, allocated->offset, requirements->requirements.size);
+        mapped = allocated->mapped = device.mapMemory(allocated->memory, allocated->offset, requirements->requirements.size);
       };
 
       //
       if (requirements->needsDestructor) {
-        destructors.push_back([device, memory=allocated->memory, mapped](BaseObj const*) {
+        destructors.push_back(allocated->destructor = [device, &memory=allocated->memory, &mapped=allocated->mapped](BaseObj const*) {
           device.waitIdle();
-          if (mapped) {
-            device.unmapMemory(memory);
+          if (memory) {
+            if (mapped) {
+              device.unmapMemory(memory);
+              mapped = nullptr;
+            };
+            device.freeMemory(memory);
           };
-          device.freeMemory(memory);
+          memory = vk::DeviceMemory{};
         });
       };
 

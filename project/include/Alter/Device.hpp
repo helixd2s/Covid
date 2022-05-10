@@ -70,38 +70,44 @@ namespace ANAMED {
       std::vector<uint32_t> requiredMemoryTypeIndices = {};
       for (uint32_t bitMask = 1u; (bitMask < 0xFFFFFFFF && bitMask > 0); bitMask <<= 1u) {
         if (req->requirements.memoryTypeBits & bitMask) { requiredMemoryTypeIndices.push_back(bitIndex); };
+        //requiredMemoryTypeIndices.push_back(bitIndex); // sparse memory requires eDeviceLocal?!
         bitIndex++;
+      };
+
+      //
+      auto requiredBits = vk::MemoryPropertyFlags{};// | vk::MemoryPropertyFlagBits::eDeviceLocal;
+      auto declineBits = vk::MemoryPropertyFlags{};
+
+      // 
+      switch (req->memoryUsage) {
+      case (MemoryUsage::eGpuOnly):
+        requiredBits |= vk::MemoryPropertyFlagBits::eDeviceLocal;
+        declineBits |= vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
+        break;
+
+      case (MemoryUsage::eCpuToGpu):
+        requiredBits |= vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCached | vk::MemoryPropertyFlagBits::eHostCoherent;
+        declineBits |= vk::MemoryPropertyFlagBits::eDeviceLocal;
+        break;
+
+      case (MemoryUsage::eGpuToCpu):
+        requiredBits |= vk::MemoryPropertyFlagBits::eDeviceLocal | vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
+        break;
+
+      case (MemoryUsage::eCpuOnly):
+        requiredBits |= vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCached | vk::MemoryPropertyFlagBits::eHostCoherent;
+        break;
+
+      default:;
       };
 
       //uint32_t memoryTypeIndex = 0u;
       //for (decltype(auto) memoryType : memoryTypes) {
       std::tuple<uint32_t, uint32_t> memoryTypeAndHeapIndex = { 0u, 0u };
+
       for (auto& memoryTypeIndex : requiredMemoryTypeIndices) {
         auto& memoryType = memoryTypes[memoryTypeIndex];
         auto& memoryHeapIndex = memoryType.heapIndex;
-        auto requiredBits = vk::MemoryPropertyFlags{};// | vk::MemoryPropertyFlagBits::eDeviceLocal;
-
-        // 
-        switch (req->memoryUsage) {
-        case (MemoryUsage::eGpuOnly):
-          requiredBits |= vk::MemoryPropertyFlagBits::eDeviceLocal;
-          break;
-
-        case (MemoryUsage::eCpuToGpu):
-          requiredBits |= vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCached | vk::MemoryPropertyFlagBits::eHostCoherent;
-          break;
-
-        case (MemoryUsage::eGpuToCpu):
-          requiredBits |= vk::MemoryPropertyFlagBits::eDeviceLocal | vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
-          break;
-
-        case (MemoryUsage::eCpuOnly):
-          requiredBits |= vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCached | vk::MemoryPropertyFlagBits::eHostCoherent;
-          break;
-
-        default:;
-          //requiredBits |= vk::MemoryPropertyFlagBits::eDeviceLocal;
-        };
 
         //
         //std::cout << "MemoryTypeIndex: " << uint32_t(memoryTypeIndex) << std::endl;
@@ -109,7 +115,7 @@ namespace ANAMED {
         //std::cout << "RequiredBits: " << uint32_t(requiredBits) << std::endl;
 
         // 
-        if (((memoryType.propertyFlags & requiredBits) == requiredBits) || (!memoryType.propertyFlags && !requiredBits)) {
+        if ((uint32_t(memoryType.propertyFlags & requiredBits) == uint32_t(requiredBits)) && uint32_t(memoryType.propertyFlags & declineBits) == 0u || (!memoryType.propertyFlags) || (!requiredBits)) {
           //std::cout << "ResolvedMemTypeAndHeap: " << uint32_t(memoryTypeIndex) << ", " << uint32_t(memoryHeapIndex) << std::endl;
           //std::cout << "" << std::endl;
           memoryTypeAndHeapIndex = { memoryTypeIndex, memoryHeapIndex };
