@@ -1,10 +1,9 @@
-#pragma once
+#pragma once 
 
 // 
 #ifdef __cplusplus
 #include "./Core.hpp"
 #include "./Device.hpp"
-#include "./MemoryAllocator.hpp"
 #include "./PipelineLayout.hpp"
 
 // 

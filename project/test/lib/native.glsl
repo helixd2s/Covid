@@ -672,8 +672,8 @@ mat3x4 getGeometryTransform(in GeometryInfo info) {
 
 //
 mat3x4 inverse(in mat3x4 inmat) {
-  const mat4x4 temp = transpose(inverse(transpose(mat4x4(inmat[0],inmat[1],inmat[2],vec4(0.f.xxx,1.f)))));
-  //const mat4x4 temp = inverse(mat4x4(inmat[0],inmat[1],inmat[2],vec4(0.f.xxx,1.f)));
+  //const mat4x4 temp = transpose(inverse(transpose(mat4x4(inmat[0],inmat[1],inmat[2],vec4(0.f.xxx,1.f)))));
+  const mat4x4 temp = inverse(mat4x4(inmat[0],inmat[1],inmat[2],vec4(0.f.xxx,1.f)));
   return mat3x4(temp[0],temp[1],temp[2]);
 };
 

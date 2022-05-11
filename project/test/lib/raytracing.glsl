@@ -269,7 +269,7 @@ RayData handleIntersection(in RayData rayData, in IntersectionInfo intersection,
   //passed.origin = vertice.xyz;
 
   //
-  rayData.origin.xyz = vertice.xyz;
+  rayData.origin.xyz += rayData.direction.xyz * intersection.hitT;//vertice.xyz;
 
   //
   if (random(rayData.launchId.xy) <= clamp(reflFactor, 0.f, 1.f) && transpCoef < 1.f) { // I currently, have no time for fresnel
@@ -456,8 +456,8 @@ PathTraceOutput pathTraceCommand(in PathTraceCommand cmd, in uint type) {
   // 
   vec4 additional = vec4(0.f.xxx, 1.f);
   if (type == 0) { additional = clampCol(rayData.emission * vec4(reflCoef.xxx, 1.f)); };
-  if (type == 1) { additional = clampCol(rayData.emission * vec4(((1.f - reflCoef) * transpCoef ).xxx, 1.f)); };
-  if (type == 2) { additional = clampCol(rayData.emission * vec4(((1.f - reflCoef) * (1.f - transpCoef)).xxx, 1.f)); };
+  if (type == 1) { additional = clampCol(rayData.emission * vec4(((1.f - reflCoef) ).xxx, 1.f)); };
+  if (type == 2) { additional = clampCol(rayData.emission * vec4(((1.f - reflCoef) ).xxx, 1.f)); };
 
   //
   PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.pixelId);
@@ -492,8 +492,8 @@ void retranslateSurface(in PathTraceCommand cmd) {
   surfaceInfo.indices = uvec4(cmd.intersection.instanceId, cmd.intersection.geometryId, cmd.intersection.primitiveId, 0u);
   surfaceInfo.origin.xyz = cmd.rayData.origin.xyz;
   surfaceInfo.normal = cmd.normals;
-  surfaceInfo.tex[EMISSION_TEX] = vec4(cmd.emissiveColor.xyz, 1.f);
-  surfaceInfo.tex[DIFFUSE_TEX] = vec4(cmd.diffuseColor.xyz, 1.f);
+  surfaceInfo.tex[EMISSION_TEX] = vec4(cmd.emissiveColor, 1.f);
+  surfaceInfo.tex[DIFFUSE_TEX] = cmd.diffuseColor;
 };
 
 // 

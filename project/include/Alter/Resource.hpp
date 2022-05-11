@@ -6,8 +6,8 @@
 #include "./Device.hpp"
 #include "./MemoryAllocator.hpp"
 #include "./PipelineLayout.hpp"
-#include "./Sampler.hpp"
 #include "./Uploader.hpp"
+#include "./Sampler.hpp"
 
 // 
 namespace ANAMED {
