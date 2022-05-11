@@ -162,7 +162,7 @@ IntersectionInfo traceRaysTransparent(in InstanceAddressInfo instance, in RayDat
         tbn[2] = fullTransformNormal(instanceInfo, tbn[2], geometryId);
         MaterialPixelInfo material = handleMaterial(getMaterialInfo(geometryInfo), interpol.data[VERTEX_TEXCOORD].xy, tbn);
 
-        if (material.color[MATERIAL_ALBEDO].a < 0.001f) {
+        if (material.color[MATERIAL_ALBEDO].a < 0.01f) {
           isOpaque = false;
         } else {
           currentT = fT;
@@ -275,6 +275,7 @@ RayData handleIntersection(in RayData rayData, in IntersectionInfo intersection,
   if (random(rayData.launchId.xy) <= clamp(reflFactor, 0.f, 1.f) && transpCoef < 1.f) { // I currently, have no time for fresnel
     rayData.direction.xyz = reflective(originSeedXYZ, rayData.direction.xyz, normals, roughnessFactor);
     rayData.energy.xyz = f16vec3(metallicMult(rayData.energy.xyz, diffuseColor.xyz, metallicFactor));
+    if (reflFactor < 0.1f) { passed.diffusePass = true; };
   } else 
   if (random(rayData.launchId.xy) <= clamp(transpCoef, inner ? 1.f : 0.f, 1.f)) { // wrong diffuse if inner
     rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, passed.alphaColor.xyz));
@@ -305,6 +306,8 @@ RayData pathTrace(in RayData rayData, inout float hitDist, inout vec3 firstNorma
   float currentT = 0.f;
   //for (uint32_t i=0;i<3;i++) {
   uint R=0, T=0;
+  //RayData prevRayData = rayData;
+
   while (R<3 && T<3) {
     if (luminance(rayData.energy.xyz) < 0.001f) { break; };
 
@@ -337,12 +340,13 @@ RayData pathTrace(in RayData rayData, inout float hitDist, inout vec3 firstNorma
     } else 
     {
       const vec4 skyColor = gamma3(vec4(texture(sampler2D(textures[background], samplers[0]), lcts(rayData.direction.xyz)).xyz, 0.f));
-      
-      rayData.origin.xyz = vec4(0.f.xxx, 1.f) * constants.lookAtInverse + rayData.direction.xyz * 10000.f;
+
+      // suppose last possible hit-point
+      //rayData.origin.xyz = vec4(0.f.xxx, 1.f) * constants.lookAtInverse + rayData.direction.xyz * 10000.f;
       rayData.emission += f16vec4(trueMultColor(rayData.energy.xyz, skyColor.xyz), 0.f);
       rayData.energy.xyz *= f16vec3(0.f.xxx);
       if (!surfaceFound) {
-        hitDist = currentT = 10000.f;
+        hitDist = currentT;// = 10000.f;
         surfaceFound = true;
       };
       break;

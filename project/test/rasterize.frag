@@ -61,7 +61,7 @@ void main() {
 
   if (
 #ifdef TRANSLUCENT
-    materialPix.color[MATERIAL_ALBEDO].a < 0.001f || 
+    materialPix.color[MATERIAL_ALBEDO].a < 0.01f || 
 #endif
     texelFetch(textures[framebufferAttachments[5]], ivec2(gl_FragCoord.xy), 0).r <= (gl_FragCoord.z - 0.0001f)
   ) {
