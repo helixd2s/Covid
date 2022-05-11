@@ -134,7 +134,7 @@ IntersectionInfo traceRaysOpaque(in InstanceAddressInfo instance, in RayData ray
 };
 
 // version without over-phasing
-IntersectionInfo traceRaysTransparent(in InstanceAddressInfo instance, in RayData rays, in float maxT) {
+IntersectionInfo traceRaysTransparent(in InstanceAddressInfo instance, in RayData rays, in float maxT, in bool hasRandom) {
   rayQueryEXT rayQuery;
   rayQueryInitializeEXT(rayQuery, accelerationStructureEXT(instance.accelStruct), 0u, 0xff, rays.origin.xyz, 0.001f, rays.direction.xyz, maxT);
   //rayQueryInitializeEXT(rayQuery, accelerationStructureEXT(instance.accelStruct), gl_RayFlagsNoOpaqueEXT, 0xff, rays.origin.xyz, 0.001f, rays.direction.xyz, maxT);
@@ -162,7 +162,7 @@ IntersectionInfo traceRaysTransparent(in InstanceAddressInfo instance, in RayDat
         tbn[2] = fullTransformNormal(instanceInfo, tbn[2], geometryId);
         MaterialPixelInfo material = handleMaterial(getMaterialInfo(geometryInfo), interpol.data[VERTEX_TEXCOORD].xy, tbn);
 
-        if (material.color[MATERIAL_ALBEDO].a < 0.01f) {
+        if (material.color[MATERIAL_ALBEDO].a < (hasRandom ? random(rays.launchId) : 0.01f)) {
           isOpaque = false;
         } else {
           currentT = fT;
@@ -216,9 +216,7 @@ vec4 directLighting(in vec3 O, in vec3 N, in vec3 tN, in vec3 r, in float t) {
 
   // 
   const bool hasIntersection = intersect(vec4(SO, sunSphere.w), rayData.origin.xyz, rayData.direction.xyz, t);
-  IntersectionInfo opaqueIntersection = traceRaysOpaque(instancedData.opaqueAddressInfo, rayData, t);
-  IntersectionInfo translucentIntersection = traceRaysTransparent(instancedData.opaqueAddressInfo, rayData, opaqueIntersection.hitT);
-  IntersectionInfo intersection = translucentIntersection.hitT <= opaqueIntersection.hitT ? translucentIntersection : opaqueIntersection;
+  IntersectionInfo intersection = traceRaysTransparent(instancedData.opaqueAddressInfo, rayData, 10000.f, true);
 
   //
   if (hasIntersection && intersection.hitT >= t && t > 0.f) {
@@ -312,7 +310,7 @@ RayData pathTrace(in RayData rayData, inout float hitDist, inout vec3 firstNorma
     if (luminance(rayData.energy.xyz) < 0.001f) { break; };
 
     // 
-    IntersectionInfo intersection = traceRaysTransparent(instancedData.opaqueAddressInfo, rayData, 10000.f);
+    IntersectionInfo intersection = traceRaysTransparent(instancedData.opaqueAddressInfo, rayData, 10000.f, false);
 
     //
     if (!all(lessThanEqual(intersection.barycentric, 0.f.xxx)) && intersection.hitT < 10000.f) {
