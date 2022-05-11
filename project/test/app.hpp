@@ -40,6 +40,7 @@ struct UniformData {
   uint64_t writeData = 0ull;
   uint64_t rasterData = 0ull;
   uint64_t surfaceData = 0ull;
+  uint64_t prevRasterData = 0ull;
   uint32_t backgroundObj = 0u;
 };
 
@@ -324,6 +325,9 @@ public:
     pingPongObj->presentImage(qfAndQueue);
     fence = std::get<0u>(swapchainObj->presentImage(qfAndQueue));
 
+    //
+    std::swap(uniformData.rasterData, uniformData.prevRasterData);
+
     // stop the capture
 //#ifdef ENABLE_RENDERDOC
     //if (rdoc_api) rdoc_api->EndFrameCapture(NULL, NULL);
@@ -382,7 +386,7 @@ public:
     rasterDataObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
       .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
       .bufferInfo = ANAMED::BufferCreateInfo{
-        .size = sizeof(RasterInfo) * renderArea.extent.width * renderArea.extent.height * 16u,
+        .size = sizeof(RasterInfo) * renderArea.extent.width * renderArea.extent.height * 32u,
         .type = ANAMED::BufferType::eStorage,
       }
     });
@@ -392,6 +396,7 @@ public:
     uniformData.pixelData = pixelDataObj->getDeviceAddress();
     uniformData.writeData = writeDataObj->getDeviceAddress();
     uniformData.rasterData = rasterDataObj->getDeviceAddress();
+    uniformData.prevRasterData = uniformData.rasterData + sizeof(RasterInfo) * renderArea.extent.width * renderArea.extent.height * 16u;
 
     //
     framebufferObj = ANAMED::FramebufferObj::make(deviceObj.with(0u), ANAMED::FramebufferCreateInfo{
@@ -404,7 +409,7 @@ public:
     pingPongObj = ANAMED::PingPongObj::make(deviceObj.with(0u), ANAMED::PingPongCreateInfo{
       .layout = descriptorsObj.as<vk::PipelineLayout>(),
       .extent = renderArea.extent,
-      .minImageCount = 1u,
+      .minImageCount = 2u,
 
       // first image is accumulation, second image is back buffer, third image is index buffer, fourth image is position buffer
       // 5th for reflection buffer, 6th for reflection back buffer, 7th for transparency, 8th for transparency back

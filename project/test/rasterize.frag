@@ -76,8 +76,8 @@ void main() {
 
     // 
     const uint rasterId = atomicAdd(counters[RASTER_COUNTER], 1);//subgroupAtomicAdd(RASTER_COUNTER);
-    const uint oldId = imageAtomicExchange(imagesR32UI[pingpong.images[0]], ivec2(gl_FragCoord.xy), rasterId+1);
     if (rasterId < extent.x * extent.y * 16) {
+      const uint oldId = imageAtomicExchange(imagesR32UI[pingpong.images[0]], ivec2(gl_FragCoord.xy), rasterId+1);
       RasterInfoRef rasterInfo = getRasterInfo(rasterId);
       rasterInfo.indices = uvec4(pIndices.xyz, oldId);
       rasterInfo.barycentric = vec4(pBary, 1.f);

@@ -49,7 +49,7 @@ void main() {
     //
   #ifdef USE_RASTERIZE_PASS
     vec4 ssLastPos = ssEye;
-    IntersectionInfo intersection = rasterize(instancedData.opaqueAddressInfo, rayData, 10000.f, ssLastPos);
+    IntersectionInfo intersection = rasterize(instancedData.opaqueAddressInfo, rayData, 10000.f, ssLastPos, false);
   #else
     IntersectionInfo intersection = traceRaysOpaque(instancedData.opaqueAddressInfo, rayData, 10000.f);
   #endif

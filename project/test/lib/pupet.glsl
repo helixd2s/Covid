@@ -32,7 +32,7 @@ vec3 computeBary(in vec4 vo, in mat3x4 vt) {
 // too expensive method of rasterization
 // vector sampling is generally expensive
 // but it's really required
-IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayData, in float maxT, inout vec4 lastPos) {
+IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayData, in float maxT, inout vec4 lastPos, in bool previous) {
   IntersectionInfo intersection;
   intersection.barycentric = vec3(0.f.xxx);
   intersection.instanceId = 0u;
@@ -40,15 +40,17 @@ IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayDat
   intersection.primitiveId = 0u;
 
   //
-  vec4 viewOrigin = vec4(vec4(rayData.origin.xyz, 1.f) * constants.lookAt, 1.f);
-  vec4 viewEnd = vec4(vec4(rayData.origin.xyz+rayData.direction.xyz, 1.f) * constants.lookAt, 1.f);
+  vec4 viewOrigin = vec4(vec4(rayData.origin.xyz, 1.f) * (previous ? constants.previousLookAt : constants.lookAt), 1.f);
+  vec4 viewEnd = vec4(vec4(rayData.origin.xyz+rayData.direction.xyz, 1.f) * (previous ? constants.previousLookAt : constants.lookAt), 1.f);
   vec4 viewDir = (viewEnd - viewOrigin);
   viewDir.xyz = normalize(viewDir.xyz);
 
   //
   vec4 ss = (viewOrigin * constants.perspective);
   ivec2 sc = ivec2((divW(ss).xy * 0.5f + 0.5f) * extent.xy);
-  uint indice = imageLoad(imagesR32UI[pingpong.images[0]], sc).x;
+
+  //
+  uint indice = previous ? imageLoad(imagesR32UI[pingpong.prevImages[0]], sc).x : imageLoad(imagesR32UI[pingpong.images[0]], sc).x;
 
   //
   float currentZ = 1.f;
@@ -59,7 +61,7 @@ IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayDat
     if (indice <= 0u) break;
 
     //
-    RasterInfoRef rasterInfo = getRasterInfo(indice-1);
+    RasterInfoRef rasterInfo = previous ? getPrevRasterInfo(indice-1) : getRasterInfo(indice-1);
     InstanceInfo instanceInfo = getInstance(instancedData.opaqueAddressInfo, rasterInfo.indices.x);
     GeometryInfo geometryInfo = getGeometry(instanceInfo, rasterInfo.indices.y);
     GeometryExtData geometry = getGeometryData(geometryInfo, rasterInfo.indices.z);
@@ -69,9 +71,13 @@ IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayDat
 
     //
     for (uint i=0;i<3;i++) { 
-      geometry.triData[VERTEX_VERTICES][i] = vec4(fullTransform(instanceInfo, vec4(geometry.triData[VERTEX_VERTICES][i].xyz, 1.f), rasterInfo.indices.y).xyz, 1.f);
-      geometry.triData[VERTEX_VERTICES][i] = vec4(geometry.triData[VERTEX_VERTICES][i] * constants.lookAt, 1.f) * constants.perspective;
-      //geometry.triData[VERTEX_VERTICES][i] = vec4(geometry.triData[VERTEX_VERTICES][i] * constants.lookAt, 1.f);
+      if (previous) {
+        geometry.triData[VERTEX_VERTICES][i] = vec4(fullPreviousTransform(instanceInfo, vec4(geometry.triData[VERTEX_VERTICES][i].xyz, 1.f), rasterInfo.indices.y).xyz, 1.f);
+      } else {
+        geometry.triData[VERTEX_VERTICES][i] = vec4(fullTransform(instanceInfo, vec4(geometry.triData[VERTEX_VERTICES][i].xyz, 1.f), rasterInfo.indices.y).xyz, 1.f);
+      };
+      geometry.triData[VERTEX_VERTICES][i] = vec4(geometry.triData[VERTEX_VERTICES][i] * (previous ? constants.previousLookAt : constants.lookAt), 1.f) * constants.perspective;
+      //geometry.triData[VERTEX_VERTICES][i] = vec4(geometry.triData[VERTEX_VERTICES][i] * (previous ? constants.previousLookAt : constants.lookAt), 1.f);
     };
 
     //

@@ -149,6 +149,7 @@ layout(set = 0, binding = 0, scalar) uniform MatrixBlock
   uint64_t writeData;
   uint64_t rasterData;
   uint64_t surfaceData;
+  uint64_t prevRasterData;
   uint32_t background;
 };
 
@@ -189,9 +190,7 @@ PixelHitInfoRef getRpjHit(in uint pixelId, in uint type) {
 
 //
 RasterInfoRef getRasterInfo(in uint rasterId)  { return RasterInfoRef(uint64_t(rasterData) + uint64_t(rasterId) * sizeof(RasterInfoRef)); };
-
-
-
+RasterInfoRef getPrevRasterInfo(in uint rasterId)  { return RasterInfoRef(uint64_t(prevRasterData) + uint64_t(rasterId) * sizeof(RasterInfoRef)); };
 
 //
 vec2 lcts(in vec3 direct) { return vec2(fma(atan(direct.z,direct.x),INV_TWO_PI,0.5f), acos(direct.y)*INV_PI); };
@@ -395,7 +394,8 @@ struct InstanceAddressBlock {
 
 //
 struct PingPongStateInfo {
-  uint32_t images[12];
+  uint32_t prevImages[6];
+  uint32_t images[6];
   uint32_t previous;
   uint32_t index;
 };
@@ -691,40 +691,15 @@ vec4 fullTransform(in InstanceInfo instance, in vec4 vertices, in uint32_t geome
 };
 
 //
-vec4 fullTransform(in InstanceData data, in vec4 vertices, in uint32_t instanceId, in uint32_t geometryId) {
-  return fullTransform(getInstance(data, instanceId), vertices, geometryId);
+vec4 fullPreviousTransform(in InstanceInfo instance, in vec4 vertices, in uint32_t geometryId) {
+  GeometryInfo geometry = getGeometry(instance, geometryId);
+  return vec4(vec4(vertices * getGeometryTransform(geometry), 1.f) * getPreviousInstanceTransform(instance), 1.f);
 };
-
-//
-vec4 fullTransform(in InstanceData data, in vec3 vertices, in uint32_t instanceId, in uint32_t geometryId) {
-  return fullTransform(data, vec4(vertices, 1.f), instanceId, geometryId);
-};
-
-//
-vec4 fullTransform(in InstanceAddressInfo info, in vec4 vertices, in uint32_t instanceId, in uint32_t geometryId) {
-  return fullTransform(getInstance(info, instanceId), vertices, geometryId);
-};
-
-//
-vec4 fullTransform(in InstanceAddressInfo info, in vec3 vertices, in uint32_t instanceId, in uint32_t geometryId) {
-  return fullTransform(info, vec4(vertices, 1.f), instanceId, geometryId);
-};
-
 
 //
 vec3 fullTransformNormal(in InstanceInfo instance, in vec3 normals, in uint32_t geometryId) {
   GeometryInfo geometry = getGeometry(instance, geometryId);
   return normalize(normalize(normals) * toNormalMat(getInstanceTransform(instance)) * toNormalMat(getGeometryTransform(geometry)));
-};
-
-//
-vec3 fullTransformNormal(in InstanceData data, in vec3 normals, in uint32_t instanceId, in uint32_t geometryId) {
-  return fullTransformNormal(getInstance(data, instanceId), normals, geometryId);
-};
-
-//
-vec3 fullTransformNormal(in InstanceAddressInfo info, in vec3 normals, in uint32_t instanceId, in uint32_t geometryId) {
-  return fullTransformNormal(getInstance(info, instanceId), normals, geometryId);
 };
 
 //
