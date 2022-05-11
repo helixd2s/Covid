@@ -32,7 +32,7 @@ vec3 computeBary(in vec4 vo, in mat3x4 vt) {
 // too expensive method of rasterization
 // vector sampling is generally expensive
 // but it's really required
-IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayData, in float maxT) {
+IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayData, in float maxT, inout vec4 lastPos) {
   IntersectionInfo intersection;
   intersection.barycentric = vec3(0.f.xxx);
   intersection.instanceId = 0u;
@@ -52,6 +52,7 @@ IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayDat
 
   //
   float currentZ = 1.f;
+  lastPos = divW(ss);
 
   //
   for (uint d=0;d<32;d++) {
@@ -85,6 +86,7 @@ IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayDat
       intersection.primitiveId = rasterInfo.indices.z;
       intersection.barycentric = bary;
       currentZ = pos.z;
+      lastPos = pos;
     };
 
     //

@@ -300,7 +300,7 @@ RayData handleIntersection(in RayData rayData, in IntersectionInfo intersection,
 };
 
 // version without over-phasing
-RayData pathTrace(in RayData rayData, inout float hitDist, inout vec3 firstNormal, inout uvec4 firstIndices) {
+RayData pathTrace(in RayData rayData, inout float hitDist, inout vec3 firstNormal, inout uvec4 firstIndices, in uint type) {
   //
   bool surfaceFound = false;
   float currentT = 0.f;
@@ -346,7 +346,11 @@ RayData pathTrace(in RayData rayData, inout float hitDist, inout vec3 firstNorma
       rayData.emission += f16vec4(trueMultColor(rayData.energy.xyz, skyColor.xyz), 0.f);
       rayData.energy.xyz *= f16vec3(0.f.xxx);
       if (!surfaceFound) {
-        hitDist = currentT;// = 10000.f;
+        if ((type == 1 || R == 0) && type != 0) {
+          hitDist = currentT = 10000.f;
+        } else {
+          hitDist = currentT;
+        };
         surfaceFound = true;
       };
       break;
@@ -451,7 +455,7 @@ PathTraceOutput pathTraceCommand(in PathTraceCommand cmd, in uint type) {
 
   // enforce typic indice
   rayData.origin += outRayNormal(rayData.direction.xyz, cmd.tbn[2].xyz) * 0.0001f;
-  rayData = pathTrace(rayData, outp.hitT, outp.normals, outp.indices);
+  rayData = pathTrace(rayData, outp.hitT, outp.normals, outp.indices, type);
 
   //
   float transpCoef = clamp(1.f - cmd.diffuseColor.a, 0.f, 1.f);

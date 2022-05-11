@@ -1,3 +1,6 @@
+#ifndef SPHERICAL_DEF
+#define SPHERICAL_DEF
+
 /*
  * Copyright LWJGL. All rights reserved.
  * License terms: https://www.lwjgl.org/license
@@ -112,3 +115,5 @@ vec3 randomCosineWeightedHemispherePoint(vec3 rand, vec3 n) {
   vec3 dir = normalize(tangent * ph.x + bitangent * ph.y + n * ph.z);
   return normalize(faceforward(dir,-n,dir));
 }
+
+#endif

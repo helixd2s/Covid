@@ -1,3 +1,6 @@
+#ifndef FRESNEL_DEF
+#define FRESNEL_DEF
+
 /*
  *	Fresnel reflectance at 0 angle incident
  */
@@ -81,3 +84,5 @@ float fresnel(float cos_theta_incident, float cos_critical, float refractive_rat
 
 	return mix(sqrtRs * sqrtRs, sqrtRp * sqrtRp, .5f);
 }
+
+#endif

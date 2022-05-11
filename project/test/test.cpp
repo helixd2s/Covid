@@ -136,7 +136,7 @@ int main(int argc, char** argv) {
   decltype(auto) iterator = rendering.begin();
 
   // 
-  while (!glfwWindowShouldClose(window)) { // 
+  while (!glfwWindowShouldClose(window) && !terminated) { // 
     glfwPollEvents();
     app->tickProcessing();
     //_CrtDumpMemoryLeaks();
@@ -147,6 +147,7 @@ int main(int argc, char** argv) {
   };
 
   // 
+  glfwTerminate(); exit(0); terminated = true;
   return 0;
 };
 #endif

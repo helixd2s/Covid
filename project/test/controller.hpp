@@ -16,6 +16,9 @@
 #include "./glfw-listener.hpp"
 
 //
+inline static bool terminated = false;
+
+//
 class Controller {
 public:
   glm::vec3 viewPos = glm::vec3(0.f, 0.f, 0.f);
@@ -122,7 +125,7 @@ public:
 
     //
     if (keys[GLFW_KEY_ESCAPE] && !hasEscPressed) { hasEscPressed = true; };
-    if (keys[GLFW_KEY_ESCAPE] && hasEscPressed) { glfwTerminate(); exit(0); };
+    if (keys[GLFW_KEY_ESCAPE] && hasEscPressed) { glfwTerminate(); exit(0); terminated = true; };
 
     // 
     glm::mat4 lkt = glm::lookAt(viewPos, viewPos + viewDir, viewUp);
