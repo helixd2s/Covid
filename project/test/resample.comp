@@ -104,8 +104,8 @@ void reproject3D(in uint pixelId, in vec3 srcRayDir, in int type) {
 
   // 
   const vec3 srcHitFoundIntersection = type == 2 ? srcPos : (type == 1 ? srcHitPos : vec4(vec4(dstHitFoundIntersection, 1.f)
-    * inverse(getInstanceTransform(instancedData.opaqueAddressInfo, data.indices.x)), 1.f) 
-    * getPreviousInstanceTransform(instancedData.opaqueAddressInfo, data.indices.x));
+    * inverse(getInstanceTransform(instancedData.opaqueAddressInfo, surface.indices.x)), 1.f) 
+    * getPreviousInstanceTransform(instancedData.opaqueAddressInfo, surface.indices.x));
 
   // 
   const vec4 srcHitPersp = vec4(vec4(srcHitFoundIntersection, 1.f) * constants.previousLookAt, 1.f) * constants.perspective;
