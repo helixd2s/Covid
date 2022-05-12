@@ -276,6 +276,7 @@ namespace ANAMED {
   class SamplerObj;
   class ResourceSparseObj;
   class PingPongObj;
+  class DenoiserObj;
 
   // 
   class GltfLoaderObj;
@@ -1071,6 +1072,15 @@ namespace ANAMED {
 
 
   //
+  struct DenoiseCommandWriteInfo : BaseCreateInfo {
+    vk::CommandBuffer cmdBuf = {};
+    std::vector<vk::Image> images = {};
+
+    //
+    decltype(auto) with(cpp21::const_wrap_arg<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
+  };
+
+  //
   struct UploadCommandWriteInfo : BaseCreateInfo {
     vk::CommandBuffer cmdBuf = {};
     vk::Buffer bunchBuffer = {};
@@ -1150,6 +1160,14 @@ namespace ANAMED {
     vk::PipelineLayout layout = {};
     std::optional<ComputePipelineCreateInfo> compute = {};
     std::optional<GraphicsPipelineCreateInfo> graphics = {};
+  };
+
+  //
+  struct DenoiserCreateInfo : BaseCreateInfo {
+    //vk::PipelineLayout layout = {};
+    //QueueGetInfo info = {};
+    std::vector<uint32_t> queueFamilyIndices = {};
+    vk::Extent2D extent = {640u, 480u};
   };
 
   //

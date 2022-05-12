@@ -28,3 +28,6 @@
 [submodule "FidelityFX-Denoiser"]
 	path = FidelityFX-Denoiser
 	url = https://github.com/GPUOpen-Effects/FidelityFX-Denoiser.git
+[submodule "NRI"]
+	path = NRI
+	url = https://github.com/NVIDIAGameWorks/NRI.git

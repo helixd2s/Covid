@@ -22,6 +22,7 @@ namespace ANAMED {
     friend DeviceObj;
     friend FramebufferObj;
     friend PipelineLayoutObj;
+    friend DenoiserObj;
 
     //
     std::vector<vk::Pipeline> secondaryPipelines = {};
