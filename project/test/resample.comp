@@ -133,8 +133,8 @@ void reproject3D(in uint pixelId, in vec3 srcRayDir, in int type) {
 
     // fallback
     vec4 
-      srcSamplePos = vec4(0.f.xxx, 1.f),//vec4(linearSrcPos(srcScreen), 1.f), 
-      dstSamplePos = vec4(0.f.xxx, 1.f);//texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), dstScreen);
+      srcSamplePos = srcHitPersp/srcHitPersp.w,//vec4(linearSrcPos(srcScreen), 1.f), 
+      dstSamplePos = dstHitPersp/dstHitPersp.w;//texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), dstScreen);
 
     // 
     { // I don't know, works it or not
@@ -156,8 +156,8 @@ void reproject3D(in uint pixelId, in vec3 srcRayDir, in int type) {
 
     // TODO: fix `pupet.glsl` for transparency support and other layers
     // transparency not supported (planned fix in next version of vector sampling) :(
-    const bool dstValidDist = type == 1 ? true : all(lessThan(abs(dstSamplePos.xyz-(dstHitPersp.xyz/dstHitPersp.w)), vec3(1.f/extent, 0.001f)));// && distance(dstPos, dstHitFoundIntersection) < 0.001f;
-    const bool srcValidDist = type == 1 ? true : all(lessThan(abs(srcSamplePos.xyz-(srcHitPersp.xyz/srcHitPersp.w)), vec3(1.f/extent, 0.001f)));
+    const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz-(dstHitPersp.xyz/dstHitPersp.w)), vec3(1.f/extent, 0.001f)));// && distance(dstPos, dstHitFoundIntersection) < 0.001f;
+    const bool srcValidDist = all(lessThan(abs(srcSamplePos.xyz-(srcHitPersp.xyz/srcHitPersp.w)), vec3(1.f/extent, 0.001f)));
 
     // copy to dest, and nullify source
     if ( data.origin.w >= 0.f && SURF_SRC.color[type].w > 0.f && dstValidDist && (srcValidDist || SURF_DST.color[type].w <= 0.f) ) {
@@ -188,7 +188,7 @@ void reprojectDiffuse(in uint srcId, in vec3 srcRayDir) {
   const ivec2 dstScreenPos = ivec2(dstScreen * vec2(extent));
 
   // fallback
-  vec4 dstSamplePos = vec4(0.f.xxx, 1.f);//vec4(texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), dstScreen, 0).xyz, 1.f);
+  vec4 dstSamplePos = dstPerspPos/dstPerspPos.w;//vec4(texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), dstScreen, 0).xyz, 1.f);
 
   //
   { // I don't know, works it or not
@@ -222,7 +222,7 @@ void main() {
   const uint pixelId = gcoord.x + extent.x * gcoord.y;
 
   //
-  const vec3 srcRayBegin = divW(vec4(vec3(tCoord, 0.5f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.previousLookAtInverse;//fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId);
+  const vec3 srcRayBegin = divW(vec4(vec3(tCoord, 0.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.previousLookAtInverse;//fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId);
   const vec3 srcRayEnd = divW(vec4(vec3(tCoord, 1.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.previousLookAtInverse;
   const vec3 srcRayDir = normalize(srcRayEnd.xyz - srcRayBegin.xyz);
 

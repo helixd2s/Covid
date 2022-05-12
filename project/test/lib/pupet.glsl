@@ -40,6 +40,7 @@ IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayDat
   intersection.primitiveId = 0u;
 
   //
+  vec4 ssOriginal = divW(lastPos);
   vec4 viewOrigin = vec4(vec4(rayData.origin.xyz, 1.f) * (previous ? constants.previousLookAt : constants.lookAt), 1.f);
   vec4 viewEnd = vec4(vec4(rayData.origin.xyz+rayData.direction.xyz, 1.f) * (previous ? constants.previousLookAt : constants.lookAt), 1.f);
   vec4 viewDir = (viewEnd - viewOrigin);
@@ -86,7 +87,7 @@ IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayDat
     vec4 pos = divW(geometry.triData[VERTEX_VERTICES] * bary);
 
     //
-    if (any(greaterThan(bary, 0.f.xxx)) && all(greaterThan(bary, 1e-9.xxx)) && all(lessThan(bary, 1.f.xxx+1e-9)) && pos.z <= currentZ) {
+    if (any(greaterThan(bary, 0.f.xxx)) && all(greaterThan(bary, 1e-9.xxx)) && all(lessThan(bary, 1.f.xxx+1e-9)) && pos.z <= currentZ && ssOriginal.z < (pos.z + 0.0001f)) {
       intersection.instanceId = rasterInfo.indices.x;
       intersection.geometryId = rasterInfo.indices.y;
       intersection.primitiveId = rasterInfo.indices.z;

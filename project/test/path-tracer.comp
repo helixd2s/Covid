@@ -33,7 +33,7 @@ void main() {
     const uint pixelId = gcoord.x + extent.x * gcoord.y;
 
     //
-    vec4 ssEye = vec4(vec3(tCoord, 0.5f) * 2.f - 1.f, 1.f);
+    vec4 ssEye = vec4(vec3(tCoord, 0.f) * 2.f - 1.f, 1.f);
     vec3 rayBegin = divW(ssEye * constants.perspectiveInverse) * constants.lookAtInverse;//fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId);
     vec3 rayEnd = divW(vec4(vec3(tCoord, 1.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse;
     vec3 rayDir = normalize(rayEnd.xyz - rayBegin.xyz);
