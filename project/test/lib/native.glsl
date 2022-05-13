@@ -35,6 +35,7 @@ const float INV_TWO_PI = 0.15915494309189535f;
 #extension GL_EXT_shader_realtime_clock : require
 #extension GL_KHR_shader_subgroup_ballot : require
 //#extension GL_ARB_conservative_depth : require
+#extension GL_EXT_shared_memory_block : require
 
 #ifdef USE_ATOMIC_FLOAT
 #extension GL_EXT_shader_atomic_float : require
@@ -462,7 +463,7 @@ uvec4 readAsUint4(in BufferViewInfo bufferViewInfo, in uint32_t index) {
 };
 
 //
-vec4 readAsFloat4(in BufferViewInfo bufferViewInfo, in uint32_t index) {
+vec4 readAsFloat4(inout BufferViewInfo bufferViewInfo, in uint32_t index) {
   const uint cCnt = bufferViewInfo.format&3u;
   const uint isHalf = (bufferViewInfo.format>>2)&1u;
   const uint isUint = (bufferViewInfo.format>>3)&1u;
@@ -491,15 +492,15 @@ vec4 readAsFloat4(in BufferViewInfo bufferViewInfo, in uint32_t index) {
 };
 
 //
-uvec3 readAsUint3(in BufferViewInfo bufferViewInfo, in uint32_t index) { return readAsUint4(bufferViewInfo, index).xyz; };
-uvec2 readAsUint2(in BufferViewInfo bufferViewInfo, in uint32_t index) { return readAsUint4(bufferViewInfo, index).xy; };
-uint readAsUint(in BufferViewInfo bufferViewInfo, in uint32_t index) { return readAsUint4(bufferViewInfo, index).x; };
+uvec3 readAsUint3(inout BufferViewInfo bufferViewInfo, in uint32_t index) { return readAsUint4(bufferViewInfo, index).xyz; };
+uvec2 readAsUint2(inout BufferViewInfo bufferViewInfo, in uint32_t index) { return readAsUint4(bufferViewInfo, index).xy; };
+uint readAsUint(inout BufferViewInfo bufferViewInfo, in uint32_t index) { return readAsUint4(bufferViewInfo, index).x; };
 
 //
 //vec4 readAsFloat4(in BufferViewInfo bufferViewInfo, in uint32_t index) { return uintBitsToFloat(readAsUint4(bufferViewInfo, index)); };
-vec3 readAsFloat3(in BufferViewInfo bufferViewInfo, in uint32_t index) { return readAsFloat4(bufferViewInfo, index).xyz; };
-vec2 readAsFloat2(in BufferViewInfo bufferViewInfo, in uint32_t index) { return readAsFloat4(bufferViewInfo, index).xy; };
-float readAsFloat(in BufferViewInfo bufferViewInfo, in uint32_t index) { return readAsFloat4(bufferViewInfo, index).x; };
+vec3 readAsFloat3(inout BufferViewInfo bufferViewInfo, in uint32_t index) { return readAsFloat4(bufferViewInfo, index).xyz; };
+vec2 readAsFloat2(inout BufferViewInfo bufferViewInfo, in uint32_t index) { return readAsFloat4(bufferViewInfo, index).xy; };
+float readAsFloat(inout BufferViewInfo bufferViewInfo, in uint32_t index) { return readAsFloat4(bufferViewInfo, index).x; };
 
 //
 layout(push_constant, scalar, buffer_reference_align = 1) uniform PConstBlock {

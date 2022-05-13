@@ -61,32 +61,33 @@ void main() {
     GeometryExtAttrib attrib = interpolate(geometry, intersection.barycentric);
 
     //
-    PathTraceCommand cmd;
-    cmd.pixelId = pixelId;
+    //PathTraceCommand cmd;
+  #define cmd cmds[gl_LocalInvocationID.y][gl_LocalInvocationID.x]
+    //cmd.pixelId = pixelId;
     cmd.intersection = intersection;
-    cmd.hasHit = !all(lessThanEqual(cmd.intersection.barycentric, 0.f.xxx));
     cmd.rayData = rayData;
-    cmd.rayData.origin = cmd.hasHit ? fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId).xyz : (vec4(0.f.xxx, 1.f) * constants.lookAtInverse + cmd.rayData.direction * 10000.f);
-    cmd.tbn = getTBN(attrib); //cmd.rayData.origin += outRayNormal(cmd.rayData.direction.xyz, cmd.tbn[2].xyz) * 0.0001f;
-    cmd.tbn[0] = fullTransformNormal(instanceInfo, cmd.tbn[0], intersection.geometryId);
-    cmd.tbn[1] = fullTransformNormal(instanceInfo, cmd.tbn[1], intersection.geometryId);
-    cmd.tbn[2] = fullTransformNormal(instanceInfo, cmd.tbn[2], intersection.geometryId);
+    const bool hasHit = !all(lessThanEqual(cmd.intersection.barycentric, 0.f.xxx));
+    cmd.rayData.origin = hasHit ? fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId).xyz : (vec4(0.f.xxx, 1.f) * constants.lookAtInverse + cmd.rayData.direction * 10000.f);
+    cmd.tbn = f16mat3x3(getTBN(attrib)); //cmd.rayData.origin += outRayNormal(cmd.rayData.direction.xyz, cmd.tbn[2].xyz) * 0.0001f;
+    cmd.tbn[0] = f16vec3(fullTransformNormal(instanceInfo, cmd.tbn[0], intersection.geometryId));
+    cmd.tbn[1] = f16vec3(fullTransformNormal(instanceInfo, cmd.tbn[1], intersection.geometryId));
+    cmd.tbn[2] = f16vec3(fullTransformNormal(instanceInfo, cmd.tbn[2], intersection.geometryId));
 
     //
-    const bool inner = dot(cmd.tbn[2], cmd.rayData.direction.xyz) > 0.f;
+    const bool inner = dot(vec3(cmd.tbn[2]), cmd.rayData.direction.xyz) > 0.f;
 
     //
     const MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), attrib.data[VERTEX_TEXCOORD].xy, cmd.tbn);
     const vec4 skyColor = gamma3(vec4(texture(sampler2D(textures[background], samplers[0]), lcts(cmd.rayData.direction.xyz)).xyz, 1.f));
 
     //
-    cmd.normals = inRayNormal(cmd.rayData.direction.xyz, materialPix.color[MATERIAL_NORMAL].xyz);
-    cmd.diffuseColor = toLinear(cmd.hasHit ? materialPix.color[MATERIAL_ALBEDO] : vec4(skyColor.xyz, 1.f));
-    cmd.emissiveColor = toLinear(cmd.hasHit ? materialPix.color[MATERIAL_EMISSIVE] : vec4(0.f.xxx, 1.f)).xyz * 2.f;
+    cmd.normals = f16vec3(inRayNormal(cmd.rayData.direction.xyz, materialPix.color[MATERIAL_NORMAL].xyz));
+    cmd.diffuseColor = f16vec4(toLinear(hasHit ? materialPix.color[MATERIAL_ALBEDO] : vec4(skyColor.xyz, 1.f)));
+    cmd.emissiveColor = f16vec3(toLinear(hasHit ? materialPix.color[MATERIAL_EMISSIVE] : vec4(0.f.xxx, 1.f)).xyz * 2.f);
 
     //
-    cmd.PBR = cmd.hasHit ? materialPix.color[MATERIAL_PBR].xyz : 0.f.xxx;
-    cmd.reflCoef = (cmd.PBR.b + mix(fresnel_schlick(0.f, dot(reflect(cmd.rayData.direction.xyz, cmd.normals), cmd.normals)), 0.f, cmd.PBR.g) * (1.f - cmd.PBR.b)) * (1.f - luminance(cmd.emissiveColor.xyz));
+    cmd.PBR = f16vec3(hasHit ? materialPix.color[MATERIAL_PBR].xyz : 0.f.xxx);
+    cmd.reflCoef = (float(cmd.PBR.b) + mix(fresnel_schlick(0.f, dot(reflect(cmd.rayData.direction.xyz, vec3(cmd.normals)), vec3(cmd.normals))), 0.f, float(cmd.PBR.g)) * (1.f - float(cmd.PBR.b))) * (1.f - luminance(cmd.emissiveColor.xyz));
 
     //
     retranslateSurface(cmd);
@@ -95,7 +96,7 @@ void main() {
     retranslateHit(pixelId, 2, cmd.rayData.origin);
 
     // 
-    if (cmd.hasHit) {
+    if (hasHit) {
       pathTraceCommand(cmd, firstPart && (cmd.diffuseColor.a >= 0.001f && luminance(cmd.diffuseColor.xyz) > 0.f) ? 2 : 0);
       if (cmd.diffuseColor.a < 1.f) { pathTraceCommand(cmd, 1); } else { blankHit(cmd, 1); };
     } else {
