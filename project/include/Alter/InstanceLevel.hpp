@@ -132,8 +132,8 @@ namespace ANAMED {
     virtual uintptr_t& getInstancedDeviceAddress() { return this->getInstancedResource()->getDeviceAddress(); };
 
     //
-    virtual uintptr_t& getDeviceAddress() { return this->handle.as<uintptr_t>(); };
     virtual uintptr_t const& getDeviceAddress() const { return this->handle.as<uintptr_t>(); };
+    virtual uintptr_t& getDeviceAddress() { return this->handle.as<uintptr_t>(); };
 
     //
     virtual void updateInstances() {
@@ -206,7 +206,7 @@ namespace ANAMED {
         };
       };
 
-      
+
     };
 
     //
@@ -215,6 +215,11 @@ namespace ANAMED {
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(Handle(this->cInfo->uploader, HandleType::eUploader));
       decltype(auto) accelInstInfo = infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR);
+      decltype(auto) accelInfo = infoMap->get<vk::AccelerationStructureCreateInfoKHR>(vk::StructureType::eAccelerationStructureCreateInfoKHR);
+      decltype(auto) accelGeomInfo = infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR);
+      decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelGeomInfo->setGeometries(this->instances), this->cInfo->limit, deviceObj->getDispatch()));
+      decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
+      decltype(auto) accessMask = vk::AccessFlagBits2(vku::getAccessMaskByImageUsage(deviceObj->get<ResourceObj>(this->instanceBuild)->getBufferUsage()));
 
       // 
       uploaderObj->writeUploadToResourceCmd(UploadCommandWriteInfo{
@@ -229,13 +234,6 @@ namespace ANAMED {
         .bunchBuffer = instanceOffset,
         .dstBuffer = BufferRegion{this->instanceExtBuffer, DataRegion{ 0ull, sizeof(InstanceInfo), this->cInfo->instances->size() * sizeof(InstanceInfo) }}
       });
-
-      //
-      decltype(auto) accelInfo = infoMap->get<vk::AccelerationStructureCreateInfoKHR>(vk::StructureType::eAccelerationStructureCreateInfoKHR);
-      decltype(auto) accelGeomInfo = infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR);
-      decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelGeomInfo->setGeometries(this->instances), this->cInfo->limit, deviceObj->getDispatch()));
-      decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
-      decltype(auto) accessMask = vk::AccessFlagBits2(vku::getAccessMaskByImageUsage(deviceObj->get<ResourceObj>(this->instanceBuild)->getBufferUsage()));
 
       //
       decltype(auto) bufferBarriersBegin = std::vector<vk::BufferMemoryBarrier2>{
@@ -301,55 +299,67 @@ namespace ANAMED {
 
     //
     virtual FenceType buildStructure(cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}) {
-      this->updateInstances();
-
-      //
-      decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo {.info = info ? info.value() : this->cInfo->info } };
-      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
-      decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(Handle(this->cInfo->uploader, HandleType::eUploader));
-
-      //
-      decltype(auto) memReqs = uploaderObj->getMemoryRequirements();
-      uintptr_t instanceDevSize = cpp21::tiled(this->cInfo->instances->size() * sizeof(InstanceDevInfo), memReqs.alignment)* memReqs.alignment;
-      uintptr_t instanceSize = cpp21::tiled(this->cInfo->instances->size() * sizeof(InstanceInfo), memReqs.alignment)* memReqs.alignment;
-
-      //
-      uintptr_t instanceDevOffset = 0ull;
-      uintptr_t instanceOffset = instanceDevSize;
-
-      //
-#ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
-      decltype(auto) instanceDevAlloc = uploaderObj->allocateMappedTemp(instanceDevSize, instanceDevOffset);
-      decltype(auto) instanceAlloc = uploaderObj->allocateMappedTemp(instanceSize, instanceOffset);
-      decltype(auto) mappedBlock = uploaderObj->getMappedBlock();
-      decltype(auto) instancePage = uploaderObj->allocatePage(instanceOffset, instanceSize);
-      decltype(auto) instanceDevPage = uploaderObj->allocatePage(instanceDevOffset, instanceDevSize);
-#endif
-
       // 
-      memcpy(instanceDevPage->mapped, this->instanceDevInfo->data(), this->instanceDevInfo->size() * sizeof(InstanceDevInfo));
-      memcpy(instancePage->mapped, this->instanceInfo->data(), this->instanceInfo->size() * sizeof(InstanceInfo));
+      if (this->cInfo->instances->size() > 0) {
+        if (!this->accelStruct) {
+          this->createStructure(info, false);
+        } else {
+          this->updateInstances();
+        };
+      } else {
 
-      // TODO: Acceleration Structure Build Barriers per Buffers
-      submission.commandInits.push_back([instanceDevOffset, instanceOffset, instancePage, instanceDevPage, dispatch = deviceObj->getDispatch(), this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
-        return this->writeBuildStructureCmd(cmdBuf, instanceDevPage->bunchBuffer, instancePage->bunchBuffer);
-      });
+      };
 
       //
+      if (this->cInfo->instances->size() > 0) {
+        decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo {.info = info ? info.value() : this->cInfo->info } };
+        decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
+        decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(Handle(this->cInfo->uploader, HandleType::eUploader));
+
+        //
+        decltype(auto) memReqs = uploaderObj->getMemoryRequirements();
+        uintptr_t instanceDevSize = cpp21::tiled(this->cInfo->instances->size() * sizeof(InstanceDevInfo), memReqs.alignment) * memReqs.alignment;
+        uintptr_t instanceSize = cpp21::tiled(this->cInfo->instances->size() * sizeof(InstanceInfo), memReqs.alignment) * memReqs.alignment;
+
+        //
+        uintptr_t instanceDevOffset = 0ull;
+        uintptr_t instanceOffset = instanceDevSize;
+
+        //
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
-      submission.submission.onDone.push_back([mappedBlock, instanceDevAlloc, instanceAlloc](cpp21::const_wrap_arg<vk::Result> result) {
-        vmaVirtualFree(mappedBlock, instanceDevAlloc);
-        vmaVirtualFree(mappedBlock, instanceAlloc);
-      });
+        decltype(auto) instanceDevAlloc = uploaderObj->allocateMappedTemp(instanceDevSize, instanceDevOffset);
+        decltype(auto) instanceAlloc = uploaderObj->allocateMappedTemp(instanceSize, instanceOffset);
+        decltype(auto) mappedBlock = uploaderObj->getMappedBlock();
+        decltype(auto) instancePage = uploaderObj->allocatePage(instanceOffset, instanceSize);
+        decltype(auto) instanceDevPage = uploaderObj->allocatePage(instanceDevOffset, instanceDevSize);
 #endif
 
-      //
-      uploaderObj->bindMemoryPages(submission.submission);
-      return ANAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
+        // 
+        memcpy(instanceDevPage->mapped, this->instanceDevInfo->data(), this->instanceDevInfo->size() * sizeof(InstanceDevInfo));
+        memcpy(instancePage->mapped, this->instanceInfo->data(), this->instanceInfo->size() * sizeof(InstanceInfo));
+
+        // TODO: Acceleration Structure Build Barriers per Buffers
+        submission.commandInits.push_back([instanceDevOffset, instanceOffset, instancePage, instanceDevPage, dispatch = deviceObj->getDispatch(), this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+          return this->writeBuildStructureCmd(cmdBuf, instanceDevPage->bunchBuffer, instancePage->bunchBuffer);
+        });
+
+        //
+#ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
+        submission.submission.onDone.push_back([mappedBlock, instanceDevAlloc, instanceAlloc](cpp21::const_wrap_arg<vk::Result> result) {
+          vmaVirtualFree(mappedBlock, instanceDevAlloc);
+          vmaVirtualFree(mappedBlock, instanceAlloc);
+          });
+#endif
+
+        //
+        uploaderObj->bindMemoryPages(submission.submission);
+        return ANAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
+      };
+      return FenceType{};
     };
 
     //
-    virtual FenceType createStructure() {
+    virtual FenceType createStructure(cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}, bool const& needsBuild = true) {
       this->updateInstances();
 
       //
@@ -443,8 +453,12 @@ namespace ANAMED {
       });
 
       //
-      //return std::get<0>(*this->buildStructure())->get();
-      return this->buildStructure();
+      if (needsBuild) {
+        return this->buildStructure(info);
+      }
+      else {
+        return FenceType();
+      };
     };
 
   protected:
@@ -471,7 +485,7 @@ namespace ANAMED {
 
       //
       if (this->cInfo->instances->size() > 0 && !this->handle) {
-        this->createStructure();
+        this->createStructure(cInfo->info);
       };
 
       //

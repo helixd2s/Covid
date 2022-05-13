@@ -146,8 +146,6 @@ namespace ANAMED {
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(Handle(this->cInfo->uploader, HandleType::eUploader));
       decltype(auto) accelGeomInfo = infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR);
-
-      //
       decltype(auto) accelInfo = infoMap->get<vk::AccelerationStructureCreateInfoKHR>(vk::StructureType::eAccelerationStructureCreateInfoKHR);
       decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelGeomInfo->setGeometries(this->geometryInfos), this->cInfo->limits, deviceObj->getDispatch()));
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
@@ -224,47 +222,58 @@ namespace ANAMED {
 
     //
     virtual FenceType buildStructure(cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}) {
-      this->updateGeometries();
+      //
+      if (this->cInfo->geometries->size() > 0) {
+        if (!this->accelStruct) {
+          this->createStructure(info, false);
+        } else {
+          this->updateGeometries();
+        };
+      } else {
+
+      };
 
       //
-      decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo {.info = info ? info.value() : this->cInfo->info } };
-      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
-      decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(Handle(this->cInfo->uploader, HandleType::eUploader));
+      if (this->cInfo->geometries->size() > 0) {
+        decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo {.info = info ? info.value() : this->cInfo->info } };
+        decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
+        decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(Handle(this->cInfo->uploader, HandleType::eUploader));
 
-      //
-      decltype(auto) memReqs = uploaderObj->getMemoryRequirements();
-      uintptr_t geometryOffset = 0ull;
-      uintptr_t geometrySize = cpp21::tiled(this->cInfo->geometries->size() * sizeof(GeometryInfo), memReqs.alignment) * memReqs.alignment;
+        //
+        decltype(auto) memReqs = uploaderObj->getMemoryRequirements();
+        uintptr_t geometryOffset = 0ull;
+        uintptr_t geometrySize = cpp21::tiled(this->cInfo->geometries->size() * sizeof(GeometryInfo), memReqs.alignment) * memReqs.alignment;
 
-      //
+        //
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
-      decltype(auto) geometryAlloc = uploaderObj->allocateMappedTemp(geometrySize, geometryOffset);
-      decltype(auto) memPage = uploaderObj->allocatePage(geometryOffset, geometrySize);//allocatePage
+        decltype(auto) geometryAlloc = uploaderObj->allocateMappedTemp(geometrySize, geometryOffset);
+        decltype(auto) memPage = uploaderObj->allocatePage(geometryOffset, geometrySize);//allocatePage
 #endif
 
-      // 
-      memcpy(memPage->mapped, this->cInfo->geometries->data(), geometrySize);
+        // 
+        memcpy(memPage->mapped, this->cInfo->geometries->data(), geometrySize);
 
-      // TODO: Acceleration Structure Build Barriers per Buffers
-      submission.commandInits.push_back([geometryOffset,dispatch=deviceObj->getDispatch(), memPage, this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
-        return this->writeBuildStructureCmd(cmdBuf, memPage->bunchBuffer);
-      });
+        // TODO: Acceleration Structure Build Barriers per Buffers
+        submission.commandInits.push_back([geometryOffset, dispatch = deviceObj->getDispatch(), memPage, this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+          return this->writeBuildStructureCmd(cmdBuf, memPage->bunchBuffer);
+        });
 
-      //
+        //
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
-      submission.submission.onDone.push_back([memPage, mappedBlock = uploaderObj->getMappedBlock(), geometryAlloc](cpp21::const_wrap_arg<vk::Result> result) {
-        vmaVirtualFree(mappedBlock, geometryAlloc);
-        memPage->destructor();
-      });
+        submission.submission.onDone.push_back([memPage, mappedBlock = uploaderObj->getMappedBlock(), geometryAlloc](cpp21::const_wrap_arg<vk::Result> result) {
+          vmaVirtualFree(mappedBlock, geometryAlloc);
+          memPage->destructor();
+        });
 #endif
 
-      //
-      uploaderObj->bindMemoryPages(submission.submission);
-      return ANAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
+        //
+        uploaderObj->bindMemoryPages(submission.submission);
+        return ANAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
+      };
     };
 
     //
-    virtual FenceType createStructure() {
+    virtual FenceType createStructure(cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}, bool const& needsBuild = true) {
       this->updateGeometries();
 
       //
@@ -337,31 +346,32 @@ namespace ANAMED {
       });
 
       //
-      //return std::get<0>(*this->buildStructure())->get();
-      return this->buildStructure();
+      if (needsBuild) {
+        return this->buildStructure(info);
+      };
+      return FenceType();
     };
 
     // 
     virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<GeometryLevelCreateInfo> cInfo = GeometryLevelCreateInfo{}) {
       if (cInfo) { this->cInfo = cInfo; };
-      decltype(auto) device = this->base.as<vk::Device>();
 
       //
       decltype(auto) accelInfo = infoMap->set(vk::StructureType::eAccelerationStructureCreateInfoKHR, vk::AccelerationStructureCreateInfoKHR{
         .createFlags = vk::AccelerationStructureCreateFlagsKHR{},
         .type = vk::AccelerationStructureTypeKHR::eBottomLevel
-      });
+        });
 
       //
       decltype(auto) accelGeomInfo = infoMap->set(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR, vk::AccelerationStructureBuildGeometryInfoKHR{
         .type = accelInfo->type,
         .flags = vk::BuildAccelerationStructureFlagBitsKHR::eAllowUpdate | vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace,
         .mode = vk::BuildAccelerationStructureModeKHR::eBuild
-      });
+        });
 
       //
       if (this->cInfo->geometries->size() > 0 && !this->handle) {
-        this->createStructure();
+        this->createStructure(cInfo->info);
       };
 
       //
