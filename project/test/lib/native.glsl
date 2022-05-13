@@ -539,7 +539,7 @@ vec4 interpolate(in mat3x4 vertices, in vec2 barycentric) {
 
 //
 InstanceInfo getInstance_(in InstanceData data, in uint32_t index) {
-  return data.infos[index];
+  return data.infos[index&0x7FFFFFFFu];
 };
 
 //
@@ -547,7 +547,7 @@ InstanceInfo getInstance_(in uint64_t data, in uint32_t index) {
   InstanceInfo info;
   info.data = 0u;
 
-  if (data > 0) { info = getInstance_(InstanceData(data), index); }; 
+  if (data > 0) { info = getInstance_(InstanceData(data), (index&0x7FFFFFFFu)); }; 
   return info;
 };
 
@@ -555,6 +555,7 @@ InstanceInfo getInstance_(in uint64_t data, in uint32_t index) {
 InstanceInfo getInstance_(in InstanceAddressInfo addressInfo, in uint32_t index) {
   InstanceInfo info;
   info.data = 0u;
+  index &= 0x7FFFFFFFu;
   if (index >= 0 && index < addressInfo.instanceCount) {
     info = getInstance_(addressInfo.data, index);
   };
