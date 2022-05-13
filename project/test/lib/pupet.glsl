@@ -101,10 +101,9 @@ IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayDat
   };
 
   // prefer less-risky ways?
-  //IntersectionInfo opaqueIntersection = traceRaysOpaque(addressInfo, rayData, maxT);
-  //IntersectionInfo translucentIntersection = traceRaysTransparent(addressInfo, rayData, opaqueIntersection.hitT);
-  //intersection = translucentIntersection.hitT <= opaqueIntersection.hitT ? translucentIntersection : opaqueIntersection;
+  //intersection = traceRaysTransparent(addressInfo, rayData, 10000.f, false);
 
+  //
   return intersection;
 };
 

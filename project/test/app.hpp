@@ -247,8 +247,7 @@ public:
         .framebuffer = framebufferObj.as<uintptr_t>(),
         .swapchain = swapchainObj.as<uintptr_t>(),
         .pingpong = pingPongObj.as<uintptr_t>(),
-        .instanceDraws = modelObj->getDefaultScene()->instanced->getDrawInfo(),
-        // # yet another std::optional problem (implicit)
+        .instanceDraws = modelObj->getDefaultScene()->opaque->instanced->getDrawInfo(),
         .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
       }),
       .submission = ANAMED::SubmissionInfo{
@@ -264,8 +263,7 @@ public:
         .framebuffer = framebufferObj.as<uintptr_t>(),
         .swapchain = swapchainObj.as<uintptr_t>(),
         .pingpong = pingPongObj.as<uintptr_t>(),
-        .instanceDraws = modelObj->getDefaultScene()->instanced->getDrawInfo(),
-        // # yet another std::optional problem (implicit)
+        .instanceDraws = modelObj->getDefaultScene()->translucent->instanced->getDrawInfo(),
         .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
       }),
       .submission = ANAMED::SubmissionInfo{
@@ -425,9 +423,7 @@ public:
 
   //
   void loadModel(std::string model, float scale = 1.f) {
-    instanceAddressBlock = ANAMED::InstanceAddressBlock{
-      .opaqueAddressInfo = (modelObj = gltfLoaderObj->load(model, this->scale = scale))->getDefaultScene()->instanced->getAddressInfo()
-    };
+    instanceAddressBlock = (modelObj = gltfLoaderObj->load(model, this->scale = scale))->getDefaultScene()->addressBlock;
   };
 
 protected: 

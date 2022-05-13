@@ -20,10 +20,13 @@ layout(location = 2) out vec4 position;
 layout(location = 3) out vec4 texcoord;
 layout(location = 4) out vec4 normals;
 
-//
-#ifndef TRANSLUCENT
-layout(early_fragment_tests) in;
-#endif
+// CONFLICT WITH CONVERVATIVE RASTERIZATION :(
+//#ifndef TRANSLUCENT
+//layout (early_fragment_tests) in;
+//#endif
+
+// 
+layout (depth_any) out float gl_FragDepth;
 
 //
 // We prefer to use refraction and ray-tracing for transparent effects...
@@ -36,13 +39,6 @@ void main() {
   // 
   InstanceInfo instanceInfo = getInstance(instanceDrawInfo.data, 0u);
   GeometryInfo geometryInfo = getGeometry(instanceInfo, geometryIndex);
-
-  // if translucent - discard!
-#ifdef TRANSLUCENT
-  if ((geometryInfo.flags&1u) == 0u) { discard; };
-#else
-  if ((geometryInfo.flags&1u) != 0u) { discard; };
-#endif
 
   //
   GeometryExtData geometry = getGeometryData(geometryInfo, pIndices.z);
@@ -58,7 +54,6 @@ void main() {
 #endif
 
   // alpha and depth depth test fail
-
   if (
 #ifdef TRANSLUCENT
     materialPix.color[MATERIAL_ALBEDO].a < 0.01f || 
@@ -73,6 +68,7 @@ void main() {
     baryData = vec4(pBary, 1.f);
     position = vec4(pScreen.xyz/pScreen.w, 1.f);
     texcoord = vec4(pTexcoord.xyz,1.f);
+    gl_FragDepth = gl_FragCoord.z;
 
     // 
     const uint rasterId = atomicAdd(counters[RASTER_COUNTER], 1);//subgroupAtomicAdd(RASTER_COUNTER);

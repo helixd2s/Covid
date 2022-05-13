@@ -45,7 +45,29 @@ namespace ANAMED
   //
   struct GltfInstanced : std::enable_shared_from_this<GltfInstanced> {
     cpp21::bucket<InstanceDataInfo> instances = std::vector<InstanceDataInfo>{};
+
+    //
     WrapShared<InstanceLevelObj> instanced = {};
+
+    //
+    uintptr_t iterator = 0ull;
+  };
+
+  //
+  struct GltfScene : std::enable_shared_from_this<GltfScene> {
+    std::shared_ptr<GltfInstanced> opaque = {};
+    std::shared_ptr<GltfInstanced> translucent = {};
+    InstanceAddressBlock addressBlock = {};
+  };
+
+  //
+  struct GltfMesh : std::enable_shared_from_this<GltfMesh> {
+    cpp21::shared_vector<GeometryExtension> extensions = {};
+    cpp21::shared_vector<GeometryInfo> geometries = {};
+
+    //
+    WrapShared<GeometryLevelObj> structure = {};
+    WrapShared<ResourceObj> extensionBuffer = {};
   };
 
   //
@@ -56,8 +78,6 @@ namespace ANAMED
     tinygltf::Model model;
 
     // data
-    std::vector<cpp21::shared_vector<GeometryExtension>> extensions = {};
-    std::vector<cpp21::shared_vector<GeometryInfo>> geometries = {};
     std::vector<MaterialInfo> materials = {};
     std::vector<BufferRegion> regions = {};
 
@@ -72,12 +92,12 @@ namespace ANAMED
 
     // objects
     std::vector<WrapShared<ResourceObj>> buffers = {};
-    std::vector<WrapShared<GeometryLevelObj>> meshes = {};
 
     // 
-    std::vector<std::shared_ptr<GltfInstanced>> scenes = {};
-    std::vector<WrapShared<ResourceObj>> extensionBuffers = {};
-    
+    std::vector<std::shared_ptr<GltfMesh>> opaqueMeshes = {};
+    std::vector<std::shared_ptr<GltfMesh>> translucentMeshes = {};
+    std::vector<std::shared_ptr<GltfScene>> scenes = {};
+
     //
     std::unordered_map<uintptr_t, bool> translucentTextures = {};
     std::unordered_map<uintptr_t, bool> translucentMaterials = {};
@@ -90,18 +110,89 @@ namespace ANAMED
     uintptr_t defaultScene = 0ull;
 
     //
-    virtual std::shared_ptr<GltfInstanced> getDefaultScene() {
+    virtual std::shared_ptr<GltfScene> getDefaultScene() {
       return this->scenes[this->defaultScene];
     };
 
     //
-    virtual std::shared_ptr<GltfInstanced> getScene(uintptr_t const& scene) {
+    virtual std::shared_ptr<GltfScene> getScene(uintptr_t const& scene) {
       return this->scenes[scene];
     };
 
     //
-    virtual std::shared_ptr<GltfInstanced> getScene() {
+    virtual std::shared_ptr<GltfScene> getScene() {
       return this->getDefaultScene();
+    };
+
+    //
+    virtual void updateScene(glm::dmat4x4 preTransform = glm::dmat4x4(1.f), bool isCreate = false) {
+      decltype(auto) gltf = this;
+      uintptr_t i = 0; for (decltype(auto) scene : gltf->model.scenes) {
+        decltype(auto) sceneObj = this->getScene(i++);
+        sceneObj->opaque->iterator = 0ull;
+        sceneObj->translucent->iterator = 0ull;
+        for (decltype(auto) node : scene.nodes) {
+          this->updateNode(sceneObj, gltf->model.nodes[node], preTransform, isCreate);
+        };
+        if (!isCreate) {
+          sceneObj->opaque->instanced->buildStructure();
+          sceneObj->translucent->instanced->buildStructure();
+        };
+      };
+    };
+
+    //
+    virtual void updateInstance(std::shared_ptr<GltfInstanced> inst, std::shared_ptr<GltfMesh> mesh, glm::dmat4 transform = glm::dmat4(1.f), bool isCreate = false) {
+      decltype(auto) gltf = this;
+      decltype(auto) transposed = glm::mat4(glm::transpose(transform));
+
+      //
+      if (mesh->geometries->size() > 0) {
+        if (isCreate) {
+          decltype(auto) devInfo = InstanceDevInfo{
+          .instanceCustomIndex = 0u,
+          .mask = 0xFFu,
+          .instanceShaderBindingTableRecordOffset = 0u,
+          .flags = uint8_t(vk::GeometryInstanceFlagBitsKHR{}),
+          .accelerationStructureReference = mesh->structure->getDeviceAddress()
+          };
+          decltype(auto) instanceInfo = InstanceInfo{
+            .transform = glm::mat3x4(transposed),
+            .prevTransform = glm::mat3x4(transposed)
+          };
+          inst->instances.add(InstanceDataInfo{ .instanceDevInfo = devInfo, .instanceInfo = instanceInfo });
+        }
+        else {
+          inst->instances[inst->iterator].instanceInfo.prevTransform = inst->instances[inst->iterator].instanceInfo.transform;
+          inst->instances[inst->iterator].instanceInfo.transform = glm::mat3x4(transposed);
+        };
+        inst->iterator++;
+      };
+    };
+
+    //
+    virtual void updateNode(std::shared_ptr<GltfScene> scene, tinygltf::Node& node, glm::dmat4 transform = glm::dmat4(1.f), bool isCreate = false) {
+      // 
+      decltype(auto) gltf = this;
+
+      // 
+      auto localTransform = glm::dmat4(1.0);
+      localTransform *= node.matrix.size() >= 16 ? glm::make_mat4(node.matrix.data()) : glm::dmat4(1.0);
+      localTransform *= node.translation.size() >= 3 ? glm::translate(glm::dmat4(1.0), glm::make_vec3(node.translation.data())) : glm::dmat4(1.0);
+      localTransform *= node.scale.size() >= 3 ? glm::scale(glm::dmat4(1.0), glm::make_vec3(node.scale.data())) : glm::dmat4(1.0);
+      localTransform *= node.rotation.size() >= 4 ? glm::mat4_cast(glm::dquat(node.rotation[3], node.rotation[0], node.rotation[1], node.rotation[2])) : glm::dmat4(1.0);
+
+      //
+      if ((node.mesh >= 0) && (node.mesh < gltf->model.meshes.size())) {
+        updateInstance(scene->opaque, gltf->opaqueMeshes[node.mesh], transform * localTransform, isCreate);
+        updateInstance(scene->translucent, gltf->translucentMeshes[node.mesh], transform * localTransform, isCreate);
+      };
+
+      //
+      for (size_t i = 0; i < node.children.size(); i++) {
+        assert((node.children[i] >= 0) && (node.children[i] < gltf->model.nodes.size()));
+        this->updateNode(scene, gltf->model.nodes[node.children[i]], transform * localTransform, isCreate);
+      };
     };
   };
 
@@ -277,11 +368,6 @@ namespace ANAMED
           });
 
         //
-        //device.waitIdle();
-        //deviceObj->tickProcessing();
-
-        //
-        //while (!status->checkStatus()) { deviceObj->tickProcessing(); };
         deviceObj->tickProcessing();
 
         //
@@ -385,11 +471,6 @@ namespace ANAMED
         });
 
         //
-        //device.waitIdle();
-        //deviceObj->tickProcessing();
-
-        //
-        //while (!status->checkStatus()) { deviceObj->tickProcessing(); };
         deviceObj->tickProcessing();
 
         // 
@@ -435,19 +516,19 @@ namespace ANAMED
         });
 
         //
-        //device.waitIdle();
-        //deviceObj->tickProcessing();
-
-        //
-        //while (!status->checkStatus()) { deviceObj->tickProcessing(); };
         deviceObj->tickProcessing();
-        
       };
 
       //
       for (decltype(auto) mesh : gltf->model.meshes) {
         //
-        decltype(auto) extensionBuffer = ANAMED::ResourceObj::make(handle, ANAMED::ResourceCreateInfo{
+        decltype(auto) opaqueMesh = std::make_shared<GltfMesh>();
+        decltype(auto) translucentMesh = std::make_shared<GltfMesh>();
+
+        //
+        opaqueMesh->geometries = cpp21::shared_vector<GeometryInfo>();
+        opaqueMesh->extensions = cpp21::shared_vector<GeometryExtension>();
+        opaqueMesh->extensionBuffer = ANAMED::ResourceObj::make(handle, ANAMED::ResourceCreateInfo{
           .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
           .bufferInfo = ANAMED::BufferCreateInfo{
             .size = mesh.primitives.size() * sizeof(GeometryExtension),
@@ -456,99 +537,139 @@ namespace ANAMED
         });
 
         //
-        uint64_t extensionAddress = extensionBuffer->getDeviceAddress();
-
-        //
-        gltf->extensions.push_back(std::vector<ANAMED::GeometryExtension>{});
-        gltf->geometries.push_back(std::vector<ANAMED::GeometryInfo>{});
-        gltf->extensionBuffers.push_back(extensionBuffer);
-
-        // GEOMETRIES BUFFER BROKEN FOR NO "/fsanitize=address"
-        auto extensions = gltf->extensions.back();
-        auto geometries = gltf->geometries.back();
+        translucentMesh->geometries = cpp21::shared_vector<GeometryInfo>();
+        translucentMesh->extensions = cpp21::shared_vector<GeometryExtension>();
+        translucentMesh->extensionBuffer = ANAMED::ResourceObj::make(handle, ANAMED::ResourceCreateInfo{
+          .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
+          .bufferInfo = ANAMED::BufferCreateInfo{
+            .size = mesh.primitives.size() * sizeof(GeometryExtension),
+            .type = ANAMED::BufferType::eUniversal,
+          }
+        });
 
         //
         uintptr_t pCount = 0ull;
         for (decltype(auto) primitive : mesh.primitives) {
           uintptr_t pId = pCount++;
-          //if (pId > 1) break; // for debug
 
-          // 
+          //
           decltype(auto) vertices = handleAccessor(primitive.attributes.at("POSITION"));
           decltype(auto) indices = handleAccessor(primitive.indices, true);
           decltype(auto) nullView = ANAMED::BufferViewInfo{ .region = ANAMED::BufferViewRegion{.deviceAddress = 0ull, .stride = 0ull, .size = 0ull}, .format = ANAMED::BufferViewFormat::eNone };
 
           //
           decltype(auto) materialId = std::min(std::max(uintptr_t(primitive.material), 0ull), uintptr_t(gltf->materials.size() - 1u));
-          geometries->push_back(ANAMED::GeometryInfo{
+          const bool isTranslucent = false;//gltf->translucentMaterials.at(uintptr_t(materialId));
+          decltype(auto) meshObj = isTranslucent ? translucentMesh : opaqueMesh;
+
+          //
+          meshObj->geometries->push_back(ANAMED::GeometryInfo{
             .vertices = vertices,
             .indices = primitive.indices >= 0 ? indices : nullView,
-            .extensionRef = extensionAddress + pId * sizeof(ANAMED::GeometryExtension),
+            .extensionRef = meshObj->extensionBuffer->getDeviceAddress() + pId * sizeof(ANAMED::GeometryExtension),
             .materialRef = materialAddress + materialId * sizeof(ANAMED::MaterialInfo),
             .primitiveCount = uint32_t(gltf->model.accessors[primitive.indices >= 0 ? primitive.indices : primitive.attributes.at("POSITION")].count) / 3u,
-            .flags = (gltf->translucentMaterials.at(uintptr_t(materialId)) ? vk::GeometryFlagBitsKHR{} : vk::GeometryFlagBitsKHR::eOpaque)
+            .flags = isTranslucent ? vk::GeometryFlagBitsKHR{} : vk::GeometryFlagBitsKHR::eOpaque
           });
 
           //
-          extensions->push_back(ANAMED::GeometryExtension{});
-          extensions->back().bufferViews[uint32_t(ANAMED::BufferBind::eExtTexcoord)] = nullView;
-          extensions->back().bufferViews[uint32_t(ANAMED::BufferBind::eExtNormals)] = nullView;
-          extensions->back().bufferViews[uint32_t(ANAMED::BufferBind::eExtTangent)] = nullView;
+          meshObj->extensions->push_back(ANAMED::GeometryExtension{});
+          auto& extension = meshObj->extensions->back();
+
+          //
+          extension.bufferViews[uint32_t(ANAMED::BufferBind::eExtTexcoord)] = nullView;
+          extension.bufferViews[uint32_t(ANAMED::BufferBind::eExtNormals)] = nullView;
+          extension.bufferViews[uint32_t(ANAMED::BufferBind::eExtTangent)] = nullView;
 
           //
           for (decltype(auto) attrib : primitive.attributes) {
             if (attrib.first == "TEXCOORD_0") {
-              extensions->back().bufferViews[uint32_t(ANAMED::BufferBind::eExtTexcoord)] = handleAccessor(attrib.second);
+              extension.bufferViews[uint32_t(ANAMED::BufferBind::eExtTexcoord)] = handleAccessor(attrib.second);
             };
             if (attrib.first == "NORMAL") {
-              extensions->back().bufferViews[uint32_t(ANAMED::BufferBind::eExtNormals)] = handleAccessor(attrib.second);
+              extension.bufferViews[uint32_t(ANAMED::BufferBind::eExtNormals)] = handleAccessor(attrib.second);
             };
             if (attrib.first == "TANGENT") {
-              extensions->back().bufferViews[uint32_t(ANAMED::BufferBind::eExtTangent)] = handleAccessor(attrib.second);
+              extension.bufferViews[uint32_t(ANAMED::BufferBind::eExtTangent)] = handleAccessor(attrib.second);
             };
           };
         };
 
         {
           //
-          decltype(auto) status = uploaderObj->executeUploadToResourceOnce(ANAMED::UploadExecutionOnce{
-            .host = cpp21::data_view<char8_t>((char8_t*)extensions->data(), 0ull, cpp21::bytesize(*extensions)),
-            .writeInfo = ANAMED::UploadCommandWriteInfo{
-              .dstBuffer = ANAMED::BufferRegion{extensionBuffer.as<vk::Buffer>(), ANAMED::DataRegion{0ull, sizeof(ANAMED::GeometryExtension), cpp21::bytesize(*extensions)}},
-            }
+          if (translucentMesh->extensions->size() > 0) {
+            decltype(auto) translucentStatus = uploaderObj->executeUploadToResourceOnce(ANAMED::UploadExecutionOnce{
+              .host = cpp21::data_view<char8_t>((char8_t*)translucentMesh->extensions->data(), 0ull, cpp21::bytesize(*translucentMesh->extensions)),
+              .writeInfo = ANAMED::UploadCommandWriteInfo{
+                .dstBuffer = ANAMED::BufferRegion{translucentMesh->extensionBuffer.as<vk::Buffer>(), ANAMED::DataRegion{0ull, sizeof(ANAMED::GeometryExtension), cpp21::bytesize(*translucentMesh->extensions)}},
+              }
+              });
+          };
+
+          //
+          if (opaqueMesh->extensions->size() > 0) {
+            decltype(auto) opaqueStatus = uploaderObj->executeUploadToResourceOnce(ANAMED::UploadExecutionOnce{
+              .host = cpp21::data_view<char8_t>((char8_t*)opaqueMesh->extensions->data(), 0ull, cpp21::bytesize(*opaqueMesh->extensions)),
+              .writeInfo = ANAMED::UploadCommandWriteInfo{
+                .dstBuffer = ANAMED::BufferRegion{opaqueMesh->extensionBuffer.as<vk::Buffer>(), ANAMED::DataRegion{0ull, sizeof(ANAMED::GeometryExtension), cpp21::bytesize(*opaqueMesh->extensions)}},
+              }
+              });
+          };
+
+          //
+          deviceObj->tickProcessing();
+
+          //
+          opaqueMesh->structure = ANAMED::GeometryLevelObj::make(handle, ANAMED::GeometryLevelCreateInfo{
+            .geometries = opaqueMesh->geometries,
+            .uploader = uploaderObj.as<uintptr_t>(),
           });
 
           //
-          device.waitIdle();
-          deviceObj->tickProcessing();
+          translucentMesh->structure = ANAMED::GeometryLevelObj::make(handle, ANAMED::GeometryLevelCreateInfo{
+            .geometries = translucentMesh->geometries,
+            .uploader = uploaderObj.as<uintptr_t>(),
+          });
 
           //
-          while (!status->checkStatus()) { deviceObj->tickProcessing(); };
-          deviceObj->tickProcessing();
-          
-          //
-          // GEOMETRIES BUFFER BROKEN FOR NO "/fsanitize=address"
-          gltf->meshes.push_back(ANAMED::GeometryLevelObj::make(handle, ANAMED::GeometryLevelCreateInfo{
-            .geometries = geometries,
-            .uploader = uploaderObj.as<uintptr_t>(),
-          }));
+          gltf->opaqueMeshes.push_back(opaqueMesh);
+          gltf->translucentMeshes.push_back(translucentMesh);
         };
+
       };
 
       //
-      uintptr_t iter = 0ull;
       uintptr_t s = 0u;;
       for (decltype(auto) scene : gltf->model.scenes) {
         uintptr_t sceneId = s++;
         decltype(auto) preTransform = glm::dmat4(1.f) * glm::scale(glm::dmat4(1.0f), glm::dvec3(1.f * scale, 1.f * scale, 1.f * scale));
-        decltype(auto) inst = std::make_shared<GltfInstanced>(); gltf->scenes.push_back(inst);
-        this->updateNodes(preTransform, true);
+        decltype(auto) scene = std::make_shared<GltfScene>(); 
 
         //
-        inst->instanced = ANAMED::InstanceLevelObj::make(handle, ANAMED::InstanceLevelCreateInfo{
-          .instances = inst->instances,
+        scene->opaque = std::make_shared<GltfInstanced>();
+        scene->translucent = std::make_shared<GltfInstanced>();
+
+        //
+        gltf->scenes.push_back(scene);
+        gltf->updateScene(preTransform, true);
+
+        //
+        scene->opaque->instanced = ANAMED::InstanceLevelObj::make(handle, ANAMED::InstanceLevelCreateInfo{
+          .instances = scene->opaque->instances,
           .uploader = this->cInfo->uploader,
         });
+
+        //
+        scene->translucent->instanced = ANAMED::InstanceLevelObj::make(handle, ANAMED::InstanceLevelCreateInfo{
+          .instances = scene->translucent->instances,
+          .uploader = this->cInfo->uploader,
+        });
+
+        //
+        scene->addressBlock = InstanceAddressBlock{
+          .opaqueAddressInfo = scene->opaque->instanced->getAddressInfo(),
+          .transparentAddressInfo = scene->translucent->instanced->getAddressInfo()
+        };
       };
 
       //
@@ -565,95 +686,20 @@ namespace ANAMED
       return this->gltfModels.back();
     };
 
-    //
-    virtual void updateNodes(glm::dmat4x4 preTransform = glm::dmat4x4(1.f), bool isCreate = false) {
-      decltype(auto) gltf = this->gltfModels[0u];
-      uintptr_t i = 0; for (decltype(auto) scene : gltf->model.scenes) {
-        decltype(auto) inst = this->getScene(i++);
-        decltype(auto) iter = 0ull;
-        for (decltype(auto) node : scene.nodes) {
-          this->updateNode(inst, iter, gltf->model.nodes[node], preTransform, isCreate);
-        };
-        if (!isCreate) {
-          inst->instanced->buildStructure();
-        };
-      };
-    };
+    
 
     //
-    virtual void updateInstance(std::shared_ptr<GltfInstanced> inst, uintptr_t& iter, intptr_t const& meshId, glm::dmat4 transform = glm::dmat4(1.f)) {
-      decltype(auto) gltf = this->gltfModels[0u];
-      decltype(auto) mesh = gltf->model.meshes[meshId];
-      decltype(auto) transposed = glm::mat4(glm::transpose(transform));
-      
-      inst->instances[iter].instanceInfo.prevTransform = inst->instances[iter].instanceInfo.transform;
-      inst->instances[iter].instanceInfo.transform = glm::mat3x4(transposed);
-    };
-
-    //
-    virtual void createInstance(std::shared_ptr<GltfInstanced> inst, uintptr_t& iter, uintptr_t const& meshId, glm::dmat4 transform = glm::dmat4(1.f)) {
-      decltype(auto) gltf = this->gltfModels[0u];
-      decltype(auto) mesh = gltf->model.meshes[meshId];
-      decltype(auto) transposed = glm::mat4(glm::transpose(transform));
-      decltype(auto) devInfo = InstanceDevInfo{
-        .instanceCustomIndex = 0u,
-        .mask = 0xFFu,
-        .instanceShaderBindingTableRecordOffset = 0u,
-        .flags = uint8_t(vk::GeometryInstanceFlagBitsKHR{}),
-        .accelerationStructureReference = gltf->meshes[meshId]->getDeviceAddress()
-      };
-      decltype(auto) instanceInfo = InstanceInfo{
-        .transform = glm::mat3x4(transposed),
-        .prevTransform = glm::mat3x4(transposed)
-      };
-      inst->instances.add(InstanceDataInfo{ .instanceDevInfo = devInfo, .instanceInfo = instanceInfo });
-    };
-
-    //
-    virtual void updateNode(std::shared_ptr<GltfInstanced> inst, uintptr_t& iter, tinygltf::Node& node, glm::dmat4 transform = glm::dmat4(1.f), bool isCreate = false) {
-      // 
-      decltype(auto) gltf = this->gltfModels[0u];
-
-      //
-      std::function<void(tinygltf::Node&, glm::dmat4 parentTransform)> handleNodes = {};
-      handleNodes = [=, &handleNodes, &iter, this](tinygltf::Node& node, glm::dmat4 transform = glm::dmat4(1.f)) {
-        // 
-        auto localTransform = glm::dmat4(1.0);
-        localTransform *= node.matrix.size() >= 16 ? glm::make_mat4(node.matrix.data()) : glm::dmat4(1.0);
-        localTransform *= node.translation.size() >= 3 ? glm::translate(glm::dmat4(1.0), glm::make_vec3(node.translation.data())) : glm::dmat4(1.0);
-        localTransform *= node.scale.size() >= 3 ? glm::scale(glm::dmat4(1.0), glm::make_vec3(node.scale.data())) : glm::dmat4(1.0);
-        localTransform *= node.rotation.size() >= 4 ? glm::mat4_cast(glm::dquat(node.rotation[3], node.rotation[0], node.rotation[1], node.rotation[2])) : glm::dmat4(1.0);
-
-        //
-        if ((node.mesh >= 0) && (node.mesh < gltf->model.meshes.size())) {
-          if (isCreate) { createInstance(inst, iter, node.mesh, transform * localTransform); }
-          else { updateInstance(inst, iter, node.mesh, transform * localTransform); };
-          iter++;
-        };
-
-        //
-        for (size_t i = 0; i < node.children.size(); i++) {
-          assert((node.children[i] >= 0) && (node.children[i] < gltf->model.nodes.size()));
-          handleNodes(gltf->model.nodes[node.children[i]], transform * localTransform);
-        };
-      };
-
-      //
-      handleNodes(node, transform);
-    };
-
-    //
-    virtual std::shared_ptr<GltfInstanced> getDefaultScene() {
+    virtual std::shared_ptr<GltfScene> getDefaultScene() {
       return this->gltfModels[0u]->getDefaultScene();
     };
 
     //
-    virtual std::shared_ptr<GltfInstanced> getScene(uintptr_t const& scene) {
+    virtual std::shared_ptr<GltfScene> getScene(uintptr_t const& scene) {
       return this->gltfModels[0u]->getScene(scene);
     };
 
     //
-    virtual std::shared_ptr<GltfInstanced> getScene() {
+    virtual std::shared_ptr<GltfScene> getScene() {
       return this->gltfModels[0u]->getScene();
     };
 

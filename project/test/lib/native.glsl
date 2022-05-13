@@ -34,6 +34,8 @@ const float INV_TWO_PI = 0.15915494309189535f;
 #extension GL_EXT_control_flow_attributes : require
 #extension GL_EXT_shader_realtime_clock : require
 #extension GL_KHR_shader_subgroup_ballot : require
+//#extension GL_ARB_conservative_depth : require
+
 #ifdef USE_ATOMIC_FLOAT
 #extension GL_EXT_shader_atomic_float : require
 #endif

@@ -34,18 +34,11 @@ void main() {
   
 
   // if translucent - discard
-#ifdef TRANSLUCENT
-  if ((geometryInfo.flags&1u) == 0u) 
-#else
-  if ((geometryInfo.flags&1u) != 0u) 
-#endif
-  {
-    gl_Position = vec4(0.f.xxx, 1.f);
-    pColor = vec4(0.f.xxx, 0.f);
-    pBary = vec3(0.f.xxx);
-    pScreen = vec4(0.f.xxx, 1.f);
-    pTexcoord = vec4(0.f.xxx, 0.f);
-  } else 
+//#ifdef TRANSLUCENT
+  //if ((geometryInfo.flags&1u) == 0u) 
+//#else
+  //if ((geometryInfo.flags&1u) != 0u) 
+//#endif
   {
     gl_Position = position;
     pColor = vec4(0.f.xxx, 0.f);
