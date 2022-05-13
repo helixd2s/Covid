@@ -335,6 +335,7 @@ public:
     co_yield true;
   };
 
+  //
   virtual void initSurface(GLFWwindow* window) {
     // 
     this->controller = std::make_shared<Controller>(this->listener = std::make_shared<GLFWListener>(this->window = window));
@@ -348,7 +349,7 @@ public:
       .layout = descriptorsObj.as<vk::PipelineLayout>(),
       .surface = surface,
       .info = qfAndQueue
-      });
+    });
 
     //
     renderArea = swapchainObj->getRenderArea();
@@ -401,14 +402,14 @@ public:
       .layout = descriptorsObj.as<vk::PipelineLayout>(),
       .extent = renderArea.extent,
       .info = qfAndQueue
-      });
+    });
 
     //
     framebufferObj[1] = ANAMED::FramebufferObj::make(deviceObj.with(0u), ANAMED::FramebufferCreateInfo{
       .layout = descriptorsObj.as<vk::PipelineLayout>(),
       .extent = renderArea.extent,
       .info = qfAndQueue
-      });
+    });
 
     //
     pingPongObj = ANAMED::PingPongObj::make(deviceObj.with(0u), ANAMED::PingPongCreateInfo{
