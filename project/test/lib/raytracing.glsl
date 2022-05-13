@@ -41,16 +41,16 @@ struct PathTraceCommand {
   RayData rayData;
   PixelSurfaceInfoRef surface;
   IntersectionInfo intersection;
-  vec3 normals;
-  vec3 rayDir;
-  vec3 PBR;
-  mat3x3 tbn;
-  uint pixelId;
+  f16vec4 diffuseColor;
+  f16vec3 emissiveColor;
+  f16vec3 normals;
+  f16vec3 PBR;
+  f16mat3x3 tbn;
   float reflCoef;
-  vec4 diffuseColor;
-  vec3 emissiveColor;
-  bool hasHit;
 };
+
+//
+layout(scalar) shared PathTraceCommand cmds[8][32];
 
 //
 struct PathTraceOutput {
@@ -91,8 +91,6 @@ bool intersect(in vec4 sphere, in vec3 O, in vec3 D, inout float tmax) {
 vec3 reflective(in vec3 seed, in vec3 dir, in vec3 normal, in float roughness) {
   return normalize(mix(reflect(dir, normal), randomCosineWeightedHemispherePoint(seed, normal), roughness * random(seed)));
 };
-
-
 
 // 
 IntersectionInfo traceRaysOpaque(in InstanceAddressBlock instance, in RayData rays, in float maxT) {
@@ -236,7 +234,7 @@ vec4 directLighting(in vec3 O, in vec3 N, in vec3 tN, in vec3 r, in float t) {
 };
 
 // 
-RayData handleIntersection(in RayData rayData, in IntersectionInfo intersection, inout PassData passed) {
+RayData handleIntersection(in RayData rayData, inout IntersectionInfo intersection, inout PassData passed) {
   InstanceInfo instanceInfo = getInstance(instancedData, intersection.instanceId);
   GeometryInfo geometryInfo = getGeometry(instanceInfo, intersection.geometryId);
   GeometryExtData geometry = getGeometryData(geometryInfo, intersection.primitiveId);
@@ -305,7 +303,7 @@ RayData handleIntersection(in RayData rayData, in IntersectionInfo intersection,
 };
 
 //
-RayData pathTrace(in RayData rayData, inout float hitDist, inout vec3 firstNormal, inout uvec4 firstIndices, in uint type) {
+RayData pathTrace(inout RayData rayData, inout float hitDist, inout vec3 firstNormal, inout uvec4 firstIndices, in uint type) {
   //
   bool surfaceFound = false;
   float currentT = 0.f;
@@ -329,11 +327,11 @@ RayData pathTrace(in RayData rayData, inout float hitDist, inout vec3 firstNorma
       pass = opaquePass;
 
       //
-      RayData opaqueRayData = handleIntersection(rayData, opaqueIntersection, opaquePass);
       rayData = handleIntersection(rayData, intersection, pass);
 
       // if translucent over opaque (decals)
       if (pass.alphaPassed && opaqueIntersection.hitT <= (intersection.hitT + 0.0001f)) {
+        RayData opaqueRayData = handleIntersection(rayData, opaqueIntersection, opaquePass);
         opaqueRayData.energy.xyz = f16vec3(trueMultColor(opaqueRayData.energy.xyz, pass.alphaColor.xyz));
         rayData = opaqueRayData, intersection = opaqueIntersection, pass = opaquePass;
       };
@@ -373,7 +371,7 @@ RayData pathTrace(in RayData rayData, inout float hitDist, inout vec3 firstNorma
 };
 
 //
-PathTraceOutput pathTraceCommand(in PathTraceCommand cmd, in uint type) {
+PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
   RayData rayData = cmd.rayData;
 
   //
@@ -416,10 +414,10 @@ PathTraceOutput pathTraceCommand(in PathTraceCommand cmd, in uint type) {
   if (type == 2) { additional = clampCol(rayData.emission * vec4(((1.f - reflCoef) ).xxx, 1.f)); };
 
   //
-  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.pixelId);
+  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.rayData.launchId.x + cmd.rayData.launchId.y * extent.x);
 
   // avoid critical error for skyboxed, also near have more priority... also, transparency may incorrect, so doing some exception
-  PixelHitInfoRef hitInfo = getNewHit(cmd.pixelId, type);
+  PixelHitInfoRef hitInfo = getNewHit(cmd.rayData.launchId.x + cmd.rayData.launchId.y * extent.x, type);
   surfaceInfo.color[type] += additional;
 
   // 
@@ -443,8 +441,8 @@ PathTraceOutput pathTraceCommand(in PathTraceCommand cmd, in uint type) {
 };
 
 //
-void retranslateSurface(in PathTraceCommand cmd) {
-  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.pixelId);
+void retranslateSurface(inout PathTraceCommand cmd) {
+  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.rayData.launchId.x + cmd.rayData.launchId.y * extent.x);
   surfaceInfo.indices = uvec4(cmd.intersection.instanceId, cmd.intersection.geometryId, cmd.intersection.primitiveId, 0u);
   surfaceInfo.origin.xyz = cmd.rayData.origin.xyz;
   surfaceInfo.normal = cmd.normals;
@@ -453,12 +451,12 @@ void retranslateSurface(in PathTraceCommand cmd) {
 };
 
 // 
-void blankHit(in PathTraceCommand cmd, in uint type) {
-  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.pixelId);
+void blankHit(inout PathTraceCommand cmd, in uint type) {
+  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.rayData.launchId.x + cmd.rayData.launchId.y * extent.x);
   surfaceInfo.color[type] += vec4(0.f.xxx, 1.f);
 
   //
-  PixelHitInfoRef hitInfo = getNewHit(cmd.pixelId, type);
+  PixelHitInfoRef hitInfo = getNewHit(cmd.rayData.launchId.x + cmd.rayData.launchId.y * extent.x, type);
   hitInfo.origin = vec4(cmd.rayData.origin.xyz, 0.f);
 };
 
