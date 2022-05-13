@@ -410,11 +410,7 @@ namespace ANAMED {
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceGraphicsPipelineLibraryFeaturesEXT, vk::PhysicalDeviceGraphicsPipelineLibraryFeaturesEXT{
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceShaderAtomicFloatFeaturesEXT, vk::PhysicalDeviceShaderAtomicFloatFeaturesEXT{
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceShaderAtomicFloat2FeaturesEXT, vk::PhysicalDeviceShaderAtomicFloat2FeaturesEXT{
-        .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDevicePageableDeviceLocalMemoryFeaturesEXT, vk::PhysicalDevicePageableDeviceLocalMemoryFeaturesEXT{
-        .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceMemoryPriorityFeaturesEXT, vk::PhysicalDeviceMemoryPriorityFeaturesEXT{
         .pNext = nullptr
-        })
-        })
         })
         })
         })

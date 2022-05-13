@@ -386,9 +386,7 @@ namespace ANAMED {
       "VK_EXT_graphics_pipeline_library",
       "VK_EXT_shader_atomic_float",
       "VK_EXT_shader_atomic_float2",
-      "VK_EXT_depth_range_unrestricted",
-      "VK_EXT_pageable_device_local_memory",
-      "VK_EXT_memory_priority"
+      "VK_EXT_depth_range_unrestricted"
     };
     cpp21::shared_vector<std::string> layerList = std::vector<std::string>{
     };
