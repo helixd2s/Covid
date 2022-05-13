@@ -95,9 +95,9 @@ vec3 reflective(in vec3 seed, in vec3 dir, in vec3 normal, in float roughness) {
 
 
 // 
-IntersectionInfo traceRaysOpaque(in InstanceAddressInfo instance, in RayData rays, in float maxT) {
+IntersectionInfo traceRaysOpaque(in InstanceAddressBlock instance, in RayData rays, in float maxT) {
   rayQueryEXT rayQuery;
-  rayQueryInitializeEXT(rayQuery, accelerationStructureEXT(instance.accelStruct), gl_RayFlagsOpaqueEXT, 0xff, rays.origin.xyz, 0.001f, rays.direction.xyz, maxT);
+  rayQueryInitializeEXT(rayQuery, accelerationStructureEXT(instance.addressInfos[0].accelStruct), gl_RayFlagsOpaqueEXT, 0xff, rays.origin.xyz, 0.001f, rays.direction.xyz, maxT);
 
   // 
   float currentT = 10000.f;
@@ -124,7 +124,7 @@ IntersectionInfo traceRaysOpaque(in InstanceAddressInfo instance, in RayData ray
     vec2 attribs = rayQueryGetIntersectionBarycentricsEXT(rayQuery, true);
     result.barycentric = vec3(1.f - attribs.x - attribs.y, attribs);
     result.hitT = rayQueryGetIntersectionTEXT(rayQuery, true);
-    result.instanceId = rayQueryGetIntersectionInstanceIdEXT(rayQuery, true);
+    result.instanceId = (rayQueryGetIntersectionInstanceIdEXT(rayQuery, true) & 0x7FFFFFFF);
     result.geometryId = rayQueryGetIntersectionGeometryIndexEXT(rayQuery, true);
     result.primitiveId = rayQueryGetIntersectionPrimitiveIndexEXT(rayQuery, true);
   };
@@ -134,9 +134,9 @@ IntersectionInfo traceRaysOpaque(in InstanceAddressInfo instance, in RayData ray
 };
 
 // version without over-phasing
-IntersectionInfo traceRaysTransparent(in InstanceAddressInfo instance, in RayData rays, in float maxT, in bool hasRandom) {
+IntersectionInfo traceRaysTransparent(in InstanceAddressBlock instance, in RayData rays, in float maxT, in bool hasRandom) {
   rayQueryEXT rayQuery;
-  rayQueryInitializeEXT(rayQuery, accelerationStructureEXT(instance.accelStruct), 0u, 0xff, rays.origin.xyz, 0.001f, rays.direction.xyz, maxT);
+  rayQueryInitializeEXT(rayQuery, accelerationStructureEXT(instance.addressInfos[1].accelStruct), 0u, 0xff, rays.origin.xyz, 0.001f, rays.direction.xyz, maxT);
   //rayQueryInitializeEXT(rayQuery, accelerationStructureEXT(instance.accelStruct), gl_RayFlagsNoOpaqueEXT, 0xff, rays.origin.xyz, 0.001f, rays.direction.xyz, maxT);
 
   // 
@@ -150,8 +150,8 @@ IntersectionInfo traceRaysTransparent(in InstanceAddressInfo instance, in RayDat
         const uint instanceId = rayQueryGetIntersectionInstanceIdEXT(rayQuery, false);
         const uint geometryId = rayQueryGetIntersectionGeometryIndexEXT(rayQuery, false);
         const uint primitiveId = rayQueryGetIntersectionPrimitiveIndexEXT(rayQuery, false);
-        InstanceInfo instanceInfo = getInstance(instance, instanceId);
-        GeometryInfo geometryInfo = getGeometry(instance, instanceId, geometryId);
+        InstanceInfo instanceInfo = getInstance(instance, 1, instanceId);
+        GeometryInfo geometryInfo = getGeometry(instanceInfo, geometryId);
         const uvec3 indices = readTriangleIndices(geometryInfo.indices, primitiveId);
         const vec2 attribs = rayQueryGetIntersectionBarycentricsEXT(rayQuery, false);
         GeometryExtData geometry = getGeometryData(geometryInfo, primitiveId);
@@ -190,7 +190,7 @@ IntersectionInfo traceRaysTransparent(in InstanceAddressInfo instance, in RayDat
     vec2 attribs = rayQueryGetIntersectionBarycentricsEXT(rayQuery, true);
     result.barycentric = vec3(1.f - attribs.x - attribs.y, attribs);
     result.hitT = rayQueryGetIntersectionTEXT(rayQuery, true);
-    result.instanceId = rayQueryGetIntersectionInstanceIdEXT(rayQuery, true);
+    result.instanceId = 0x80000000 | (rayQueryGetIntersectionInstanceIdEXT(rayQuery, true) & 0x7FFFFFFF);
     result.geometryId = rayQueryGetIntersectionGeometryIndexEXT(rayQuery, true);
     result.primitiveId = rayQueryGetIntersectionPrimitiveIndexEXT(rayQuery, true);
   };
@@ -216,7 +216,7 @@ vec4 directLighting(in vec3 O, in vec3 N, in vec3 tN, in vec3 r, in float t) {
 
   // 
   const bool hasIntersection = intersect(vec4(SO, sunSphere.w), rayData.origin.xyz, rayData.direction.xyz, t);
-  IntersectionInfo intersection = traceRaysTransparent(instancedData.opaqueAddressInfo, rayData, 10000.f, true);
+  IntersectionInfo intersection = traceRaysOpaque(instancedData, rayData, 10000.f);
 
   //
   if (hasIntersection && intersection.hitT >= t && t > 0.f) {
@@ -230,7 +230,7 @@ vec4 directLighting(in vec3 O, in vec3 N, in vec3 tN, in vec3 r, in float t) {
 
 // 
 RayData handleIntersection(in RayData rayData, in IntersectionInfo intersection, inout PassData passed) {
-  InstanceInfo instanceInfo = getInstance(instancedData.opaqueAddressInfo, intersection.instanceId);
+  InstanceInfo instanceInfo = getInstance(instancedData, intersection.instanceId);
   GeometryInfo geometryInfo = getGeometry(instanceInfo, intersection.geometryId);
   GeometryExtData geometry = getGeometryData(geometryInfo, intersection.primitiveId);
   GeometryExtAttrib attrib = interpolate(geometry, intersection.barycentric);
@@ -310,7 +310,7 @@ RayData pathTrace(in RayData rayData, inout float hitDist, inout vec3 firstNorma
     if (luminance(rayData.energy.xyz) < 0.001f) { break; };
 
     // 
-    IntersectionInfo intersection = traceRaysTransparent(instancedData.opaqueAddressInfo, rayData, 10000.f, false);
+    IntersectionInfo intersection = traceRaysOpaque(instancedData, rayData, 10000.f);
 
     //
     if (!all(lessThanEqual(intersection.barycentric, 0.f.xxx)) && intersection.hitT < 10000.f) {

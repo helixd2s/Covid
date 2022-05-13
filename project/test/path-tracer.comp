@@ -49,13 +49,13 @@ void main() {
     //
   #ifdef USE_RASTERIZE_PASS
     vec4 ssLastPos = ssEye;
-    IntersectionInfo intersection = rasterize(instancedData.opaqueAddressInfo, rayData, 10000.f, ssLastPos, false);
+    IntersectionInfo intersection = rasterize(instancedData, rayData, 10000.f, ssLastPos, false);
   #else
-    IntersectionInfo intersection = traceRaysOpaque(instancedData.opaqueAddressInfo, rayData, 10000.f);
+    IntersectionInfo intersection = traceRaysOpaque(instancedData, rayData, 10000.f);
   #endif
 
     // 
-    InstanceInfo instanceInfo = getInstance(instancedData.opaqueAddressInfo, intersection.instanceId);
+    InstanceInfo instanceInfo = getInstance(instancedData, intersection.instanceId);
     GeometryInfo geometryInfo = getGeometry(instanceInfo, intersection.geometryId);
     GeometryExtData geometry = getGeometryData(geometryInfo, intersection.primitiveId);
     GeometryExtAttrib attrib = interpolate(geometry, intersection.barycentric);

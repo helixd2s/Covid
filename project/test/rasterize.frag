@@ -31,13 +31,11 @@ layout (depth_any) out float gl_FragDepth;
 //
 // We prefer to use refraction and ray-tracing for transparent effects...
 void main() {
-
-  //
   uint32_t instanceIndex = pIndices.x;
   uint32_t geometryIndex = pIndices.y;
 
   // 
-  InstanceInfo instanceInfo = getInstance(instanceDrawInfo.data, 0u);
+  InstanceInfo instanceInfo = getInstance_(instanceDrawInfo.data, 0u);
   GeometryInfo geometryInfo = getGeometry(instanceInfo, geometryIndex);
 
   //
@@ -53,12 +51,20 @@ void main() {
   MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), pTexcoord.xy, tbn);
 #endif
 
+  //
+  const uint translucent = 
+#ifdef TRANSLUCENT
+  1u;
+#else
+  0u;
+#endif
+
   // alpha and depth depth test fail
   if (
 #ifdef TRANSLUCENT
     materialPix.color[MATERIAL_ALBEDO].a < 0.01f || 
 #endif
-    texelFetch(textures[framebufferAttachments[5]], ivec2(gl_FragCoord.xy), 0).r <= (gl_FragCoord.z - 0.0001f)
+    texelFetch(textures[framebufferAttachments[0][5]], ivec2(gl_FragCoord.xy), 0).r <= (gl_FragCoord.z - 0.0001f)
   ) {
     discard;
   } else 
@@ -73,7 +79,7 @@ void main() {
     // 
     const uint rasterId = atomicAdd(counters[RASTER_COUNTER], 1);//subgroupAtomicAdd(RASTER_COUNTER);
     if (rasterId < extent.x * extent.y * 16) {
-      const uint oldId = imageAtomicExchange(imagesR32UI[pingpong.images[0]], ivec2(gl_FragCoord.xy), rasterId+1);
+      const uint oldId = imageAtomicExchange(imagesR32UI[pingpong.images[/*translucent*/0]], ivec2(gl_FragCoord.xy), rasterId+1);
       RasterInfoRef rasterInfo = getRasterInfo(rasterId);
       rasterInfo.indices = uvec4(pIndices.xyz, oldId);
       rasterInfo.barycentric = vec4(pBary, 1.f);

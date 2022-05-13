@@ -20,7 +20,7 @@ void main() {
   uint32_t geometryIndex = gl_DrawID+instanceDrawInfo.drawIndex;
 
   // 
-  InstanceInfo instanceInfo = getInstance(instanceDrawInfo.data, 0u);
+  InstanceInfo instanceInfo = getInstance_(instanceDrawInfo.data, 0u);
   GeometryInfo geometryInfo = getGeometry(instanceInfo, geometryIndex);
   GeometryExtData geometry = getGeometryData(geometryInfo, uint(gl_VertexIndex/3u));
 
@@ -30,15 +30,14 @@ void main() {
   const vec4 position = vec4(fullTransform(instanceInfo, vertice, geometryIndex) * constants.lookAt, 1.f) * constants.perspective;
 
   // anyways, give index data for relax and chill
-  pIndices = uvec4(instanceIndex, geometryIndex, gl_VertexIndex/3u, 0u);
-  
+  pIndices = uvec4((instanceIndex&0x7FFFFFFFu), geometryIndex, gl_VertexIndex/3u, 0u);
 
-  // if translucent - discard
-//#ifdef TRANSLUCENT
-  //if ((geometryInfo.flags&1u) == 0u) 
-//#else
-  //if ((geometryInfo.flags&1u) != 0u) 
-//#endif
+  // majorify
+#ifdef TRANSLUCENT
+  pIndices.x |= 0x80000000u;
+#endif
+
+  //
   {
     gl_Position = position;
     pColor = vec4(0.f.xxx, 0.f);

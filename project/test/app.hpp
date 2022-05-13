@@ -33,7 +33,7 @@ struct Constants
 
 //
 struct UniformData {
-  uint32_t framebufferAttachments[8] = { 0u,0u,0u,0u };
+  uint32_t framebufferAttachments[2][8] = {{0u}};
   glm::uvec2 extent = {}; uint32_t frameCounter, reserved;
   Constants constants = {};
   uint64_t pixelData = 0ull;
@@ -88,7 +88,7 @@ protected:
   ANAMED::WrapShared<ANAMED::PipelineObj> controlObj = {};
   ANAMED::WrapShared<ANAMED::PipelineObj> translucentObj = {};
   ANAMED::WrapShared<ANAMED::SwapchainObj> swapchainObj = {};
-  ANAMED::WrapShared<ANAMED::FramebufferObj> framebufferObj = {};
+  ANAMED::WrapShared<ANAMED::FramebufferObj> framebufferObj[2] = {};
   ANAMED::WrapShared<ANAMED::PingPongObj> pingPongObj = {};
   ANAMED::WrapShared<ANAMED::ResourceObj> backgroundObj = {};
   ANAMED::WrapShared<ANAMED::ResourceObj> pixelDataObj = {};
@@ -235,16 +235,16 @@ public:
       }
     });*/
 
-
     //
-    framebufferObj->clearAttachments(qfAndQueue);
+    framebufferObj[0]->clearAttachments(qfAndQueue);
+    framebufferObj[1]->clearAttachments(qfAndQueue);
 
     //
     decltype(auto) opaqueFence = opaqueObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
       // # yet another std::optional problem (implicit)
       .graphics = std::optional<ANAMED::WriteGraphicsInfo>(ANAMED::WriteGraphicsInfo{
         .layout = descriptorsObj.as<vk::PipelineLayout>(),
-        .framebuffer = framebufferObj.as<uintptr_t>(),
+        .framebuffer = framebufferObj[0].as<uintptr_t>(),
         .swapchain = swapchainObj.as<uintptr_t>(),
         .pingpong = pingPongObj.as<uintptr_t>(),
         .instanceDraws = modelObj->getDefaultScene()->opaque->instanced->getDrawInfo(),
@@ -260,7 +260,7 @@ public:
       // # yet another std::optional problem (implicit)
       .graphics = std::optional<ANAMED::WriteGraphicsInfo>(ANAMED::WriteGraphicsInfo{
         .layout = descriptorsObj.as<vk::PipelineLayout>(),
-        .framebuffer = framebufferObj.as<uintptr_t>(),
+        .framebuffer = framebufferObj[1].as<uintptr_t>(),
         .swapchain = swapchainObj.as<uintptr_t>(),
         .pingpong = pingPongObj.as<uintptr_t>(),
         .instanceDraws = modelObj->getDefaultScene()->translucent->instanced->getDrawInfo(),
@@ -397,7 +397,14 @@ public:
     uniformData.prevRasterData = uniformData.rasterData + sizeof(RasterInfo) * renderArea.extent.width * renderArea.extent.height * 16u;
 
     //
-    framebufferObj = ANAMED::FramebufferObj::make(deviceObj.with(0u), ANAMED::FramebufferCreateInfo{
+    framebufferObj[0] = ANAMED::FramebufferObj::make(deviceObj.with(0u), ANAMED::FramebufferCreateInfo{
+      .layout = descriptorsObj.as<vk::PipelineLayout>(),
+      .extent = renderArea.extent,
+      .info = qfAndQueue
+      });
+
+    //
+    framebufferObj[1] = ANAMED::FramebufferObj::make(deviceObj.with(0u), ANAMED::FramebufferCreateInfo{
       .layout = descriptorsObj.as<vk::PipelineLayout>(),
       .extent = renderArea.extent,
       .info = qfAndQueue
@@ -417,8 +424,10 @@ public:
     });
 
     // 
-    decltype(auto) framebufferAttachments = framebufferObj->getImageViewIndices();
-    memcpy(uniformData.framebufferAttachments, framebufferAttachments.data(), std::min(framebufferAttachments.size(), 8ull) * sizeof(uint32_t));
+    for (uint32_t i = 0; i < 2; i++) {
+      decltype(auto) framebufferAttachments = framebufferObj[i]->getImageViewIndices();
+      memcpy(uniformData.framebufferAttachments[i], framebufferAttachments.data(), std::min(framebufferAttachments.size(), 8ull) * sizeof(uint32_t));
+    };
   };
 
   //

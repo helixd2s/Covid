@@ -144,7 +144,7 @@ const uint SURFACE_COUNTER = 3u;
 // 
 layout(set = 0, binding = 0, scalar) uniform MatrixBlock
 {
-  uint32_t framebufferAttachments[8]; // framebuffers
+  uint32_t framebufferAttachments[2][8]; // framebuffers
   uvec2 extent; uint frameCounter, reserved0;
   Constants constants;
   uint64_t pixelData;
@@ -390,8 +390,7 @@ struct PushConstantData {
 
 //
 struct InstanceAddressBlock {
-  InstanceAddressInfo opaqueAddressInfo;
-  InstanceAddressInfo transparentAddressInfo;
+  InstanceAddressInfo addressInfos[2];
 };
 
 //
@@ -539,34 +538,42 @@ vec4 interpolate(in mat3x4 vertices, in vec2 barycentric) {
 
 
 //
-InstanceInfo getInstance(in InstanceData data, in uint32_t index) {
+InstanceInfo getInstance_(in InstanceData data, in uint32_t index) {
   return data.infos[index];
 };
 
 //
-InstanceInfo getInstance(in uint64_t data, in uint32_t index) {
+InstanceInfo getInstance_(in uint64_t data, in uint32_t index) {
   InstanceInfo info;
   info.data = 0u;
 
-  if (data > 0) { info = getInstance(InstanceData(data), index); }; 
+  if (data > 0) { info = getInstance_(InstanceData(data), index); }; 
   return info;
 };
 
 //
-InstanceInfo getInstance(in InstanceAddressInfo addressInfo, in uint32_t index) {
+InstanceInfo getInstance_(in InstanceAddressInfo addressInfo, in uint32_t index) {
   InstanceInfo info;
   info.data = 0u;
   if (index >= 0 && index < addressInfo.instanceCount) {
-    info = getInstance(addressInfo.data, index);
+    info = getInstance_(addressInfo.data, index);
   };
   return info;
 };
 
 // 
-InstanceInfo getInstance(in uint64_t data) { return getInstance(data, 0u); };
-InstanceInfo getInstance(in InstanceData data) { return getInstance(data, 0u); };
+InstanceInfo getInstance_(in uint64_t data) { return getInstance_(data, 0u); };
+InstanceInfo getInstance_(in InstanceData data) { return getInstance_(data, 0u); };
 
+//
+InstanceInfo getInstance(in InstanceAddressBlock addressInfo, in uint32_t instanceId) {
+  return getInstance_(addressInfo.addressInfos[(instanceId&0x80000000u)>>31u], (instanceId&0x7FFFFFFFu));
+};
 
+//
+InstanceInfo getInstance(in InstanceAddressBlock addressInfo, in uint32_t type, in uint32_t instanceId) {
+  return getInstance_(addressInfo.addressInfos[type], instanceId&0x7FFFFFFFu);
+};
 
 //
 GeometryInfo getGeometry(in GeometryData data, in uint32_t index) {
@@ -630,12 +637,7 @@ GeometryInfo getGeometry(in InstanceInfo instanceInfo, in uint32_t index) {
 };
 
 //
-GeometryInfo getGeometry(in InstanceData data, in uint32_t instanceId, in uint32_t index) {
-  return getGeometry(getInstance(data, instanceId), index);
-};
-
-//
-GeometryInfo getGeometry(in InstanceAddressInfo info, in uint32_t instanceId, in uint32_t index) {
+GeometryInfo getGeometry(in InstanceAddressBlock info, in uint32_t instanceId, in uint32_t index) {
   return getGeometry(getInstance(info, instanceId), index);
 };
 
@@ -645,7 +647,7 @@ const vec3 bary[3] = { vec3(1.f,0.f,0.f), vec3(0.f,1.f,0.f), vec3(0.f,0.f,1.f) }
 
 
 //
-mat3x4 getInstanceTransform(in InstanceAddressInfo addressInfo, in uint32_t instanceId) {
+mat3x4 getInstanceTransform(in InstanceAddressBlock addressInfo, in uint32_t instanceId) {
   InstanceInfo instanceInfo = getInstance(addressInfo, instanceId);
   return instanceInfo.transform;
 };
@@ -661,7 +663,7 @@ mat3x4 getPreviousInstanceTransform(in InstanceInfo info) {
 };
 
 //
-mat3x4 getPreviousInstanceTransform(in InstanceAddressInfo addressInfo, in uint32_t instanceId) {
+mat3x4 getPreviousInstanceTransform(in InstanceAddressBlock addressInfo, in uint32_t instanceId) {
   InstanceInfo instanceInfo = getInstance(addressInfo, instanceId);
   return instanceInfo.previousTransform;
 };

@@ -79,18 +79,18 @@ void reproject3D(in uint pixelId, in vec3 srcRayDir, in int type) {
 
   // 
   const vec3 dstPos = vec4(vec4(srcPos.xyz, 1.f) 
-    * inverse(getPreviousInstanceTransform(instancedData.opaqueAddressInfo, surface.indices.x)), 1.f) 
-    * getInstanceTransform(instancedData.opaqueAddressInfo, surface.indices.x);
+    * inverse(getPreviousInstanceTransform(instancedData, surface.indices.x)), 1.f) 
+    * getInstanceTransform(instancedData, surface.indices.x);
   const vec3 dstHitPos = vec4(vec4(srcHitPos.xyz, 1.f) 
-    * inverse(getPreviousInstanceTransform(instancedData.opaqueAddressInfo, data.indices.x)), 1.f) 
-    * getInstanceTransform(instancedData.opaqueAddressInfo, data.indices.x);
+    * inverse(getPreviousInstanceTransform(instancedData, data.indices.x)), 1.f) 
+    * getInstanceTransform(instancedData, data.indices.x);
   const vec3 dstNormal = normalize(srcNormal.xyz 
-    * toNormalMat(getPreviousInstanceTransform(instancedData.opaqueAddressInfo, surface.indices.x)) 
-    * toNormalMat(inverse(getInstanceTransform(instancedData.opaqueAddressInfo, surface.indices.x)))
+    * toNormalMat(getPreviousInstanceTransform(instancedData, surface.indices.x)) 
+    * toNormalMat(inverse(getInstanceTransform(instancedData, surface.indices.x)))
   );
   const vec3 dstRayDir = normalize(srcRayDir.xyz 
-    * toNormalMat(getPreviousInstanceTransform(instancedData.opaqueAddressInfo, surface.indices.x)) 
-    * toNormalMat(inverse(getInstanceTransform(instancedData.opaqueAddressInfo, surface.indices.x)))
+    * toNormalMat(getPreviousInstanceTransform(instancedData, surface.indices.x)) 
+    * toNormalMat(inverse(getInstanceTransform(instancedData, surface.indices.x)))
   );
 
   // 
@@ -104,8 +104,8 @@ void reproject3D(in uint pixelId, in vec3 srcRayDir, in int type) {
 
   // 
   const vec3 srcHitFoundIntersection = type == 2 ? srcPos : (type == 1 ? srcHitPos : vec4(vec4(dstHitFoundIntersection, 1.f)
-    * inverse(getInstanceTransform(instancedData.opaqueAddressInfo, type == 1 ? data.indices.x : surface.indices.x)), 1.f) 
-    * getPreviousInstanceTransform(instancedData.opaqueAddressInfo, type == 1 ? data.indices.x : surface.indices.x));
+    * inverse(getInstanceTransform(instancedData, type == 1 ? data.indices.x : surface.indices.x)), 1.f) 
+    * getPreviousInstanceTransform(instancedData, type == 1 ? data.indices.x : surface.indices.x));
 
   // 
   const vec4 srcHitPersp = vec4(vec4(srcHitFoundIntersection, 1.f) * constants.previousLookAt, 1.f) * constants.perspective;
@@ -142,7 +142,7 @@ void reproject3D(in uint pixelId, in vec3 srcRayDir, in int type) {
       rayData.launchId = u16vec2(srcInt);
       rayData.origin = srcHitFoundIntersection.xyz;
       rayData.direction = normalize(srcHitFoundIntersection.xyz-srcPos.xyz);
-      rasterize(instancedData.opaqueAddressInfo, rayData, 10000.f, srcSamplePos, true);
+      rasterize(instancedData, rayData, 10000.f, srcSamplePos, true);
     };
 
     //
@@ -151,7 +151,7 @@ void reproject3D(in uint pixelId, in vec3 srcRayDir, in int type) {
       rayData.launchId = u16vec2(dstInt);
       rayData.origin = dstHitFoundIntersection.xyz;
       rayData.direction = normalize(dstHitFoundIntersection.xyz-dstPos.xyz);
-      rasterize(instancedData.opaqueAddressInfo, rayData, 10000.f, dstSamplePos, false);
+      rasterize(instancedData, rayData, 10000.f, dstSamplePos, false);
     };
 
     // TODO: fix `pupet.glsl` for transparency support and other layers
@@ -180,9 +180,9 @@ void reprojectDiffuse(in uint srcId, in vec3 srcRayDir) {
   const vec3 srcNormal = srcSurface.normal.xyz;
 
   //
-  const vec3 dstPos = vec4(vec4(srcPos.xyz, 1.f) * inverse(getPreviousInstanceTransform(instancedData.opaqueAddressInfo, srcSurface.indices.x)), 1.f) * getInstanceTransform(instancedData.opaqueAddressInfo, srcSurface.indices.x);
-  const vec3 dstNormal = normalize(srcNormal.xyz * toNormalMat(getPreviousInstanceTransform(instancedData.opaqueAddressInfo, srcSurface.indices.x)) * toNormalMat(inverse(getInstanceTransform(instancedData.opaqueAddressInfo, srcSurface.indices.x))));
-  const vec3 dstRayDir = normalize(srcRayDir.xyz * toNormalMat(getPreviousInstanceTransform(instancedData.opaqueAddressInfo, srcSurface.indices.x)) * toNormalMat(inverse(getInstanceTransform(instancedData.opaqueAddressInfo, srcSurface.indices.x))));
+  const vec3 dstPos = vec4(vec4(srcPos.xyz, 1.f) * inverse(getPreviousInstanceTransform(instancedData, srcSurface.indices.x)), 1.f) * getInstanceTransform(instancedData, srcSurface.indices.x);
+  const vec3 dstNormal = normalize(srcNormal.xyz * toNormalMat(getPreviousInstanceTransform(instancedData, srcSurface.indices.x)) * toNormalMat(inverse(getInstanceTransform(instancedData, srcSurface.indices.x))));
+  const vec3 dstRayDir = normalize(srcRayDir.xyz * toNormalMat(getPreviousInstanceTransform(instancedData, srcSurface.indices.x)) * toNormalMat(inverse(getInstanceTransform(instancedData, srcSurface.indices.x))));
   const vec4 dstPerspPos = vec4(vec4(dstPos.xyz, 1.f) * constants.lookAt, 1.f) * constants.perspective;
   const vec2 dstScreen = (dstPerspPos.xy/dstPerspPos.w) * 0.5f + 0.5f;
   const ivec2 dstScreenPos = ivec2(dstScreen * vec2(extent));
@@ -196,7 +196,7 @@ void reprojectDiffuse(in uint srcId, in vec3 srcRayDir) {
     rayData.launchId = u16vec2(dstScreenPos);
     rayData.origin = dstPos.xyz;
     rayData.direction = vec3(0.f); // WARNING! BROKEN RAY!
-    rasterize(instancedData.opaqueAddressInfo, rayData, 10000.f, dstSamplePos, false);
+    rasterize(instancedData, rayData, 10000.f, dstSamplePos, false);
   };
 
   //

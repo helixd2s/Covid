@@ -32,7 +32,7 @@ vec3 computeBary(in vec4 vo, in mat3x4 vt) {
 // too expensive method of rasterization
 // vector sampling is generally expensive
 // but it's really required
-IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayData, in float maxT, inout vec4 lastPos, in bool previous) {
+IntersectionInfo rasterize(in InstanceAddressBlock addressInfo, in RayData rayData, in float maxT, inout vec4 lastPos, in bool previous) {
   IntersectionInfo intersection;
   intersection.barycentric = vec3(0.f.xxx);
   intersection.instanceId = 0u;
@@ -50,7 +50,7 @@ IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayDat
   vec4 ss = (viewOrigin * constants.perspective);
   ivec2 sc = ivec2((divW(ss).xy * 0.5f + 0.5f) * extent.xy);
 
-  //
+  // TODO: separate translucency support
   uint indice = previous ? imageLoad(imagesR32UI[pingpong.prevImages[0]], sc).x : imageLoad(imagesR32UI[pingpong.images[0]], sc).x;
 
   //
@@ -63,7 +63,7 @@ IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayDat
 
     //
     RasterInfoRef rasterInfo = previous ? getPrevRasterInfo(indice-1) : getRasterInfo(indice-1);
-    InstanceInfo instanceInfo = getInstance(instancedData.opaqueAddressInfo, rasterInfo.indices.x);
+    InstanceInfo instanceInfo = getInstance(addressInfo, rasterInfo.indices.x);
     GeometryInfo geometryInfo = getGeometry(instanceInfo, rasterInfo.indices.y);
     GeometryExtData geometry = getGeometryData(geometryInfo, rasterInfo.indices.z);
 

@@ -132,8 +132,8 @@ namespace ANAMED {
     virtual uintptr_t& getInstancedDeviceAddress() { return this->getInstancedResource()->getDeviceAddress(); };
 
     //
-    virtual uintptr_t const& getDeviceAddress() const { return this->handle.as<uintptr_t>(); };
-    virtual uintptr_t& getDeviceAddress() { return this->handle.as<uintptr_t>(); };
+    virtual uintptr_t const& getDeviceAddress() const { return this->addressInfo.accelStruct; };
+    virtual uintptr_t& getDeviceAddress() { return this->addressInfo.accelStruct; };
 
     //
     virtual void updateInstances() {
@@ -440,7 +440,7 @@ namespace ANAMED {
 
       //
       this->handle = device.getAccelerationStructureAddressKHR(vk::AccelerationStructureDeviceAddressInfoKHR{ .accelerationStructure = this->accelStruct }, deviceObj->getDispatch());
-      this->addressInfo = InstanceAddressInfo{ .data = this->getInstanceInfoDeviceAddress(), .accelStruct = this->handle.as<uintptr_t>(), .instanceCount = uint32_t(std::max(cInfo->instances->size(), size_t(cInfo->limit))) };
+      this->addressInfo = InstanceAddressInfo{ .data = this->getInstanceInfoDeviceAddress(), .accelStruct = this->accelStruct ? this->handle.as<uintptr_t>() : 0ull, .instanceCount = uint32_t(std::max(cInfo->instances->size(), size_t(cInfo->limit))) };
 
       //
       this->destructors.push_back([this, device, accellStruct = accelInstInfo->dstAccelerationStructure, dispatch = deviceObj->getDispatch()](BaseObj const* baseObj) {
