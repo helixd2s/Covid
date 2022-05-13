@@ -93,17 +93,9 @@ vec3 reflective(in vec3 seed, in vec3 dir, in vec3 normal, in float roughness) {
 };
 
 // 
-IntersectionInfo traceRaysOpaque(in InstanceAddressBlock instance, in RayData rays, in float maxT) {
+IntersectionInfo traceRaysOpaque(in InstanceAddressBlock instance, inout IntersectionInfo result, in RayData rays, in float maxT) {
   // 
   float currentT = 10000.f;
-  IntersectionInfo result;
-  {
-    result.barycentric = vec3(0.f.xxx);
-    result.hitT = currentT;
-    result.instanceId = 0u;
-    result.geometryId = 0u;
-    result.primitiveId = 0u;
-  };
 
   //
   if (instance.addressInfos[0].accelStruct > 0) {//
@@ -135,17 +127,9 @@ IntersectionInfo traceRaysOpaque(in InstanceAddressBlock instance, in RayData ra
 };
 
 // version without over-phasing
-IntersectionInfo traceRaysTransparent(in InstanceAddressBlock instance, in RayData rays, in float maxT, in bool hasRandom) {
+IntersectionInfo traceRaysTransparent(in InstanceAddressBlock instance, inout IntersectionInfo result, in RayData rays, in float maxT, in bool hasRandom) {
   //
   float currentT = 10000.f;
-  IntersectionInfo result;
-  {
-    result.barycentric = vec3(0.f.xxx);
-    result.hitT = currentT;
-    result.instanceId = 0u;
-    result.geometryId = 0u;
-    result.primitiveId = 0u;
-  };
 
   //
   if (instance.addressInfos[1].accelStruct > 0) {
@@ -156,7 +140,7 @@ IntersectionInfo traceRaysTransparent(in InstanceAddressBlock instance, in RayDa
     while(rayQueryProceedEXT(rayQuery)) {
       bool isOpaque = true;
 
-      {   // compute intersection opacity
+      { // compute intersection opacity
         const float fT = rayQueryGetIntersectionTEXT(rayQuery, false);
         if (fT <= currentT) {
           const uint instanceId = rayQueryGetIntersectionInstanceIdEXT(rayQuery, false);
@@ -219,9 +203,18 @@ vec4 directLighting(in vec3 O, in vec3 N, in vec3 tN, in vec3 r, in float t) {
 
   // 
   const bool hasIntersection = intersect(vec4(SO, sunSphere.w), rayData.origin.xyz, rayData.direction.xyz, t);
-  IntersectionInfo opaqueIntersection = traceRaysOpaque(instancedData, rayData, t);
-  IntersectionInfo translucentIntersection = traceRaysTransparent(instancedData, rayData, opaqueIntersection.hitT, true);
-  IntersectionInfo intersection = translucentIntersection.hitT <= opaqueIntersection.hitT ? translucentIntersection : opaqueIntersection;
+  IntersectionInfo intersection;
+  {
+    intersection.barycentric = vec3(0.f.xxx);
+    intersection.hitT = t;
+    intersection.instanceId = 0u;
+    intersection.geometryId = 0u;
+    intersection.primitiveId = 0u;
+  };
+
+  //
+  intersection = traceRaysOpaque(instancedData, intersection, rayData, t);
+  intersection = traceRaysTransparent(instancedData, intersection, rayData, intersection.hitT, true);
 
   //
   if (hasIntersection && intersection.hitT >= t && t > 0.f) {
@@ -313,32 +306,44 @@ RayData pathTrace(inout RayData rayData, inout float hitDist, inout vec3 firstNo
     if (luminance(rayData.energy.xyz) < 0.001f) { break; };
 
     // 
-    IntersectionInfo opaqueIntersection = traceRaysOpaque(instancedData, rayData, 10000.f);
-    IntersectionInfo translucentIntersection = traceRaysTransparent(instancedData, rayData, opaqueIntersection.hitT, false);
-    IntersectionInfo intersection = translucentIntersection.hitT <= opaqueIntersection.hitT ? translucentIntersection : opaqueIntersection;
+    IntersectionInfo intersection;
+    {
+      intersection.barycentric = vec3(0.f.xxx);
+      intersection.hitT = 10000.f;
+      intersection.instanceId = 0u;
+      intersection.geometryId = 0u;
+      intersection.primitiveId = 0u;
+    };
+
+    //
+    intersection = traceRaysOpaque(instancedData, intersection, rayData, 10000.f);
+    intersection = traceRaysTransparent(instancedData, intersection, rayData, intersection.hitT, true);
+    //IntersectionInfo intersection = traceRaysOpaque(instancedData, rayData, 10000.f);
 
     //
     if (!all(lessThanEqual(intersection.barycentric, 0.f.xxx)) && intersection.hitT < 10000.f) {
-      PassData opaquePass, pass;
-      opaquePass.alphaColor = vec4(1.f.xxx, 1.f);
-      opaquePass.alphaPassed = false;
-      opaquePass.diffusePass = false;
-      opaquePass.normals = vec3(0.f.xxx);
-      pass = opaquePass;
+      //PassData opaquePass, pass;
+      PassData pass;
+      pass.alphaColor = vec4(1.f.xxx, 1.f);
+      pass.alphaPassed = false;
+      pass.diffusePass = false;
+      pass.normals = vec3(0.f.xxx);
+      //opaquePass = pass;
 
       //
       rayData = handleIntersection(rayData, intersection, pass);
 
       // if translucent over opaque (decals)
-      if (pass.alphaPassed && opaqueIntersection.hitT <= (intersection.hitT + 0.0001f)) {
-        RayData opaqueRayData = handleIntersection(rayData, opaqueIntersection, opaquePass);
-        opaqueRayData.energy.xyz = f16vec3(trueMultColor(opaqueRayData.energy.xyz, pass.alphaColor.xyz));
-        rayData = opaqueRayData, intersection = opaqueIntersection, pass = opaquePass;
-      };
+      //if (pass.alphaPassed && opaqueIntersection.hitT <= (intersection.hitT + 0.0001f)) {
+        //intersection = opaqueIntersection;
+        //rayData = handleIntersection(rayData, intersection, opaquePass);
+        //rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, pass.alphaColor.xyz));
+        //pass = opaquePass;
+      //};
 
       //
-      if (pass.alphaPassed) { T++; } else { R++; };
-      currentT += intersection.hitT;
+      //if (pass.alphaPassed) { T++; } else { R++; };
+      R++; currentT += intersection.hitT;
 
       // 
       if (pass.diffusePass && !surfaceFound) { 

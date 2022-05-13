@@ -378,7 +378,7 @@ namespace ANAMED {
       "VK_KHR_external_memory_win32",
       "VK_KHR_external_memory_fd",
       //"VK_KHR_shader_subgroup_uniform_control_flow",
-      //"VK_KHR_workgroup_memory_explicit_layout",
+      "VK_KHR_workgroup_memory_explicit_layout",
       "VK_KHR_shared_presentable_image",
       "VK_KHR_shader_clock",
       "VK_KHR_fragment_shading_rate",

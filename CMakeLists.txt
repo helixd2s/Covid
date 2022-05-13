@@ -113,7 +113,7 @@ set (HSOURCES "submodules/include/vk-utils/cpp21/core.hpp" "project/include/Alte
 ADD_MSVC_PRECOMPILED_HEADER("project/cmake_pch.hxx" "project/cmake_pch.cxx" HSOURCES)
 
 #
-target_link_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS} ${Vulkan_LIBRARIES} glfw NRD)
+target_link_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS} ${Vulkan_LIBRARIES} glfw )
 
 # 
 if (MSVC)

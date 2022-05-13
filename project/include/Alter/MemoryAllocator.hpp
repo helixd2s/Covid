@@ -109,6 +109,9 @@ namespace ANAMED {
       };
 
       //
+      device.setMemoryPriorityEXT(allocated->memory, 1.f, deviceObj->getDispatch());
+
+      //
       if (requirements->memoryUsage == MemoryUsage::eGpuOnly) {
 #ifdef _WIN32
         extHandle = device.getMemoryWin32HandleKHR(vk::MemoryGetWin32HandleInfoKHR{ .memory = allocated->memory, .handleType = extMemFlagBits }, deviceObj->getDispatch());

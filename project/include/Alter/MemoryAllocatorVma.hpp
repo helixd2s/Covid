@@ -179,6 +179,9 @@ namespace ANAMED {
       allocated->allocation = uintptr_t(allocation);
 
       //
+      device.setMemoryPriorityEXT(allocated->memory, 1.f, deviceObj->getDispatch());
+
+      //
       if (requirements->needsDestructor) {
         destructors.push_back(allocated->destructor = [device, allocator=this->handle.as<VmaAllocator>(), &allocation=allocated->allocation](BaseObj const*) {
           device.waitIdle();

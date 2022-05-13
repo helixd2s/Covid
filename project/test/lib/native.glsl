@@ -433,7 +433,7 @@ layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) readonly
 layout(buffer_reference, scalar, buffer_reference_align = 1, align = 1) readonly buffer Ushort { uint16_t data[]; };
 
 // instead of `0u` (zero) should to be `firstVertex`
-uvec4 readAsUint4(in BufferViewInfo bufferViewInfo, in uint32_t index) {
+uvec4 readAsUint4(inout BufferViewInfo bufferViewInfo, in uint32_t index) {
   const uint cCnt = bufferViewInfo.format&3u;
   const uint isHalf = (bufferViewInfo.format>>2)&1u;
   const uint isUint = (bufferViewInfo.format>>3)&1u;
