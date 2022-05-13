@@ -100,9 +100,9 @@ void main() {
       pathTraceCommand(cmd, firstPart && (cmd.diffuseColor.a >= 0.001f && luminance(cmd.diffuseColor.xyz) > 0.f) ? 2 : 0);
       if (cmd.diffuseColor.a < 1.f) { pathTraceCommand(cmd, 1); } else { blankHit(cmd, 1); };
     } else {
-      backgroundHit(pixelId, 0, cmd.rayData.origin);
-      backgroundHit(pixelId, 1, cmd.rayData.origin);
-      backgroundHit(pixelId, 2, cmd.rayData.origin);
+      backgroundHit(pixelId, 0, cmd.rayData.origin, cmd.diffuseColor);
+      backgroundHit(pixelId, 1, cmd.rayData.origin, cmd.diffuseColor);
+      backgroundHit(pixelId, 2, cmd.rayData.origin, cmd.diffuseColor);
     };
 
     PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);

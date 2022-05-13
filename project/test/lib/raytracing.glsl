@@ -239,8 +239,9 @@ RayData reuseLight(inout RayData rayData) {
     vec4 ssSurf = divW(vec4(vec4(surfPos, 1.f) * constants.lookAt, 1.f) * constants.perspective);
 
     //
-    if (all(lessThan(abs(ssPos.xyz-ssSurf.xyz), vec3(1.f/extent, 0.001f)))) {
-      rayData.emission += f16vec4(trueMultColor(cvtRgb16Acc(surfaceInfo.accum[2]), rayData.energy));
+    if (all(lessThan(abs(ssPos.xyz-ssSurf.xyz), vec3(2.f/extent, 0.002f)))) {
+      const vec4 color = cvtRgb16Acc(surfaceInfo.accum[2]);
+      rayData.emission += f16vec4(trueMultColor(color/color.w, rayData.energy));
     };
   };
   return rayData;
@@ -420,8 +421,13 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
     rayData.emission = f16vec4(0.f.xxx, 1.f);
   } else {
     rayData.direction.xyz = normalize(randomCosineWeightedHemispherePoint(originSeedXYZ, cmd.normals));
+    rayData.energy = f16vec4(1.f.xxx, 1.f);
+    rayData.energy = f16vec4(trueMultColor(rayData.energy.xyz, cmd.diffuseColor.xyz), 1.f);
     rayData.energy = f16vec4(trueMultColor(rayData.energy.xyz, 1.f-cmd.emissiveColor.xyz), 1.f);
-    rayData.emission = f16vec4(directLighting(rayData.origin.xyz, cmd.normals.xyz, cmd.tbn[2], vec3(random(rayData.launchId.xy), random(rayData.launchId.xy), random(rayData.launchId.xy)), 10000.f));
+    rayData.emission = f16vec4(trueMultColor(
+      rayData.energy.xyz, 
+      directLighting(rayData.origin.xyz, cmd.normals.xyz, cmd.tbn[2], vec3(random(rayData.launchId.xy), random(rayData.launchId.xy), random(rayData.launchId.xy)), 10000.f).xyz
+    ), 1.f);
     rayData.emission.w = 1.hf;
   };
 
@@ -504,9 +510,9 @@ void retranslateHit(in uint pixelId, in uint type, in vec3 origin) {
 };
 
 // 
-void backgroundHit(in uint pixelId, in uint type, in vec3 origin) {
+void backgroundHit(in uint pixelId, in uint type, in vec3 origin, in vec4 color) {
   PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
-  surfaceInfo.color[type] += ((type == 2) ? vec4(1.f.xxxx) : vec4(0.f.xxx, 1.f));
+  surfaceInfo.color[type] += ((type == 2) ? /*vec4(1.f.xxxx)*/color : vec4(0.f.xxx, 1.f));
 
   //
   PixelHitInfoRef hitInfo = getNewHit(pixelId, type);

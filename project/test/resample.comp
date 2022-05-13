@@ -156,8 +156,8 @@ void reproject3D(in uint pixelId, in vec3 srcRayDir, in int type) {
 
     // TODO: fix `pupet.glsl` for transparency support and other layers
     // transparency not supported (planned fix in next version of vector sampling) :(
-    const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz-(dstHitPersp.xyz/dstHitPersp.w)), vec3(1.f/extent, 0.001f)));// && distance(dstPos, dstHitFoundIntersection) < 0.001f;
-    const bool srcValidDist = all(lessThan(abs(srcSamplePos.xyz-(srcHitPersp.xyz/srcHitPersp.w)), vec3(1.f/extent, 0.001f)));
+    const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz-(dstHitPersp.xyz/dstHitPersp.w)), vec3(2.f/extent, 0.002f)));// && distance(dstPos, dstHitFoundIntersection) < 0.001f;
+    const bool srcValidDist = all(lessThan(abs(srcSamplePos.xyz-(srcHitPersp.xyz/srcHitPersp.w)), vec3(2.f/extent, 0.002f)));
 
     // copy to dest, and nullify source
     if ( data.origin.w >= 0.f && SURF_SRC.color[type].w > 0.f && dstValidDist && (srcValidDist || SURF_DST.color[type].w <= 0.f) ) {
@@ -202,7 +202,7 @@ void reprojectDiffuse(in uint srcId, in vec3 srcRayDir) {
   //
   if (dstScreenPos.x >= 0 && dstScreenPos.y >= 0 && dstScreenPos.x < extent.x && dstScreenPos.y < extent.y) {
     const uint dstId = uint(dstScreenPos.x + dstScreenPos.y * extent.x);
-    const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz-(dstPerspPos.xyz/dstPerspPos.w)), vec3(1.f/extent, 0.001f)));
+    const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz-(dstPerspPos.xyz/dstPerspPos.w)), vec3(2.f/extent, 0.002f)));
     PixelSurfaceInfoRef dstSurface = getPixelSurface(dstId);
     PixelHitInfoRef dstHit = getRpjHit(dstId, 2);
     if (srcSurface.color[2].w > 0.f && dstValidDist) {
