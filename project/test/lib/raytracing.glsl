@@ -226,6 +226,26 @@ vec4 directLighting(in vec3 O, in vec3 N, in vec3 tN, in vec3 r, in float t) {
   return vec4(clampCol(rayData.emission).xyz, 0.f);
 };
 
+//
+RayData reuseLight(inout RayData rayData) {
+  // screen space reuse already lighted pixels
+  vec4 ssPos = divW(vec4(vec4(rayData.origin.xyz, 1.f) * constants.lookAt, 1.f) * constants.perspective);
+  ivec2 pxId = ivec2((ssPos.xy * 0.5f + 0.5f) * extent);
+
+  //
+  if (pxId.x >= 0 && pxId.y >= 0 && pxId.x < extent.x && pxId.y < extent.y) {
+    PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pxId.x + pxId.y * extent.x);
+    vec3 surfPos = surfaceInfo.origin.xyz;
+    vec4 ssSurf = divW(vec4(vec4(surfPos, 1.f) * constants.lookAt, 1.f) * constants.perspective);
+
+    //
+    if (all(lessThan(abs(ssPos.xyz-ssSurf.xyz), vec3(1.f/extent, 0.001f)))) {
+      rayData.emission += f16vec4(trueMultColor(cvtRgb16Acc(surfaceInfo.accum[2]), rayData.energy));
+    };
+  };
+  return rayData;
+};
+
 // 
 RayData handleIntersection(in RayData rayData, inout IntersectionInfo intersection, inout PassData passed) {
   InstanceInfo instanceInfo = getInstance(instancedData, intersection.instanceId);
@@ -288,7 +308,8 @@ RayData handleIntersection(in RayData rayData, inout IntersectionInfo intersecti
     rayData.emission.xyz += f16vec3(trueMultColor(rayData.energy.xyz, directLighting(rayData.origin.xyz, normals, tbn[2], vec3(random(rayData.launchId.xy), random(rayData.launchId.xy), random(rayData.launchId.xy)), 10000.f).xyz).xyz);
   };
 
-  // 
+  //
+  reuseLight(rayData);
   rayData.origin.xyz += outRayNormal(rayData.direction.xyz, tbn[2]) * 0.0001f;
 
   // 
@@ -404,6 +425,9 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
     rayData.emission.w = 1.hf;
   };
 
+  //
+  //reuseLight(rayData); // already reprojected!
+
   // enforce typic indice
   rayData.origin += outRayNormal(rayData.direction.xyz, cmd.tbn[2].xyz) * 0.0001f;
   rayData = pathTrace(rayData, outp.hitT, outp.normals, outp.indices, type);
@@ -470,7 +494,7 @@ void blankHit(inout PathTraceCommand cmd, in uint type) {
 void retranslateHit(in uint pixelId, in uint type, in vec3 origin) {
   PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
   surfaceInfo.color[type] = cvtRgb16Acc(surfaceInfo.accum[type]); 
-  surfaceInfo.accum[type] = TYPE(0u);
+  //surfaceInfo.accum[type] = TYPE(0u);
 
   //
   PixelHitInfoRef newHitInfo = getNewHit(pixelId, type);

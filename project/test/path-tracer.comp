@@ -104,5 +104,8 @@ void main() {
       backgroundHit(pixelId, 1, cmd.rayData.origin);
       backgroundHit(pixelId, 2, cmd.rayData.origin);
     };
+
+    PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
+    for (uint i=0;i<3;i++) { surfaceInfo.accum[i] = TYPE(0u); };
   };
 };
