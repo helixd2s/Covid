@@ -189,7 +189,7 @@ namespace ANAMED {
         //this->firstUpdate[idx] = false;
       };
 
-      {
+      if (this->instanceBuild) {
         instances[0] = vk::AccelerationStructureGeometryKHR{
           .geometryType = vk::GeometryTypeKHR::eInstances,
           .geometry = vk::AccelerationStructureGeometryDataKHR{.instances = vk::AccelerationStructureGeometryInstancesDataKHR{
@@ -205,7 +205,6 @@ namespace ANAMED {
           .transformOffset = 0u
         };
       };
-
 
     };
 

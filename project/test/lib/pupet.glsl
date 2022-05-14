@@ -110,12 +110,12 @@ IntersectionInfo rasterize(in InstanceAddressBlock addressInfo, in RayData rayDa
 */
 
 // very cheap way - NOT RECOMMENDED!
-IntersectionInfo rasterize(in InstanceAddressBlock addressInfo, in RayData rayData, in float maxT, inout vec4 lastPos, in bool previous) {
-  const uvec4 indices = texelFetch(texturesU[framebufferAttachments[0][0]], ivec2(rayData.launchId), 0);
-  const vec3 bary = texelFetch(textures[framebufferAttachments[0][1]], ivec2(rayData.launchId), 0).xyz;
+IntersectionInfo rasterize_(in InstanceAddressBlock addressInfo, inout IntersectionInfo intersection, in RayData rayData, in float maxT, inout vec4 lastPos, in bool previous, in uint isTrasnlucent) {
+  //
+  const uvec4 indices = texelFetch(texturesU[framebufferAttachments[isTrasnlucent][0]], ivec2(rayData.launchId), 0);
+  const vec3 bary = texelFetch(textures[framebufferAttachments[isTrasnlucent][1]], ivec2(rayData.launchId), 0).xyz;
 
   //
-  vec4 ssOriginal = divW(lastPos);
   vec4 viewOrigin = vec4(vec4(rayData.origin.xyz, 1.f) * (previous ? constants.previousLookAt : constants.lookAt), 1.f);
   vec4 viewEnd = vec4(vec4(rayData.origin.xyz+rayData.direction.xyz, 1.f) * (previous ? constants.previousLookAt : constants.lookAt), 1.f);
   vec4 viewDir = (viewEnd - viewOrigin);
@@ -124,19 +124,39 @@ IntersectionInfo rasterize(in InstanceAddressBlock addressInfo, in RayData rayDa
   //
   vec4 ss = (viewOrigin * constants.perspective);
   vec2 sc = (divW(ss).xy * 0.5f + 0.5f);
+  vec4 sp = vec4(texture(sampler2D(textures[framebufferAttachments[isTrasnlucent][2]], samplers[0]), sc).xyz, 1.f);
+  //vec4 sp = vec4(texelFetch(textures[framebufferAttachments[isTrasnlucent][2]], ivec2(rayData.launchId), 0).xyz, 1.f);
 
   //
-  IntersectionInfo intersection;
-  intersection.barycentric = bary.xyz;
-  intersection.instanceId = indices[0];
-  intersection.geometryId = indices[1];
-  intersection.primitiveId = indices[2];
-  lastPos = vec4(texture(sampler2D(textures[framebufferAttachments[0][2]], samplers[0]), sc).xyz, 1.f);
+  if (divW(lastPos).z <= (sp.z + 0.001f) && sp.z < 1.f) {
+    intersection.barycentric = bary.xyz;
+    intersection.instanceId = indices[0];
+    intersection.geometryId = indices[1];
+    intersection.primitiveId = indices[2];
+    lastPos = sp;
+  };
 
   //
   return intersection;
 };
 
+//
+IntersectionInfo rasterize(in InstanceAddressBlock addressInfo, in RayData rayData, in float maxT, inout vec4 lastPos, in bool previous) {
+  IntersectionInfo intersection;
+  intersection.barycentric = vec3(0.f.xxx);
+  intersection.instanceId = 0u;
+  intersection.geometryId = 0u;
+  intersection.primitiveId = 0u;
+
+  //
+  rasterize_(addressInfo, intersection, rayData, maxT, lastPos, previous, 0);
+  rasterize_(addressInfo, intersection, rayData, maxT, lastPos, previous, 1);
+
+  //
+  return intersection;
+};
+
+//
 RayData reuseLight(inout RayData rayData) {
   // screen space reuse already lighted pixels
   vec4 ssPos = divW(vec4(vec4(rayData.origin.xyz, 1.f) * constants.lookAt, 1.f) * constants.perspective);

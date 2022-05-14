@@ -218,31 +218,31 @@ namespace ANAMED
   //
   inline vk::Format convertFormat(bool& translucent, uint32_t comp, uint32_t bits, uint32_t type = TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE) {
     if (bits == 8) {
-      if (comp == 1) { return vk::Format::eR8Unorm; translucent = false; }; //break;
-      if (comp == 2) { return vk::Format::eR8G8Unorm; translucent = true; }; //break;
-      if (comp == 3) { return vk::Format::eR8G8B8Unorm; translucent = false; }; //break;
-      if (comp == 4) { return vk::Format::eR8G8B8A8Unorm; translucent = true; }; //break;
-    } else 
+      if (comp == 1) { translucent = false; return vk::Format::eR8Unorm; }; //break;
+      if (comp == 2) { translucent = true ; return vk::Format::eR8G8Unorm; }; //break;
+      if (comp == 3) { translucent = false; return vk::Format::eR8G8B8Unorm; }; //break;
+      if (comp == 4) { translucent = true ; return vk::Format::eR8G8B8A8Unorm; }; //break;
+    } else
     if (bits == 16) {
       if (type == TINYGLTF_COMPONENT_TYPE_FLOAT) {
-        if (comp == 1) { return vk::Format::eR16Sfloat; translucent = false; }; //break;
-        if (comp == 2) { return vk::Format::eR16G16Sfloat; translucent = true; }; //break;
-        if (comp == 3) { return vk::Format::eR16G16B16Sfloat; translucent = false; }; //break;
-        if (comp == 4) { return vk::Format::eR16G16B16A16Sfloat; translucent = true; }; //break;
+        if (comp == 1) { translucent = false; return vk::Format::eR16Sfloat;  }; //break;
+        if (comp == 2) { translucent = true ; return vk::Format::eR16G16Sfloat;}; //break;
+        if (comp == 3) { translucent = false; return vk::Format::eR16G16B16Sfloat; }; //break;
+        if (comp == 4) { translucent = true ; return vk::Format::eR16G16B16A16Sfloat;}; //break;
       } else {
-        if (comp == 1) { return vk::Format::eR16Unorm; translucent = false; }; //break;
-        if (comp == 2) { return vk::Format::eR16G16Unorm; translucent = true; }; //break;
-        if (comp == 3) { return vk::Format::eR16G16B16Unorm; translucent = false; }; //break;
-        if (comp == 4) { return vk::Format::eR16G16B16A16Unorm; translucent = true; }; //break;
+        if (comp == 1) { translucent = false; return vk::Format::eR16Unorm; }; //break;
+        if (comp == 2) { translucent = true ; return vk::Format::eR16G16Unorm; }; //break;
+        if (comp == 3) { translucent = false; return vk::Format::eR16G16B16Unorm; }; //break;
+        if (comp == 4) { translucent = true ; return vk::Format::eR16G16B16A16Unorm; }; //break;
       }
     } else
     if (bits == 32) {
-      if (comp == 1) { return vk::Format::eR32Sfloat; translucent = false; }; //break;
-      if (comp == 2) { return vk::Format::eR32G32Sfloat;  translucent = true; }; //break;
-      if (comp == 3) { return vk::Format::eR32G32B32Sfloat; translucent = false; }; //break;
-      if (comp == 4) { return vk::Format::eR32G32B32A32Sfloat;  translucent = true; }; //break;
+      if (comp == 1) { translucent = false; return vk::Format::eR32Sfloat; }; //break;
+      if (comp == 2) { translucent = true ; return vk::Format::eR32G32Sfloat; }; //break;
+      if (comp == 3) { translucent = false; return vk::Format::eR32G32B32Sfloat;  }; //break;
+      if (comp == 4) { translucent = true ; return vk::Format::eR32G32B32A32Sfloat; }; //break;
     };
-    return vk::Format::eR8G8B8A8Unorm;
+    { translucent = true; return vk::Format::eR8G8B8A8Unorm; };
   };
 
   //
@@ -278,6 +278,16 @@ namespace ANAMED
     axis[0] = qx / denom;
     axis[1] = qy / denom;
     axis[2] = qz / denom;
+  };
+
+  inline bool Check_ext(const std::string& filename)
+  {
+    size_t pos = filename.rfind('.');
+    if (pos == std::string::npos) { return false; };
+
+    std::string ext = filename.substr(pos + 1);
+    if (ext == "jpg" || ext == "jpeg" || ext == "gif") { return true; };
+    return false;
   };
 
   // 
@@ -319,6 +329,7 @@ namespace ANAMED
       decltype(auto) descriptorsObj = deviceObj->get<PipelineLayoutObj>(this->cInfo->descriptors);
 
       // 
+      //loader.SetPreserveImageChannels(true);
       bool ret = loader.LoadASCIIFromFile(&gltf->model, &gltf->err, &gltf->warn, filename);
       //bool ret = loader.LoadBinaryFromFile(&model, &err, &warn, argv[1]); // for binary glTF(.glb)
 
@@ -348,6 +359,11 @@ namespace ANAMED
             .type = ANAMED::ImageType::eTexture
           }
           });
+
+        // can't determine directly
+        if (Check_ext(image.uri)) {
+          isTranslucent = false;
+        };
 
         // 
         gltf->translucentImages[I] = isTranslucent;
@@ -398,6 +414,11 @@ namespace ANAMED
       };
 
       //
+      decltype(auto) handleFactor = [=](auto const& factor) {
+        return glm::vec4(factor[0], factor[1], factor[2], factor.size() > 3 ? factor[3] : 1.f);
+      };
+      
+      //
       decltype(auto) handleAccessor = [=,this](intptr_t const& accessorIndex, bool const& isIndice = false) {
         auto bresult = ANAMED::BufferViewInfo{ .region = ANAMED::BufferViewRegion{.deviceAddress = 0ull, .stride = 0ull, .size = 0ull}, .format = ANAMED::BufferViewFormat::eNone };;
 
@@ -447,8 +468,41 @@ namespace ANAMED
       };
 
       //
-      decltype(auto) handleFactor = [=](auto const& factor) {
-        return glm::vec4(factor[0], factor[1], factor[2], factor.size() > 3 ? factor[3] : 1.f);
+      gltf->materialBuffer = ANAMED::ResourceObj::make(handle, ANAMED::ResourceCreateInfo{
+        .descriptors = cInfo->descriptors,
+        .bufferInfo = ANAMED::BufferCreateInfo{
+          .size = gltf->model.materials.size() * sizeof(ANAMED::MaterialInfo),
+          .type = ANAMED::BufferType::eUniversal,
+        }
+        });
+
+      //
+      uint64_t materialAddress = gltf->materialBuffer->getDeviceAddress();
+
+      //
+      i = 0;
+      for (decltype(auto) material : gltf->model.materials) {
+        uintptr_t I = i++;
+        decltype(auto) materialInf = ANAMED::MaterialInfo{};
+        materialInf.texCol[uint32_t(ANAMED::TextureBind::eAlbedo)] = ANAMED::TexOrDef{ .texture = material.pbrMetallicRoughness.baseColorTexture.index >= 0 ? gltf->textures[material.pbrMetallicRoughness.baseColorTexture.index] : CTexture{}, .defValue = handleFactor(material.pbrMetallicRoughness.baseColorFactor) };
+        materialInf.texCol[uint32_t(ANAMED::TextureBind::eNormal)] = ANAMED::TexOrDef{ .texture = material.normalTexture.index >= 0 ? gltf->textures[material.normalTexture.index] : CTexture{}, .defValue = glm::vec4(0.5f, 0.5f, 1.f, 1.f) };
+        materialInf.texCol[uint32_t(ANAMED::TextureBind::ePBR)] = ANAMED::TexOrDef{ .texture = material.pbrMetallicRoughness.metallicRoughnessTexture.index >= 0 ? gltf->textures[material.pbrMetallicRoughness.metallicRoughnessTexture.index] : CTexture{}, .defValue = glm::vec4(1.f, material.pbrMetallicRoughness.roughnessFactor, material.pbrMetallicRoughness.metallicFactor, 1.f) };
+        materialInf.texCol[uint32_t(ANAMED::TextureBind::eEmissive)] = ANAMED::TexOrDef{ .texture = material.emissiveTexture.index >= 0 ? gltf->textures[material.emissiveTexture.index] : CTexture{}, .defValue = handleFactor(material.emissiveFactor) };
+        gltf->materials.push_back(materialInf);
+        gltf->translucentMaterials[I] = material.pbrMetallicRoughness.baseColorTexture.index >= 0 ? gltf->translucentTextures.at(material.pbrMetallicRoughness.baseColorTexture.index) : (handleFactor(material.pbrMetallicRoughness.baseColorFactor).a < 1.f ? true : false);
+      };
+
+      {
+        //
+        decltype(auto) status = uploaderObj->executeUploadToResourceOnce(ANAMED::UploadExecutionOnce{
+          .host = cpp21::data_view<char8_t>((char8_t*)gltf->materials.data(), 0ull, cpp21::bytesize(gltf->materials)),
+          .writeInfo = ANAMED::UploadCommandWriteInfo{
+            .dstBuffer = ANAMED::BufferRegion{gltf->materialBuffer.as<vk::Buffer>(), ANAMED::DataRegion{0ull, sizeof(ANAMED::MaterialInfo), cpp21::bytesize(gltf->materials)}},
+          }
+          });
+
+        //
+        deviceObj->tickProcessing();
       };
 
       // 
@@ -482,42 +536,7 @@ namespace ANAMED
         gltf->regions.push_back(BufferRegion{ .buffer = gltf->buffers[bufferView.buffer].as<vk::Buffer>(), .region = DataRegion{bufferView.byteOffset, bufferView.byteStride, bufferView.byteLength}});
       };
 
-      //
-      gltf->materialBuffer = ANAMED::ResourceObj::make(handle, ANAMED::ResourceCreateInfo{
-        .descriptors = cInfo->descriptors,
-        .bufferInfo = ANAMED::BufferCreateInfo{
-          .size = gltf->model.materials.size() * sizeof(ANAMED::MaterialInfo),
-          .type = ANAMED::BufferType::eUniversal,
-        }
-      });
-
-      //
-      uint64_t materialAddress = gltf->materialBuffer->getDeviceAddress();
-
-      //
-      i = 0;
-      for (decltype(auto) material : gltf->model.materials) { uintptr_t I = i++;
-        decltype(auto) materialInf = ANAMED::MaterialInfo{};
-        materialInf.texCol[uint32_t(ANAMED::TextureBind::eAlbedo)] = ANAMED::TexOrDef{ .texture = material.pbrMetallicRoughness.baseColorTexture.index >= 0 ? gltf->textures[material.pbrMetallicRoughness.baseColorTexture.index] : CTexture{}, .defValue = handleFactor(material.pbrMetallicRoughness.baseColorFactor)};
-        materialInf.texCol[uint32_t(ANAMED::TextureBind::eNormal)] = ANAMED::TexOrDef{ .texture = material.normalTexture.index >= 0 ? gltf->textures[material.normalTexture.index] : CTexture{}, .defValue = glm::vec4(0.5f, 0.5f, 1.f, 1.f) };
-        materialInf.texCol[uint32_t(ANAMED::TextureBind::ePBR)] = ANAMED::TexOrDef{ .texture = material.pbrMetallicRoughness.metallicRoughnessTexture.index >= 0 ? gltf->textures[material.pbrMetallicRoughness.metallicRoughnessTexture.index] : CTexture{}, .defValue = glm::vec4(1.f, material.pbrMetallicRoughness.roughnessFactor, material.pbrMetallicRoughness.metallicFactor, 1.f) };
-        materialInf.texCol[uint32_t(ANAMED::TextureBind::eEmissive)] = ANAMED::TexOrDef{ .texture = material.emissiveTexture.index >= 0 ? gltf->textures[material.emissiveTexture.index] : CTexture{}, .defValue = handleFactor(material.emissiveFactor) };
-        gltf->materials.push_back(materialInf);
-        gltf->translucentMaterials[I] = material.pbrMetallicRoughness.baseColorTexture.index >= 0 ? gltf->translucentTextures.at(material.pbrMetallicRoughness.baseColorTexture.index) : (handleFactor(material.pbrMetallicRoughness.baseColorFactor).a < 1.f ? true : false);
-      };
-
-      {
-        //
-        decltype(auto) status = uploaderObj->executeUploadToResourceOnce(ANAMED::UploadExecutionOnce{
-          .host = cpp21::data_view<char8_t>((char8_t*)gltf->materials.data(), 0ull, cpp21::bytesize(gltf->materials)),
-          .writeInfo = ANAMED::UploadCommandWriteInfo{
-            .dstBuffer = ANAMED::BufferRegion{gltf->materialBuffer.as<vk::Buffer>(), ANAMED::DataRegion{0ull, sizeof(ANAMED::MaterialInfo), cpp21::bytesize(gltf->materials)}},
-          }
-        });
-
-        //
-        deviceObj->tickProcessing();
-      };
+      
 
       //
       for (decltype(auto) mesh : gltf->model.meshes) {
@@ -559,14 +578,14 @@ namespace ANAMED
 
           //
           decltype(auto) materialId = std::min(std::max(uintptr_t(primitive.material), 0ull), uintptr_t(gltf->materials.size() - 1u));
-          const bool isTranslucent = false;//gltf->translucentMaterials.at(uintptr_t(materialId));
+          const bool isTranslucent = gltf->translucentMaterials.at(uintptr_t(materialId));
           decltype(auto) meshObj = isTranslucent ? translucentMesh : opaqueMesh;
 
           //
           meshObj->geometries->push_back(ANAMED::GeometryInfo{
             .vertices = vertices,
             .indices = primitive.indices >= 0 ? indices : nullView,
-            .extensionRef = meshObj->extensionBuffer->getDeviceAddress() + pId * sizeof(ANAMED::GeometryExtension),
+            .extensionRef = meshObj->extensionBuffer->getDeviceAddress() + meshObj->extensions->size() * sizeof(ANAMED::GeometryExtension),
             .materialRef = materialAddress + materialId * sizeof(ANAMED::MaterialInfo),
             .primitiveCount = uint32_t(gltf->model.accessors[primitive.indices >= 0 ? primitive.indices : primitive.attributes.at("POSITION")].count) / 3u,
             .flags = isTranslucent ? vk::GeometryFlagBitsKHR{} : vk::GeometryFlagBitsKHR::eOpaque
