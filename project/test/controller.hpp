@@ -27,7 +27,7 @@ public:
   glm::vec3 viewUp = glm::vec3(0.f, 1.f, 0.f);
 
   //
-  double moveSpeed = 10.f;
+  double moveSpeed = 1.f;
   double viewSpeed = 1.f;
 
   // 

@@ -32,6 +32,7 @@ vec3 computeBary(in vec4 vo, in mat3x4 vt) {
 // too expensive method of rasterization
 // vector sampling is generally expensive
 // but it's really required
+/*
 IntersectionInfo rasterize(in InstanceAddressBlock addressInfo, in RayData rayData, in float maxT, inout vec4 lastPos, in bool previous) {
   IntersectionInfo intersection;
   intersection.barycentric = vec3(0.f.xxx);
@@ -106,20 +107,58 @@ IntersectionInfo rasterize(in InstanceAddressBlock addressInfo, in RayData rayDa
   //
   return intersection;
 };
+*/
 
-/*
 // very cheap way - NOT RECOMMENDED!
-IntersectionInfo rasterize(in InstanceAddressInfo addressInfo, in RayData rayData, in float maxT) {
-  const uvec4 indices = texelFetch(texturesU[framebufferAttachments[0]], ivec2(rayData.launchId), 0);
-  const vec3 bary = texelFetch(textures[framebufferAttachments[1]], ivec2(rayData.launchId), 0).xyz;
+IntersectionInfo rasterize(in InstanceAddressBlock addressInfo, in RayData rayData, in float maxT, inout vec4 lastPos, in bool previous) {
+  const uvec4 indices = texelFetch(texturesU[framebufferAttachments[0][0]], ivec2(rayData.launchId), 0);
+  const vec3 bary = texelFetch(textures[framebufferAttachments[0][1]], ivec2(rayData.launchId), 0).xyz;
 
+  //
+  vec4 ssOriginal = divW(lastPos);
+  vec4 viewOrigin = vec4(vec4(rayData.origin.xyz, 1.f) * (previous ? constants.previousLookAt : constants.lookAt), 1.f);
+  vec4 viewEnd = vec4(vec4(rayData.origin.xyz+rayData.direction.xyz, 1.f) * (previous ? constants.previousLookAt : constants.lookAt), 1.f);
+  vec4 viewDir = (viewEnd - viewOrigin);
+  viewDir.xyz = normalize(viewDir.xyz);
+
+  //
+  vec4 ss = (viewOrigin * constants.perspective);
+  vec2 sc = (divW(ss).xy * 0.5f + 0.5f);
+
+  //
   IntersectionInfo intersection;
   intersection.barycentric = bary.xyz;
   intersection.instanceId = indices[0];
   intersection.geometryId = indices[1];
   intersection.primitiveId = indices[2];
+  lastPos = vec4(texture(sampler2D(textures[framebufferAttachments[0][2]], samplers[0]), sc).xyz, 1.f);
+
+  //
   return intersection;
 };
-*/
+
+RayData reuseLight(inout RayData rayData) {
+  // screen space reuse already lighted pixels
+  vec4 ssPos = divW(vec4(vec4(rayData.origin.xyz, 1.f) * constants.lookAt, 1.f) * constants.perspective);
+  ivec2 pxId = ivec2((ssPos.xy * 0.5f + 0.5f) * extent);
+
+  //
+  if (pxId.x >= 0 && pxId.y >= 0 && pxId.x < extent.x && pxId.y < extent.y) {
+    vec4 ssSurf = ssPos; ssSurf.z = 1.f;
+
+    // 
+    { // I don't know, works it or not
+      rasterize(instancedData, rayData, 10000.f, ssSurf, false);
+    };
+
+    // testing now working correctly, sorry
+    if (all(lessThan(abs(ssPos.xyz-ssSurf.xyz), vec3(2.f/extent, 0.002f)))) {
+      PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pxId.x + pxId.y * extent.x);
+      const vec4 color = cvtRgb16Acc(surfaceInfo.accum[2]);
+      rayData.emission += f16vec4(trueMultColor(color/color.w, rayData.energy));
+    };
+  };
+  return rayData;
+};
 
 #endif

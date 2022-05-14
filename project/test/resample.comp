@@ -154,10 +154,9 @@ void reproject3D(in uint pixelId, in vec3 srcRayDir, in int type) {
       rasterize(instancedData, rayData, 10000.f, dstSamplePos, false);
     };
 
-    // TODO: fix `pupet.glsl` for transparency support and other layers
-    // transparency not supported (planned fix in next version of vector sampling) :(
-    const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz-(dstHitPersp.xyz/dstHitPersp.w)), vec3(2.f/extent, 0.002f)));// && distance(dstPos, dstHitFoundIntersection) < 0.001f;
-    const bool srcValidDist = all(lessThan(abs(srcSamplePos.xyz-(srcHitPersp.xyz/srcHitPersp.w)), vec3(2.f/extent, 0.002f)));
+    // sorry, we doesn't save previous raster data
+    const bool dstValidDist = type == 1 ? true : all(lessThan(abs(dstSamplePos.xyz-(dstHitPersp.xyz/dstHitPersp.w)), vec3(2.f/extent, 0.002f)));// && distance(dstPos, dstHitFoundIntersection) < 0.001f;
+    const bool srcValidDist = true;//all(lessThan(abs(srcSamplePos.xyz-(srcHitPersp.xyz/srcHitPersp.w)), vec3(2.f/extent, 0.002f)));
 
     // copy to dest, and nullify source
     if ( data.origin.w >= 0.f && SURF_SRC.color[type].w > 0.f && dstValidDist && (srcValidDist || SURF_DST.color[type].w <= 0.f) ) {

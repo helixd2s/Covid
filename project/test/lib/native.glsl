@@ -831,8 +831,9 @@ float luminance(in vec3 color) {
 vec3 trueMultColor(in vec3 rayColor, in vec3 material) {
   const float rfactor = clamp(luminance(max(rayColor,0.f.xxx)), 0.f, 16.f);
   const float mfactor = clamp(luminance(max(material,0.f.xxx)), 0.f, 16.f);
+  return clamp(material,0.f.xxx,16.f.xxx) * clamp(rayColor,0.f.xxx,16.f.xxx);
   //return rfactor * materialColor + mfactor * rayColor;
-  return sqrt((rfactor * clamp(material,0.f.xxx,16.f.xxx)) * (mfactor * clamp(rayColor,0.f.xxx,16.f.xxx)));
+  //return sqrt((rfactor * clamp(material,0.f.xxx,16.f.xxx)) * (mfactor * clamp(rayColor,0.f.xxx,16.f.xxx)));
   //return rayColor * material;
 };
 
