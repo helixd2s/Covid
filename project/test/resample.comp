@@ -72,101 +72,104 @@ void reproject3D(in uint pixelId, in vec3 srcRayDir, in int type) {
   PixelSurfaceInfoRef surface = getPixelSurface(pixelId);
   PixelHitInfoRef data = getNewHit(pixelId, type);
 
-  // 
-  const vec3 srcHitPos = data.origin.xyz + data.origin.w * srcRayDir;
-  const vec3 srcPos = data.origin.xyz;
-  const vec3 srcNormal = surface.normal.xyz;
-
-  // 
-  const vec3 dstPos = vec4(vec4(srcPos.xyz, 1.f) 
-    * inverse(getPreviousInstanceTransform(instancedData, surface.indices.x)), 1.f) 
-    * getInstanceTransform(instancedData, surface.indices.x);
-  const vec3 dstHitPos = vec4(vec4(srcHitPos.xyz, 1.f) 
-    * inverse(getPreviousInstanceTransform(instancedData, data.indices.x)), 1.f) 
-    * getInstanceTransform(instancedData, data.indices.x);
-  const vec3 dstNormal = normalize(srcNormal.xyz 
-    * toNormalMat(getPreviousInstanceTransform(instancedData, surface.indices.x)) 
-    * toNormalMat(inverse(getInstanceTransform(instancedData, surface.indices.x)))
-  );
-  const vec3 dstRayDir = normalize(srcRayDir.xyz 
-    * toNormalMat(getPreviousInstanceTransform(instancedData, surface.indices.x)) 
-    * toNormalMat(inverse(getInstanceTransform(instancedData, surface.indices.x)))
-  );
-
-  // 
-  const vec3 dstHitFoundIntersection = type == 2 ? dstPos : (type == 1 ? dstHitPos : vec4(
-    find_reflection_incident_point( 
-      vec4(dstPos.xyz, 1.f) * constants.lookAt, 
-      vec4(srcHitPos.xyz, 1.f) * constants.previousLookAt, 
-      vec4(srcPos.xyz, 1.f) * constants.previousLookAt, 
-      normalize(srcNormal.xyz)
-    ), 1.f) * constants.lookAtInverse);
-
-  // 
-  const vec3 srcHitFoundIntersection = type == 2 ? srcPos : (type == 1 ? srcHitPos : vec4(vec4(dstHitFoundIntersection, 1.f)
-    * inverse(getInstanceTransform(instancedData, type == 1 ? data.indices.x : surface.indices.x)), 1.f) 
-    * getPreviousInstanceTransform(instancedData, type == 1 ? data.indices.x : surface.indices.x));
-
-  // 
-  const vec4 srcHitPersp = vec4(vec4(srcHitFoundIntersection, 1.f) * constants.previousLookAt, 1.f) * constants.perspective;
-  const vec2 srcScreen = (srcHitPersp.xy/srcHitPersp.w * 0.5f + 0.5f);
-  const ivec2 srcInt = ivec2(srcScreen * vec2(extent));
-  const uint srcId = uint(srcInt.x + srcInt.y * extent.x);
-  const bool srcValid = srcInt.x >= 0 && srcInt.y >= 0 && srcInt.x < extent.x && srcInt.y < extent.y;
-
-  // 
-  const vec4 dstHitPersp = vec4(vec4(dstHitFoundIntersection, 1.f) * constants.lookAt, 1.f) * constants.perspective;
-  const vec2 dstScreen = (dstHitPersp.xy/dstHitPersp.w * 0.5f + 0.5f);
-  const ivec2 dstInt = ivec2(dstScreen * vec2(extent));
-  const uint dstId = uint(dstInt.x + dstInt.y * extent.x);
-  const bool dstValid = dstInt.x >= 0 && dstInt.y >= 0 && dstInt.x < extent.x && dstInt.y < extent.y;
-
-  // 
-  if (srcValid && dstValid) {
-    //
-    PixelSurfaceInfoRef SURF_SRC = getPixelSurface(srcId);
-    PixelHitInfoRef HIT_SRC = getNewHit(srcId, type);
-
-    //
-    PixelSurfaceInfoRef SURF_DST = getPixelSurface(dstId);
-    PixelHitInfoRef HIT_DST = getRpjHit(dstId, type);  
-
-    // fallback
-    vec4 
-      srcSamplePos = srcHitPersp/srcHitPersp.w,//vec4(linearSrcPos(srcScreen), 1.f), 
-      dstSamplePos = dstHitPersp/dstHitPersp.w;//texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), dstScreen);
+  //
+  if (data.origin.x != 0.f || data.origin.y != 0.f || data.origin.z != 0.f) {
+    // 
+    const vec3 srcHitPos = data.origin.xyz + data.origin.w * srcRayDir;
+    const vec3 srcPos = data.origin.xyz;
+    const vec3 srcNormal = surface.normal.xyz;
 
     // 
-    { // I don't know, works it or not
-      RayData rayData;
-      rayData.launchId = u16vec2(srcInt);
-      rayData.origin = srcHitFoundIntersection.xyz;
-      rayData.direction = normalize(srcHitFoundIntersection.xyz-srcPos.xyz);
-      rasterize(instancedData, rayData, 10000.f, srcSamplePos, true);
-    };
+    const vec3 dstPos = vec4(vec4(srcPos.xyz, 1.f) 
+      * inverse(getPreviousInstanceTransform(instancedData, surface.indices.x)), 1.f) 
+      * getInstanceTransform(instancedData, surface.indices.x);
+    const vec3 dstHitPos = vec4(vec4(srcHitPos.xyz, 1.f) 
+      * inverse(getPreviousInstanceTransform(instancedData, data.indices.x)), 1.f) 
+      * getInstanceTransform(instancedData, data.indices.x);
+    const vec3 dstNormal = normalize(srcNormal.xyz 
+      * toNormalMat(getPreviousInstanceTransform(instancedData, surface.indices.x)) 
+      * toNormalMat(inverse(getInstanceTransform(instancedData, surface.indices.x)))
+    );
+    const vec3 dstRayDir = normalize(srcRayDir.xyz 
+      * toNormalMat(getPreviousInstanceTransform(instancedData, surface.indices.x)) 
+      * toNormalMat(inverse(getInstanceTransform(instancedData, surface.indices.x)))
+    );
 
-    //
-    { // I don't know, works it or not
-      RayData rayData;
-      rayData.launchId = u16vec2(dstInt);
-      rayData.origin = dstHitFoundIntersection.xyz;
-      rayData.direction = normalize(dstHitFoundIntersection.xyz-dstPos.xyz);
-      rasterize(instancedData, rayData, 10000.f, dstSamplePos, false);
-    };
+    // 
+    const vec3 dstHitFoundIntersection = type == 2 ? dstPos : (type == 1 ? dstHitPos : vec4(
+      find_reflection_incident_point( 
+        vec4(dstPos.xyz, 1.f) * constants.lookAt, 
+        vec4(srcHitPos.xyz, 1.f) * constants.previousLookAt, 
+        vec4(srcPos.xyz, 1.f) * constants.previousLookAt, 
+        normalize(srcNormal.xyz)
+      ), 1.f) * constants.lookAtInverse);
 
-    // sorry, we doesn't save previous raster data
-    const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz-(dstHitPersp.xyz/dstHitPersp.w)), vec3(2.f/extent, 0.002f)));// && distance(dstPos, dstHitFoundIntersection) < 0.001f;
-    const bool srcValidDist = true;//all(lessThan(abs(srcSamplePos.xyz-(srcHitPersp.xyz/srcHitPersp.w)), vec3(2.f/extent, 0.002f)));
+    // 
+    const vec3 srcHitFoundIntersection = type == 2 ? srcPos : (type == 1 ? srcHitPos : vec4(vec4(dstHitFoundIntersection, 1.f)
+      * inverse(getInstanceTransform(instancedData, type == 1 ? data.indices.x : surface.indices.x)), 1.f) 
+      * getPreviousInstanceTransform(instancedData, type == 1 ? data.indices.x : surface.indices.x));
 
-    // copy to dest, and nullify source
-    if ( data.origin.w >= 0.f && SURF_SRC.color[type].w > 0.f && dstValidDist && (srcValidDist || SURF_DST.color[type].w <= 0.f) ) {
-      accumulate(SURF_DST, type, cvtRgb16Float(SURF_SRC.color[type])); SURF_SRC.color[type] = vec4(0.f.xxxx);
+    // 
+    const vec4 srcHitPersp = vec4(vec4(srcHitFoundIntersection, 1.f) * constants.previousLookAt, 1.f) * constants.perspective;
+    const vec2 srcScreen = (srcHitPersp.xy/srcHitPersp.w * 0.5f + 0.5f);
+    const ivec2 srcInt = ivec2(srcScreen * vec2(extent));
+    const uint srcId = uint(srcInt.x + srcInt.y * extent.x);
+    const bool srcValid = srcInt.x >= 0 && srcInt.y >= 0 && srcInt.x < extent.x && srcInt.y < extent.y;
+
+    // 
+    const vec4 dstHitPersp = vec4(vec4(dstHitFoundIntersection, 1.f) * constants.lookAt, 1.f) * constants.perspective;
+    const vec2 dstScreen = (dstHitPersp.xy/dstHitPersp.w * 0.5f + 0.5f);
+    const ivec2 dstInt = ivec2(dstScreen * vec2(extent));
+    const uint dstId = uint(dstInt.x + dstInt.y * extent.x);
+    const bool dstValid = dstInt.x >= 0 && dstInt.y >= 0 && dstInt.x < extent.x && dstInt.y < extent.y;
+
+    // 
+    if (srcValid && dstValid) {
+      //
+      PixelSurfaceInfoRef SURF_SRC = getPixelSurface(srcId);
+      PixelHitInfoRef HIT_SRC = getNewHit(srcId, type);
+
+      //
+      PixelSurfaceInfoRef SURF_DST = getPixelSurface(dstId);
+      PixelHitInfoRef HIT_DST = getRpjHit(dstId, type);  
+
+      // fallback
+      vec4 
+        srcSamplePos = srcHitPersp/srcHitPersp.w,//vec4(linearSrcPos(srcScreen), 1.f), 
+        dstSamplePos = dstHitPersp/dstHitPersp.w;//texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), dstScreen);
 
       // 
-      HIT_DST.origin = vec4(dstHitFoundIntersection, distance(dstHitPos, dstHitFoundIntersection)); HIT_SRC.origin = vec4(0.f.xxxx);
-      HIT_DST.indices = HIT_SRC.indices; HIT_SRC.indices = uvec4(0u);
-    };
+      if (HIT_SRC.origin.x != 0.f || HIT_SRC.origin.y != 0.f || HIT_SRC.origin.z != 0.f) { // I don't know, works it or not
+        RayData rayData;
+        rayData.launchId = u16vec2(srcInt);
+        rayData.origin = srcHitFoundIntersection.xyz;
+        rayData.direction = normalize(srcHitFoundIntersection.xyz-srcPos.xyz);
+        rasterize(instancedData, rayData, 10000.f, srcSamplePos, true);
+      };
 
+      //
+      if (HIT_DST.origin.x != 0.f || HIT_DST.origin.y != 0.f || HIT_DST.origin.z != 0.f) { // I don't know, works it or not
+        RayData rayData;
+        rayData.launchId = u16vec2(dstInt);
+        rayData.origin = dstHitFoundIntersection.xyz;
+        rayData.direction = normalize(dstHitFoundIntersection.xyz-dstPos.xyz);
+        rasterize(instancedData, rayData, 10000.f, dstSamplePos, false);
+      };
+
+      // sorry, we doesn't save previous raster data
+      const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz-(dstHitPersp.xyz/dstHitPersp.w)), vec3(2.f/extent, 0.002f)));// && distance(dstPos, dstHitFoundIntersection) < 0.001f;
+      const bool srcValidDist = true;//all(lessThan(abs(srcSamplePos.xyz-(srcHitPersp.xyz/srcHitPersp.w)), vec3(2.f/extent, 0.002f)));
+
+      // copy to dest, and nullify source
+      if ( data.origin.w >= 0.f && SURF_SRC.color[type].w > 0.f && dstValidDist && (srcValidDist || SURF_DST.color[type].w <= 0.f) ) {
+        accumulate(SURF_DST, type, cvtRgb16Float(SURF_SRC.color[type])); SURF_SRC.color[type] = vec4(0.f.xxxx);
+
+        // 
+        HIT_DST.origin = vec4(dstHitFoundIntersection, distance(dstHitPos, dstHitFoundIntersection)); HIT_SRC.origin = vec4(0.f.xxxx);
+        HIT_DST.indices = HIT_SRC.indices; HIT_SRC.indices = uvec4(0u);
+      };
+
+    };
   };
 };
 
@@ -174,43 +177,45 @@ void reproject3D(in uint pixelId, in vec3 srcRayDir, in int type) {
 void reprojectDiffuse(in uint srcId, in vec3 srcRayDir) {
   PixelSurfaceInfoRef srcSurface = getPixelSurface(srcId);
   PixelHitInfoRef srcHit = getNewHit(srcId, 2);
+  if (srcHit.origin.x != 0.f || srcHit.origin.y != 0.f || srcHit.origin.z != 0.f) {
 
-  //
-  const vec3 srcPos = srcSurface.origin.xyz;
-  const vec3 srcNormal = srcSurface.normal.xyz;
+    //
+    const vec3 srcPos = srcSurface.origin.xyz;
+    const vec3 srcNormal = srcSurface.normal.xyz;
 
-  //
-  const vec3 dstPos = vec4(vec4(srcPos.xyz, 1.f) * inverse(getPreviousInstanceTransform(instancedData, srcSurface.indices.x)), 1.f) * getInstanceTransform(instancedData, srcSurface.indices.x);
-  const vec3 dstNormal = normalize(srcNormal.xyz * toNormalMat(getPreviousInstanceTransform(instancedData, srcSurface.indices.x)) * toNormalMat(inverse(getInstanceTransform(instancedData, srcSurface.indices.x))));
-  const vec3 dstRayDir = normalize(srcRayDir.xyz * toNormalMat(getPreviousInstanceTransform(instancedData, srcSurface.indices.x)) * toNormalMat(inverse(getInstanceTransform(instancedData, srcSurface.indices.x))));
-  const vec4 dstPerspPos = vec4(vec4(dstPos.xyz, 1.f) * constants.lookAt, 1.f) * constants.perspective;
-  const vec2 dstScreen = (dstPerspPos.xy/dstPerspPos.w) * 0.5f + 0.5f;
-  const ivec2 dstScreenPos = ivec2(dstScreen * vec2(extent));
+    //
+    const vec3 dstPos = vec4(vec4(srcPos.xyz, 1.f) * inverse(getPreviousInstanceTransform(instancedData, srcSurface.indices.x)), 1.f) * getInstanceTransform(instancedData, srcSurface.indices.x);
+    const vec3 dstNormal = normalize(srcNormal.xyz * toNormalMat(getPreviousInstanceTransform(instancedData, srcSurface.indices.x)) * toNormalMat(inverse(getInstanceTransform(instancedData, srcSurface.indices.x))));
+    const vec3 dstRayDir = normalize(srcRayDir.xyz * toNormalMat(getPreviousInstanceTransform(instancedData, srcSurface.indices.x)) * toNormalMat(inverse(getInstanceTransform(instancedData, srcSurface.indices.x))));
+    const vec4 dstPerspPos = vec4(vec4(dstPos.xyz, 1.f) * constants.lookAt, 1.f) * constants.perspective;
+    const vec2 dstScreen = (dstPerspPos.xy/dstPerspPos.w) * 0.5f + 0.5f;
+    const ivec2 dstScreenPos = ivec2(dstScreen * vec2(extent));
 
-  // fallback
-  vec4 dstSamplePos = dstPerspPos/dstPerspPos.w;//vec4(texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), dstScreen, 0).xyz, 1.f);
+    // fallback
+    vec4 dstSamplePos = dstPerspPos/dstPerspPos.w;//vec4(texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), dstScreen, 0).xyz, 1.f);
 
-  //
-  { // I don't know, works it or not
-    RayData rayData;
-    rayData.launchId = u16vec2(dstScreenPos);
-    rayData.origin = dstPos.xyz;
-    rayData.direction = vec3(0.f); // WARNING! BROKEN RAY!
-    rasterize(instancedData, rayData, 10000.f, dstSamplePos, false);
-  };
+    //
+    if (srcSurface.origin.x != 0.f || srcSurface.origin.y != 0.f || srcSurface.origin.z != 0.f) { // I don't know, works it or not
+      RayData rayData;
+      rayData.launchId = u16vec2(dstScreenPos);
+      rayData.origin = dstPos.xyz;
+      rayData.direction = vec3(0.f); // WARNING! BROKEN RAY!
+      rasterize(instancedData, rayData, 10000.f, dstSamplePos, false);
+    };
 
-  //
-  if (dstScreenPos.x >= 0 && dstScreenPos.y >= 0 && dstScreenPos.x < extent.x && dstScreenPos.y < extent.y) {
-    const uint dstId = uint(dstScreenPos.x + dstScreenPos.y * extent.x);
-    const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz-(dstPerspPos.xyz/dstPerspPos.w)), vec3(2.f/extent, 0.002f)));
-    PixelSurfaceInfoRef dstSurface = getPixelSurface(dstId);
-    PixelHitInfoRef dstHit = getRpjHit(dstId, 2);
-    if (srcSurface.color[2].w > 0.f && dstValidDist) {
-      // 
-      accumulate(dstSurface, 2, cvtRgb16Float(srcSurface.color[2]));
+    //
+    if (dstScreenPos.x >= 0 && dstScreenPos.y >= 0 && dstScreenPos.x < extent.x && dstScreenPos.y < extent.y) {
+      const uint dstId = uint(dstScreenPos.x + dstScreenPos.y * extent.x);
+      const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz-(dstPerspPos.xyz/dstPerspPos.w)), vec3(2.f/extent, 0.002f)));
+      PixelSurfaceInfoRef dstSurface = getPixelSurface(dstId);
+      PixelHitInfoRef dstHit = getRpjHit(dstId, 2);
+      if (srcSurface.color[2].w > 0.f && dstValidDist) {
+        // 
+        accumulate(dstSurface, 2, cvtRgb16Float(srcSurface.color[2]));
 
-      // nullify source
-      srcSurface.color[2] = vec4(0.f.xxxx);
+        // nullify source
+        srcSurface.color[2] = vec4(0.f.xxxx);
+      };
     };
   };
 };
@@ -226,9 +231,14 @@ void main() {
   const vec3 srcRayEnd = divW(vec4(vec3(tCoord, 1.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.previousLookAtInverse;
   const vec3 srcRayDir = normalize(srcRayEnd.xyz - srcRayBegin.xyz);
 
+  //
+  PixelSurfaceInfoRef srcSurface = getPixelSurface(pixelId);
+
   // using barrier for partially avoid some problems
-  reproject3D(pixelId, srcRayDir, 0);
-  reproject3D(pixelId, srcRayDir, 1);
-  reprojectDiffuse(pixelId, srcRayDir);
+  if (srcSurface.origin.x != 0.f || srcSurface.origin.y != 0.f || srcSurface.origin.z != 0.f) {
+    reproject3D(pixelId, srcRayDir, 0);
+    reproject3D(pixelId, srcRayDir, 1);
+    reprojectDiffuse(pixelId, srcRayDir);
+  };
   //reproject3D(pixelId, srcRayDir, 2);
 };

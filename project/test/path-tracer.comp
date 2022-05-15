@@ -92,6 +92,7 @@ void main() {
       const vec4 skyColor = gamma3(vec4(texture(sampler2D(textures[background], samplers[0]), lcts(cmd.rayData.direction.xyz)).xyz, 1.f));
       cmd.diffuseColor = f16vec4(vec4(skyColor.xyz, 1.f));
       cmd.emissiveColor = f16vec3(0.f.xxx.xyz);
+      cmd.rayData.origin = 0.f.xxx;
     };
 
     //

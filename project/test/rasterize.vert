@@ -20,7 +20,7 @@ void main() {
   uint32_t geometryIndex = gl_DrawID+instanceDrawInfo.drawIndex;
 
   // 
-  InstanceInfo instanceInfo = getInstance_(instanceDrawInfo.data, 0u);
+  InstanceInfo instanceInfo = InstanceInfo(instanceDrawInfo.data);
   GeometryInfo geometryInfo = getGeometry(instanceInfo, geometryIndex);
   GeometryExtData geometry = getGeometryData(geometryInfo, uint(gl_VertexIndex/3u));
 

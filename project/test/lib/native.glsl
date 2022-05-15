@@ -83,12 +83,6 @@ struct Constants
 #define TYPE uvec4
 #endif
 
-// but may not to be...
-layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer PixelHitInfoRef {
-  uvec4 indices;
-  vec4 origin;
-};
-
 //
 const uint DIFFUSE_TEX = 0u;
 const uint EMISSION_TEX = 1u;
@@ -97,6 +91,12 @@ const uint EMISSION_TEX = 1u;
 const uint DIFFUSE_TYPE = 2u;
 const uint REFLECTION_TYPE = 0u;
 const uint TRANSPARENCY_TYPE = 1u;
+
+// but may not to be...
+layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer PixelHitInfoRef {
+  uvec4 indices;
+  vec4 origin;
+};
 
 // but may not to be...
 layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer PixelSurfaceInfoRef {
@@ -110,12 +110,6 @@ layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer Pix
 
 //
 layout(buffer_reference, scalar, buffer_reference_align = 1) buffer RasterInfoRef {
-  uvec4 indices;
-  vec4 barycentric;
-};
-
-//
-struct RasterInfo {
   uvec4 indices;
   vec4 barycentric;
 };
@@ -319,8 +313,10 @@ struct GeometryExtAttrib {
   vec4 data[MAX_VERTEX_DATA];
 };
 
+
+
 //
-struct GeometryInfo {
+layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer GeometryInfo {
   BufferViewInfo vertices;
   BufferViewInfo indices;
   BufferViewInfo transform;
@@ -336,22 +332,12 @@ struct GeometryInfo {
 };
 
 //
-layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer GeometryData {
-  GeometryInfo infos[];
-};
-
-//
-struct InstanceInfo {
+layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer InstanceInfo {
   uint64_t data; uint32_t geometryCount; uint32_t reserved;
   mat3x4 transform;
   mat3x4 previousTransform;
   //mat3x3 normalTransform;
   //uint32_t align;
-};
-
-//
-layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer InstanceData {
-  InstanceInfo infos[];
 };
 
 
@@ -520,36 +506,16 @@ vec4 interpolate(in mat3x4 vertices, in vec2 barycentric) {
   return interpolate(vertices, vec3(1.f-barycentric.x-barycentric.y, barycentric.xy));
 };
 
-
-
-//
-InstanceInfo getInstance_(in InstanceData data, in uint32_t index) {
-  return data.infos[index&0x7FFFFFFFu];
-};
-
-//
-InstanceInfo getInstance_(in uint64_t data, in uint32_t index) {
-  InstanceInfo info;
-  //info.data = 0u;
-
-  if (data > 0) { info = getInstance_(InstanceData(data), (index&0x7FFFFFFFu)); }; 
-  return info;
-};
-
 //
 InstanceInfo getInstance_(in InstanceAddressInfo addressInfo, in uint32_t index) {
   InstanceInfo info;
   //info.data = 0u;
   index &= 0x7FFFFFFFu;
   if (index >= 0 && index < addressInfo.instanceCount) {
-    info = getInstance_(addressInfo.data, index);
+    info = InstanceInfo(addressInfo.data) + index;//getInstance_(addressInfo.data, index);
   };
   return info;
 };
-
-// 
-InstanceInfo getInstance_(in uint64_t data) { return getInstance_(data, 0u); };
-InstanceInfo getInstance_(in InstanceData data) { return getInstance_(data, 0u); };
 
 //
 InstanceInfo getInstance(in InstanceAddressBlock addressInfo, in uint32_t instanceId) {
@@ -562,32 +528,27 @@ InstanceInfo getInstance(in InstanceAddressBlock addressInfo, in uint32_t type, 
 };
 
 //
-GeometryInfo getGeometry(in GeometryData data, in uint32_t index) {
-  return data.infos[index];
-};
-
-//
-GeometryInfo getGeometry(in uint64_t data, in uint32_t index) {
+GeometryInfo getGeometry_(in uint64_t data, in uint32_t index) {
   // 
-  BufferViewRegion nullViewRegion;
-  nullViewRegion.deviceAddress = 0u;
-  nullViewRegion.stride = 0u;
-  nullViewRegion.size = 0u;
+  //BufferViewRegion nullViewRegion;
+  //nullViewRegion.deviceAddress = 0u;
+  //nullViewRegion.stride = 0u;
+  //nullViewRegion.size = 0u;
 
   //
-  BufferViewInfo nullView;
-  nullView.region = nullViewRegion;
+  //BufferViewInfo nullView;
+  //nullView.region = nullViewRegion;
 
   //
   GeometryInfo info;
-  info.extensionRef = 0u;
-  info.materialRef = 0u;
-  info.vertices = nullView;
-  info.indices = nullView;
-  info.transform = nullView;
+  //info.extensionRef = 0u;
+  //info.materialRef = 0u;
+  //info.vertices = nullView;
+  //info.indices = nullView;
+  //info.transform = nullView;
   
   // 
-  if (data > 0) { info = getGeometry(GeometryData(data), index); };
+  if (data > 0) { info = GeometryInfo(data) + index; };
 
   // 
   return info;
@@ -596,26 +557,26 @@ GeometryInfo getGeometry(in uint64_t data, in uint32_t index) {
 //
 GeometryInfo getGeometry(in InstanceInfo instanceInfo, in uint32_t index) {
   // 
-  BufferViewRegion nullViewRegion;
-  nullViewRegion.deviceAddress = 0u;
-  nullViewRegion.stride = 0u;
-  nullViewRegion.size = 0u;
+  //BufferViewRegion nullViewRegion;
+  //nullViewRegion.deviceAddress = 0u;
+  //nullViewRegion.stride = 0u;
+  //nullViewRegion.size = 0u;
 
   //
-  BufferViewInfo nullView;
-  nullView.region = nullViewRegion;
+  //BufferViewInfo nullView;
+  //nullView.region = nullViewRegion;
 
   //
   GeometryInfo info;
-  info.extensionRef = 0u;
-  info.materialRef = 0u;
-  info.vertices = nullView;
-  info.indices = nullView;
-  info.transform = nullView;
+  //info.extensionRef = 0u;
+  //info.materialRef = 0u;
+  //info.vertices = nullView;
+  //info.indices = nullView;
+  //info.transform = nullView;
 
   //
   if (index >= 0u && index < instanceInfo.geometryCount) {
-    info = getGeometry(instanceInfo.data, index); 
+    info = getGeometry_(instanceInfo.data, index); 
   };
 
   // 

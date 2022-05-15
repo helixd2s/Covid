@@ -35,7 +35,7 @@ void main() {
   uint32_t geometryIndex = pIndices.y;
 
   // 
-  InstanceInfo instanceInfo = getInstance_(instanceDrawInfo.data, 0u);
+  InstanceInfo instanceInfo = InstanceInfo(instanceDrawInfo.data);
   GeometryInfo geometryInfo = getGeometry(instanceInfo, geometryIndex);
 
   //

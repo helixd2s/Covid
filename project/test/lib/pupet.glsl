@@ -29,18 +29,19 @@ vec3 computeBary(in vec4 vo, in mat3x4 vt) {
   return abs(det) > 0.f ? UVW : vec3(0.f);
 };
 
+/*
 // too expensive method of rasterization
 // vector sampling is generally expensive
 // but it's really mostly required
-  /*
+// currentlt, works BUGGY and bit-incorrectlly, and laggy
 IntersectionInfo rasterize(in InstanceAddressBlock addressInfo, in RayData rayData, in float maxT, inout vec4 lastPos, in bool previous) {
-
   IntersectionInfo intersection;
   intersection.barycentric = vec3(0.f.xxx);
   intersection.instanceId = 0u;
   intersection.geometryId = 0u;
   intersection.primitiveId = 0u;
 
+  //
   const mat3x4 lkAt = (previous ? constants.previousLookAt : constants.lookAt);
 
   //
@@ -113,7 +114,8 @@ IntersectionInfo rasterize(in InstanceAddressBlock addressInfo, in RayData rayDa
 
   //
   return intersection;
-};*/
+};
+*/
 
 // very cheap way - NOT RECOMMENDED!
 IntersectionInfo rasterize_(in InstanceAddressBlock addressInfo, inout IntersectionInfo intersection, in RayData rayData, in float maxT, inout vec4 lastPos, in bool previous, in uint isTrasnlucent) {
@@ -135,7 +137,7 @@ IntersectionInfo rasterize_(in InstanceAddressBlock addressInfo, inout Intersect
   vec4 cp = vec4(texelFetch(textures[framebufferAttachments[isTrasnlucent][4]], ivec2(rayData.launchId), 0).xyz, 1.f);
 
   //
-  if ((divW(lastPos).z <= (sp.z + 0.01f) || cp.w >= 1.f) && sp.z < 1.f) {
+  if ((sp.z <= (divW(lastPos).z + 0.001f) || cp.a >= 1.f) && sp.z < 1.f) {
     intersection.barycentric = bary.xyz;
     intersection.instanceId = indices[0];
     intersection.geometryId = indices[1];

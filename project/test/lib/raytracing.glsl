@@ -275,6 +275,7 @@ RayData handleIntersection(in RayData rayData, inout IntersectionInfo intersecti
     rayData.direction.xyz = reflective(originSeedXYZ, rayData.direction.xyz, normals, roughnessFactor);
     rayData.energy.xyz = f16vec3(metallicMult(rayData.energy.xyz, diffuseColor.xyz, metallicFactor));
     if (reflFactor < 0.1f) { passed.diffusePass = true; };
+    //passed.diffusePass = true;
   } else 
   if (random(rayData.launchId.xy) <= clamp(transpCoef, inner ? 1.f : 0.f, 1.f)) { // wrong diffuse if inner
     rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, passed.alphaColor.xyz));
@@ -306,6 +307,12 @@ RayData pathTrace(inout RayData rayData, inout float hitDist, inout vec3 firstNo
   float currentT = 0.f;
   //for (uint32_t i=0;i<3;i++) {
   uint R=0, T=0;
+
+  // sorry, I hadn't choice
+  uvec4 lastIndices = firstIndices;
+  vec3 lastNormal = firstNormal;
+
+  //
   while (R<3 && T<3) {
     if (luminance(rayData.energy.xyz) < 0.001f) { break; };
 
@@ -350,6 +357,10 @@ RayData pathTrace(inout RayData rayData, inout float hitDist, inout vec3 firstNo
       R++; currentT += intersection.hitT;
 
       // 
+      lastNormal = pass.normals.xyz;
+      lastIndices = uvec4(intersection.instanceId, intersection.geometryId, intersection.primitiveId, 0u);
+
+      //
       if (pass.diffusePass && !surfaceFound) { 
         hitDist = currentT;
         surfaceFound = true;
@@ -366,6 +377,9 @@ RayData pathTrace(inout RayData rayData, inout float hitDist, inout vec3 firstNo
       rayData.emission += f16vec4(trueMultColor(rayData.energy.xyz, skyColor.xyz), 0.f);
       rayData.energy.xyz *= f16vec3(0.f.xxx);
       if (!surfaceFound) {
+        // sorry, I hadn't choice
+        firstIndices = lastIndices;
+        firstNormal = lastNormal;
         if ((type == 1 || R == 0) && type != 0) {
           hitDist = currentT = 10000.f;
         } else {
@@ -495,7 +509,7 @@ void retranslateHit(in uint pixelId, in uint type, in vec3 origin) {
 void backgroundHit(in uint pixelId, in uint type, in vec3 origin, in vec4 color) {
   PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
   surfaceInfo.color[type] += ((type == 2) ? /*vec4(1.f.xxxx)*/color : vec4(0.f.xxx, 1.f));
-
+  
   //
   PixelHitInfoRef hitInfo = getNewHit(pixelId, type);
   hitInfo.indices = uvec4(0u.xxx, type);
