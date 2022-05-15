@@ -69,25 +69,22 @@ IntersectionInfo rasterizeVector(in InstanceAddressBlock addressInfo, in RayData
     RasterInfoRef rasterInfo = previous ? getPrevRasterInfo(indice-1) : getRasterInfo(indice-1);
     InstanceInfo instanceInfo = getInstance(addressInfo, rasterInfo.indices.x);
     GeometryInfo geometryInfo = getGeometry(instanceInfo, rasterInfo.indices.y);
-    GeometryExtData geometry = getGeometryData(geometryInfo, rasterInfo.indices.z);
-
-    // no more used
-    //mat3x3 M = mat3x3(vec3(1.f, 0.f, 0.f), vec3(0.f, 1.f, 0.f), vec3(-viewDir.xy, 1.f)/viewDir.z);
+    mat3x4 vertices = readTriangleVertices3One(geometryInfo.vertices, readTriangleIndices(geometryInfo.indices, rasterInfo.indices.z));
 
     //
     for (uint i=0;i<3;i++) { 
       if (previous) {
-        geometry.triData[VERTEX_VERTICES][i] = vec4(fullPreviousTransform(instanceInfo, vec4(geometry.triData[VERTEX_VERTICES][i].xyz, 1.f), rasterInfo.indices.y).xyz, 1.f);
+        vertices[i] = vec4(fullPreviousTransform(instanceInfo, vec4(vertices[i].xyz, 1.f), rasterInfo.indices.y).xyz, 1.f);
       } else {
-        geometry.triData[VERTEX_VERTICES][i] = vec4(fullTransform(instanceInfo, vec4(geometry.triData[VERTEX_VERTICES][i].xyz, 1.f), rasterInfo.indices.y).xyz, 1.f);
+        vertices[i] = vec4(fullTransform(instanceInfo, vec4(vertices[i].xyz, 1.f), rasterInfo.indices.y).xyz, 1.f);
       };
-      geometry.triData[VERTEX_VERTICES][i] = vec4(geometry.triData[VERTEX_VERTICES][i] * lkAt, 1.f) * constants.perspective;
-      //geometry.triData[VERTEX_VERTICES][i] = vec4(geometry.triData[VERTEX_VERTICES][i] * (previous ? constants.previousLookAt : constants.lookAt), 1.f);
+      vertices[i] = vec4(vertices[i] * lkAt, 1.f) * constants.perspective;
+      //vertices[i] = vec4(vertices[i] * (previous ? constants.previousLookAt : constants.lookAt), 1.f);
     };
 
     //
-    vec3 bary = computeBary(ss, geometry.triData[VERTEX_VERTICES]);
-    vec4 pos = divW(geometry.triData[VERTEX_VERTICES] * bary);
+    vec3 bary = computeBary(ss, vertices);
+    vec4 pos = divW(vertices * bary);
 
     //
     if (
