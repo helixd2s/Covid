@@ -579,11 +579,52 @@ namespace ANAMED {
     virtual FenceType executeFillBuffer(std::optional<CommandOnceSubmission> info) {
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) bufferInfo = infoMap->get<vk::BufferCreateInfo>(vk::StructureType::eBufferCreateInfo);
+      decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
+
+      //
+      decltype(auto) bufferBarriersBegin = std::vector<vk::BufferMemoryBarrier2>{
+        
+      };
+
+      //
+      decltype(auto) bufferBarriersEnd = std::vector<vk::BufferMemoryBarrier2>{
+        
+      };
+
+      // injure with current queueFamily
+      for (uint32_t q = 0; q < bufferInfo->queueFamilyIndexCount; q++) {
+        auto& qf = bufferInfo->pQueueFamilyIndices[q];
+        bufferBarriersBegin.push_back(vk::BufferMemoryBarrier2{
+          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eMemoryWrite) | vk::PipelineStageFlagBits2::eAllCommands,
+          .srcAccessMask = vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eMemoryWrite,
+          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eTransferWrite) | vk::PipelineStageFlagBits2::eAllCommands,
+          .dstAccessMask = vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eTransferWrite,
+          .srcQueueFamilyIndex = qf,
+          .dstQueueFamilyIndex = info->submission.info->queueFamilyIndex,
+          .buffer = this->handle.as<vk::Buffer>(),
+          .offset = 0ull,
+          .size = bufferInfo->size
+        });
+        bufferBarriersEnd.push_back(vk::BufferMemoryBarrier2{
+          .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eTransferWrite) | vk::PipelineStageFlagBits2::eAllCommands,
+          .srcAccessMask = vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eTransferWrite,
+          .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eMemoryWrite) | vk::PipelineStageFlagBits2::eAllCommands,
+          .dstAccessMask = vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eMemoryWrite,
+          .srcQueueFamilyIndex = info->submission.info->queueFamilyIndex,
+          .dstQueueFamilyIndex = qf,
+          .buffer = this->handle.as<vk::Buffer>(),
+          .offset = 0ull,
+          .size = bufferInfo->size
+        });
+      };
 
       // 
       if (this->cInfo->bufferInfo && this->handle.type == HandleType::eBuffer) {
-        info->commandInits.push_back([this, bufferInfo](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+        info->commandInits.push_back([this, bufferInfo, depInfo, bufferBarriersBegin, bufferBarriersEnd](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+          auto _depInfo = depInfo;
+          cmdBuf->pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersBegin));
           cmdBuf->fillBuffer(this->handle.as<vk::Buffer>(), 0ull, bufferInfo->size, 0u);
+          cmdBuf->pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersEnd));
           return cmdBuf;
         });
 

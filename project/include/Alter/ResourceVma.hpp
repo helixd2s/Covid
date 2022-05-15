@@ -95,6 +95,9 @@ namespace ANAMED {
       });
 
       //
+      imageInfo->setQueueFamilyIndices(deviceObj->getQueueFamilies().indices);
+
+      //
       VmaMemoryUsage memUsage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
       if (memoryUsage == MemoryUsage::eGpuOnly) { memUsage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE; };
       if (memoryUsage == MemoryUsage::eCpuOnly) { memUsage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST; };
@@ -162,6 +165,9 @@ namespace ANAMED {
         .usage = bufferUsage,
         .sharingMode = vk::SharingMode::eExclusive
         });
+
+      //
+      bufferInfo->setQueueFamilyIndices(deviceObj->getQueueFamilies().indices);
 
       //
       VmaMemoryUsage memUsage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
