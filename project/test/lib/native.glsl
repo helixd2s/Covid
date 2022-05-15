@@ -606,12 +606,15 @@ mat3x4 getPreviousInstanceTransform(in InstanceInfo info) {
 //
 mat3x4 getGeometryTransform(in GeometryInfo info) {
   TransformBlock tblock = TransformBlock(info.transform.region.deviceAddress);
-  return info.transform.region.deviceAddress > 0ul ? tblock.transform[0u] : mat3x4(1.f);
+  if (uint64_t(info) > 0) {
+    return info.transform.region.deviceAddress > 0ul ? tblock.transform[0u] : mat3x4(1.f);
+  };
+  return mat3x4(1.f);
 };
 
 //
 //mat3x4 getGeometryTransform(in GeometryInfo info) {
-  //TransformBlock tblock = TransformBlock(uint64_t(info) > 0 ? info.transform.region.deviceAddress : 0ull);
+  //TransformBlock tblock = TransformBlock(uint64_t(info) > 0 ? info.transform.region.deviceAddress : 0ul);
   //return uint64_t(info) > 0 && info.transform.region.deviceAddress > 0ul ? tblock.transform[0u] : mat3x4(1.f);
 //};
 

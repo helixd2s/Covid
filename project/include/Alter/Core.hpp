@@ -784,6 +784,7 @@ namespace ANAMED {
   struct BufferCreateInfo : BaseCreateInfo {
     size_t size = 0ull;
     BufferType type = BufferType::eStorage;
+    std::optional<QueueGetInfo> info = QueueGetInfo{};
   };
 
   

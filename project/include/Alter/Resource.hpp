@@ -450,7 +450,7 @@ namespace ANAMED {
     };
 
     // 
-    virtual void createBuffer(cpp21::const_wrap_arg<BufferCreateInfo> cInfo = {}) {
+    virtual FenceType createBuffer(cpp21::const_wrap_arg<BufferCreateInfo> cInfo = {}) {
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
 
@@ -505,6 +505,14 @@ namespace ANAMED {
           });
         deviceObj->getAddressSpace().insert({this->deviceAddress, this->deviceAddress + cInfo->size}, this->handle.as<vk::Buffer>());
       };
+
+      //
+      decltype(auto) submission = CommandOnceSubmission{
+        .submission = SubmissionInfo{.info = cInfo->info ? cInfo->info : QueueGetInfo{0u, 0u}}
+      };
+
+      // 
+      return this->executeFillBuffer(submission);
     };
 
   public:
@@ -565,6 +573,27 @@ namespace ANAMED {
       };
 
       //return SFT();
+    };
+
+    //
+    virtual FenceType executeFillBuffer(std::optional<CommandOnceSubmission> info) {
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) bufferInfo = infoMap->get<vk::BufferCreateInfo>(vk::StructureType::eBufferCreateInfo);
+
+      // 
+      if (this->cInfo->bufferInfo && this->handle.type == HandleType::eBuffer) {
+        info->commandInits.push_back([this, bufferInfo](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+          cmdBuf->fillBuffer(this->handle.as<vk::Buffer>(), 0ull, bufferInfo->size, 0u);
+          return cmdBuf;
+        });
+
+        //
+        //this->cInfo->imageInfo->layout = switchInfo.newImageLayout;
+        return deviceObj->executeCommandOnce(info);
+      };
+
+      // 
+      return FenceType{};
     };
 
     //

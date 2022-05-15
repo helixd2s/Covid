@@ -143,7 +143,7 @@ namespace ANAMED {
     };
 
     // 
-     void createBuffer(cpp21::const_wrap_arg<BufferCreateInfo> cInfo = {}) override {
+     FenceType createBuffer(cpp21::const_wrap_arg<BufferCreateInfo> cInfo = {}) override {
       //
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
@@ -201,6 +201,14 @@ namespace ANAMED {
         device.waitIdle();
         vmaDestroyBuffer(allocator, buffer, allocation);
       });
+
+      //
+      decltype(auto) submission = CommandOnceSubmission{
+        .submission = SubmissionInfo{.info = cInfo->info ? cInfo->info : QueueGetInfo{0u, 0u}}
+      };
+
+      // 
+      return this->executeFillBuffer(submission);
     };
 
 
