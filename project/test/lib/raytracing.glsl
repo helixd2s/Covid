@@ -313,7 +313,7 @@ RayData pathTrace(inout RayData rayData, inout float hitDist, inout vec3 firstNo
   vec3 lastNormal = firstNormal;
 
   //
-  while (R<3 && T<3) {
+  while (R<2 && T<2) {
     if (luminance(rayData.energy.xyz) < 0.001f) { break; };
 
     // 
