@@ -508,7 +508,7 @@ vec4 interpolate(in mat3x4 vertices, in vec2 barycentric) {
 
 //
 InstanceInfo getInstance_(in InstanceAddressInfo addressInfo, in uint32_t index) {
-  InstanceInfo info;
+  InstanceInfo info = InstanceInfo(0ul);
   //info.data = 0u;
   index &= 0x7FFFFFFFu;
   if (index >= 0 && index < addressInfo.instanceCount) {
@@ -540,13 +540,13 @@ GeometryInfo getGeometry_(in uint64_t data, in uint32_t index) {
   //nullView.region = nullViewRegion;
 
   //
-  GeometryInfo info;
+  GeometryInfo info = GeometryInfo(0ul);
   //info.extensionRef = 0u;
   //info.materialRef = 0u;
   //info.vertices = nullView;
   //info.indices = nullView;
   //info.transform = nullView;
-  
+
   // 
   if (data > 0) { info = GeometryInfo(data) + index; };
 
@@ -567,7 +567,7 @@ GeometryInfo getGeometry(in InstanceInfo instanceInfo, in uint32_t index) {
   //nullView.region = nullViewRegion;
 
   //
-  GeometryInfo info;
+  GeometryInfo info = GeometryInfo(0ul);
   //info.extensionRef = 0u;
   //info.materialRef = 0u;
   //info.vertices = nullView;
@@ -605,8 +605,15 @@ mat3x4 getPreviousInstanceTransform(in InstanceInfo info) {
 
 //
 mat3x4 getGeometryTransform(in GeometryInfo info) {
-  return info.transform.region.deviceAddress > 0 ? TransformBlock(info.transform.region.deviceAddress).transform[0u] : mat3x4(1.f);
+  TransformBlock tblock = TransformBlock(info.transform.region.deviceAddress);
+  return info.transform.region.deviceAddress > 0ul ? tblock.transform[0u] : mat3x4(1.f);
 };
+
+//
+//mat3x4 getGeometryTransform(in GeometryInfo info) {
+  //TransformBlock tblock = TransformBlock(info > 0 ? info.transform.region.deviceAddress : 0ull);
+  //return info > 0 && info.transform.region.deviceAddress > 0ul ? tblock.transform[0u] : mat3x4(1.f);
+//};
 
 //
 mat3x4 getInstanceTransform(in InstanceAddressBlock addressInfo, in uint32_t instanceId) {
@@ -619,36 +626,6 @@ mat3x4 getPreviousInstanceTransform(in InstanceAddressBlock addressInfo, in uint
   InstanceInfo instanceInfo = getInstance(addressInfo, instanceId);
   return uint64_t(instanceInfo) > 0 ? instanceInfo.previousTransform : mat3x4(1.f);
 };
-
-
-/*
-//
-mat3x4 getInstanceTransform(in InstanceInfo info) {
-  return uint64_t(info) > 0 ? info.transform : mat3x4(1.f);
-};
-
-//
-mat3x4 getPreviousInstanceTransform(in InstanceInfo info) {
-  return uint64_t(info) > 0 ? info.transform : mat3x4(1.f);
-};
-
-//
-mat3x4 getGeometryTransform(in GeometryInfo info) {
-  return uint64_t(info) > 0 && info.transform.region.deviceAddress > 0 ? TransformBlock(info.transform.region.deviceAddress).transform[0u] : mat3x4(1.f);
-};
-
-//
-mat3x4 getInstanceTransform(in InstanceAddressBlock addressInfo, in uint32_t instanceId) {
-  InstanceInfo instanceInfo = getInstance(addressInfo, instanceId);
-  return uint64_t(instanceInfo) > 0 ? instanceInfo.transform : mat3x4(1.f);
-};
-
-//
-mat3x4 getPreviousInstanceTransform(in InstanceAddressBlock addressInfo, in uint32_t instanceId) {
-  InstanceInfo instanceInfo = getInstance(addressInfo, instanceId);
-  return uint64_t(instanceInfo) > 0 ? instanceInfo.previousTransform : mat3x4(1.f);
-};
-*/
 
 
 
