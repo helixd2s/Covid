@@ -496,13 +496,13 @@ void blankHit(inout PathTraceCommand cmd, in uint type) {
 void retranslateHit(in uint pixelId, in uint type, in vec3 origin) {
   PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
   surfaceInfo.color[type] = cvtRgb16Acc(surfaceInfo.accum[type]); 
-  //surfaceInfo.accum[type] = TYPE(0u);
+  surfaceInfo.accum[type] = TYPE(0u);
 
   //
   PixelHitInfoRef newHitInfo = getNewHit(pixelId, type);
   PixelHitInfoRef hitInfo = getRpjHit(pixelId, type);
-  newHitInfo.indices = hitInfo.indices;
-  newHitInfo.origin = hitInfo.origin;
+  newHitInfo.indices = hitInfo.indices; hitInfo.indices = uvec4(0u);
+  newHitInfo.origin = hitInfo.origin; hitInfo.origin = vec4(0.f.xxxx);
 };
 
 // 
