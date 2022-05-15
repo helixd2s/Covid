@@ -124,11 +124,12 @@ IntersectionInfo rasterize_(in InstanceAddressBlock addressInfo, inout Intersect
   //
   vec4 ss = (viewOrigin * constants.perspective);
   vec2 sc = (divW(ss).xy * 0.5f + 0.5f);
-  vec4 sp = vec4(texture(sampler2D(textures[framebufferAttachments[isTrasnlucent][2]], samplers[0]), sc).xyz, 1.f);
-  //vec4 sp = vec4(texelFetch(textures[framebufferAttachments[isTrasnlucent][2]], ivec2(rayData.launchId), 0).xyz, 1.f);
+  //vec4 sp = vec4(texture(sampler2D(textures[framebufferAttachments[isTrasnlucent][2]], samplers[0]), sc).xyz, 1.f);
+  vec4 sp = vec4(texelFetch(textures[framebufferAttachments[isTrasnlucent][2]], ivec2(rayData.launchId), 0).xyz, 1.f);
+  vec4 cp = vec4(texelFetch(textures[framebufferAttachments[isTrasnlucent][4]], ivec2(rayData.launchId), 0).xyz, 1.f);
 
   //
-  if (divW(lastPos).z <= (sp.z + 0.001f) && sp.z < 1.f) {
+  if ((divW(lastPos).z <= (sp.z + 0.01f) || cp.w >= 1.f) && sp.z < 1.f) {
     intersection.barycentric = bary.xyz;
     intersection.instanceId = indices[0];
     intersection.geometryId = indices[1];

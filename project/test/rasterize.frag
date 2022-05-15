@@ -18,7 +18,7 @@ layout(location = 0) out uvec4 indices;
 layout(location = 1) out vec4 baryData;
 layout(location = 2) out vec4 position;
 layout(location = 3) out vec4 texcoord;
-layout(location = 4) out vec4 normals;
+layout(location = 4) out vec4 tcolor;
 
 // CONFLICT WITH CONVERVATIVE RASTERIZATION :(
 //#ifndef TRANSLUCENT
@@ -59,6 +59,9 @@ void main() {
   0u;
 #endif
 
+  //
+  gl_FragDepth = 1.f;
+
   // alpha and depth depth test fail
   if (
 #ifdef TRANSLUCENT
@@ -74,6 +77,11 @@ void main() {
     baryData = vec4(pBary, 1.f);
     position = vec4(pScreen.xyz/pScreen.w, 1.f);
     texcoord = vec4(pTexcoord.xyz,1.f);
+#ifdef TRANSLUCENT
+    tcolor = materialPix.color[MATERIAL_ALBEDO];
+#else
+    tcolor = vec4(0.f.xxxx);
+#endif
     gl_FragDepth = gl_FragCoord.z;
 
     // 
