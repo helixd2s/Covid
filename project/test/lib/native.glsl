@@ -174,26 +174,26 @@ uint subgroupAtomicAdd(in uint counterId) {
 };
 
 //
-#define sizeof(Type) uint64_t(Type(uint64_t(0))+1)
+//#define sizeof(Type) uint64_t(Type(uint64_t(0))+1)
 
 //
-PixelSurfaceInfoRef getPixelSurface(in uint pixelId)  { return PixelSurfaceInfoRef(uint64_t(surfaceData) + uint64_t(pixelId) * sizeof(PixelSurfaceInfoRef)); };
+PixelSurfaceInfoRef getPixelSurface(in uint pixelId)  { return PixelSurfaceInfoRef(surfaceData) + pixelId; };
 
 //
 PixelHitInfoRef getNewHit(in uint pixelId, in uint type) { 
   const uint hitId = pixelId + extent.x * extent.y * type;
-  return PixelHitInfoRef(uint64_t(pixelData) + uint64_t(hitId) * sizeof(PixelHitInfoRef));
+  return PixelHitInfoRef(pixelData) + hitId;
 };
 
 //
 PixelHitInfoRef getRpjHit(in uint pixelId, in uint type) { 
   const uint hitId = pixelId + extent.x * extent.y * type;
-  return PixelHitInfoRef(uint64_t(writeData) + uint64_t(hitId) * sizeof(PixelHitInfoRef));
+  return PixelHitInfoRef(writeData) + hitId;
 };
 
 //
-RasterInfoRef getRasterInfo(in uint rasterId)  { return RasterInfoRef(uint64_t(rasterData) + uint64_t(rasterId) * sizeof(RasterInfoRef)); };
-RasterInfoRef getPrevRasterInfo(in uint rasterId)  { return RasterInfoRef(uint64_t(prevRasterData) + uint64_t(rasterId) * sizeof(RasterInfoRef)); };
+RasterInfoRef getRasterInfo(in uint rasterId)  { return RasterInfoRef(rasterData) + rasterId; };
+RasterInfoRef getPrevRasterInfo(in uint rasterId)  { return RasterInfoRef(prevRasterData) + rasterId; };
 
 //
 vec2 lcts(in vec3 direct) { return vec2(fma(atan(direct.z,direct.x),INV_TWO_PI,0.5f), acos(direct.y)*INV_PI); };

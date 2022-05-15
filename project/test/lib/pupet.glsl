@@ -31,8 +31,7 @@ vec3 computeBary(in vec4 vo, in mat3x4 vt) {
 
 // too expensive method of rasterization
 // vector sampling is generally expensive
-// but it's really required
-/*
+// but it's really mostly required
 IntersectionInfo rasterize(in InstanceAddressBlock addressInfo, in RayData rayData, in float maxT, inout vec4 lastPos, in bool previous) {
   IntersectionInfo intersection;
   intersection.barycentric = vec3(0.f.xxx);
@@ -40,10 +39,12 @@ IntersectionInfo rasterize(in InstanceAddressBlock addressInfo, in RayData rayDa
   intersection.geometryId = 0u;
   intersection.primitiveId = 0u;
 
+  const mat3x4 lkAt = (previous ? constants.previousLookAt : constants.lookAt);
+
   //
   vec4 ssOriginal = divW(lastPos);
-  vec4 viewOrigin = vec4(vec4(rayData.origin.xyz, 1.f) * (previous ? constants.previousLookAt : constants.lookAt), 1.f);
-  vec4 viewEnd = vec4(vec4(rayData.origin.xyz+rayData.direction.xyz, 1.f) * (previous ? constants.previousLookAt : constants.lookAt), 1.f);
+  vec4 viewOrigin = vec4(vec4(rayData.origin.xyz, 1.f) * lkAt, 1.f);
+  vec4 viewEnd = vec4(vec4(rayData.origin.xyz+rayData.direction.xyz, 1.f) * lkAt, 1.f);
   vec4 viewDir = (viewEnd - viewOrigin);
   viewDir.xyz = normalize(viewDir.xyz);
 
@@ -69,7 +70,7 @@ IntersectionInfo rasterize(in InstanceAddressBlock addressInfo, in RayData rayDa
     GeometryExtData geometry = getGeometryData(geometryInfo, rasterInfo.indices.z);
 
     // no more used
-    mat3x3 M = mat3x3(vec3(1.f, 0.f, 0.f), vec3(0.f, 1.f, 0.f), vec3(-viewDir.xy, 1.f)/viewDir.z);
+    //mat3x3 M = mat3x3(vec3(1.f, 0.f, 0.f), vec3(0.f, 1.f, 0.f), vec3(-viewDir.xy, 1.f)/viewDir.z);
 
     //
     for (uint i=0;i<3;i++) { 
@@ -78,17 +79,21 @@ IntersectionInfo rasterize(in InstanceAddressBlock addressInfo, in RayData rayDa
       } else {
         geometry.triData[VERTEX_VERTICES][i] = vec4(fullTransform(instanceInfo, vec4(geometry.triData[VERTEX_VERTICES][i].xyz, 1.f), rasterInfo.indices.y).xyz, 1.f);
       };
-      geometry.triData[VERTEX_VERTICES][i] = vec4(geometry.triData[VERTEX_VERTICES][i] * (previous ? constants.previousLookAt : constants.lookAt), 1.f) * constants.perspective;
+      geometry.triData[VERTEX_VERTICES][i] = vec4(geometry.triData[VERTEX_VERTICES][i] * lkAt, 1.f) * constants.perspective;
       //geometry.triData[VERTEX_VERTICES][i] = vec4(geometry.triData[VERTEX_VERTICES][i] * (previous ? constants.previousLookAt : constants.lookAt), 1.f);
     };
 
     //
     vec3 bary = computeBary(ss, geometry.triData[VERTEX_VERTICES]);
-    //vec4 pos = divW((geometry.triData[VERTEX_VERTICES] * bary) * constants.perspective);
     vec4 pos = divW(geometry.triData[VERTEX_VERTICES] * bary);
 
     //
-    if (any(greaterThan(bary, 0.f.xxx)) && all(greaterThan(bary, 1e-9.xxx)) && all(lessThan(bary, 1.f.xxx+1e-9)) && pos.z <= currentZ && ssOriginal.z < (pos.z + 0.0001f)) {
+    if (
+      any(greaterThan(bary, 0.f.xxx)) && 
+      all(greaterThan(bary, 1e-9.xxx)) && 
+      all(lessThan(bary, 1.f.xxx+1e-9)) && 
+      pos.z <= currentZ && ssOriginal.z < (pos.z + 0.0001f)
+    ) {
       intersection.instanceId = rasterInfo.indices.x;
       intersection.geometryId = rasterInfo.indices.y;
       intersection.primitiveId = rasterInfo.indices.z;
@@ -107,8 +112,8 @@ IntersectionInfo rasterize(in InstanceAddressBlock addressInfo, in RayData rayDa
   //
   return intersection;
 };
-*/
 
+/*
 // very cheap way - NOT RECOMMENDED!
 IntersectionInfo rasterize_(in InstanceAddressBlock addressInfo, inout IntersectionInfo intersection, in RayData rayData, in float maxT, inout vec4 lastPos, in bool previous, in uint isTrasnlucent) {
   //
@@ -156,6 +161,7 @@ IntersectionInfo rasterize(in InstanceAddressBlock addressInfo, in RayData rayDa
   //
   return intersection;
 };
+*/
 
 //
 RayData reuseLight(inout RayData rayData) {
