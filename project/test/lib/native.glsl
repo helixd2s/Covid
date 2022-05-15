@@ -89,12 +89,6 @@ layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer Pix
   vec4 origin;
 };
 
-// 
-struct PixelHitInfo {
-  uvec4 indices;
-  vec4 origin;
-};
-
 //
 const uint DIFFUSE_TEX = 0u;
 const uint EMISSION_TEX = 1u;
@@ -106,16 +100,6 @@ const uint TRANSPARENCY_TYPE = 1u;
 
 // but may not to be...
 layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer PixelSurfaceInfoRef {
-  uvec4 indices;
-  vec3 origin;
-  vec3 normal;
-  vec4 tex[2];
-  TYPE accum[3];
-  vec4 color[3];
-};
-
-//
-struct PixelSurfaceInfo {
   uvec4 indices;
   vec3 origin;
   vec3 normal;
@@ -546,7 +530,7 @@ InstanceInfo getInstance_(in InstanceData data, in uint32_t index) {
 //
 InstanceInfo getInstance_(in uint64_t data, in uint32_t index) {
   InstanceInfo info;
-  info.data = 0u;
+  //info.data = 0u;
 
   if (data > 0) { info = getInstance_(InstanceData(data), (index&0x7FFFFFFFu)); }; 
   return info;
@@ -555,7 +539,7 @@ InstanceInfo getInstance_(in uint64_t data, in uint32_t index) {
 //
 InstanceInfo getInstance_(in InstanceAddressInfo addressInfo, in uint32_t index) {
   InstanceInfo info;
-  info.data = 0u;
+  //info.data = 0u;
   index &= 0x7FFFFFFFu;
   if (index >= 0 && index < addressInfo.instanceCount) {
     info = getInstance_(addressInfo.data, index);
