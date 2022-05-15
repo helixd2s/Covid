@@ -611,8 +611,8 @@ mat3x4 getGeometryTransform(in GeometryInfo info) {
 
 //
 //mat3x4 getGeometryTransform(in GeometryInfo info) {
-  //TransformBlock tblock = TransformBlock(info > 0 ? info.transform.region.deviceAddress : 0ull);
-  //return info > 0 && info.transform.region.deviceAddress > 0ul ? tblock.transform[0u] : mat3x4(1.f);
+  //TransformBlock tblock = TransformBlock(uint64_t(info) > 0 ? info.transform.region.deviceAddress : 0ull);
+  //return uint64_t(info) > 0 && info.transform.region.deviceAddress > 0ul ? tblock.transform[0u] : mat3x4(1.f);
 //};
 
 //
