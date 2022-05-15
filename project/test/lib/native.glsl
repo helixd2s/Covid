@@ -594,31 +594,62 @@ const vec3 bary[3] = { vec3(1.f,0.f,0.f), vec3(0.f,1.f,0.f), vec3(0.f,0.f,1.f) }
 
 
 //
-mat3x4 getInstanceTransform(in InstanceAddressBlock addressInfo, in uint32_t instanceId) {
-  InstanceInfo instanceInfo = getInstance(addressInfo, instanceId);
-  return instanceInfo.transform;
-};
-
-//
 mat3x4 getInstanceTransform(in InstanceInfo info) {
-  return info.transform;
+  return uint64_t(info) > 0 ? info.transform : mat3x4(1.f);
 };
 
 //
 mat3x4 getPreviousInstanceTransform(in InstanceInfo info) {
-  return info.transform;
-};
-
-//
-mat3x4 getPreviousInstanceTransform(in InstanceAddressBlock addressInfo, in uint32_t instanceId) {
-  InstanceInfo instanceInfo = getInstance(addressInfo, instanceId);
-  return instanceInfo.previousTransform;
+  return uint64_t(info) > 0 ? info.transform : mat3x4(1.f);
 };
 
 //
 mat3x4 getGeometryTransform(in GeometryInfo info) {
   return info.transform.region.deviceAddress > 0 ? TransformBlock(info.transform.region.deviceAddress).transform[0u] : mat3x4(1.f);
 };
+
+//
+mat3x4 getInstanceTransform(in InstanceAddressBlock addressInfo, in uint32_t instanceId) {
+  InstanceInfo instanceInfo = getInstance(addressInfo, instanceId);
+  return uint64_t(instanceInfo) > 0 ? instanceInfo.transform : mat3x4(1.f);
+};
+
+//
+mat3x4 getPreviousInstanceTransform(in InstanceAddressBlock addressInfo, in uint32_t instanceId) {
+  InstanceInfo instanceInfo = getInstance(addressInfo, instanceId);
+  return uint64_t(instanceInfo) > 0 ? instanceInfo.previousTransform : mat3x4(1.f);
+};
+
+
+/*
+//
+mat3x4 getInstanceTransform(in InstanceInfo info) {
+  return uint64_t(info) > 0 ? info.transform : mat3x4(1.f);
+};
+
+//
+mat3x4 getPreviousInstanceTransform(in InstanceInfo info) {
+  return uint64_t(info) > 0 ? info.transform : mat3x4(1.f);
+};
+
+//
+mat3x4 getGeometryTransform(in GeometryInfo info) {
+  return uint64_t(info) > 0 && info.transform.region.deviceAddress > 0 ? TransformBlock(info.transform.region.deviceAddress).transform[0u] : mat3x4(1.f);
+};
+
+//
+mat3x4 getInstanceTransform(in InstanceAddressBlock addressInfo, in uint32_t instanceId) {
+  InstanceInfo instanceInfo = getInstance(addressInfo, instanceId);
+  return uint64_t(instanceInfo) > 0 ? instanceInfo.transform : mat3x4(1.f);
+};
+
+//
+mat3x4 getPreviousInstanceTransform(in InstanceAddressBlock addressInfo, in uint32_t instanceId) {
+  InstanceInfo instanceInfo = getInstance(addressInfo, instanceId);
+  return uint64_t(instanceInfo) > 0 ? instanceInfo.previousTransform : mat3x4(1.f);
+};
+*/
+
 
 
 //

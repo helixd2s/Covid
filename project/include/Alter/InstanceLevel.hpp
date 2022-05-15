@@ -189,21 +189,20 @@ namespace ANAMED {
         //this->firstUpdate[idx] = false;
       };
 
-      if (this->instanceBuild) {
-        instances[0] = vk::AccelerationStructureGeometryKHR{
-          .geometryType = vk::GeometryTypeKHR::eInstances,
-          .geometry = vk::AccelerationStructureGeometryDataKHR{.instances = vk::AccelerationStructureGeometryInstancesDataKHR{
-            .arrayOfPointers = false,
-            .data = reinterpret_cast<vk::DeviceOrHostAddressConstKHR&>(this->getInstancedDeviceAddress()),
-          }},
-          .flags = vk::GeometryFlagBitsKHR{}
-        };
-        instanceRanges[0] = vk::AccelerationStructureBuildRangeInfoKHR{
-          .primitiveCount = uint32_t(this->cInfo->instances->size()),
-          .primitiveOffset = 0u,
-          .firstVertex = 0u,
-          .transformOffset = 0u
-        };
+      //
+      instances[0] = vk::AccelerationStructureGeometryKHR{
+        .geometryType = vk::GeometryTypeKHR::eInstances,
+        .geometry = vk::AccelerationStructureGeometryDataKHR{.instances = vk::AccelerationStructureGeometryInstancesDataKHR{
+          .arrayOfPointers = false,
+          .data = this->instanceBuild ? reinterpret_cast<vk::DeviceOrHostAddressConstKHR&>(this->getInstancedDeviceAddress()) : vk::DeviceOrHostAddressConstKHR(0ull),
+        }},
+        .flags = vk::GeometryFlagBitsKHR{}
+      };
+      instanceRanges[0] = vk::AccelerationStructureBuildRangeInfoKHR{
+        .primitiveCount = uint32_t(this->cInfo->instances->size()),
+        .primitiveOffset = 0u,
+        .firstVertex = 0u,
+        .transformOffset = 0u
       };
 
     };

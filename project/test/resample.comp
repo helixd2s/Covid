@@ -73,7 +73,7 @@ void reproject3D(in uint pixelId, in vec3 srcRayDir, in int type) {
   PixelHitInfoRef data = getNewHit(pixelId, type);
 
   //
-  if (data.origin.x != 0.f || data.origin.y != 0.f || data.origin.z != 0.f) {
+  //if (data.origin.x != 0.f || data.origin.y != 0.f || data.origin.z != 0.f) {
     // 
     const vec3 srcHitPos = data.origin.xyz + data.origin.w * srcRayDir;
     const vec3 srcPos = data.origin.xyz;
@@ -139,45 +139,47 @@ void reproject3D(in uint pixelId, in vec3 srcRayDir, in int type) {
         dstSamplePos = dstHitPersp/dstHitPersp.w;//texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), dstScreen);
 
       // 
-      if (HIT_SRC.origin.x != 0.f || HIT_SRC.origin.y != 0.f || HIT_SRC.origin.z != 0.f) { // I don't know, works it or not
+      //if (HIT_SRC.origin.x != 0.f || HIT_SRC.origin.y != 0.f || HIT_SRC.origin.z != 0.f) 
+      /*{ // I don't know, works it or not
         RayData rayData;
         rayData.launchId = u16vec2(srcInt);
         rayData.origin = srcHitFoundIntersection.xyz;
         rayData.direction = normalize(srcHitFoundIntersection.xyz-srcPos.xyz);
         rasterize(instancedData, rayData, 10000.f, srcSamplePos, true);
-      };
+      };*/
 
       //
-      if (HIT_DST.origin.x != 0.f || HIT_DST.origin.y != 0.f || HIT_DST.origin.z != 0.f) { // I don't know, works it or not
+      //if (HIT_DST.origin.x != 0.f || HIT_DST.origin.y != 0.f || HIT_DST.origin.z != 0.f) 
+      { // I don't know, works it or not
         RayData rayData;
         rayData.launchId = u16vec2(dstInt);
         rayData.origin = dstHitFoundIntersection.xyz;
         rayData.direction = normalize(dstHitFoundIntersection.xyz-dstPos.xyz);
-        rasterize(instancedData, rayData, 10000.f, dstSamplePos, false);
+        rasterizeVector(instancedData, rayData, 10000.f, dstSamplePos, false);
       };
 
       // sorry, we doesn't save previous raster data
-      const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz-(dstHitPersp.xyz/dstHitPersp.w)), vec3(2.f/extent, 0.002f)));// && distance(dstPos, dstHitFoundIntersection) < 0.001f;
-      const bool srcValidDist = true;//all(lessThan(abs(srcSamplePos.xyz-(srcHitPersp.xyz/srcHitPersp.w)), vec3(2.f/extent, 0.002f)));
+      const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz-(dstHitPersp.xyz/dstHitPersp.w)), vec3(1.f/extent, 0.001f)));// && distance(dstPos, dstHitFoundIntersection) < 0.001f;
+      const bool srcValidDist = all(lessThan(abs(srcSamplePos.xyz-(srcHitPersp.xyz/srcHitPersp.w)), vec3(1.f/extent, 0.001f)));
 
       // copy to dest, and nullify source
       if ( data.origin.w >= 0.f && SURF_SRC.color[type].w > 0.f && dstValidDist && (srcValidDist || SURF_DST.color[type].w <= 0.f) ) {
-        accumulate(SURF_DST, type, cvtRgb16Float(SURF_SRC.color[type])); SURF_SRC.color[type] = vec4(0.f.xxxx);
+        accumulate(SURF_DST, type, cvtRgb16Float(SURF_SRC.color[type]));
 
         // 
-        HIT_DST.origin = vec4(dstHitFoundIntersection, distance(dstHitPos, dstHitFoundIntersection)); HIT_SRC.origin = vec4(0.f.xxxx);
-        HIT_DST.indices = HIT_SRC.indices; HIT_SRC.indices = uvec4(0u);
+        HIT_DST.origin = vec4(dstHitFoundIntersection, distance(dstHitPos, dstHitFoundIntersection));
+        HIT_DST.indices = HIT_SRC.indices;
       };
 
     };
-  };
+  //};
 };
 
 //
 void reprojectDiffuse(in uint srcId, in vec3 srcRayDir) {
   PixelSurfaceInfoRef srcSurface = getPixelSurface(srcId);
   PixelHitInfoRef srcHit = getNewHit(srcId, 2);
-  if (srcHit.origin.x != 0.f || srcHit.origin.y != 0.f || srcHit.origin.z != 0.f) {
+  //if (srcHit.origin.x != 0.f || srcHit.origin.y != 0.f || srcHit.origin.z != 0.f) {
 
     //
     const vec3 srcPos = srcSurface.origin.xyz;
@@ -195,29 +197,26 @@ void reprojectDiffuse(in uint srcId, in vec3 srcRayDir) {
     vec4 dstSamplePos = dstPerspPos/dstPerspPos.w;//vec4(texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), dstScreen, 0).xyz, 1.f);
 
     //
-    if (srcSurface.origin.x != 0.f || srcSurface.origin.y != 0.f || srcSurface.origin.z != 0.f) { // I don't know, works it or not
+    {
       RayData rayData;
       rayData.launchId = u16vec2(dstScreenPos);
       rayData.origin = dstPos.xyz;
       rayData.direction = vec3(0.f); // WARNING! BROKEN RAY!
-      rasterize(instancedData, rayData, 10000.f, dstSamplePos, false);
+      rasterizeVector(instancedData, rayData, 10000.f, dstSamplePos, false);
     };
 
     //
     if (dstScreenPos.x >= 0 && dstScreenPos.y >= 0 && dstScreenPos.x < extent.x && dstScreenPos.y < extent.y) {
       const uint dstId = uint(dstScreenPos.x + dstScreenPos.y * extent.x);
-      const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz-(dstPerspPos.xyz/dstPerspPos.w)), vec3(2.f/extent, 0.002f)));
+      const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz-(dstPerspPos.xyz/dstPerspPos.w)), vec3(1.f/extent, 0.001f)));
       PixelSurfaceInfoRef dstSurface = getPixelSurface(dstId);
       PixelHitInfoRef dstHit = getRpjHit(dstId, 2);
       if (srcSurface.color[2].w > 0.f && dstValidDist) {
         // 
         accumulate(dstSurface, 2, cvtRgb16Float(srcSurface.color[2]));
-
-        // nullify source
-        srcSurface.color[2] = vec4(0.f.xxxx);
       };
     };
-  };
+  //};
 };
 
 // 

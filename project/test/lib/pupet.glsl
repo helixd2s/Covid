@@ -29,12 +29,11 @@ vec3 computeBary(in vec4 vo, in mat3x4 vt) {
   return abs(det) > 0.f ? UVW : vec3(0.f);
 };
 
-/*
 // too expensive method of rasterization
 // vector sampling is generally expensive
 // but it's really mostly required
 // currentlt, works BUGGY and bit-incorrectlly, and laggy
-IntersectionInfo rasterize(in InstanceAddressBlock addressInfo, in RayData rayData, in float maxT, inout vec4 lastPos, in bool previous) {
+IntersectionInfo rasterizeVector(in InstanceAddressBlock addressInfo, in RayData rayData, in float maxT, inout vec4 lastPos, in bool previous) {
   IntersectionInfo intersection;
   intersection.barycentric = vec3(0.f.xxx);
   intersection.instanceId = 0u;
@@ -115,7 +114,6 @@ IntersectionInfo rasterize(in InstanceAddressBlock addressInfo, in RayData rayDa
   //
   return intersection;
 };
-*/
 
 // very cheap way - NOT RECOMMENDED!
 IntersectionInfo rasterize_(in InstanceAddressBlock addressInfo, inout IntersectionInfo intersection, in RayData rayData, in float maxT, inout vec4 lastPos, in bool previous, in uint isTrasnlucent) {

@@ -293,7 +293,7 @@ RayData handleIntersection(in RayData rayData, inout IntersectionInfo intersecti
   };
 
   //
-  reuseLight(rayData);
+  //reuseLight(rayData);
   rayData.origin.xyz += outRayNormal(rayData.direction.xyz, tbn[2]) * 0.0001f;
 
   // 
@@ -501,8 +501,8 @@ void retranslateHit(in uint pixelId, in uint type, in vec3 origin) {
   //
   PixelHitInfoRef newHitInfo = getNewHit(pixelId, type);
   PixelHitInfoRef hitInfo = getRpjHit(pixelId, type);
-  newHitInfo.indices = hitInfo.indices, hitInfo.indices = uvec4(0u);
-  newHitInfo.origin = hitInfo.origin, hitInfo.origin = vec4(0.f.xxxx);
+  newHitInfo.indices = hitInfo.indices;
+  newHitInfo.origin = hitInfo.origin;
 };
 
 // 
