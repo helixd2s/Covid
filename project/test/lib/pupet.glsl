@@ -137,7 +137,7 @@ IntersectionInfo rasterize_(in InstanceAddressBlock addressInfo, inout Intersect
   vec4 cp = vec4(texelFetch(textures[framebufferAttachments[isTrasnlucent][4]], ivec2(rayData.launchId), 0).xyz, 1.f);
 
   //
-  if ((sp.z <= (divW(lastPos).z + 0.001f) || cp.a >= 1.f) && sp.z < 1.f) {
+  if ((divW(lastPos).z <= (divW(sp).z + 0.001f) || cp.a >= 1.f) && sp.z < 1.f) {
     intersection.barycentric = bary.xyz;
     intersection.instanceId = indices[0];
     intersection.geometryId = indices[1];
