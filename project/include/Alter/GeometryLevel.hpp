@@ -135,7 +135,7 @@ namespace ANAMED {
         });
         multiDraw->push_back(vk::MultiDrawInfoEXT{
           .firstVertex = 0u,
-          .vertexCount = geometry.primitiveCount * 3u
+          .vertexCount = geometry.primitiveCount
         });
       };
     };

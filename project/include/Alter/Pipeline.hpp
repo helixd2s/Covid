@@ -134,7 +134,7 @@ namespace ANAMED {
 
       //
       decltype(auto) pInputAssembly = infoMap->set(vk::StructureType::ePipelineInputAssemblyStateCreateInfo, vk::PipelineInputAssemblyStateCreateInfo{
-        .topology = vk::PrimitiveTopology::eTriangleList
+        .topology = vk::PrimitiveTopology::ePointList
       });
 
       //

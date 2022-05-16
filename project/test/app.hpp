@@ -549,6 +549,7 @@ protected:
     //
     std::unordered_map<vk::ShaderStageFlagBits, cpp21::shared_vector<uint32_t>> preOpaqueStageMaps = {};
     preOpaqueStageMaps[vk::ShaderStageFlagBits::eVertex] = cpp21::readBinaryU32("./pre-opaque.vert.spv");
+    preOpaqueStageMaps[vk::ShaderStageFlagBits::eGeometry] = cpp21::readBinaryU32("./pre-opaque.geom.spv");
     preOpaqueStageMaps[vk::ShaderStageFlagBits::eFragment] = cpp21::readBinaryU32("./pre-opaque.frag.spv");
     preOpaqueObj = ANAMED::PipelineObj::make(deviceObj.with(0u), ANAMED::PipelineCreateInfo{
       .layout = descriptorsObj.as<vk::PipelineLayout>(),
@@ -563,6 +564,7 @@ protected:
     //
     std::unordered_map<vk::ShaderStageFlagBits, cpp21::shared_vector<uint32_t>> preTranslucentStageMaps = {};
     preTranslucentStageMaps[vk::ShaderStageFlagBits::eVertex] = cpp21::readBinaryU32("./pre-translucent.vert.spv");
+    preTranslucentStageMaps[vk::ShaderStageFlagBits::eGeometry] = cpp21::readBinaryU32("./pre-translucent.geom.spv");
     preTranslucentStageMaps[vk::ShaderStageFlagBits::eFragment] = cpp21::readBinaryU32("./pre-translucent.frag.spv");
     preTranslucentObj = ANAMED::PipelineObj::make(deviceObj.with(0u), ANAMED::PipelineCreateInfo{
       .layout = descriptorsObj.as<vk::PipelineLayout>(),
@@ -578,6 +580,7 @@ protected:
     //
     std::unordered_map<vk::ShaderStageFlagBits, cpp21::shared_vector<uint32_t>> nativeOpaqueStageMaps = {};
     nativeOpaqueStageMaps[vk::ShaderStageFlagBits::eVertex] = cpp21::readBinaryU32("./native-opaque.vert.spv");
+    nativeOpaqueStageMaps[vk::ShaderStageFlagBits::eGeometry] = cpp21::readBinaryU32("./native-opaque.geom.spv");
     nativeOpaqueStageMaps[vk::ShaderStageFlagBits::eFragment] = cpp21::readBinaryU32("./native-opaque.frag.spv");
     nativeOpaqueObj = ANAMED::PipelineObj::make(deviceObj.with(0u), ANAMED::PipelineCreateInfo{
       .layout = descriptorsObj.as<vk::PipelineLayout>(),
@@ -592,6 +595,7 @@ protected:
     //
     std::unordered_map<vk::ShaderStageFlagBits, cpp21::shared_vector<uint32_t>> nativeTranslucentStageMaps = {};
     nativeTranslucentStageMaps[vk::ShaderStageFlagBits::eVertex] = cpp21::readBinaryU32("./native-translucent.vert.spv");
+    nativeTranslucentStageMaps[vk::ShaderStageFlagBits::eGeometry] = cpp21::readBinaryU32("./native-translucent.geom.spv");
     nativeTranslucentStageMaps[vk::ShaderStageFlagBits::eFragment] = cpp21::readBinaryU32("./native-translucent.frag.spv");
     nativeTranslucentObj = ANAMED::PipelineObj::make(deviceObj.with(0u), ANAMED::PipelineCreateInfo{
       .layout = descriptorsObj.as<vk::PipelineLayout>(),
