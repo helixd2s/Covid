@@ -213,10 +213,10 @@ vec4 directLighting(in vec3 O, in vec3 N, in vec3 tN, in vec3 r, in float t) {
   };
 
   //
-  const float BRDF = (weight * clamp(dot( rayData.direction.xyz, N ), 0.f, 1.f));
+  const float BRDF = hasIntersection ? (weight * clamp(dot( rayData.direction.xyz, N ), 0.f, 1.f)) : 0.f;
 
   //
-  if (BRDF > 0.f) {
+  if (BRDF > 0.f && hasIntersection) {
     intersection = traceRaysOpaque(instancedData, intersection, rayData, t);
     intersection = traceRaysTransparent(instancedData, intersection, rayData, intersection.hitT, true);
   };
