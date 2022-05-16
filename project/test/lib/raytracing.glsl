@@ -158,7 +158,7 @@ IntersectionInfo traceRaysTransparent(in InstanceAddressBlock instance, inout In
           tbn[2] = fullTransformNormal(instanceInfo, tbn[2], geometryId);
           MaterialPixelInfo material = handleMaterial(getMaterialInfo(geometryInfo), interpol.data[VERTEX_TEXCOORD].xy, tbn);
 
-          if (material.color[MATERIAL_ALBEDO].a < (hasRandom ? random(rays.launchId) : 0.01f)) {
+          if (material.color[MATERIAL_ALBEDO].a < (hasRandom ? random(blueNoiseFn(rays.launchId.xy)) : 0.01f)) {
             isOpaque = false;
           } else {
             currentT = fT;
@@ -264,7 +264,7 @@ RayData handleIntersection(in RayData rayData, inout IntersectionInfo intersecti
   //
   float transpCoef = clamp(1.f - diffuseColor.a, 0.f, 1.f);
   float reflFactor = clamp((metallicFactor + mix(fresnel_schlick(0.f, dot(reflect(rayData.direction.xyz, normals), normals)), 0.f, roughnessFactor) * (1.f - metallicFactor)) * (1.f - luminance(emissiveColor.xyz)), 0.f, 1.f);
-  vec3 originSeedXYZ = vec3(random(rayData.launchId.xy), random(rayData.launchId.xy), random(rayData.launchId.xy));
+  vec3 originSeedXYZ = vec3(random(blueNoiseFn(rayData.launchId.xy)), random(blueNoiseFn(rayData.launchId.xy)), random(blueNoiseFn(rayData.launchId.xy)));
 
   //
   passed.alphaColor = vec4(mix(diffuseColor.xyz, 1.f.xxx, diffuseColor.a), diffuseColor.a);
@@ -275,13 +275,13 @@ RayData handleIntersection(in RayData rayData, inout IntersectionInfo intersecti
   rayData.origin.xyz += rayData.direction.xyz * intersection.hitT;//vertice.xyz;
 
   //
-  if (random(rayData.launchId.xy) <= clamp(reflFactor, 0.f, 1.f) && transpCoef < 1.f) { // I currently, have no time for fresnel
+  if (random(blueNoiseFn(rayData.launchId.xy)) <= clamp(reflFactor, 0.f, 1.f) && transpCoef < 1.f) { // I currently, have no time for fresnel
     rayData.direction.xyz = reflective(originSeedXYZ, rayData.direction.xyz, normals, roughnessFactor);
     rayData.energy.xyz = f16vec3(metallicMult(rayData.energy.xyz, diffuseColor.xyz, metallicFactor));
     if (reflFactor < 0.1f) { passed.diffusePass = true; };
     //passed.diffusePass = true;
   } else 
-  if (random(rayData.launchId.xy) <= clamp(transpCoef, inner ? 1.f : 0.f, 1.f)) { // wrong diffuse if inner
+  if (random(blueNoiseFn(rayData.launchId.xy)) <= clamp(transpCoef, inner ? 1.f : 0.f, 1.f)) { // wrong diffuse if inner
     rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, passed.alphaColor.xyz));
     passed.alphaPassed = true;
   } else
@@ -293,7 +293,7 @@ RayData handleIntersection(in RayData rayData, inout IntersectionInfo intersecti
     passed.diffusePass = true;
     rayData.direction.xyz = randomCosineWeightedHemispherePoint(originSeedXYZ, normals);
     rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, diffuseColor.xyz));
-    rayData.emission.xyz += f16vec3(trueMultColor(rayData.energy.xyz, directLighting(rayData.origin.xyz, normals, tbn[2], vec3(random(rayData.launchId.xy), random(rayData.launchId.xy), random(rayData.launchId.xy)), 10000.f).xyz).xyz);
+    rayData.emission.xyz += f16vec3(trueMultColor(rayData.energy.xyz, directLighting(rayData.origin.xyz, normals, tbn[2], vec3(random(blueNoiseFn(rayData.launchId.xy)), random(blueNoiseFn(rayData.launchId.xy)), random(blueNoiseFn(rayData.launchId.xy))), 10000.f).xyz).xyz);
   };
 
   //
@@ -402,7 +402,7 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
   RayData rayData = cmd.rayData;
 
   //
-  vec3 originSeedXYZ = vec3(random(rayData.launchId.xy), random(rayData.launchId.xy), random(rayData.launchId.xy));
+  vec3 originSeedXYZ = vec3(random(blueNoiseFn(rayData.launchId.xy)), random(blueNoiseFn(rayData.launchId.xy)), random(blueNoiseFn(rayData.launchId.xy)));
   PathTraceOutput outp;
   outp.hitT = 0.f;
   outp.indices = uvec4(0u);
@@ -426,7 +426,7 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
     rayData.energy = f16vec4(trueMultColor(rayData.energy.xyz, 1.f-cmd.emissiveColor.xyz), 1.f);
     rayData.emission = f16vec4(trueMultColor(
       rayData.energy.xyz, 
-      directLighting(rayData.origin.xyz, cmd.normals.xyz, cmd.tbn[2], vec3(random(rayData.launchId.xy), random(rayData.launchId.xy), random(rayData.launchId.xy)), 10000.f).xyz
+      directLighting(rayData.origin.xyz, cmd.normals.xyz, cmd.tbn[2], vec3(random(blueNoiseFn(rayData.launchId.xy)), random(blueNoiseFn(rayData.launchId.xy)), random(blueNoiseFn(rayData.launchId.xy))), 10000.f).xyz
     ), 1.f);
     rayData.emission.w = 1.hf;
   };

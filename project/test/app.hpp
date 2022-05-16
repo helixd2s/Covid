@@ -42,6 +42,7 @@ struct UniformData {
   uint64_t surfaceData = 0ull;
   uint64_t prevRasterData = 0ull;
   uint32_t backgroundObj = 0u;
+  uint32_t blueNoiseObj = 0u;
 };
 
 //
@@ -97,6 +98,7 @@ protected:
   ANAMED::WrapShared<ANAMED::FramebufferObj> framebufferObj[2] = {};
   ANAMED::WrapShared<ANAMED::PingPongObj> pingPongObj = {};
   ANAMED::WrapShared<ANAMED::ResourceObj> backgroundObj = {};
+  ANAMED::WrapShared<ANAMED::ResourceObj> blueNoiseObj = {};
   ANAMED::WrapShared<ANAMED::ResourceObj> pixelDataObj = {};
   ANAMED::WrapShared<ANAMED::ResourceObj> writeDataObj = {};
   ANAMED::WrapShared<ANAMED::ResourceObj> rasterDataObj = {};
@@ -313,7 +315,7 @@ public:
     decltype(auto) resampleFence = resampleObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
       // # yet another std::optional problem (implicit)
       .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
-        .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 32u), cpp21::tiled(renderArea.extent.height, 8u), 1u},
+        .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 32u), cpp21::tiled(renderArea.extent.height, 4u), 1u},
         .layout = descriptorsObj.as<vk::PipelineLayout>(),
         .swapchain = swapchainObj.as<uintptr_t>(),
         .pingpong = pingPongObj.as<uintptr_t>(),
@@ -329,7 +331,7 @@ public:
     decltype(auto) computeFence = pathTracerObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
       // # yet another std::optional problem (implicit)
       .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
-        .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 32u), cpp21::tiled(renderArea.extent.height, 8u), 1u},
+        .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 32u), cpp21::tiled(renderArea.extent.height, 4u), 1u},
         .layout = descriptorsObj.as<vk::PipelineLayout>(),
         .swapchain = swapchainObj.as<uintptr_t>(),
         .pingpong = pingPongObj.as<uintptr_t>(),
@@ -612,44 +614,85 @@ protected:
     frameCount = 0;
 
     //
-    stbi_ldr_to_hdr_scale(1.0f);
-    stbi_ldr_to_hdr_gamma(2.2f);
+    {
+      stbi_ldr_to_hdr_scale(1.0f);
+      stbi_ldr_to_hdr_gamma(2.2f);
+
+      //
+      int w = 0, h = 0, c = 0;
+      float* data = (float*)stbi_loadf("./HDR_111_Parking_Lot_2_Ref.hdr", &w, &h, &c, STBI_rgb_alpha);
+
+      //
+      backgroundObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
+        .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
+        .imageInfo = ANAMED::ImageCreateInfo{
+          .format = vk::Format::eR32G32B32A32Sfloat,
+          .extent = vk::Extent3D{uint32_t(w), uint32_t(h), 1u},
+          .type = ANAMED::ImageType::eTexture
+        }
+        });
+
+      //
+      decltype(auto) pair = backgroundObj->createImageView(ANAMED::ImageViewCreateInfo{
+        .viewType = vk::ImageViewType::e2D
+        });
+
+
+      // complete loader
+      //
+      decltype(auto) status = uploaderObj->executeUploadToResourceOnce(ANAMED::UploadExecutionOnce{
+        .host = cpp21::data_view<char8_t>((char8_t*)data, 0ull, h * w * 16ull),
+        .writeInfo = ANAMED::UploadCommandWriteInfo{
+          // # yet another std::optional problem (implicit)
+          .dstImage = std::optional<ANAMED::ImageRegion>(ANAMED::ImageRegion{.image = backgroundObj.as<vk::Image>(), .region = ANAMED::ImageDataRegion{.extent = vk::Extent3D{uint32_t(w), uint32_t(h), 1u}}}),
+        }
+        });
+
+      //
+      descriptorsObj->updateDescriptors();
+
+      //
+      uniformData.backgroundObj = std::get<1u>(pair);
+    }
 
     //
-    int w = 0, h = 0, c = 0;
-    float* data = (float*)stbi_loadf("./HDR_111_Parking_Lot_2_Ref.hdr", &w, &h, &c, STBI_rgb_alpha);
+    {
+      //
+      int w = 0, h = 0, c = 0;
+      float* data = (float*)stbi_loadf("./BlueNoise470.png", &w, &h, &c, STBI_rgb_alpha);
 
-    //
-    backgroundObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
-      .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
-      .imageInfo = ANAMED::ImageCreateInfo{
-        .format = vk::Format::eR32G32B32A32Sfloat,
-        .extent = vk::Extent3D{uint32_t(w), uint32_t(h), 1u},
-        .type = ANAMED::ImageType::eTexture
-      }
-    });
+      //
+      blueNoiseObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
+        .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
+        .imageInfo = ANAMED::ImageCreateInfo{
+          .format = vk::Format::eR8G8B8A8Uint,
+          .extent = vk::Extent3D{uint32_t(w), uint32_t(h), 1u},
+          .type = ANAMED::ImageType::eTexture
+        }
+        });
 
-    //
-    decltype(auto) pair = backgroundObj->createImageView(ANAMED::ImageViewCreateInfo{
-      .viewType = vk::ImageViewType::e2D
-    });
+      //
+      decltype(auto) pair = blueNoiseObj->createImageView(ANAMED::ImageViewCreateInfo{
+        .viewType = vk::ImageViewType::e2D
+        });
 
 
-    // complete loader
-    //
-    decltype(auto) status = uploaderObj->executeUploadToResourceOnce(ANAMED::UploadExecutionOnce{
-      .host = cpp21::data_view<char8_t>((char8_t*)data, 0ull, h * w * 16ull),
-      .writeInfo = ANAMED::UploadCommandWriteInfo{
-        // # yet another std::optional problem (implicit)
-        .dstImage = std::optional<ANAMED::ImageRegion>(ANAMED::ImageRegion{.image = backgroundObj.as<vk::Image>(), .region = ANAMED::ImageDataRegion{.extent = vk::Extent3D{uint32_t(w), uint32_t(h), 1u}}}),
-      }
-    });
+      // complete loader
+      //
+      decltype(auto) status = uploaderObj->executeUploadToResourceOnce(ANAMED::UploadExecutionOnce{
+        .host = cpp21::data_view<char8_t>((char8_t*)data, 0ull, h * w * 4ull),
+        .writeInfo = ANAMED::UploadCommandWriteInfo{
+          // # yet another std::optional problem (implicit)
+          .dstImage = std::optional<ANAMED::ImageRegion>(ANAMED::ImageRegion{.image = blueNoiseObj.as<vk::Image>(), .region = ANAMED::ImageDataRegion{.extent = vk::Extent3D{uint32_t(w), uint32_t(h), 1u}}}),
+        }
+        });
 
-    //
-    descriptorsObj->updateDescriptors();
+      //
+      descriptorsObj->updateDescriptors();
 
-    //
-    uniformData.backgroundObj = std::get<1u>(pair);
+      //
+      uniformData.blueNoiseObj = std::get<1u>(pair);
+    };
   };
 
 };

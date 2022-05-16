@@ -132,6 +132,7 @@ layout(set = 0, binding = 0, scalar) uniform MatrixBlock
   uint64_t surfaceData;
   uint64_t prevRasterData;
   uint32_t background;
+  uint32_t blueNoise;
 };
 
 // 
@@ -212,6 +213,12 @@ layout(set = 3, binding = 0, rgba16f) uniform image2D imagesRgba16F[];
 layout(set = 3, binding = 0, rgba32ui) uniform uimage2D imagesRgba32UI[];
 layout(set = 3, binding = 0, r32ui) uniform uimage2D imagesR32UI[];
 layout(set = 3, binding = 0, r32f) uniform image2D imagesR32F[];
+
+//
+uint blueNoiseFn(in uvec2 coord) {
+  const ivec2 texSize = textureSize(texturesU[blueNoise], 0);
+  return texelFetch(texturesU[blueNoise], ivec2(coord) % texSize, 0).r;
+};
 
 //
 void accumulate(inout PixelSurfaceInfoRef surfaceInfo, in uint type, in TYPE data) {
