@@ -25,9 +25,6 @@ layout(location = 4) out vec4 tcolor;
 //layout (early_fragment_tests) in;
 //#endif
 
-// 
-layout (depth_any) out float gl_FragDepth;
-
 //
 // We prefer to use refraction and ray-tracing for transparent effects...
 void main() {
@@ -37,8 +34,6 @@ void main() {
   // 
   InstanceInfo instanceInfo = InstanceInfo(instanceDrawInfo.data);
   GeometryInfo geometryInfo = getGeometry(instanceInfo, geometryIndex);
-
-  //
   GeometryExtData geometry = getGeometryData(geometryInfo, pIndices.z);
   GeometryExtAttrib attrib = interpolate(geometry, pBary);
 
@@ -59,31 +54,18 @@ void main() {
   0u;
 #endif
 
-  //
-  gl_FragDepth = 1.f;
-
   // alpha and depth depth test fail
+  const float dp = texelFetch(textures[framebufferAttachments[translucent][5]], ivec2(gl_FragCoord.xy), 0).r;
   if (
 #ifdef TRANSLUCENT
     materialPix.color[MATERIAL_ALBEDO].a < 0.01f || 
 #endif
-    texelFetch(textures[framebufferAttachments[0][5]], ivec2(gl_FragCoord.xy), 0).r <= (gl_FragCoord.z - 0.0001f)
+    dp <= (gl_FragCoord.z - 0.0001f) 
+
   ) {
     discard;
   } else 
   {
-    //
-    indices = pIndices;
-    baryData = vec4(pBary, 1.f);
-    position = vec4(pScreen.xyz/pScreen.w, 1.f);
-    texcoord = vec4(pTexcoord.xyz,1.f);
-#ifdef TRANSLUCENT
-    tcolor = materialPix.color[MATERIAL_ALBEDO];
-#else
-    tcolor = vec4(0.f.xxxx);
-#endif
-    gl_FragDepth = gl_FragCoord.z;
-
     // 
     const uint rasterId = atomicAdd(counters[RASTER_COUNTER], 1);//subgroupAtomicAdd(RASTER_COUNTER);
     if (rasterId < extent.x * extent.y * 16) {

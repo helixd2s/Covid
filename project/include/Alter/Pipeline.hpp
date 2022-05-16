@@ -149,7 +149,7 @@ namespace ANAMED {
 
       //
       decltype(auto) pRasterizationConservative = infoMap->set(vk::StructureType::ePipelineRasterizationConservativeStateCreateInfoEXT, vk::PipelineRasterizationConservativeStateCreateInfoEXT{
-        .conservativeRasterizationMode = vk::ConservativeRasterizationModeEXT::eOverestimate
+        .conservativeRasterizationMode = graphics->hasConservativeRaster ? vk::ConservativeRasterizationModeEXT::eOverestimate : vk::ConservativeRasterizationModeEXT::eDisabled
       });
 
       //
@@ -175,8 +175,8 @@ namespace ANAMED {
 
       //
       decltype(auto) pDepthStencil = infoMap->set(vk::StructureType::ePipelineDepthStencilStateCreateInfo, vk::PipelineDepthStencilStateCreateInfo{
-        .depthTestEnable = true,
-        .depthWriteEnable = true,
+        .depthTestEnable = graphics->hasDepthTest,
+        .depthWriteEnable = graphics->hasDepthWrite,
         .depthCompareOp = vk::CompareOp::eLessOrEqual,
         .depthBoundsTestEnable = false,
         .stencilTestEnable = false,

@@ -1151,6 +1151,10 @@ namespace ANAMED {
   struct GraphicsPipelineCreateInfo : BaseCreateInfo {
     FramebufferType framebufferType = FramebufferType::eUnknown;
     std::unordered_map<vk::ShaderStageFlagBits, cpp21::shared_vector<uint32_t>> stageCodes = {};
+
+    bool hasDepthTest = true;
+    bool hasDepthWrite = true;
+    bool hasConservativeRaster = false;
   };
 
   //
