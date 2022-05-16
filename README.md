@@ -106,9 +106,10 @@ Some functionality still WIP, but almost ready to ***MVP***…
   0. Please, enable symbolic links support in your (GIT) system
   1. Do `git clone https://github.com/helixd2s/Alter.git --recursive` with submodules
   2. Install `vcpkg` into disk `C:/vcpkg` directory, and install `GLFW3`
-  3. Install latest version of Vulkan SDK 
-  4. Configure project with CMake, into `build` local directory
-  5. Compile SPIR-V modules...
-  6. Copy or sym-link containement of `project/prebuild` into `build`
-  7. Compile project through Visual Studio 2022
-  8. Run with `-m Model.gltf -s 1.0` flags (where `-m` is modelname, `-s` is scale)
+  3. Make sure that you installed **not** as `C:/vcpkg/vcpkg` or etc.
+  4. Install latest version of Vulkan SDK (`1.3.211.0`)
+  5. Configure project with CMake, into `<Alter>/build` local directory
+  6. Compile SPIR-V modules in `<Alter>/project/test`...
+  7. Copy or sym-link containement of `<Alter>/project/prebuild` into `<Alter>/build`
+  8. Open `*.sln`, and compile project through `Visual Studio 2022`
+  9. Run with `-m <SomeModel>.gltf -s 1.0` flags (where `-m` is modelname, `-s` is scale)
