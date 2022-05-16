@@ -215,9 +215,12 @@ layout(set = 3, binding = 0, r32ui) uniform uimage2D imagesR32UI[];
 layout(set = 3, binding = 0, r32f) uniform image2D imagesR32F[];
 
 //
-uint blueNoiseFn(in uvec2 coord) {
-  const ivec2 texSize = textureSize(texturesU[blueNoise], 0);
-  return texelFetch(texturesU[blueNoise], ivec2(coord) % texSize, 0).r;
+//uint 
+uvec2 
+blueNoiseFn(in uvec2 coord) {
+  //const ivec2 texSize = textureSize(texturesU[blueNoise], 0);
+  //return texelFetch(texturesU[blueNoise], ivec2(coord) % texSize, 0).r;
+  return coord;
 };
 
 //

@@ -50,7 +50,7 @@ struct PathTraceCommand {
 };
 
 //
-layout(scalar) shared PathTraceCommand cmds[8][32];
+layout(scalar) shared PathTraceCommand cmds[4][32];
 
 //
 struct PathTraceOutput {

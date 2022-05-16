@@ -65,6 +65,7 @@ vec3 linearSrcPos(in vec2 txy) {
   return texels*vec4(i2[0],i2[1]);
 };
 
+#define ACCOUNT_TRANSPARENCY
 
 //
 //void reproject3D(in PixelSurfaceInfo surface, in PixelHitInfo data, in uint pixelId, in vec3 srcRayDir, in int type) {
@@ -96,6 +97,7 @@ void reproject3D(in uint pixelId, in vec3 srcRayDir, in int type) {
     );
 
     // 
+#ifdef ACCOUNT_TRANSPARENCY
     const vec3 dstHitFoundIntersection = type == 2 ? dstPos : (type == 1 ? dstHitPos : vec4(
       find_reflection_incident_point( 
         vec4(dstPos.xyz, 1.f) * constants.lookAt, 
@@ -108,6 +110,20 @@ void reproject3D(in uint pixelId, in vec3 srcRayDir, in int type) {
     const vec3 srcHitFoundIntersection = type == 2 ? srcPos : (type == 1 ? srcHitPos : vec4(vec4(dstHitFoundIntersection, 1.f)
       * inverse(getInstanceTransform(instancedData, type == 1 ? data.indices.x : surface.indices.x)), 1.f) 
       * getPreviousInstanceTransform(instancedData, type == 1 ? data.indices.x : surface.indices.x));
+#else
+    const vec3 dstHitFoundIntersection = type == 2 ? dstPos : (vec4(
+      find_reflection_incident_point( 
+        vec4(dstPos.xyz, 1.f) * constants.lookAt, 
+        vec4(srcHitPos.xyz, 1.f) * constants.previousLookAt, 
+        vec4(srcPos.xyz, 1.f) * constants.previousLookAt, 
+        normalize(srcNormal.xyz)
+      ), 1.f) * constants.lookAtInverse);
+
+    // 
+    const vec3 srcHitFoundIntersection = type == 2 ? srcPos : (vec4(vec4(dstHitFoundIntersection, 1.f)
+      * inverse(getInstanceTransform(instancedData, surface.indices.x)), 1.f) 
+      * getPreviousInstanceTransform(instancedData, surface.indices.x));
+#endif
 
     // 
     const vec4 srcHitPersp = vec4(vec4(srcHitFoundIntersection, 1.f) * constants.previousLookAt, 1.f) * constants.perspective;
