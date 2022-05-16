@@ -100,3 +100,15 @@ Some functionality still WIP, but almost ready to ***MVP***…
 
   You can read more about this runtime option here: https://docs.microsoft.com/en-us/cpp/sanitizers/asan-runtime?view=msvc-170#msvc-specific-addresssanitizer-runtime-options
   ```
+
+### Compile instruction?
+
+  0. Please, enable symbolic links support in your (GIT) system
+  1. Do `git clone https://github.com/helixd2s/Alter.git --recursive` with submodules
+  2. Install `vcpkg` into disk `C:/vcpkg` directory, and install `GLFW3`
+  3. Install latest version of Vulkan SDK 
+  4. Configure project with CMake, into `build` local directory
+  5. Compile SPIR-V modules...
+  6. Copy or sym-link containement of `project/prebuild` into `build`
+  7. Compile project through Visual Studio 2022
+  8. Run with `-m Model.gltf -s 1.0` flags (where `-m` is modelname, `-s` is scale)
