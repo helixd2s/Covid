@@ -213,13 +213,17 @@ vec4 directLighting(in vec3 O, in vec3 N, in vec3 tN, in vec3 r, in float t) {
   };
 
   //
-  intersection = traceRaysOpaque(instancedData, intersection, rayData, t);
-  intersection = traceRaysTransparent(instancedData, intersection, rayData, intersection.hitT, true);
+  const float BRDF = (weight * clamp(dot( rayData.direction.xyz, N ), 0.f, 1.f));
+
+  //
+  if (BRDF > 0.f) {
+    intersection = traceRaysOpaque(instancedData, intersection, rayData, t);
+    intersection = traceRaysTransparent(instancedData, intersection, rayData, intersection.hitT, true);
+  };
 
   //
   if (hasIntersection && intersection.hitT >= t && t > 0.f) {
-    rayData.emission.xyz += f16vec3(sunColor * (weight * clamp(dot( rayData.direction.xyz, N ), 0.f, 1.f)));
-    //rayData.emission.w += float16_t(1.f);
+    rayData.emission.xyz += f16vec3(sunColor * BRDF);
   };
 
   //
