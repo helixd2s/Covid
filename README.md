@@ -101,15 +101,23 @@ Some functionality still WIP, but almost ready to ***MVP***…
   You can read more about this runtime option here: https://docs.microsoft.com/en-us/cpp/sanitizers/asan-runtime?view=msvc-170#msvc-specific-addresssanitizer-runtime-options
   ```
 
+### Dependencies
+
+  - Vulkan SDK (`1.3.211.0`)
+  - `vcpkg` with `glfw3`
+
+  But mostly already has with submodules.
+
 ### Compile instruction?
 
   0. Please, enable symbolic links support in your (GIT) system
   1. Do `git clone https://github.com/helixd2s/Alter.git --recursive` with submodules
-  2. Install `vcpkg` into disk `C:/vcpkg` directory, and install `GLFW3`
+  2. Install `vcpkg` into disk `C:/vcpkg`.
   3. Make sure that you installed **not** as `C:/vcpkg/vcpkg` or etc.
-  4. Install latest version of Vulkan SDK (`1.3.211.0`)
-  5. Configure project with CMake, into `<Alter>/build` local directory
-  6. Compile SPIR-V modules in `<Alter>/project/test`...
-  7. Copy or sym-link containement of `<Alter>/project/prebuild` into `<Alter>/build`
-  8. Open `*.sln`, and compile project through `Visual Studio 2022`
-  9. Run with `-m <SomeModel>.gltf -s 1.0` flags (where `-m` is modelname, `-s` is scale)
+  4. Do `vcpkg install glfw3` in command-line, install other deps.
+  5. Install latest version of Vulkan SDK (`1.3.211.0`)
+  6. Configure project with CMake, into `<Alter>/build` local directory
+  7. Compile SPIR-V modules in `<Alter>/project/test`...
+  8. Copy or sym-link containement of `<Alter>/project/prebuild` into `<Alter>/build`
+  9. Open `*.sln`, and compile project through `Visual Studio 2022`
+  10. Run with `-m <SomeModel>.gltf -s 1.0` flags (where `-m` is modelname, `-s` is scale)
