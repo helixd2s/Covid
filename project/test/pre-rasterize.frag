@@ -52,7 +52,7 @@ void main() {
 #endif
 
   // alpha and depth depth test fail
-  const float dp = texelFetch(textures[framebufferAttachments[translucent][5]], ivec2(gl_FragCoord.xy), 0).r;
+  const float dp = texelFetch(textures[framebufferAttachments[0][translucent][5]], ivec2(gl_FragCoord.xy), 0).r;
   if (
 #ifdef TRANSLUCENT
     materialPix.color[MATERIAL_ALBEDO].a < 0.01f || 
@@ -71,6 +71,21 @@ void main() {
       rasterInfo.indices = uvec4(pIndices.xyz, oldId);
       rasterInfo.barycentric = vec4(pBary, 1.f);
     };
+
+    /*
+    //
+    indices = pIndices;
+    baryData = vec4(pBary, 1.f);
+
+    //
+    position = vec4(pScreen.xyz/pScreen.w, 1.f);
+    texcoord = vec4(pTexcoord.xyz,1.f);
+#ifdef TRANSLUCENT
+    tcolor = materialPix.color[MATERIAL_ALBEDO] * vec4(materialPix.color[MATERIAL_ALBEDO].aaa, 1.f);
+#else
+    tcolor = vec4(0.f.xxx, 1.f);
+#endif
+    gl_FragDepth = gl_FragCoord.z;*/
   };
 
 };

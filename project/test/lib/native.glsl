@@ -68,9 +68,13 @@ struct Constants
 {
   mat4x4 perspective;
   mat4x4 perspectiveInverse;
+
+  // TODO: make array of
   mat3x4 lookAt;
-  mat3x4 lookAtInverse;
   mat3x4 previousLookAt;
+
+  // TODO: make array of
+  mat3x4 lookAtInverse;
   mat3x4 previousLookAtInverse;
 };
 
@@ -123,7 +127,7 @@ const uint SURFACE_COUNTER = 3u;
 // 
 layout(set = 0, binding = 0, scalar) uniform MatrixBlock
 {
-  uint32_t framebufferAttachments[2][8]; // framebuffers
+  uint32_t framebufferAttachments[2][2][8]; // framebuffers
   uvec2 extent; uint frameCounter, reserved0;
   Constants constants;
   uint64_t pixelData;

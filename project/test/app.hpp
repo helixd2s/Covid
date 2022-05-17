@@ -25,15 +25,19 @@ struct Constants
 {
   glm::mat4x4 perspective = glm::mat4x4(1.f);
   glm::mat4x4 perspectiveInverse = glm::mat4x4(1.f);
+
+  // TODO: make array of
   glm::mat3x4 lookAt = glm::mat3x4(1.f);
-  glm::mat3x4 lookAtInverse = glm::mat3x4(1.f);
   glm::mat3x4 previousLookAt = glm::mat3x4(1.f);
+
+  // TODO: make array of
+  glm::mat3x4 lookAtInverse = glm::mat3x4(1.f);
   glm::mat3x4 previousLookAtInverse = glm::mat3x4(1.f);
 };
 
 //
 struct UniformData {
-  uint32_t framebufferAttachments[2][8] = {{0u}};
+  uint32_t framebufferAttachments[2][2][8] = {{0u}};
   glm::uvec2 extent = {}; uint32_t frameCounter, reserved;
   Constants constants = {};
   uint64_t pixelData = 0ull;
@@ -162,6 +166,20 @@ public:
     uniformData.frameCounter = 0u;
 
     // 
+    for (uint32_t i = 0; i < 2; i++) {
+      framebufferObj[i]->acquireImage(qfAndQueue);
+      framebufferObj[i]->clearAttachments(qfAndQueue);
+
+      // 
+      decltype(auto) framebufferAttachments = framebufferObj[i]->getImageViewIndices();
+      memcpy(uniformData.framebufferAttachments[0][i], framebufferAttachments.data(), std::min(framebufferAttachments.size(), 8ull) * sizeof(uint32_t));
+
+      // 
+      decltype(auto) previousFramebufferAttachments = framebufferObj[i]->getPrevImageViewIndices();
+      memcpy(uniformData.framebufferAttachments[1][i], previousFramebufferAttachments.data(), std::min(previousFramebufferAttachments.size(), 8ull) * sizeof(uint32_t));
+    };
+
+    // 
     //gltfLoaderObj->updateInstances(0u, glm::dmat4(1.f) * glm::scale(glm::dmat4(1.0f), glm::dvec3(1.f * scale, 1.f * scale, 1.f * scale)) * glm::rotate(glm::dmat4(1.0f), (controller->time - controller->beginTime) * 0.01, glm::dvec3(0.f, 1.f, 0.f)));
     //gltfLoaderObj->updateNodes(glm::dmat4(1.f) * glm::scale(glm::dmat4(1.0f), glm::dvec3(1.f * scale, 1.f * scale, 1.f * scale)));
 
@@ -243,10 +261,6 @@ public:
         .info = qfAndQueue,
       }
     });*/
-
-    //
-    framebufferObj[0]->clearAttachments(qfAndQueue);
-    framebufferObj[1]->clearAttachments(qfAndQueue);
 
     //
     decltype(auto) nativeOpaqueFence = nativeOpaqueObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
@@ -480,12 +494,6 @@ public:
       .formats = std::vector<vk::Format>{ vk::Format::eR32Uint, vk::Format::eR32Uint, vk::Format::eR32Uint, vk::Format::eR32Uint, vk::Format::eR32Uint },
       .info = qfAndQueue
     });
-
-    // 
-    for (uint32_t i = 0; i < 2; i++) {
-      decltype(auto) framebufferAttachments = framebufferObj[i]->getImageViewIndices();
-      memcpy(uniformData.framebufferAttachments[i], framebufferAttachments.data(), std::min(framebufferAttachments.size(), 8ull) * sizeof(uint32_t));
-    };
   };
 
   //

@@ -731,7 +731,7 @@ namespace ANAMED {
         .colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
       },
       vk::PipelineColorBlendAttachmentState{
-        .blendEnable = false,
+        .blendEnable = true,
         .srcColorBlendFactor = vk::BlendFactor::eSrcAlpha, // needs pre-mult
         .dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
         .colorBlendOp = vk::BlendOp::eAdd,
@@ -1186,6 +1186,7 @@ namespace ANAMED {
     FramebufferType type = FramebufferType::eUnknown;
     vk::PipelineLayout layout = {};
     vk::Extent2D extent = {640u, 480u};
+    uint32_t minImageCount = 2u;
     std::optional<QueueGetInfo> info = {};
   };
 

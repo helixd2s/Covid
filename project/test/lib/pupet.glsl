@@ -115,8 +115,8 @@ IntersectionInfo rasterizeVector(in InstanceAddressBlock addressInfo, in RayData
 // very cheap way - NOT RECOMMENDED!
 IntersectionInfo rasterize_(in InstanceAddressBlock addressInfo, inout IntersectionInfo intersection, in RayData rayData, in float maxT, inout vec4 lastPos, in bool previous, in uint isTrasnlucent) {
   //
-  const uvec4 indices = texelFetch(texturesU[framebufferAttachments[isTrasnlucent][0]], ivec2(rayData.launchId), 0);
-  const vec3 bary = texelFetch(textures[framebufferAttachments[isTrasnlucent][1]], ivec2(rayData.launchId), 0).xyz;
+  const uvec4 indices = texelFetch(texturesU[framebufferAttachments[uint(previous)][isTrasnlucent][0]], ivec2(rayData.launchId), 0);
+  const vec3 bary = texelFetch(textures[framebufferAttachments[uint(previous)][isTrasnlucent][1]], ivec2(rayData.launchId), 0).xyz;
 
   //
   vec4 viewOrigin = vec4(vec4(rayData.origin.xyz, 1.f) * (previous ? constants.previousLookAt : constants.lookAt), 1.f);
@@ -127,9 +127,9 @@ IntersectionInfo rasterize_(in InstanceAddressBlock addressInfo, inout Intersect
   //
   vec4 ss = (viewOrigin * constants.perspective);
   vec2 sc = (divW(ss).xy * 0.5f + 0.5f);
-  //vec4 sp = vec4(texture(sampler2D(textures[framebufferAttachments[isTrasnlucent][2]], samplers[0]), sc).xyz, 1.f);
-  vec4 sp = vec4(texelFetch(textures[framebufferAttachments[isTrasnlucent][2]], ivec2(rayData.launchId), 0).xyz, 1.f);
-  vec4 cp = vec4(texelFetch(textures[framebufferAttachments[isTrasnlucent][4]], ivec2(rayData.launchId), 0).xyz, 1.f);
+  //vec4 sp = vec4(texture(sampler2D(textures[framebufferAttachments[uint(previous)][isTrasnlucent][2]], samplers[0]), sc).xyz, 1.f);
+  vec4 sp = vec4(texelFetch(textures[framebufferAttachments[uint(previous)][isTrasnlucent][2]], ivec2(rayData.launchId), 0).xyz, 1.f);
+  vec4 cp = vec4(texelFetch(textures[framebufferAttachments[uint(previous)][isTrasnlucent][4]], ivec2(rayData.launchId), 0).xyz, 1.f);
 
   //
   if ((divW(lastPos).z <= (divW(sp).z + 0.001f) || cp.a >= 1.f) && sp.z < 1.f) {
@@ -187,6 +187,7 @@ RayData reuseLight(inout RayData rayData) {
 
 //
 //#define OUTSOURCE
+//#define ACCOUNT_TRANSPARENCY
 
 //
 //void reproject3D(in PixelSurfaceInfo surface, in PixelHitInfo data, in uint pixelId, in vec3 srcRayDir, in int type) {
@@ -318,7 +319,7 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in int type)
         rayData.launchId = u16vec2(srcInt);
         rayData.origin = srcHitFoundIntersection.xyz;
         rayData.direction = normalize(srcHitFoundIntersection.xyz-srcPos.xyz);
-        rasterizeVector(instancedData, rayData, 10000.f, srcSamplePos, true);
+        rasterize(instancedData, rayData, 10000.f, srcSamplePos, true);
       };
 
       //
@@ -327,7 +328,7 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in int type)
         rayData.launchId = u16vec2(dstInt);
         rayData.origin = dstHitFoundIntersection.xyz;
         rayData.direction = normalize(dstHitFoundIntersection.xyz-dstPos.xyz);
-        rasterizeVector(instancedData, rayData, 10000.f, dstSamplePos, false);
+        rasterize(instancedData, rayData, 10000.f, dstSamplePos, false);
       };
 
       // sorry, we doesn't save previous raster data
@@ -410,7 +411,7 @@ void reprojectDiffuse(in uint pixelId, in vec3 dstRayDir)
       rayData.launchId = u16vec2(srcScreenPos);
       rayData.origin = srcPos.xyz;
       rayData.direction = vec3(0.f);
-      rasterizeVector(instancedData, rayData, 10000.f, srcSamplePos, true);
+      rasterize(instancedData, rayData, 10000.f, srcSamplePos, true);
     };
 
     { //
@@ -418,7 +419,7 @@ void reprojectDiffuse(in uint pixelId, in vec3 dstRayDir)
       rayData.launchId = u16vec2(dstScreenPos);
       rayData.origin = dstPos.xyz;
       rayData.direction = vec3(0.f);
-      rasterizeVector(instancedData, rayData, 10000.f, dstSamplePos, false);
+      rasterize(instancedData, rayData, 10000.f, dstSamplePos, false);
     };
 
     //

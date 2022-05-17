@@ -11,6 +11,28 @@
 // 
 namespace ANAMED {
   
+  //
+  struct FbHistory {
+    //
+    FramebufferState state = FramebufferState::eShaderRead;
+
+    std::vector<vk::Image> images = {};
+    std::vector<vk::ImageView> imageViews = {};
+    std::vector<uint32_t> imageViewIndices = {};
+    std::vector<vk::RenderingAttachmentInfo> colorAttachments = {};
+
+    //
+    vk::RenderingAttachmentInfo depthAttachment = {};
+    vk::RenderingAttachmentInfo stencilAttachment = {};
+
+    //
+    std::vector<std::function<void(cpp21::const_wrap_arg<vk::CommandBuffer>, cpp21::const_wrap_arg<FramebufferState>)>> switchToShaderReadFn = {};
+    std::vector<std::function<void(cpp21::const_wrap_arg<vk::CommandBuffer>, cpp21::const_wrap_arg<FramebufferState>)>> switchToAttachmentFn = {};
+    std::vector<std::function<void(cpp21::const_wrap_arg<vk::CommandBuffer>, cpp21::const_wrap_arg<FramebufferState>)>> clearAttachmentFn = {};
+
+
+  };
+
   // 
   class FramebufferObj : public BaseObj {
   public: 
@@ -28,28 +50,10 @@ namespace ANAMED {
 
     //
     std::optional<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{};
+    std::vector<FbHistory> fbHistory = {};
 
     //
-    std::vector<vk::Image> images = {};
-    std::vector<vk::ImageView> imageViews = {};
-    std::vector<uint32_t> imageViewIndices = {};
-
-    //
-    std::vector<vk::RenderingAttachmentInfo> colorAttachments = {};
-
-    //
-    vk::RenderingAttachmentInfo depthAttachment = {};
-    vk::RenderingAttachmentInfo stencilAttachment = {};
-
-    //
-    std::vector<std::function<void(cpp21::const_wrap_arg<vk::CommandBuffer>, cpp21::const_wrap_arg<FramebufferState>)>> switchToShaderReadFn = {};
-    std::vector<std::function<void(cpp21::const_wrap_arg<vk::CommandBuffer>, cpp21::const_wrap_arg<FramebufferState>)>> switchToAttachmentFn = {};
-    std::vector<std::function<void(cpp21::const_wrap_arg<vk::CommandBuffer>, cpp21::const_wrap_arg<FramebufferState>)>> clearAttachmentFn = {};
-
-    //
-    FramebufferState state = FramebufferState::eShaderRead;
-
-    //
+    uint32_t currentIndex = 0u, previousIndex = 0u;
     vk::Rect2D renderArea = {};
 
     // 
@@ -69,21 +73,47 @@ namespace ANAMED {
     };
 
     //
-    virtual std::vector<uint32_t> const& getImageViewIndices() const { return imageViewIndices; };
+    virtual std::vector<uint32_t> const& getImageViewIndices(FbHistory const& history) const { return history.imageViewIndices; };
+
+    //
+    virtual vk::RenderingAttachmentInfo const& getDepthAttachment(FbHistory const& history) const {
+      return history.depthAttachment;
+    };
+
+    //
+    virtual vk::RenderingAttachmentInfo const& getStencilAttachment(FbHistory const& history) const {
+      return history.stencilAttachment;
+    };
+
+    //
+    virtual std::vector<vk::RenderingAttachmentInfo> const& getColorAttachments(FbHistory const& history) const {
+      return history.colorAttachments;
+    };
+
+    //
+    virtual std::vector<uint32_t> const& getImageViewIndices() const { return getImageViewIndices(this->fbHistory[this->currentIndex]); };
+    virtual std::vector<uint32_t> const& getPrevImageViewIndices() const { return getImageViewIndices(this->fbHistory[this->previousIndex]); };
 
     //
     virtual vk::RenderingAttachmentInfo const& getDepthAttachment() const {
-      return depthAttachment;
+      return getDepthAttachment(this->fbHistory[this->currentIndex]);
     };
 
     //
     virtual vk::RenderingAttachmentInfo const& getStencilAttachment() const {
-      return stencilAttachment;
+      return getStencilAttachment(this->fbHistory[this->currentIndex]);
     };
 
     //
-    virtual std::vector<vk::RenderingAttachmentInfo> const& getColorAttachments() {
-      return colorAttachments;
+    virtual std::vector<vk::RenderingAttachmentInfo> const& getColorAttachments() const {
+      return getColorAttachments(this->fbHistory[this->currentIndex]);
+    };
+
+    //
+    virtual uint32_t& acquireImage(cpp21::const_wrap_arg<ANAMED::QueueGetInfo> qfAndQueue) {
+      this->previousIndex = this->currentIndex;
+      this->currentIndex = (++this->currentIndex) % this->fbHistory.size();
+      return this->currentIndex;
     };
 
     //
@@ -104,25 +134,38 @@ namespace ANAMED {
     };
 
     //
-    virtual tType writeSwitchToShaderRead(cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
-      if (this->state != FramebufferState::eShaderRead) {
-        for (decltype(auto) fn : switchToShaderReadFn) { fn(cmdBuf, this->state); };
-        this->state = FramebufferState::eShaderRead;
+    virtual tType writeSwitchToShaderRead(FbHistory& history, cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+      if (history.state != FramebufferState::eShaderRead) {
+        for (decltype(auto) fn : history.switchToShaderReadFn) { fn(cmdBuf, history.state); };
+        history.state = FramebufferState::eShaderRead;
       };
       return SFT();
+    };
+
+    //
+    virtual tType writeSwitchToAttachment(FbHistory& history, cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+      if (history.state != FramebufferState::eAttachment) {
+        for (decltype(auto) fn : history.switchToAttachmentFn) { fn(cmdBuf, history.state); };
+        history.state = FramebufferState::eAttachment;
+      };
+      return SFT();
+    };
+
+
+    //
+    virtual tType writeSwitchToShaderRead(cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+      return writeSwitchToShaderRead(this->fbHistory[this->currentIndex], cmdBuf);
     };
 
     //
     virtual tType writeSwitchToAttachment(cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
-      if (this->state != FramebufferState::eAttachment) {
-        for (decltype(auto) fn : switchToAttachmentFn) { fn(cmdBuf, this->state); };
-        this->state = FramebufferState::eAttachment;
-      };
-      return SFT();
+      return writeSwitchToAttachment(this->fbHistory[this->currentIndex], cmdBuf);
     };
 
+
+
     //
-    virtual tType writeClearAttachments(cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+    virtual tType writeClearAttachments(FbHistory& history, cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<PipelineLayoutObj>(this->cInfo->layout);
@@ -134,7 +177,7 @@ namespace ANAMED {
 
       // 
       clearRects.push_back(vk::ClearRect{ .rect = this->renderArea, .baseArrayLayer = 0u, .layerCount = this->cInfo->type == FramebufferType::eCubemap ? 6u : 1u });
-      uint32_t i = 0u; for (decltype(auto) color : this->colorAttachments) {
+      uint32_t i = 0u; for (decltype(auto) color : history.colorAttachments) {
         uint32_t t = i++;
         clearAttachments.push_back(vk::ClearAttachment{ .aspectMask = vk::ImageAspectFlagBits::eColor, .colorAttachment = t, .clearValue = attachment.colorClearValues[t] });
       };
@@ -148,10 +191,10 @@ namespace ANAMED {
         .renderArea = renderArea,
         .layerCount = this->cInfo->type == FramebufferType::eCubemap ? 6u : 1u,
         .viewMask = 0x0u,
-        .colorAttachmentCount = uint32_t(colorAttachments.size()),
-        .pColorAttachments = colorAttachments.data(),
-        .pDepthAttachment = &depthAttachment,
-        .pStencilAttachment = &stencilAttachment
+        .colorAttachmentCount = uint32_t(history.colorAttachments.size()),
+        .pColorAttachments = history.colorAttachments.data(),
+        .pDepthAttachment = &history.depthAttachment,
+        .pStencilAttachment = &history.stencilAttachment
       });
       cmdBuf->clearAttachments(clearAttachments, clearRects);
       cmdBuf->endRendering();
@@ -161,11 +204,11 @@ namespace ANAMED {
     };
 
     //
-    virtual FenceType clearAttachments(cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}) {
+    virtual FenceType clearAttachments(FbHistory& history, cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}) {
       // 
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo{.info = info } };
-      submission.commandInits.push_back([this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
-        this->writeClearAttachments(cmdBuf);
+      submission.commandInits.push_back([this, &history](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+        this->writeClearAttachments(history, cmdBuf);
         return cmdBuf;
       });
       ANAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
@@ -175,43 +218,59 @@ namespace ANAMED {
     };
 
     //
-    virtual FenceType switchToShaderRead(cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}) {
+    virtual FenceType switchToShaderRead(FbHistory& history, cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}) {
       // 
-      if (this->state != FramebufferState::eShaderRead) {
+      if (history.state != FramebufferState::eShaderRead) {
         decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo{.info = info } };
-        submission.commandInits.push_back([this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
-          this->writeSwitchToShaderRead(cmdBuf);
+        submission.commandInits.push_back([this, &history](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+          this->writeSwitchToShaderRead(history, cmdBuf);
           return cmdBuf;
         });
-        this->state = FramebufferState::eShaderRead;
+        history.state = FramebufferState::eShaderRead;
         ANAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
       };
 
       //
       return FenceType{};
+    };
+
+    //
+    virtual FenceType switchToAttachment(FbHistory& history, cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}) {
+      // 
+      if (history.state != FramebufferState::eAttachment) {
+        decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo{.info = info } };
+        submission.commandInits.push_back([this, &history](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+          this->writeSwitchToAttachment(history, cmdBuf);
+          return cmdBuf;
+        });
+        history.state = FramebufferState::eAttachment;
+        ANAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
+      };
+
+      //
+      return FenceType{};
+    };
+
+    //
+    virtual FenceType clearAttachments(cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}) {
+      return clearAttachments(this->fbHistory[this->currentIndex], info);
+    };
+
+    //
+    virtual FenceType switchToShaderRead(cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}) {
+      return switchToShaderRead(this->fbHistory[this->currentIndex], info);
     };
 
     //
     virtual FenceType switchToAttachment(cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}) {
-      // 
-      if (this->state != FramebufferState::eAttachment) {
-        decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo{.info = info } };
-        submission.commandInits.push_back([this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
-          this->writeSwitchToAttachment(cmdBuf);
-          return cmdBuf;
-        });
-        this->state = FramebufferState::eAttachment;
-        ANAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
-      };
-
-      //
-      return FenceType{};
+      return switchToAttachment(this->fbHistory[this->currentIndex], info);
     };
+
 
   protected:
 
     //
-    virtual void createImage(cpp21::const_wrap_arg<ImageType> imageType = ImageType::eColorAttachment) {
+    virtual void createImage(FbHistory& history, cpp21::const_wrap_arg<ImageType> imageType = ImageType::eColorAttachment) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<PipelineLayoutObj>(this->cInfo->layout);
@@ -220,7 +279,7 @@ namespace ANAMED {
       decltype(auto) lastStencilFormat = attachment.stencilAttachmentFormat;
 
       // 
-      decltype(auto) format = (*imageType) == ImageType::eDepthStencilAttachment ? lastDepthFormat : ((*imageType) == ImageType::eDepthAttachment ? lastDepthFormat : ((*imageType) == ImageType::eStencilAttachment ? lastStencilFormat : attachment.colorAttachmentFormats[colorAttachments.size()]));
+      decltype(auto) format = (*imageType) == ImageType::eDepthStencilAttachment ? lastDepthFormat : ((*imageType) == ImageType::eDepthAttachment ? lastDepthFormat : ((*imageType) == ImageType::eStencilAttachment ? lastStencilFormat : attachment.colorAttachmentFormats[history.colorAttachments.size()]));
       decltype(auto) imageLayout = 
         (*imageType) == ImageType::eDepthStencilAttachment ? vk::ImageLayout::eDepthStencilAttachmentOptimal :
         ((*imageType) == ImageType::eDepthAttachment ? vk::ImageLayout::eDepthAttachmentOptimal :
@@ -249,15 +308,15 @@ namespace ANAMED {
       });
 
       //
-      this->images.push_back(imageObj.as<vk::Image>());
-      this->imageViews.push_back(std::get<0>(pair));
-      this->imageViewIndices.push_back(std::get<1>(pair));
+      history.images.push_back(imageObj.as<vk::Image>());
+      history.imageViews.push_back(std::get<0>(pair));
+      history.imageViewIndices.push_back(std::get<1>(pair));
 
       //
       decltype(auto) imageView = std::get<0>(pair);
 
       // TODO: use pre-built command buffer
-      this->switchToAttachmentFn.push_back([device, imageLayout, subresourceRange, image=imageObj.as<vk::Image>()](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf, cpp21::const_wrap_arg<FramebufferState> previousState = {}) {
+      history.switchToAttachmentFn.push_back([this, device, imageLayout, subresourceRange, image=imageObj.as<vk::Image>(), &history](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf, cpp21::const_wrap_arg<FramebufferState> previousState = {}) {
         decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(device);
         decltype(auto) imageObj = deviceObj->get<ResourceObj>(image);
         imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
@@ -268,7 +327,7 @@ namespace ANAMED {
       });
 
       //
-      this->switchToShaderReadFn.push_back([device, subresourceRange, image = imageObj.as<vk::Image>()](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf, cpp21::const_wrap_arg<FramebufferState> previousState = {}) {
+      history.switchToShaderReadFn.push_back([this, device, subresourceRange, image = imageObj.as<vk::Image>(), &history](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf, cpp21::const_wrap_arg<FramebufferState> previousState = {}) {
         decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(device);
         decltype(auto) imageObj = deviceObj->get<ResourceObj>(image);
         imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
@@ -280,19 +339,19 @@ namespace ANAMED {
 
       //
       if ((*imageType) == ImageType::eDepthStencilAttachment) {
-        stencilAttachment = depthAttachment = vk::RenderingAttachmentInfo{ .imageView = imageView, .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eLoad, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = attachment.depthClearValue };
+        history.stencilAttachment = history.depthAttachment = vk::RenderingAttachmentInfo{ .imageView = imageView, .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eLoad, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = attachment.depthClearValue };
       }
       else
       if ((*imageType) == ImageType::eDepthAttachment) {
-        depthAttachment = vk::RenderingAttachmentInfo{ .imageView = imageView, .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eLoad, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = attachment.depthClearValue };
+        history.depthAttachment = vk::RenderingAttachmentInfo{ .imageView = imageView, .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eLoad, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = attachment.depthClearValue };
       }
       else 
       if ((*imageType) == ImageType::eStencilAttachment) {
-        stencilAttachment = vk::RenderingAttachmentInfo{ .imageView = imageView, .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eLoad, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = attachment.depthClearValue };
+        history.stencilAttachment = vk::RenderingAttachmentInfo{ .imageView = imageView, .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eLoad, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = attachment.depthClearValue };
       }
       else {
-        uintptr_t last = colorAttachments.size();
-        colorAttachments.push_back(vk::RenderingAttachmentInfo{ .imageView = imageView, .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eLoad, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = attachment.colorClearValues[last] });
+        uintptr_t last = history.colorAttachments.size();
+        history.colorAttachments.push_back(vk::RenderingAttachmentInfo{ .imageView = imageView, .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eLoad, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = attachment.colorClearValues[last] });
       };
     };
 
@@ -301,36 +360,40 @@ namespace ANAMED {
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<PipelineLayoutObj>(this->cInfo->layout);
 
-      {
-        this->colorAttachments = {};
-        this->switchToShaderReadFn = {};
-        this->switchToAttachmentFn = {};
-      }
-
-      { //
-        decltype(auto) it = images.begin();
-        for (it = images.begin(); it != images.end();) {
+      // 
+      for (auto& history : this->fbHistory) { //
+        decltype(auto) it = history.images.begin();
+        for (it = history.images.begin(); it != history.images.end();) {
           deviceObj->get<ResourceObj>(*it)->destroy(deviceObj.get());
-          it = images.erase(it);
+          it = history.images.erase(it);
         };
       };
 
       //
       this->renderArea = vk::Rect2D{ vk::Offset2D{0u, 0u}, cInfo->extent };
 
-      // 
-      glm::vec4 color = glm::vec4(0.f, 0.f, 0.f, 0.f);
-      for (auto& format : descriptorsObj->cInfo->attachments[uint32_t(this->cInfo->type)].colorAttachmentFormats) {
-        this->createImage(ImageType::eUniversal);
+      // avoid indirection
+      this->fbHistory = {};
+      for (uint32_t i = 0; i < this->cInfo->minImageCount; i++) {
+        this->fbHistory.push_back(FbHistory{});
       };
 
-      // 
-      if (descriptorsObj->cInfo->attachments[uint32_t(this->cInfo->type)].depthAttachmentFormat == descriptorsObj->cInfo->attachments[uint32_t(this->cInfo->type)].stencilAttachmentFormat) {
-        this->createImage(ImageType::eDepthStencilAttachment);
-      }
-      else {
-        this->createImage(ImageType::eDepthAttachment);
-        this->createImage(ImageType::eStencilAttachment);
+      // re-loop 
+      for (auto& history : this->fbHistory) {
+
+        //
+        for (auto& format : descriptorsObj->cInfo->attachments[uint32_t(this->cInfo->type)].colorAttachmentFormats) {
+          this->createImage(history, ImageType::eUniversal);
+        };
+
+        // 
+        if (descriptorsObj->cInfo->attachments[uint32_t(this->cInfo->type)].depthAttachmentFormat == descriptorsObj->cInfo->attachments[uint32_t(this->cInfo->type)].stencilAttachmentFormat) {
+          this->createImage(history, ImageType::eDepthStencilAttachment);
+        }
+        else {
+          this->createImage(history, ImageType::eDepthAttachment);
+          this->createImage(history, ImageType::eStencilAttachment);
+        };
       };
 
       // 
