@@ -105,7 +105,7 @@ layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer Pix
   vec3 normal;
   vec4 tex[2];
   TYPE accum[3];
-  vec4 color[3];
+  TYPE color[3];
 };
 
 //
@@ -222,15 +222,6 @@ blueNoiseFn(in uvec2 coord) {
   //return texelFetch(texturesU[blueNoise], ivec2(coord) % texSize, 0).r;
   return coord;
 };
-
-//
-void accumulate(inout PixelSurfaceInfoRef surfaceInfo, in uint type, in TYPE data) {
-  atomicAdd(surfaceInfo.accum[type].x, data.x);
-  atomicAdd(surfaceInfo.accum[type].y, data.y);
-  atomicAdd(surfaceInfo.accum[type].z, data.z);
-  atomicAdd(surfaceInfo.accum[type].w, data.w);
-};
-
 
 // but may not to be...
 layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer TransformBlock {
@@ -846,6 +837,26 @@ uvec4 cvtRgb16Float(in vec4 sampled) {
 };
 #endif
 
+//
+void accumulate(inout PixelSurfaceInfoRef surfaceInfo, in uint type, in TYPE data) {
+  atomicAdd(surfaceInfo.color[type].x, data.x);
+  atomicAdd(surfaceInfo.color[type].y, data.y);
+  atomicAdd(surfaceInfo.color[type].z, data.z);
+  atomicAdd(surfaceInfo.color[type].w, data.w);
+};
+
+#ifndef USE_ATOMIC_FLOAT
+//
+void accumulate(inout PixelSurfaceInfoRef surfaceInfo, in uint type, in vec4 data_) {
+  const uvec4 data = cvtRgb16Float(data_);
+  atomicAdd(surfaceInfo.color[type].x, data.x);
+  atomicAdd(surfaceInfo.color[type].y, data.y);
+  atomicAdd(surfaceInfo.color[type].z, data.z);
+  atomicAdd(surfaceInfo.color[type].w, data.w);
+};
+#endif
+
+
 
 vec4 clampCol(in vec4 col) {
   return clamp(max(col,0.f.xxxx)/max(col.w, 1.f), vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f));
@@ -870,6 +881,16 @@ vec4 absmax(in vec4 val, in vec4 mn) {
 //
 vec4 divW(in vec4 coord) {
   return coord.xyzw/absmax(coord.w, 1e-9);
+};
+
+
+//
+vec3 proj_point_in_plane(in vec3 p, in vec3 v0, in vec3 n, out float d) { return p - ((d = dot(n, p - v0)) * n); };
+vec3 find_reflection_incident_point(in vec3 p0, in vec3 p1, in vec3 v0, in vec3 n) {
+  float d0 = 0; vec3 proj_p0 = proj_point_in_plane(p0, v0, n, d0);
+  float d1 = 0; vec3 proj_p1 = proj_point_in_plane(p1, v0, n, d1);
+  if(d1 < d0) { return (proj_p0 - proj_p1) * d1/(d0+d1) + proj_p1; }
+         else { return (proj_p1 - proj_p0) * d0/(d0+d1) + proj_p0; };
 };
 
 

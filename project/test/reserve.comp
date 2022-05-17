@@ -1,0 +1,36 @@
+#version 460 core
+
+// 
+#extension GL_GOOGLE_include_directive : require
+
+//
+#include "lib/native.glsl"
+#include "lib/fresnel.glsl"
+#include "lib/random.glsl"
+#include "lib/sphere.glsl"
+#include "lib/pupet.glsl"
+
+//
+layout (local_size_x = 32, local_size_y = 4, local_size_z = 1) in;
+
+// 
+void main() {
+  const uvec2 gcoord = gl_GlobalInvocationID.xy;
+  const vec2 tCoord = (vec2(gcoord) + 0.5f)/vec2(extent);
+  const uint pixelId = gcoord.x + extent.x * gcoord.y;
+
+  //
+  const vec3 dstRayBegin = divW(vec4(vec3(tCoord, 0.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.previousLookAtInverse;//fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId);
+  const vec3 dstRayEnd = divW(vec4(vec3(tCoord, 1.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.previousLookAtInverse;
+  const vec3 dstRayDir = normalize(dstRayEnd.xyz - dstRayBegin.xyz);
+
+  //
+  //PixelSurfaceInfoRef surface = getPixelSurface(pixelId);
+  //if (surface.origin.x != 0.f || surface.origin.y != 0.f || surface.origin.z != 0.f) {
+    //reproject3D(pixelId, dstRayDir, 0);
+    //reproject3D(pixelId, dstRayDir, 1);
+    //reprojectDiffuse(pixelId, dstRayDir);
+  //};
+
+  //reproject3D(pixelId, srcRayDir, 2);
+};

@@ -8,22 +8,23 @@
 #include "lib/fresnel.glsl"
 #include "lib/random.glsl"
 #include "lib/sphere.glsl"
+#include "lib/pupet.glsl"
 
 //
-layout (local_size_x = 32, local_size_y = 8, local_size_z = 1) in;
+layout (local_size_x = 32, local_size_y = 4, local_size_z = 1) in;
 
 //
 vec4 readAndNeighborColor(in uint pixelId, in uint type) {
   PixelSurfaceInfoRef hitInfo = getPixelSurface(pixelId);
-  vec4 center = hitInfo.color[type];
+  TYPE center = hitInfo.color[type];
   if (center.w <= 0.f) {
-    center = vec4(0.f);
+    center = TYPE(0.f);
     if ((pixelId + extent.x) < (extent.y * extent.x)) { PixelSurfaceInfoRef info = getPixelSurface(pixelId + extent.x); center += info.color[type]; };
     if ((pixelId.x%extent.x) < extent.x-1)            { PixelSurfaceInfoRef info = getPixelSurface(pixelId + 1); center += info.color[type]; };
     if (pixelId >= extent.x)                          { PixelSurfaceInfoRef info = getPixelSurface(pixelId - extent.x); center += info.color[type]; };
     if ((pixelId.x%extent.x) >= 1)                    { PixelSurfaceInfoRef info = getPixelSurface(pixelId - 1); center += info.color[type]; };
   };
-  return center;
+  return cvtRgb16Acc(center);
 };
 
 //
@@ -46,6 +47,11 @@ void main() {
   const vec2 tCoord = vec2(gcoord)/vec2(extent);
   const uint pixelId = gcoord.x + extent.x * gcoord.y;
 
+  //
+  const vec3 dstRayBegin = divW(vec4(vec3(tCoord, 0.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse;//fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId);
+  const vec3 dstRayEnd = divW(vec4(vec3(tCoord, 1.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse;
+  const vec3 dstRayDir = normalize(dstRayEnd.xyz - dstRayBegin.xyz);
+
   // 
   const vec4 resultRefl = readAndNeighborColor(pixelId, 0);
   const vec4 resultTransp = readAndNeighborColor(pixelId, 1);
@@ -64,4 +70,27 @@ void main() {
 
   // final color
   imageStore(images[swapchain.image], ivec2(gcoord.x, extent.y-1-gcoord.y), fromLinear(finalColor));
+
+  //
+  for (uint t=0;t<3;t++) {
+    PixelSurfaceInfoRef surface = getPixelSurface(pixelId);
+
+    // 
+    vec4 unlimited = cvtRgb16Acc(surface.color[t]);
+    vec4 average = unlimited/max(unlimited.w, 1.f);
+    vec4 limited = average * min(max(unlimited.w, 1.f), 16.f);
+
+    // 
+    surface.color[t] = cvtRgb16Float(limited);
+    surface.accum[t] = TYPE(0u);
+    PixelHitInfoRef newHitInfo = getNewHit(pixelId, t);
+    PixelHitInfoRef hitInfo = getRpjHit(pixelId, t);
+
+    //
+    hitInfo.indices = uvec4(0u);
+    hitInfo.origin = vec4(0.f.xxxx);
+
+    // re-save for reprojection
+    retranslateBackHit(pixelId, t);
+  };
 };

@@ -111,7 +111,7 @@ void main() {
       backgroundHit(pixelId, 2, cmd.rayData.origin, cmd.diffuseColor);
     };
 
-    PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
-    for (uint i=0;i<3;i++) { surfaceInfo.accum[i] = TYPE(0u); };
+    //PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
+    //for (uint i=0;i<3;i++) { surfaceInfo.accum[i] = TYPE(0u); };
   };
 };

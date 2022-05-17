@@ -82,6 +82,7 @@ protected:
   ANAMED::WrapShared<ANAMED::PipelineLayoutObj> descriptorsObj = {};
   ANAMED::WrapShared<ANAMED::UploaderObj> uploaderObj = {};
   ANAMED::WrapShared<ANAMED::GltfLoaderObj> gltfLoaderObj = {};
+  ANAMED::WrapShared<ANAMED::PipelineObj> reserveObj = {};
   ANAMED::WrapShared<ANAMED::PipelineObj> resampleObj = {};
   ANAMED::WrapShared<ANAMED::PipelineObj> pathTracerObj = {};
 
@@ -344,10 +345,26 @@ public:
     });
 
     //
+    decltype(auto) reserveFence = reserveObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
+      // # yet another std::optional problem (implicit)
+      .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
+        .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 32u), cpp21::tiled(renderArea.extent.height, 4u), 1u},
+        .layout = descriptorsObj.as<vk::PipelineLayout>(),
+        .swapchain = swapchainObj.as<uintptr_t>(),
+        .pingpong = pingPongObj.as<uintptr_t>(),
+        // # yet another std::optional problem (implicit)
+        .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
+      }),
+      .submission = ANAMED::SubmissionInfo{
+        .info = qfAndQueue
+      }
+      });
+
+    //
     decltype(auto) postFence = postObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
       // # yet another std::optional problem (implicit)
       .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
-        .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 32u), cpp21::tiled(renderArea.extent.height, 8u), 1u},
+        .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 32u), cpp21::tiled(renderArea.extent.height, 4u), 1u},
         .layout = descriptorsObj.as<vk::PipelineLayout>(),
         .swapchain = swapchainObj.as<uintptr_t>(),
         .pingpong = pingPongObj.as<uintptr_t>(),
@@ -521,6 +538,14 @@ protected:
         .code = cpp21::readBinaryU32("./path-tracer.comp.spv")
       }
     });
+
+    //
+    reserveObj = ANAMED::PipelineObj::make(deviceObj.with(0u), ANAMED::PipelineCreateInfo{
+      .layout = descriptorsObj.as<vk::PipelineLayout>(),
+      .compute = ANAMED::ComputePipelineCreateInfo{
+        .code = cpp21::readBinaryU32("./reserve.comp.spv")
+      }
+      });
 
     //
     resampleObj = ANAMED::PipelineObj::make(deviceObj.with(0u), ANAMED::PipelineCreateInfo{
