@@ -347,22 +347,22 @@ namespace ANAMED {
       exec->cmdBuf.setScissorWithCount(scissors);
 
       //
-      using fnT = void(cpp21::shared_vector<vk::MultiDrawInfoEXT> const&);
+      using fnT = void(cpp21::shared_vector<vk::MultiDrawInfoEXT> const&, uint32_t const&);
       using fnTp = std::function<fnT>;
 
       //
       if (exec->instanceDraws.size() > 0) {
         for (decltype(auto) instInfo : exec->instanceDraws) {
           decltype(auto) multiDrawDirect = supportMultiDraw ?
-            fnTp([cmdBuf = exec->cmdBuf, dispatch = deviceObj->getDispatch()](cpp21::shared_vector<vk::MultiDrawInfoEXT> const& multiDraw) {
-              cmdBuf.drawMultiEXT(*multiDraw, 1u, 0u, sizeof(vk::MultiDrawInfoEXT), dispatch);
+            fnTp([cmdBuf = exec->cmdBuf, dispatch = deviceObj->getDispatch()](cpp21::shared_vector<vk::MultiDrawInfoEXT> const& multiDraw, uint32_t const& instanceCount = 1u) {
+              cmdBuf.drawMultiEXT(*multiDraw, instanceCount, 0u, sizeof(vk::MultiDrawInfoEXT), dispatch);
             }) :
-            fnTp([cmdBuf = exec->cmdBuf, pipelineLayout, instInfo](cpp21::shared_vector<vk::MultiDrawInfoEXT> const& multiDraw) {
+            fnTp([cmdBuf = exec->cmdBuf, pipelineLayout, instInfo](cpp21::shared_vector<vk::MultiDrawInfoEXT> const& multiDraw, uint32_t const& instanceCount = 1u) {
               uint32_t index = 0u;
               for (decltype(auto) drawInfo : *multiDraw) {
                 decltype(auto) pushed = instInfo.drawConst->with(index++);
                 cmdBuf.pushConstants(pipelineLayout, vk::ShaderStageFlagBits::eAll, sizeof(InstanceAddressBlock), sizeof(PushConstantData), &pushed);
-                cmdBuf.draw(drawInfo.vertexCount, 1u, drawInfo.firstVertex, 0u);
+                cmdBuf.draw(drawInfo.vertexCount, instanceCount, drawInfo.firstVertex, 0u);
               };
             });
 
@@ -379,7 +379,7 @@ namespace ANAMED {
             if (exec->pingpong) {
               exec->cmdBuf.pushConstants(descriptorsObj->handle.as<vk::PipelineLayout>(), vk::ShaderStageFlagBits::eAll, sizeof(InstanceAddressBlock) + sizeof(PushConstantData) + sizeof(SwapchainStateInfo), sizeof(PingPongStateInfo), &deviceObj->get<PingPongObj>(exec->pingpong)->getStateInfo());
             };
-            multiDrawDirect(instInfo.drawInfos);
+            multiDrawDirect(instInfo.drawInfos, instInfo.drawConst ? instInfo.drawConst->instanceCount : 1u);
         };
       };
 

@@ -514,8 +514,11 @@ namespace ANAMED {
 #pragma pack(push, 1)
   __declspec(align(1))
   struct PushConstantData {
-    uint64_t dataAddress = 0ull;
+    //uint64_t dataAddress = 0ull;
+    uint32_t instanceCount = 0u;
     uint32_t instanceIndex = 0u;
+
+    uint32_t reserved0 = 0u;
     uint32_t drawIndex = 0u;
 
     decltype(auto) with(uint32_t const& drawIndex) const { auto copy = *this; copy.drawIndex = drawIndex; return copy; };
@@ -656,6 +659,7 @@ namespace ANAMED {
     //std::vector<uint32_t> limits = {};
     //size_t instanceCount = 1u;
     uintptr_t uploader = 0ull;
+    bool isTranslucent = false;
 
     // 
     std::optional<QueueGetInfo> info = QueueGetInfo{};

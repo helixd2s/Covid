@@ -31,30 +31,27 @@ layout (depth_any) out float gl_FragDepth;
 //
 // We prefer to use refraction and ray-tracing for transparent effects...
 void main() {
-  uint32_t instanceIndex = pIndices.x;
-  uint32_t geometryIndex = pIndices.y;
-
-  // 
-  InstanceInfo instanceInfo = InstanceInfo(instanceDrawInfo.data);
-  GeometryInfo geometryInfo = getGeometry(instanceInfo, geometryIndex);
-  GeometryExtData geometry = getGeometryData(geometryInfo, pIndices.z);
-  GeometryExtAttrib attrib = interpolate(geometry, pBary);
-
-  //
-#ifdef TRANSLUCENT
-  mat3x3 tbn = getTBN(attrib);
-  tbn[0] = fullTransformNormal(instanceInfo, tbn[0], geometryIndex);
-  tbn[1] = fullTransformNormal(instanceInfo, tbn[1], geometryIndex);
-  tbn[2] = fullTransformNormal(instanceInfo, tbn[2], geometryIndex);
-  MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), pTexcoord.xy, tbn);
-#endif
-
   //
   const uint translucent = 
 #ifdef TRANSLUCENT
   1u;
 #else
   0u;
+#endif
+
+  // 
+  InstanceInfo instanceInfo = getInstance(instancedData, translucent, pIndices.x);
+  GeometryInfo geometryInfo = getGeometry(instanceInfo, pIndices.y);
+  GeometryExtData geometry = getGeometryData(geometryInfo, pIndices.z);
+  GeometryExtAttrib attrib = interpolate(geometry, pBary);
+
+  //
+#ifdef TRANSLUCENT
+  mat3x3 tbn = getTBN(attrib);
+  tbn[0] = fullTransformNormal(instanceInfo, tbn[0], pIndices.y);
+  tbn[1] = fullTransformNormal(instanceInfo, tbn[1], pIndices.y);
+  tbn[2] = fullTransformNormal(instanceInfo, tbn[2], pIndices.y);
+  MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), pTexcoord.xy, tbn);
 #endif
 
   //

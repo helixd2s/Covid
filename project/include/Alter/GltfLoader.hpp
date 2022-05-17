@@ -676,12 +676,14 @@ namespace ANAMED
         scene->opaque->instanced = ANAMED::InstanceLevelObj::make(handle, ANAMED::InstanceLevelCreateInfo{
           .instances = scene->opaque->instances,
           .uploader = this->cInfo->uploader,
+          .isTranslucent = false
         });
 
         //
         scene->translucent->instanced = ANAMED::InstanceLevelObj::make(handle, ANAMED::InstanceLevelCreateInfo{
           .instances = scene->translucent->instances,
           .uploader = this->cInfo->uploader,
+          .isTranslucent = true
         });
 
         //

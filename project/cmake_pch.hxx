@@ -32,6 +32,7 @@
 #include <fstream>
 #include <typeindex>
 #include <coroutine>
+#include <numeric>
 
 #ifdef __clang__
 #include <tl/generator.hpp>

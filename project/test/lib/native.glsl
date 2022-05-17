@@ -364,8 +364,9 @@ struct InstanceAddressInfo {
 // ALWAYS USE Alter INDEX OF `InstanceDrawDatas`
 struct PushConstantData {
   //InstanceData data;
-  uint64_t data;
+  uint32_t instanceCount;
   uint32_t instanceIndex;
+  uint32_t reserved0;
   uint32_t drawIndex;
 };
 

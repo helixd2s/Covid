@@ -16,6 +16,8 @@
 // 
 namespace ANAMED {
 
+  
+
   // 
   class InstanceLevelObj : public BaseObj {
   public: 
@@ -171,7 +173,7 @@ namespace ANAMED {
         // 
         if (this->instanceExtBuffer && this->getInstanceInfoResource()) {
           instanceDraw.drawInfos = geometryLevel->getDrawInfo();
-          instanceDraw.drawConst = PushConstantData{ .dataAddress = this->getInstanceInfoDeviceAddress() + sizeof(InstanceInfo) * idx, .instanceIndex = uint32_t(idx), .drawIndex = 0u };
+          instanceDraw.drawConst = PushConstantData{ .instanceCount = 1u, .instanceIndex = uint32_t(idx), .drawIndex = 0u };
         };
 
         // 
@@ -187,6 +189,48 @@ namespace ANAMED {
 
         //
         //this->firstUpdate[idx] = false;
+      };
+
+      // WIP XREP ALGO
+      std::vector<uintptr_t> indices(this->cInfo->instances->size());
+      std::iota(indices.begin(), indices.end(), 0);
+      std::sort(indices.begin(), indices.end(), [&](int i, int j) {
+        return this->instanceDevInfo[i].accelerationStructureReference < this->instanceDevInfo[j].accelerationStructureReference;
+      });
+
+      //
+      cpp21::apply_permutation<InstanceInfo>(this->instanceInfo, indices);
+      cpp21::apply_permutation<InstanceDevInfo>(this->instanceDevInfo, indices);
+      cpp21::apply_permutation<InstanceDataInfo>(this->cInfo->instances, indices);
+
+      // WIP XREP ALGO
+      // STILL MAY CRASH!!!
+      this->instanceDraw = std::vector<InstanceDraw>{};
+      uint32_t instanceCount = 0u;
+      for (uintptr_t idx = 0ull; idx < this->cInfo->instances->size(); idx++) {
+        auto& instances = this->cInfo->instances[idx];
+        auto& instanceInfo = this->instanceInfo[idx];
+        auto& instanceDevInfo = this->instanceDevInfo[idx];
+
+        //
+        auto& prevInstances = this->cInfo->instances[idx > 0 ? (idx - 1) : idx];
+        auto& prevInstanceInfo = this->instanceInfo[idx > 0 ? (idx - 1) : idx];
+        auto& prevInstanceDevInfo = this->instanceDevInfo[idx > 0 ? (idx - 1) : idx];
+
+        //
+        instanceCount++;
+
+        // 
+        decltype(auto) geometryLevel = deviceObj->get<GeometryLevelObj>(instanceDevInfo.accelerationStructureReference);
+
+        //
+        if (prevInstanceDevInfo.accelerationStructureReference != instanceDevInfo.accelerationStructureReference || (idx <= (this->cInfo->instances->size()-1))) {
+          this->instanceDraw->push_back(InstanceDraw{
+            .drawConst = PushConstantData{.instanceCount = instanceCount, .instanceIndex = uint32_t(idx), .drawIndex = 0u},
+            .drawInfos = geometryLevel->getDrawInfo()
+          });
+          instanceCount = 0u;
+        };
       };
 
       //
