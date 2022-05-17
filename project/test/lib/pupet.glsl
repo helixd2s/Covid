@@ -437,7 +437,7 @@ void reprojectDiffuse(in uint pixelId, in vec3 dstRayDir)
       PixelSurfaceInfoRef srcSurface = getPixelSurface(srcId);
 
       // Up-Filling
-      if (srcSurface.accum[2].w > 0.f && srcValidDist) {
+      if (srcSurface.accum[2].w > 0.f && srcValidDist && dstValidDist) {
         accumulate(dstSurface, 2, srcSurface.accum[2]);
       };
     };
