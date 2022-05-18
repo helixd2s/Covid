@@ -487,14 +487,27 @@ void retranslateHit(in uint pixelId, in uint type, in vec3 origin) {
 // 
 void retranslateBackHit(in uint pixelId, in uint type) {
   PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
-  surfaceInfo.accum[type] = surfaceInfo.color[type];
-  surfaceInfo.color[type] = cvtRgb16Float(vec4(0.f));
+  if (surfaceInfo.color[type].w > 0.f) {
+    surfaceInfo.accum[type] = surfaceInfo.color[type];
+    surfaceInfo.color[type] = cvtRgb16Float(vec4(0.f));
 
-  //
-  PixelHitInfoRef hitInfo = getNewHit(pixelId, type);
+    //
+    PixelHitInfoRef hitInfo = getNewHit(pixelId, type);
+    PixelHitInfoRef newHitInfo = getRpjHit(pixelId, type);
+    newHitInfo.indices = hitInfo.indices; hitInfo.indices = uvec4(0u);
+    newHitInfo.origin = hitInfo.origin; hitInfo.origin = vec4(0.f);
+  };
+};
+
+// 
+void reprojHit(in uint pixelId, in uint type) {
+  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
   PixelHitInfoRef newHitInfo = getRpjHit(pixelId, type);
-  newHitInfo.indices = hitInfo.indices; hitInfo.indices = uvec4(0u);
-  newHitInfo.origin = hitInfo.origin; hitInfo.origin = vec4(0.f);
+  PixelHitInfoRef hitInfo = getNewHit(pixelId, type);
+  if (surfaceInfo.color[type].w > 0.f) {
+    newHitInfo.indices = hitInfo.indices;
+    newHitInfo.origin = hitInfo.origin;
+  };
 };
 
 // 

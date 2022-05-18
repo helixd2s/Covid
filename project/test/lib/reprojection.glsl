@@ -28,12 +28,7 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in int type)
 #endif
 {
   PixelSurfaceInfoRef surface = getPixelSurface(pixelId);
-#ifdef OUTSOURCE
   PixelHitInfoRef data = getRpjHit(pixelId, type);
-#else
-  // HAVE WRITE CONFLICT!
-  PixelHitInfoRef data = getNewHit(pixelId, type);
-#endif
 
   //
   const bool isSurface = data.origin.w > 0.f && data.origin.w < 10000.f;
@@ -103,9 +98,9 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in int type)
           vec4(srcPos.xyz, 1.f) * constants.previousLookAt, 
           normalize(srcNormal.xyz) * toNormalMat(constants.previousLookAt)
         ), 1.f) * constants.previousLookAtInverse;
-      dstHitFoundIntersection = vec4(vec4(srcHitFoundIntersection, 1.f)
-        * getPreviousInstanceTransform(instancedData, surface.indices.x), 1.f)
-        * inverse(getInstanceTransform(instancedData, surface.indices.x));
+      //dstHitFoundIntersection = vec4(vec4(srcHitFoundIntersection, 1.f)
+        //* getPreviousInstanceTransform(instancedData, surface.indices.x), 1.f)
+        //* inverse(getInstanceTransform(instancedData, surface.indices.x));
 //#else
       /*dstHitFoundIntersection = vec4(find_reflection_incident_point( 
           vec4(dstPos.xyz, 1.f) * constants.lookAt, 

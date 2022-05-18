@@ -111,6 +111,11 @@ void main() {
       backgroundHit(pixelId, 2, cmd.rayData.origin, cmd.diffuseColor);
     };
 
+    //
+    reprojHit(pixelId, 0);
+    reprojHit(pixelId, 1);
+    reprojHit(pixelId, 2);
+
     //PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
     //for (uint i=0;i<3;i++) { surfaceInfo.accum[i] = TYPE(0u); };
   };
