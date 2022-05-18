@@ -179,13 +179,13 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in int type)
       };
 
       // sorry, we doesn't save previous raster data
-      const bool dstValidDist = type == 1 ? true : all(lessThan(abs(dstSamplePos.xyz-(dstHitPersp.xyz/dstHitPersp.w)), vec3(2.f/extent, 0.004f)));
-      const bool srcValidDist = type == 1 ? true : all(lessThan(abs(srcSamplePos.xyz-(srcHitPersp.xyz/srcHitPersp.w)), vec3(2.f/extent, 0.004f)));
+      const bool dstValidDist = type == 1 ? true : all(lessThan(abs(dstSamplePos.xyz-(dstHitPersp.xyz/dstHitPersp.w)), vec3(2.f/extent, 0.008f)));
+      const bool srcValidDist = type == 1 ? true : all(lessThan(abs(srcSamplePos.xyz-(srcHitPersp.xyz/srcHitPersp.w)), vec3(2.f/extent, 0.008f))) && HIT_SRC.origin.w > 0.f;
 
       // copy to dest, and nullify source
       const uint sampled = uint(SURF_DST.color[type].w);
       TYPE original = SURF_DST.accum[type];
-      if ( original.w > 0.f && dstValidDist && HIT_SRC.origin.w > 0.f && (srcValidDist || sampled <= 0u) ) 
+      if ( original.w > 0.f && dstValidDist && srcValidDist ) 
       {
         accumulate(SURF_DST, type, original);
         HIT_DST.origin = vec4(dstHitFoundIntersection, distance(dstHitPos, dstHitFoundIntersection));
@@ -277,12 +277,12 @@ void reprojectDiffuse(in uint pixelId, in vec3 dstRayDir, in int type)
     ) {
       // DST
       const uint dstId = uint(dstScreenPos.x + dstScreenPos.y * extent.x);
-      const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz-(dstPerspPos.xyz/dstPerspPos.w)), vec3(2.f/extent, 0.004f)));
+      const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz-(dstPerspPos.xyz/dstPerspPos.w)), vec3(2.f/extent, 0.008f)));
       PixelSurfaceInfoRef dstSurface = getPixelSurface(dstId);
 
       // SRC
       const uint srcId = uint(srcScreenPos.x + srcScreenPos.y * extent.x);
-      const bool srcValidDist = all(lessThan(abs(srcSamplePos.xyz-(srcPerspPos.xyz/srcPerspPos.w)), vec3(2.f/extent, 0.004f)));
+      const bool srcValidDist = all(lessThan(abs(srcSamplePos.xyz-(srcPerspPos.xyz/srcPerspPos.w)), vec3(2.f/extent, 0.008f)));
       PixelSurfaceInfoRef srcSurface = getPixelSurface(srcId);
 
       // Up-Filling

@@ -32,7 +32,7 @@ void main() {
   PixelSurfaceInfoRef surface = getPixelSurface(pixelId);
   if (surface.origin.x != 0.f || surface.origin.y != 0.f || surface.origin.z != 0.f) {
     reprojectDiffuse(pixelId, srcRayDir, 2);
-    reproject3D(pixelId, srcRayDir, 0);
-    reproject3D(pixelId, srcRayDir, 1);
+    //reproject3D(pixelId, srcRayDir, 0);
+    //reproject3D(pixelId, srcRayDir, 1);
   };
 };
