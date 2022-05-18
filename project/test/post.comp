@@ -19,10 +19,10 @@ vec4 readAndNeighborColor(in uint pixelId, in uint type) {
   TYPE center = hitInfo.color[type];
   if (center.w <= 0.f) {
     center = TYPE(0.f);
-    if ((pixelId + extent.x) < (extent.y * extent.x)) { PixelSurfaceInfoRef info = getPixelSurface(pixelId + extent.x); center += info.color[type]; };
-    if ((pixelId.x%extent.x) < extent.x-1)            { PixelSurfaceInfoRef info = getPixelSurface(pixelId + 1); center += info.color[type]; };
-    if (pixelId >= extent.x)                          { PixelSurfaceInfoRef info = getPixelSurface(pixelId - extent.x); center += info.color[type]; };
-    if ((pixelId.x%extent.x) >= 1)                    { PixelSurfaceInfoRef info = getPixelSurface(pixelId - 1); center += info.color[type]; };
+    if ((pixelId + extent.x) < (extent.y * extent.x)) { PixelSurfaceInfoRef info = getPixelSurface(pixelId + extent.x); if (info.color[type].w > 0) { center += info.color[type]; }; };
+    if ((pixelId.x%extent.x) < extent.x-1)            { PixelSurfaceInfoRef info = getPixelSurface(pixelId + 1); if (info.color[type].w > 0) { center += info.color[type]; }; };
+    if (pixelId >= extent.x)                          { PixelSurfaceInfoRef info = getPixelSurface(pixelId - extent.x); if (info.color[type].w > 0) { center += info.color[type]; }; };
+    if ((pixelId.x%extent.x) >= 1)                    { PixelSurfaceInfoRef info = getPixelSurface(pixelId - 1); if (info.color[type].w > 0) { center += info.color[type]; }; };
   };
   return cvtRgb16Acc(center);
 };

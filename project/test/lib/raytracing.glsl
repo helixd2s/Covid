@@ -348,15 +348,16 @@ RayData pathTrace(inout RayData rayData, inout float hitDist, inout vec3 firstNo
       const vec4 skyColor = gamma3(vec4(texture(sampler2D(textures[background], samplers[0]), lcts(rayData.direction.xyz)).xyz, 0.f));
 
       // suppose last possible hit-point
-      //rayData.origin.xyz = vec4(0.f.xxx, 1.f) * constants.lookAtInverse + rayData.direction.xyz * 10000.f;
+      
       rayData.emission += f16vec4(trueMultColor(rayData.energy.xyz, skyColor.xyz), 0.f);
       rayData.energy.xyz *= f16vec3(0.f.xxx);
       if (!surfaceFound) {
         // sorry, I hadn't choice
         firstIndices = lastIndices;
         firstNormal = lastNormal;
-        if ((type == 1 || R == 0) && type != 0) {
+        if (type == 1 || R == 0) {
           hitDist = currentT = 10000.f;
+          //rayData.origin.xyz = vec4(0.f.xxx, 1.f) * constants.lookAtInverse;
         } else {
           hitDist = currentT;
         };

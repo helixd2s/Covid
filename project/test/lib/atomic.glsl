@@ -28,21 +28,46 @@ uvec4 cvtRgb16Float(in vec4 sampled) {
 #endif
 
 //
-void accumulate(inout PixelSurfaceInfoRef surfaceInfo, in uint type, in TYPE data) {
-  atomicAdd(surfaceInfo.color[type].x, data.x);
-  atomicAdd(surfaceInfo.color[type].y, data.y);
-  atomicAdd(surfaceInfo.color[type].z, data.z);
-  atomicAdd(surfaceInfo.color[type].w, data.w);
+TYPE accumulate(inout PixelSurfaceInfoRef surfaceInfo, in uint type, in TYPE data) {
+  return TYPE(
+    atomicAdd(surfaceInfo.color[type].x, data.x),
+    atomicAdd(surfaceInfo.color[type].y, data.y),
+    atomicAdd(surfaceInfo.color[type].z, data.z),
+    atomicAdd(surfaceInfo.color[type].w, data.w)
+  );
+};
+
+//
+TYPE exchange(inout PixelSurfaceInfoRef surfaceInfo, in uint type, in TYPE data) {
+  return TYPE(
+    atomicExchange(surfaceInfo.color[type].x, data.x),
+    atomicExchange(surfaceInfo.color[type].y, data.y),
+    atomicExchange(surfaceInfo.color[type].z, data.z),
+    atomicExchange(surfaceInfo.color[type].w, data.w)
+  );
 };
 
 #ifndef USE_ATOMIC_FLOAT
 //
-void accumulate(inout PixelSurfaceInfoRef surfaceInfo, in uint type, in vec4 data_) {
+vec4 exchange(inout PixelSurfaceInfoRef surfaceInfo, in uint type, in vec4 data_) {
   const uvec4 data = cvtRgb16Float(data_);
-  atomicAdd(surfaceInfo.color[type].x, data.x);
-  atomicAdd(surfaceInfo.color[type].y, data.y);
-  atomicAdd(surfaceInfo.color[type].z, data.z);
-  atomicAdd(surfaceInfo.color[type].w, data.w);
+  return cvtRgb16Acc(uvec4(
+    atomicAdd(surfaceInfo.color[type].x, data.x),
+    atomicAdd(surfaceInfo.color[type].y, data.y),
+    atomicAdd(surfaceInfo.color[type].z, data.z),
+    atomicAdd(surfaceInfo.color[type].w, data.w)
+  ));
+};
+
+//
+vec4 exchange(inout PixelSurfaceInfoRef surfaceInfo, in uint type, in vec4 data_) {
+  const uvec4 data = cvtRgb16Float(data_);
+  return cvtRgb16Acc(uvec4(
+    atomicExchange(surfaceInfo.color[type].x, data.x),
+    atomicExchange(surfaceInfo.color[type].y, data.y),
+    atomicExchange(surfaceInfo.color[type].z, data.z),
+    atomicExchange(surfaceInfo.color[type].w, data.w)
+  ));
 };
 #endif
 

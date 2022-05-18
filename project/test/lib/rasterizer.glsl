@@ -212,8 +212,12 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in int type)
 #ifdef OUTSOURCE
   PixelHitInfoRef data = getRpjHit(pixelId, type);
 #else
+  // HAVE WRITE CONFLICT!
   PixelHitInfoRef data = getNewHit(pixelId, type);
 #endif
+
+  //
+  const bool isSurface = data.origin.w > 0.f && data.origin.w < 10000.f;
 
   //
   //if (data.origin.x != 0.f || data.origin.y != 0.f || data.origin.z != 0.f) {
@@ -222,8 +226,8 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in int type)
     // 
 #ifdef OUTSOURCE
     // 
-    const vec3 srcHitPos = surface.origin.xyz + data.origin.w * srcRayDir;
-    const vec3 srcPos = surface.origin.xyz;
+    const vec3 srcPos = surface.origin.xyz;//(notNull ? surface.origin.xyz : vec4(0.f.xxx, 1.f) * constants.previousLookAtInverse);
+    const vec3 srcHitPos = srcPos + data.origin.w * srcRayDir;
     const vec3 srcNormal = surface.normal.xyz;
 
     //
@@ -241,8 +245,8 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in int type)
       * toNormalMat(inverse(getInstanceTransform(instancedData, surface.indices.x))));
 #else 
     //
-    const vec3 dstHitPos = surface.origin.xyz + data.origin.w * dstRayDir;
-    const vec3 dstPos = surface.origin.xyz;
+    const vec3 dstPos = surface.origin.xyz;//(notNull ? surface.origin.xyz : vec4(0.f.xxx, 1.f) * constants.lookAtInverse);
+    const vec3 dstHitPos = dstPos + data.origin.w * dstRayDir;
     const vec3 dstNormal = surface.normal.xyz;
 
     // 
@@ -261,18 +265,19 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in int type)
 #endif
 
     // 
-    vec3 srcHitFoundIntersection = srcPos;
-    vec3 dstHitFoundIntersection = dstPos;
+    vec3 srcHitFoundIntersection = srcPos;//(isSurface ? srcPos : vec4(0.f.xxx, 1.f) * constants.previousLookAtInverse);
+    vec3 dstHitFoundIntersection = dstPos;//(isSurface ? dstPos : vec4(0.f.xxx, 1.f) * constants.lookAtInverse);
     if (type == 2) {
       // no changes for diffuse
     } else
 #ifdef ACCOUNT_TRANSPARENCY
     if (type == 1) {
-      dstHitFoundIntersection = dstHitPos;
       srcHitFoundIntersection = srcHitPos;
+      dstHitFoundIntersection = dstHitPos;
     } else
 #endif
-    { // only outsource version support
+    if (isSurface) { // only outsource version support
+//#ifdef OUTSOURCE
       srcHitFoundIntersection = vec4(find_reflection_incident_point( 
           vec4(dstPos.xyz, 1.f) * constants.lookAt, 
           vec4(srcHitPos.xyz, 1.f) * constants.previousLookAt, 
@@ -282,6 +287,17 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in int type)
       dstHitFoundIntersection = vec4(vec4(srcHitFoundIntersection, 1.f)
         * getPreviousInstanceTransform(instancedData, surface.indices.x), 1.f)
         * inverse(getInstanceTransform(instancedData, surface.indices.x));
+//#else
+      /*dstHitFoundIntersection = vec4(find_reflection_incident_point( 
+          vec4(dstPos.xyz, 1.f) * constants.lookAt, 
+          vec4(srcHitPos.xyz, 1.f) * constants.previousLookAt, 
+          vec4(srcPos.xyz, 1.f) * constants.previousLookAt, 
+          normalize(srcNormal.xyz) * toNormalMat(constants.previousLookAt)
+        ), 1.f) * constants.lookAtInverse;
+      srcHitFoundIntersection = vec4(vec4(dstHitFoundIntersection, 1.f)
+        * getInstanceTransform(instancedData, surface.indices.x), 1.f)
+        * inverse(getPreviousInstanceTransform(instancedData, surface.indices.x));*/
+//#endif
 
       /*
       dstHitFoundIntersection = vec4(find_reflection_incident_point( 
@@ -295,7 +311,6 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in int type)
         * inverse(getPreviousInstanceTransform(instancedData, surface.indices.x));
       */
     };
-
 
     // 
     const vec4 srcHitPersp = vec4(vec4(srcHitFoundIntersection, 1.f) * constants.previousLookAt, 1.f) * constants.perspective;
@@ -349,22 +364,23 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in int type)
       const bool srcValidDist = type == 1 ? true : all(lessThan(abs(srcSamplePos.xyz-(srcHitPersp.xyz/srcHitPersp.w)), vec3(2.f/extent, 0.004f)));
 
       // copy to dest, and nullify source
-      if ( SURF_SRC.accum[type].w > 0.f && (HIT_SRC.origin.w > 0.f && HIT_SRC.origin.w <= 10000.f) && dstValidDist && (srcValidDist || SURF_DST.color[type].w <= 0.f) ) 
+      const uint sampled = uint(SURF_DST.color[type].w);
+      TYPE original = SURF_DST.accum[type];
+      if ( original.w > 0.f && dstValidDist && HIT_SRC.origin.w > 0.f && (srcValidDist || sampled <= 0u) ) 
       {
+        accumulate(SURF_DST, type, original);
         HIT_DST.origin = vec4(dstHitFoundIntersection, distance(dstHitPos, dstHitFoundIntersection));
         HIT_DST.indices = HIT_SRC.indices;
-        accumulate(SURF_DST, type, SURF_SRC.accum[type]);
       };
-
     };
   //};
 };
 
 //
 #ifdef OUTSOURCE
-void reprojectDiffuse(in uint pixelId, in vec3 srcRayDir) 
+void reprojectDiffuse(in uint pixelId, in vec3 srcRayDir, in int type) 
 #else
-void reprojectDiffuse(in uint pixelId, in vec3 dstRayDir) 
+void reprojectDiffuse(in uint pixelId, in vec3 dstRayDir, in int type) 
 #endif
 {
   PixelSurfaceInfoRef surface = getPixelSurface(pixelId);
@@ -451,8 +467,8 @@ void reprojectDiffuse(in uint pixelId, in vec3 dstRayDir)
       PixelSurfaceInfoRef srcSurface = getPixelSurface(srcId);
 
       // Up-Filling
-      if (srcSurface.accum[2].w > 0.f && srcValidDist && dstValidDist) {
-        accumulate(dstSurface, 2, srcSurface.accum[2]);
+      if (srcSurface.accum[type].w > 0.f && srcValidDist && dstValidDist) {
+        accumulate(dstSurface, type, srcSurface.accum[type]);
       };
     };
   //};
