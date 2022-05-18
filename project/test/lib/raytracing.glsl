@@ -355,12 +355,12 @@ RayData pathTrace(inout RayData rayData, inout float hitDist, inout vec3 firstNo
         // sorry, I hadn't choice
         firstIndices = lastIndices;
         firstNormal = lastNormal;
-        //if ((type == 1 || R == 0) && type != 0) {
-          //hitDist = currentT = 10000.f;
+        if (type == 1 || R == 0) {
+          hitDist = currentT = 10000.f;
           //rayData.origin.xyz = vec4(0.f.xxx, 1.f) * constants.lookAtInverse;
-        //} else {
+        } else {
           hitDist = currentT;
-        //};
+        };
         surfaceFound = true;
       };
       break;
@@ -432,7 +432,7 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
 
   // 
   hitInfo.indices = uvec4(outp.indices.xyz, type);
-  hitInfo.origin.xyz = outp.hitT >= 10000.f ? vec4(0.f.xxx, 1.f) * constants.lookAtInverse : cmd.rayData.origin.xyz;
+  hitInfo.origin.xyz = cmd.rayData.origin.xyz;
   hitInfo.direct.xyz = rayDirection;
 
   //

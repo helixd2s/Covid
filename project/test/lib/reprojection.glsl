@@ -18,8 +18,8 @@ vec3 find_reflection_incident_point(in vec3 p0, in vec3 p1, in vec3 v0, in vec3 
 };
 
 
-
-//
+// incorrectly reprojected when distance more than 10000.f (i.e. skybox)
+// needs re-creation skybox, or more distance (for example, 100000.f)
 //void reproject3D(in PixelSurfaceInfo surface, in PixelHitInfo data, in uint pixelId, in vec3 srcRayDir, in int type) {
 #ifdef OUTSOURCE
 void reproject3D(in uint pixelId, in vec3 srcRayDir, in int type) 
@@ -40,7 +40,7 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in int type)
     // 
 #ifdef OUTSOURCE
     // 
-    const vec3 srcPos = surface.origin.xyz;//(notNull ? surface.origin.xyz : vec4(0.f.xxx, 1.f) * constants.previousLookAtInverse);
+    const vec3 srcPos = data.origin.xyz;//(notNull ? surface.origin.xyz : vec4(0.f.xxx, 1.f) * constants.previousLookAtInverse);
     const vec3 srcHitPos = srcPos + data.origin.w * srcRayDir;
     const vec3 srcNormal = surface.normal.xyz;
 
@@ -59,7 +59,7 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in int type)
       * toNormalMat(inverse(getInstanceTransform(instancedData, surface.indices.x))));
 #else 
     //
-    const vec3 dstPos = surface.origin.xyz;//(notNull ? surface.origin.xyz : vec4(0.f.xxx, 1.f) * constants.lookAtInverse);
+    const vec3 dstPos = data.origin.xyz;//(notNull ? surface.origin.xyz : vec4(0.f.xxx, 1.f) * constants.lookAtInverse);
     const vec3 dstHitPos = dstPos + data.origin.w * dstRayDir;
     const vec3 dstNormal = surface.normal.xyz;
 
