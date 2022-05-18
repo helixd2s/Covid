@@ -57,8 +57,7 @@ void main() {
 #ifdef TRANSLUCENT
     materialPix.color[MATERIAL_ALBEDO].a < 0.01f || 
 #endif
-    dp <= (gl_FragCoord.z - 0.0001f) 
-
+    dp <= (gl_FragCoord.z - 0.0001f) // for optimize!
   ) {
     discard;
   } else 
@@ -69,7 +68,7 @@ void main() {
       const uint oldId = imageAtomicExchange(imagesR32UI[pingpong.images[/*translucent*/0]], ivec2(gl_FragCoord.xy), rasterId+1);
       RasterInfoRef rasterInfo = getRasterInfo(rasterId);
       rasterInfo.indices = uvec4(pIndices.xyz, oldId);
-      rasterInfo.barycentric = vec4(pBary, 1.f);
+      rasterInfo.barycentric = vec4(pBary, gl_FragCoord.z);
     };
 
     /*

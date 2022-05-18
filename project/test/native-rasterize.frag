@@ -70,7 +70,7 @@ void main() {
   {
     //
     indices = pIndices;
-    baryData = vec4(pBary, 1.f);
+    baryData = vec4(pBary, gl_FragCoord.z);
 
     //
     position = vec4(pScreen.xyz/pScreen.w, 1.f);

@@ -99,6 +99,7 @@ IntersectionInfo rasterizeVector(in InstanceAddressBlock addressInfo, in RayData
       intersection.barycentric = bary;
       currentZ = pos.z;
       lastPos = pos;
+      break; // due sorted!
     };
 
     //

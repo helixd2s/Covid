@@ -91,7 +91,7 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in int type)
     } else
 #endif
     if (isSurface) { // only outsource version support
-//#ifdef OUTSOURCE
+
       srcHitFoundIntersection = vec4(find_reflection_incident_point( 
           vec4(dstPos.xyz, 1.f) * constants.lookAt, 
           vec4(srcHitPos.xyz, 1.f) * constants.previousLookAt, 
@@ -101,29 +101,16 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in int type)
       //dstHitFoundIntersection = vec4(vec4(srcHitFoundIntersection, 1.f)
         //* getPreviousInstanceTransform(instancedData, surface.indices.x), 1.f)
         //* inverse(getInstanceTransform(instancedData, surface.indices.x));
-//#else
+
       /*dstHitFoundIntersection = vec4(find_reflection_incident_point( 
           vec4(dstPos.xyz, 1.f) * constants.lookAt, 
           vec4(srcHitPos.xyz, 1.f) * constants.previousLookAt, 
           vec4(srcPos.xyz, 1.f) * constants.previousLookAt, 
           normalize(srcNormal.xyz) * toNormalMat(constants.previousLookAt)
-        ), 1.f) * constants.lookAtInverse;
-      srcHitFoundIntersection = vec4(vec4(dstHitFoundIntersection, 1.f)
+        ), 1.f) * constants.lookAtInverse;*/
+      /*srcHitFoundIntersection = vec4(vec4(dstHitFoundIntersection, 1.f)
         * getInstanceTransform(instancedData, surface.indices.x), 1.f)
         * inverse(getPreviousInstanceTransform(instancedData, surface.indices.x));*/
-//#endif
-
-      /*
-      dstHitFoundIntersection = vec4(find_reflection_incident_point( 
-          vec4(dstPos.xyz, 1.f) * constants.lookAt, 
-          vec4(srcHitPos.xyz, 1.f) * constants.previousLookAt, 
-          vec4(srcPos.xyz, 1.f) * constants.previousLookAt, 
-          normalize(srcNormal.xyz) * toNormalMat(constants.previousLookAt)
-        ), 1.f) * constants.lookAtInverse;
-      srcHitFoundIntersection = vec4(vec4(dstHitFoundIntersection, 1.f)
-        * getInstanceTransform(instancedData, surface.indices.x), 1.f)
-        * inverse(getPreviousInstanceTransform(instancedData, surface.indices.x));
-      */
     };
 
     // 
@@ -161,7 +148,7 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in int type)
         rayData.launchId = u16vec2(srcInt);
         rayData.origin = srcHitFoundIntersection.xyz;
         rayData.direction = normalize(srcHitFoundIntersection.xyz-srcPos.xyz);
-        rasterize(instancedData, rayData, 10000.f, srcSamplePos, true);
+        rasterizeVector(instancedData, rayData, 10000.f, srcSamplePos, true);
       };
 
       //
@@ -170,7 +157,7 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in int type)
         rayData.launchId = u16vec2(dstInt);
         rayData.origin = dstHitFoundIntersection.xyz;
         rayData.direction = normalize(dstHitFoundIntersection.xyz-dstPos.xyz);
-        rasterize(instancedData, rayData, 10000.f, dstSamplePos, false);
+        rasterizeVector(instancedData, rayData, 10000.f, dstSamplePos, false);
       };
 
       // sorry, we doesn't save previous raster data
@@ -254,7 +241,7 @@ void reprojectDiffuse(in uint pixelId, in vec3 dstRayDir, in int type)
       rayData.launchId = u16vec2(srcScreenPos);
       rayData.origin = srcPos.xyz;
       rayData.direction = vec3(0.f);
-      rasterize(instancedData, rayData, 10000.f, srcSamplePos, true);
+      rasterizeVector(instancedData, rayData, 10000.f, srcSamplePos, true);
     };
 
     { //
@@ -262,7 +249,7 @@ void reprojectDiffuse(in uint pixelId, in vec3 dstRayDir, in int type)
       rayData.launchId = u16vec2(dstScreenPos);
       rayData.origin = dstPos.xyz;
       rayData.direction = vec3(0.f);
-      rasterize(instancedData, rayData, 10000.f, dstSamplePos, false);
+      rasterizeVector(instancedData, rayData, 10000.f, dstSamplePos, false);
     };
 
     //
