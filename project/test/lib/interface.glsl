@@ -51,7 +51,7 @@ layout(set = 0, binding = 1, scalar) buffer CounterBlock
 layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer PixelHitInfoRef {
   uvec4 indices;
   vec4 origin;
-  //vec4 direct;
+  vec4 direct;
 };
 
 // but may not to be...

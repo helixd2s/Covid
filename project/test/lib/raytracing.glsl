@@ -205,7 +205,7 @@ vec4 directLighting(in vec3 O, in vec3 N, in vec3 tN, in vec3 r, in float t) {
 RayData reuseLight(inout RayData rayData);
 
 // 
-RayData handleIntersection(in RayData rayData, inout IntersectionInfo intersection, inout PassData passed) {
+RayData handleIntersection(in RayData rayData, inout IntersectionInfo intersection, inout PassData passed, in uint type) {
   InstanceInfo instanceInfo = getInstance(instancedData, intersection.instanceId);
   GeometryInfo geometryInfo = getGeometry(instanceInfo, intersection.geometryId);
   GeometryExtData geometry = getGeometryData(geometryInfo, intersection.primitiveId);
@@ -249,7 +249,7 @@ RayData handleIntersection(in RayData rayData, inout IntersectionInfo intersecti
   if (random(blueNoiseFn(rayData.launchId.xy)) <= clamp(reflFactor, 0.f, 1.f) && transpCoef < 1.f) { // I currently, have no time for fresnel
     rayData.direction.xyz = reflective(originSeedXYZ, rayData.direction.xyz, normals, roughnessFactor);
     rayData.energy.xyz = f16vec3(metallicMult(rayData.energy.xyz, diffuseColor.xyz, metallicFactor));
-    if (reflFactor < 0.1f) { passed.diffusePass = true; };
+    if (reflFactor < 0.1f || type == 1) { passed.diffusePass = true; };
     //passed.diffusePass = true;
   } else 
   if (random(blueNoiseFn(rayData.launchId.xy)) <= clamp(transpCoef, inner ? 1.f : 0.f, 1.f)) { // wrong diffuse if inner
@@ -317,7 +317,7 @@ RayData pathTrace(inout RayData rayData, inout float hitDist, inout vec3 firstNo
       //opaquePass = pass;
 
       //
-      rayData = handleIntersection(rayData, intersection, pass);
+      rayData = handleIntersection(rayData, intersection, pass, type);
 
       // if translucent over opaque (decals)
       //if (pass.alphaPassed && opaqueIntersection.hitT <= (intersection.hitT + 0.0001f)) {
@@ -404,6 +404,9 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
   };
 
   //
+  vec3 rayDirection = cmd.rayData.direction.xyz;
+
+  //
   //reuseLight(rayData); // already reprojected!
 
   // enforce typic indice
@@ -430,6 +433,7 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
   // 
   hitInfo.indices = uvec4(outp.indices.xyz, type);
   hitInfo.origin.xyz = outp.hitT >= 10000.f ? vec4(0.f.xxx, 1.f) * constants.lookAtInverse : cmd.rayData.origin.xyz;
+  hitInfo.direct.xyz = rayDirection;
 
   //
   if (outp.hitT > 0.f && 
