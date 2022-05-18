@@ -46,10 +46,10 @@ Some functionality still WIP, but almost ready to ***MVP***…
   - [x] ♟️ Checkerboard optimization (for diffuse/reflection)
   - [x] ♟️ Temporal screen-space reprojection (accumulation)
   - [x] ♟️ Software rasterization misc (barycentrics, vector-sampling)
+  - [x] 🚧 Pre-defined shader packages
   - [ ] 🧩 Rewrite to HLSL (needs features)
   - [ ] 🧩 Distances, MIP and LoD support
   - [ ] 🧩 Full vulkan memory model support
-  - [ ] 🧩️ Pre-defined shader packages
   - [ ] 🧩 Short-range SSRT support
   - [ ] 🧩 Advanced shadow maps (with simpler RT)
 

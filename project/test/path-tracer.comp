@@ -9,7 +9,7 @@
 
 //
 #include "lib/raytracing.glsl"
-#include "lib/pupet.glsl"
+#include "lib/rasterizer.glsl"
 
 //
 layout (local_size_x = 32, local_size_y = 4, local_size_z = 1) in;

@@ -59,35 +59,6 @@ struct PathTraceOutput {
 };
 
 //
-void genTB(in vec3 N, out vec3 T, out vec3 B) {
-  const float s = N.z < 0.0 ? -1.0 : 1.0;
-  const float a = -1.0 / (s + N.z);
-  const float b = N.x * N.y * a;
-  T = vec3(1.0 + s * N.x * N.x * a, s * b, -s * N.x);
-  B = vec3(b, s + N.y * N.y * a, -N.y);
-};
-
-//
-vec3 coneSample(in vec3 N, in float cosTmax, in vec2 r) {
-  vec3 T, B; genTB(N, T, B);
-  r.x *= 2.0 * PI;
-  r.y = 1.0 - r.y * (1.0 - cosTmax);
-  const float s = sqrt(1.0 - r.y * r.y);
-  return T * (cos(r.x) * s) + B * (sin(r.x) * s) + N * r.y;
-};
-
-//
-bool intersect(in vec4 sphere, in vec3 O, in vec3 D, inout float tmax) {
-  const vec3 L = sphere.xyz - O;
-  const float tc = dot(D, L);
-  const float t = tc - sqrt(sphere.w * sphere.w + tc * tc - dot(L, L));
-  if (t > 0.0 && t < tmax) {
-    tmax = t; return true;
-  }
-  return false;
-};
-
-//
 vec3 reflective(in vec3 seed, in vec3 dir, in vec3 normal, in float roughness) {
   return normalize(mix(reflect(dir, normal), randomCosineWeightedHemispherePoint(seed, normal), roughness * random(seed)));
 };
@@ -531,12 +502,5 @@ void backgroundHit(in uint pixelId, in uint type, in vec3 origin, in vec4 color)
   hitInfo.indices = uvec4(0u.xxx, type);
   hitInfo.origin = vec4(vec4(0.f.xxx, 1.f) * constants.lookAtInverse, 10000.f);
 };
-
-
-
-
-
-
-
 
 #endif
