@@ -9,6 +9,7 @@
 #include "lib/random.glsl"
 #include "lib/sphere.glsl"
 #include "lib/rasterizer.glsl"
+#include "lib/reprojection.glsl"
 
 //
 layout (local_size_x = 32, local_size_y = 4, local_size_z = 1) in;
