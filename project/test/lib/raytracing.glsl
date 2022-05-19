@@ -205,7 +205,7 @@ vec4 directLighting(in vec3 O, in vec3 N, in vec3 tN, in vec3 r, in float t) {
 RayData reuseLight(inout RayData rayData);
 
 // 
-RayData handleIntersection(in RayData rayData, inout IntersectionInfo intersection, inout PassData passed, in uint type) {
+RayData handleIntersection(inout RayData rayData, inout IntersectionInfo intersection, inout PassData passed, in uint type) {
   InstanceInfo instanceInfo = getInstance(instancedData, intersection.instanceId);
   GeometryInfo geometryInfo = getGeometry(instanceInfo, intersection.geometryId);
   GeometryExtData geometry = getGeometryData(geometryInfo, intersection.primitiveId);
@@ -384,23 +384,17 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
   //
   if (type == 0) {
     rayData.direction.xyz = normalize(reflective(originSeedXYZ, rayData.direction.xyz, cmd.normals.xyz, cmd.PBR.g));;
-    rayData.energy = f16vec4(metallicMult(1.f.xxx, cmd.diffuseColor.xyz, cmd.PBR.b), 1.f);
-    rayData.emission = f16vec4(0.f.xxx, 1.f);
+    rayData.energy = f16vec4(1.f.xxx, 1.f);//f16vec4(metallicMult(1.f.xxx, cmd.diffuseColor.xyz, cmd.PBR.b), 1.f);
+    rayData.emission = f16vec4(1.f.xxx, 1.f);
   } else 
   if (type == 1) {
     //rayData.direction.xyz = rayData.direction.xyz;
     rayData.energy = f16vec4(1.f.xxx, 1.f);//f16vec4(metallicMult(1.f.xxx, materialPix.color[MATERIAL_ALBEDO].xyz, metallicFactor), 1.f);
-    rayData.emission = f16vec4(0.f.xxx, 1.f);
+    rayData.emission = f16vec4(1.f.xxx, 1.f);
   } else {
     rayData.direction.xyz = normalize(randomCosineWeightedHemispherePoint(originSeedXYZ, cmd.normals));
     rayData.energy = f16vec4(1.f.xxx, 1.f);
-    rayData.energy = f16vec4(trueMultColor(rayData.energy.xyz, cmd.diffuseColor.xyz), 1.f);
-    rayData.energy = f16vec4(trueMultColor(rayData.energy.xyz, 1.f-cmd.emissiveColor.xyz), 1.f);
-    rayData.emission = f16vec4(trueMultColor(
-      rayData.energy.xyz, 
-      directLighting(rayData.origin.xyz, cmd.normals.xyz, cmd.tbn[2], vec3(random(blueNoiseFn(rayData.launchId.xy)), random(blueNoiseFn(rayData.launchId.xy)), random(blueNoiseFn(rayData.launchId.xy))), 10000.f).xyz
-    ), 1.f);
-    rayData.emission.w = 1.hf;
+    rayData.emission = f16vec4(directLighting(rayData.origin.xyz, cmd.normals.xyz, cmd.tbn[2], vec3(random(blueNoiseFn(rayData.launchId.xy)), random(blueNoiseFn(rayData.launchId.xy)), random(blueNoiseFn(rayData.launchId.xy))), 10000.f).xyz, 1.f);
   };
 
   //
@@ -416,6 +410,16 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
   //
   float transpCoef = clamp(1.f - cmd.diffuseColor.a, 0.f, 1.f);
   float reflCoef = clamp(cmd.reflCoef, 0.f, 1.f);
+
+  //
+  if (type == 0) {
+    rayData.emission.xyz = f16vec3(metallicMult(rayData.emission.xyz, cmd.diffuseColor.xyz, cmd.PBR.b));
+  } else 
+  if (type == 1) {
+    //rayData.emission.xyz = f16vec3(metallicMult(rayData.emission.xyz, cmd.diffuseColor.xyz, cmd.PBR.b));
+  } else {
+    rayData.emission.xyz = f16vec3(trueMultColor(rayData.emission.xyz, cmd.diffuseColor.xyz * (1.f - cmd.emissiveColor.xyz)));
+  };
 
   // 
   vec4 additional = vec4(0.f.xxx, 1.f);

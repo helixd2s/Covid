@@ -62,7 +62,7 @@ vec4 trueMultColor(in vec4 rayColor, in vec4 material) {
 vec3 metallicMult(in vec3 rayColor, in vec3 material, in float factor) {
   const float rfactor = clamp(luminance(max(rayColor,0.f.xxx)), 0.f, 16.f);
   const float mfactor = clamp(luminance(max(material,0.f.xxx)), 0.f, 16.f);
-  return mix(clamp(rayColor,0.f.xxx,16.f.xxx), rfactor.xxx * material, factor.xxx);
+  return mix(clamp(rayColor,0.f.xxx,16.f.xxx), mix(rayColor * material, rfactor.xxx * material, max(material.r, max(material.g, material.b)) - min(material.r, min(material.g, material.b))), factor.xxx);
 };
 
 vec3 inRayNormal(in vec3 dir, in vec3 normal) {
