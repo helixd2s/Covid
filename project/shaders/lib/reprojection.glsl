@@ -149,7 +149,7 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in uint type)
         rayData.launchId = u16vec2(srcInt);
         rayData.origin = srcHitFoundIntersection.xyz;
         rayData.direction = normalize(srcHitFoundIntersection.xyz-srcPos.xyz);
-        rasterizeVector(instancedData, rayData, 10000.f, srcSamplePos, true);
+        rasterize(instancedData, rayData, 10000.f, srcSamplePos, true);
       };
 
       //
@@ -158,12 +158,12 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in uint type)
         rayData.launchId = u16vec2(dstInt);
         rayData.origin = dstHitFoundIntersection.xyz;
         rayData.direction = normalize(dstHitFoundIntersection.xyz-dstPos.xyz);
-        rasterizeVector(instancedData, rayData, 10000.f, dstSamplePos, false);
+        rasterize(instancedData, rayData, 10000.f, dstSamplePos, false);
       };
 
       // sorry, we doesn't save previous raster data
-      const bool dstValidDist = type == 1 ? true : all(lessThan(abs(dstSamplePos.xyz-(dstHitPersp.xyz/dstHitPersp.w)), vec3(2.f/extent, 0.008f)));
-      const bool srcValidDist = type == 1 ? true : all(lessThan(abs(srcSamplePos.xyz-(srcHitPersp.xyz/srcHitPersp.w)), vec3(2.f/extent, 0.008f))) && HIT_SRC.origin.w > 0.f;
+      const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz-(dstHitPersp.xyz/dstHitPersp.w)), vec3(2.f/extent, 0.008f)));
+      const bool srcValidDist = all(lessThan(abs(srcSamplePos.xyz-(srcHitPersp.xyz/srcHitPersp.w)), vec3(2.f/extent, 0.008f))) && HIT_SRC.origin.w > 0.f;
 
       // copy to dest, and nullify source
       const uint sampled = uint(SURF_DST.color[type].w);
@@ -242,7 +242,7 @@ void reprojectDiffuse(in uint pixelId, in vec3 dstRayDir, in uint type)
       rayData.launchId = u16vec2(srcScreenPos);
       rayData.origin = srcPos.xyz;
       rayData.direction = vec3(0.f);
-      rasterizeVector(instancedData, rayData, 10000.f, srcSamplePos, true);
+      rasterize(instancedData, rayData, 10000.f, srcSamplePos, true);
     };
 
     { //
@@ -250,7 +250,7 @@ void reprojectDiffuse(in uint pixelId, in vec3 dstRayDir, in uint type)
       rayData.launchId = u16vec2(dstScreenPos);
       rayData.origin = dstPos.xyz;
       rayData.direction = vec3(0.f);
-      rasterizeVector(instancedData, rayData, 10000.f, dstSamplePos, false);
+      rasterize(instancedData, rayData, 10000.f, dstSamplePos, false);
     };
 
     //

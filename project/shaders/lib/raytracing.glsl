@@ -227,7 +227,7 @@ RayData handleIntersection(inout RayData rayData, inout IntersectionInfo interse
   const vec3 normals = inRayNormal(rayData.direction, materialPix.color[MATERIAL_NORMAL].xyz);//materialPix.color[MATERIAL_NORMAL].xyz;
 
   // 
-  vec4 emissiveColor = toLinear(materialPix.color[MATERIAL_EMISSIVE]) * vec4(2.f.xxx, 1.f);
+  vec4 emissiveColor = toLinear(materialPix.color[MATERIAL_EMISSIVE]) * vec4(4.f.xxx, 1.f);
   vec4 diffuseColor = toLinear(materialPix.color[MATERIAL_ALBEDO]);
   float metallicFactor = materialPix.color[MATERIAL_PBR].b;
   float roughnessFactor = materialPix.color[MATERIAL_PBR].g;
@@ -259,7 +259,7 @@ RayData handleIntersection(inout RayData rayData, inout IntersectionInfo interse
   {
     if (luminance(emissiveColor.xyz) > 0.001f) {
       rayData.emission.xyz += f16vec3(trueMultColor(rayData.energy.xyz, emissiveColor.xyz));
-      rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, 1.f-emissiveColor.xyz));
+      rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, max(1.f-emissiveColor.xyz, 0.f.xxx)));
     };
     passed.diffusePass = true;
     rayData.direction.xyz = randomCosineWeightedHemispherePoint(originSeedXYZ, normals);
