@@ -348,19 +348,18 @@ RayData pathTrace(inout RayData rayData, inout float hitDist, inout vec3 firstNo
       const vec4 skyColor = gamma3(vec4(texture(sampler2D(textures[background], samplers[0]), lcts(rayData.direction.xyz)).xyz, 0.f));
 
       // suppose last possible hit-point
-      
       rayData.emission += f16vec4(trueMultColor(rayData.energy.xyz, skyColor.xyz), 0.f);
       rayData.energy.xyz *= f16vec3(0.f.xxx);
       if (!surfaceFound) {
         // sorry, I hadn't choice
         firstIndices = lastIndices;
         firstNormal = lastNormal;
-        if (type == 1 || R == 0) {
-          hitDist = currentT = 10000.f;
+        //if (type == 1 || R == 0) {
+          //hitDist = currentT = 10000.f;
           //rayData.origin.xyz = vec4(0.f.xxx, 1.f) * constants.lookAtInverse;
-        } else {
+        //} else {
           hitDist = currentT;
-        };
+        //};
         surfaceFound = true;
       };
       break;
@@ -385,12 +384,12 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
   if (type == 0) {
     rayData.direction.xyz = normalize(reflective(originSeedXYZ, rayData.direction.xyz, cmd.normals.xyz, cmd.PBR.g));;
     rayData.energy = f16vec4(1.f.xxx, 1.f);//f16vec4(metallicMult(1.f.xxx, cmd.diffuseColor.xyz, cmd.PBR.b), 1.f);
-    rayData.emission = f16vec4(1.f.xxx, 1.f);
+    rayData.emission = f16vec4(0.f.xxx, 0.f);
   } else 
   if (type == 1) {
     //rayData.direction.xyz = rayData.direction.xyz;
     rayData.energy = f16vec4(1.f.xxx, 1.f);//f16vec4(metallicMult(1.f.xxx, materialPix.color[MATERIAL_ALBEDO].xyz, metallicFactor), 1.f);
-    rayData.emission = f16vec4(1.f.xxx, 1.f);
+    rayData.emission = f16vec4(0.f.xxx, 0.f);
   } else {
     rayData.direction.xyz = normalize(randomCosineWeightedHemispherePoint(originSeedXYZ, cmd.normals));
     rayData.energy = f16vec4(1.f.xxx, 1.f);

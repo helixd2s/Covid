@@ -58,25 +58,6 @@ vec4 trueMultColor(in vec4 rayColor, in vec4 material) {
   return vec4(trueMultColor(rayColor.xyz, material.xyz), material.w * rayColor.w);
 };
 
-// for metallic reflection
-vec3 metallicMult(in vec3 rayColor, in vec3 material, in float factor) {
-  const float rfactor = clamp(luminance(max(rayColor,0.f.xxx)), 0.f, 16.f);
-  const float mfactor = clamp(luminance(max(material,0.f.xxx)), 0.f, 16.f);
-  return mix(clamp(rayColor,0.f.xxx,16.f.xxx), mix(rayColor * material, rfactor.xxx * material, max(material.r, max(material.g, material.b)) - min(material.r, min(material.g, material.b))), factor.xxx);
-};
-
-vec3 inRayNormal(in vec3 dir, in vec3 normal) {
-  return normalize(faceforward(normal, dir, normal));
-};
-
-vec3 outRayNormal(in vec3 dir, in vec3 normal) {
-  return normalize(faceforward(normal, dir, normal));
-};
-
-vec4 clampCol(in vec4 col) {
-  return clamp(max(col,0.f.xxxx)/max(col.w, 1.f), vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f));
-};
-
 float absmax(in float val, in float mn) {
   float sig = sign(val); return mix(mn, sig * max(abs(val), abs(mn)), abs(sig) > 0.f);
 };
@@ -91,6 +72,34 @@ vec3 absmax(in vec3 val, in vec3 mn) {
 
 vec4 absmax(in vec4 val, in vec4 mn) {
   vec4 sig = sign(val); return mix(mn, sig * max(abs(val), abs(mn)), greaterThan(abs(sig), 0.f.xxxx));
+};
+
+// for metallic reflection
+vec3 metallicMult(in vec3 rayColor, in vec3 material, in float factor) {
+  // needs pre-multiply with material due and incorrect bad results
+  const float rfactor = clamp(luminance(max(sqrt(rayColor*material),0.f.xxx)), 0.f, 16.f);
+
+  //
+  const float mn = min(material.r, min(material.g, material.b));
+  const float mx = max(material.r, max(material.g, material.b));
+  const float chroma = mx - mn;
+  const float lightness = (mx + mn) / 2.f;
+  const float saturation = 1.f - (mn/absmax(mx,1e-9));
+
+  //return mix(clamp(rayColor,0.f.xxx,16.f.xxx), clamp(rayColor * material,0.f.xxx,16.f.xxx), sqrt(factor.xxx));
+  return mix(clamp(rayColor,0.f.xxx,16.f.xxx), clamp(mix(rfactor.xxx * material, rayColor * material, sqrt(1.f-chroma)), 0.f.xxx,16.f.xxx), sqrt(factor.xxx));
+};
+
+vec3 inRayNormal(in vec3 dir, in vec3 normal) {
+  return normalize(faceforward(normal, dir, normal));
+};
+
+vec3 outRayNormal(in vec3 dir, in vec3 normal) {
+  return normalize(faceforward(normal, dir, normal));
+};
+
+vec4 clampCol(in vec4 col) {
+  return clamp(max(col,0.f.xxxx)/max(col.w, 1.f), vec4(0.f.xxx, 1.f), vec4(16.f.xxx, 1.f));
 };
 
 //
