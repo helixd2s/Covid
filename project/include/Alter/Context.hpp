@@ -82,7 +82,7 @@ namespace ANAMED {
       };
 
       // needs only before deleting main object...
-      for (decltype(auto) fn : this->destructors) { fn(this); };
+      for (decltype(auto) fn : this->destructors) { if (fn) { (*fn)(this); }; };
       this->destructors = {};
       this->alive = false;
 

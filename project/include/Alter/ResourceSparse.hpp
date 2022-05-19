@@ -88,10 +88,10 @@ namespace ANAMED {
       memoryRequirements = memReqInfo2->memoryRequirements;
 
       //
-      destructors.push_back([device, buffer = this->handle.as<vk::Buffer>()](BaseObj const*) {
+      destructors.push_back(std::make_shared<std::function<DFun>>([device, buffer = this->handle.as<vk::Buffer>()](BaseObj const*) {
         device.waitIdle();
         device.destroyBuffer(buffer);
-      });
+      }));
 
       // 
       return FenceType{};
@@ -153,7 +153,7 @@ namespace ANAMED {
       }, allocated->mapped, [device, allocated](){
         device.waitIdle();
         if (allocated && allocated->destructor) {
-          allocated->destructor(nullptr);
+          (*allocated->destructor)(nullptr);
         };
       }));
 

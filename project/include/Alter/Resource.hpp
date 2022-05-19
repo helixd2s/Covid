@@ -183,15 +183,15 @@ namespace ANAMED {
         };
 
         // 
-        this->destructors.insert(this->destructors.begin(), 1, [device, descriptorId, images = (imvType == 1u ? descriptorsObj->getImageDescriptors() : descriptorsObj->getTextureDescriptors())](BaseObj const* baseObj) {
+        this->destructors.insert(this->destructors.begin(), 1, std::make_shared<std::function<DFun>>([device, descriptorId, images = (imvType == 1u ? descriptorsObj->getImageDescriptors() : descriptorsObj->getTextureDescriptors())](BaseObj const* baseObj) {
           const_cast<cpp21::bucket<vk::DescriptorImageInfo>&>(images).removeByIndex(descriptorId);
-        });
+        }));
       };
 
       //
-      this->destructors.insert(this->destructors.begin(), 1, [device, imageView](BaseObj const* baseObj) {
+      this->destructors.insert(this->destructors.begin(), 1, std::make_shared<std::function<DFun>>([device, imageView](BaseObj const* baseObj) {
         device.destroyImageView(imageView);
-      });
+      }));
 
       // 
       return std::tuple{ imageView, descriptorId }; // don't return reference, may broke vector
@@ -410,12 +410,12 @@ namespace ANAMED {
       }).get(), memReqInfo2.get());
 
       //
-      destructors.push_back([device, image = this->handle.as<vk::Image>(), type=cInfo->type](BaseObj const*) {
+      destructors.push_back(std::make_shared<std::function<DFun>>([device, image = this->handle.as<vk::Image>(), type=cInfo->type](BaseObj const*) {
         if (type!=ImageType::eSwapchain) {
           device.waitIdle();
           device.destroyImage(image);
         };
-      });
+      }));
 
       // 
       this->allocated = this->allocateMemory(this->mReqs = MemoryRequirements{
@@ -479,10 +479,10 @@ namespace ANAMED {
       }).get(), memReqInfo2.get());
 
       //
-      destructors.push_back([device, buffer = this->handle.as<vk::Buffer>()](BaseObj const*) {
+      destructors.push_back(std::make_shared<std::function<DFun>>([device, buffer = this->handle.as<vk::Buffer>()](BaseObj const*) {
         device.waitIdle();
         device.destroyBuffer(buffer);
-      });
+      }));
 
       //
       this->allocated = this->allocateMemory(this->mReqs = MemoryRequirements{

@@ -77,7 +77,7 @@ namespace ANAMED {
   public:
 
     //
-    virtual std::shared_ptr<AllocatedMemory> allocateMemory(cpp21::const_wrap_arg<MemoryRequirements> requirements, std::shared_ptr<AllocatedMemory> allocated, ExtHandle& extHandle, std::shared_ptr<EXIF> extInfoMap, void*& mapped, std::vector<std::function<void(BaseObj const*)>>& destructors) {
+    virtual std::shared_ptr<AllocatedMemory> allocateMemory(cpp21::const_wrap_arg<MemoryRequirements> requirements, std::shared_ptr<AllocatedMemory> allocated, ExtHandle& extHandle, std::shared_ptr<EXIF> extInfoMap, void*& mapped, std::vector<std::shared_ptr<std::function<DFun>>>& destructors) {
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       auto& device = this->base.as<vk::Device>();
       auto& physicalDevice = deviceObj->getPhysicalDevice();
@@ -129,7 +129,7 @@ namespace ANAMED {
 
       //
       if (requirements->needsDestructor) {
-        destructors.push_back(allocated->destructor = [device, &memory=allocated->memory, &mapped=allocated->mapped](BaseObj const*) {
+        destructors.push_back(allocated->destructor = std::make_shared<std::function<DFun>>([device, &memory = allocated->memory, &mapped = allocated->mapped](BaseObj const*) {
           device.waitIdle();
           if (memory) {
             if (mapped) {
@@ -139,7 +139,7 @@ namespace ANAMED {
             device.freeMemory(memory);
           };
           memory = vk::DeviceMemory{};
-        });
+        }));
       };
 
       // 

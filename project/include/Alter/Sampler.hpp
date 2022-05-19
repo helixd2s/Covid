@@ -83,15 +83,15 @@ namespace ANAMED {
       };
 
       //
-      this->destructors.insert(this->destructors.begin(), 1, [device, sampler = this->handle.as<vk::Sampler>()](BaseObj const* baseObj) {
+      this->destructors.insert(this->destructors.begin(), 1, std::make_shared<std::function<DFun>>([device, sampler = this->handle.as<vk::Sampler>()](BaseObj const* baseObj) {
         device.destroySampler(sampler);
-      });
+      }));
 
       //
       if (descriptorsObj) {
-        this->destructors.insert(this->destructors.begin(), 1, [descriptorId = this->descriptorId, samplers = descriptorsObj->getSamplerDescriptors()](BaseObj const* baseObj) {
+        this->destructors.insert(this->destructors.begin(), 1, std::make_shared<std::function<DFun>>([descriptorId = this->descriptorId, samplers = descriptorsObj->getSamplerDescriptors()](BaseObj const* baseObj) {
           const_cast<cpp21::bucket<vk::DescriptorImageInfo>&>(samplers).removeByIndex(descriptorId);
-        });
+        }));
       };
     };
 

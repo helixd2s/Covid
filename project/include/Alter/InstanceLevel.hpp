@@ -485,14 +485,14 @@ namespace ANAMED {
       this->addressInfo = InstanceAddressInfo{ .data = this->getInstanceInfoDeviceAddress(), .accelStruct = this->accelStruct ? this->handle.as<uintptr_t>() : 0ull, .instanceCount = uint32_t(std::max(cInfo->instances->size(), size_t(cInfo->limit))) };
 
       //
-      this->destructors.push_back([this, device, accellStruct = accelInstInfo->dstAccelerationStructure, dispatch = deviceObj->getDispatch()](BaseObj const* baseObj) {
+      this->destructors.push_back(std::make_shared<std::function<DFun>>([this, device, accellStruct = accelInstInfo->dstAccelerationStructure, dispatch = deviceObj->getDispatch()](BaseObj const* baseObj) {
         device.waitIdle();
         device.destroyAccelerationStructureKHR(accellStruct, nullptr, dispatch);
         this->bindInstanceBuffer->destroy(baseObj);
         this->bindInstanceScratch->destroy(baseObj);
         this->bindInstanceBuild->destroy(baseObj);
         this->bindInstanceExtBuffer->destroy(baseObj);
-      });
+      }));
 
       //
       if (needsBuild) {

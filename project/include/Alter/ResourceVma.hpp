@@ -134,12 +134,12 @@ namespace ANAMED {
       };
 
       //
-      this->destructors.push_back([device, image = this->handle.as<vk::Image>(), type = cInfo->type, allocator = memoryAllocatorObj->getHandle().as<VmaAllocator>(), allocation = alloc->allocation](BaseObj const*) {
+      this->destructors.push_back(std::make_shared<std::function<DFun>>([device, image = this->handle.as<vk::Image>(), type = cInfo->type, allocator = memoryAllocatorObj->getHandle().as<VmaAllocator>(), allocation = alloc->allocation](BaseObj const*) {
         if (type != ImageType::eSwapchain) {
           device.waitIdle();
           vmaDestroyImage(allocator, image, allocation);
         };
-      });
+      }));
 
       //
       return FenceType{};
@@ -203,10 +203,10 @@ namespace ANAMED {
       };
 
       //
-      this->destructors.push_back([device, buffer = this->handle.as<vk::Buffer>(), type = cInfo->type, allocator = memoryAllocatorObj->getHandle().as<VmaAllocator>(), allocation = alloc->allocation](BaseObj const*) {
+      this->destructors.push_back(std::make_shared<std::function<DFun>>([device, buffer = this->handle.as<vk::Buffer>(), type = cInfo->type, allocator = memoryAllocatorObj->getHandle().as<VmaAllocator>(), allocation = alloc->allocation](BaseObj const*) {
         device.waitIdle();
         vmaDestroyBuffer(allocator, buffer, allocation);
-      });
+      }));
 
       //
       decltype(auto) submission = CommandOnceSubmission{

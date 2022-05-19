@@ -337,13 +337,13 @@ namespace ANAMED {
       this->handle = device.getAccelerationStructureAddressKHR(vk::AccelerationStructureDeviceAddressInfoKHR{ .accelerationStructure = this->accelStruct }, deviceObj->getDispatch());
 
       //
-      this->destructors.push_back([this, device, accellStruct = accelGeomInfo->dstAccelerationStructure, dispatch = deviceObj->getDispatch()](BaseObj const* baseObj) {
+      this->destructors.push_back(std::make_shared<std::function<DFun>>([this, device, accellStruct = accelGeomInfo->dstAccelerationStructure, dispatch = deviceObj->getDispatch()](BaseObj const* baseObj) {
         device.waitIdle();
         device.destroyAccelerationStructureKHR(accellStruct, nullptr, dispatch);
         this->bindGeometryBuffer->destroy(baseObj);
         this->bindGeometryScratch->destroy(baseObj);
         this->bindGeometryBuild->destroy(baseObj);
-      });
+      }));
 
       //
       if (needsBuild) {

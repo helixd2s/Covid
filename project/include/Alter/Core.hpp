@@ -571,8 +571,8 @@ namespace ANAMED {
   };
 #pragma pack(pop)
 
-  
-
+  //
+  using DFun = void(BaseObj const*);
 
 
   //
@@ -827,7 +827,7 @@ namespace ANAMED {
     uintptr_t allocation = 0ull;
 
     //
-    std::function<void(BaseObj const*)> destructor = {};
+    std::shared_ptr<std::function<DFun>> destructor = {};
   };
 
   //
@@ -1534,6 +1534,8 @@ namespace ANAMED {
   using HMAP_S = std::shared_ptr<HMAP_T>;
   using HMAP_I = std::optional<std::unordered_map<uintptr_t, std::shared_ptr<BaseObj>>::iterator>;
 
+  
+
   //
   class BaseObj : public std::enable_shared_from_this<BaseObj> {
   protected:
@@ -1543,7 +1545,7 @@ namespace ANAMED {
     std::shared_ptr<CallStack> callstack = {};
 
     //
-    std::vector<std::function<void(BaseObj const*)>> destructors = {};
+    std::vector<std::shared_ptr<std::function<DFun>>> destructors = {};
 
     // 
     Handle handle = {}, base = {};

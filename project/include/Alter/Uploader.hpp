@@ -164,7 +164,7 @@ namespace ANAMED {
       sparsePage->destructor = [device, allocated, &buffer=sparsePage->bunchBuffer]() {
         device.waitIdle();
         if (allocated && allocated->destructor) {
-          allocated->destructor(nullptr);
+          (*allocated->destructor)(nullptr);
         };
         if (buffer) {
           device.destroyBuffer(buffer); buffer = vk::Buffer{};
@@ -389,10 +389,10 @@ namespace ANAMED {
         //}).get(), memReqInfo2.get());
 
       //
-      destructors.push_back([device, buffer = this->mappedBuffer](BaseObj const*) {
+      destructors.push_back(std::make_shared<std::function<DFun>>([device, buffer = this->mappedBuffer](BaseObj const*) {
         device.waitIdle();
         device.destroyBuffer(buffer);
-      });
+      }));
 
       //
       sparseBufferBindInfo[0u].buffer = this->mappedBuffer;
