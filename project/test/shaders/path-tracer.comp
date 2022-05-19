@@ -89,8 +89,8 @@ void main() {
       cmd.PBR = f16vec3(hasHit ? materialPix.color[MATERIAL_PBR].xyz : 0.f.xxx);
       cmd.reflCoef = (float(cmd.PBR.b) + mix(fresnel_schlick(0.f, dot(reflect(cmd.rayData.direction.xyz, vec3(cmd.normals)), vec3(cmd.normals))), 0.f, float(cmd.PBR.g)) * (1.f - float(cmd.PBR.b))) * (1.f - luminance(cmd.emissiveColor.xyz));
     } else {
-      const vec4 skyColor = gamma3(vec4(texture(sampler2D(textures[background], samplers[0]), lcts(cmd.rayData.direction.xyz)).xyz, 1.f));
-      cmd.diffuseColor = f16vec4(vec4(skyColor.xyz, 1.f));
+      //const vec4 skyColor = vec4(texture(sampler2D(textures[background], samplers[0]), lcts(cmd.rayData.direction.xyz)).xyz, 1.f);
+      cmd.diffuseColor = f16vec4(vec4(gamma3(toLinear(skyColor.xyz)), 1.f));
       cmd.emissiveColor = f16vec3(0.f.xxx.xyz);
       cmd.rayData.origin = 0.f.xxx;
     };

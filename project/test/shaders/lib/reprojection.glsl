@@ -90,24 +90,25 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in int type)
       dstHitFoundIntersection = dstHitPos;
     } else
 #endif
-    if (isSurface) { // only outsource version support
+    //if (isSurface) 
+    { // only outsource version support
 
-      srcHitFoundIntersection = vec4(find_reflection_incident_point( 
+      /*srcHitFoundIntersection = vec4(find_reflection_incident_point( 
           vec4(dstPos.xyz, 1.f) * constants.lookAt, 
           vec4(srcHitPos.xyz, 1.f) * constants.previousLookAt, 
           vec4(srcPos.xyz, 1.f) * constants.previousLookAt, 
           normalize(srcNormal.xyz) * toNormalMat(constants.previousLookAt)
-        ), 1.f) * constants.previousLookAtInverse;
+        ), 1.f) * constants.previousLookAtInverse;*/
       //dstHitFoundIntersection = vec4(vec4(srcHitFoundIntersection, 1.f)
         //* getPreviousInstanceTransform(instancedData, surface.indices.x), 1.f)
         //* inverse(getInstanceTransform(instancedData, surface.indices.x));
 
-      /*dstHitFoundIntersection = vec4(find_reflection_incident_point( 
+      dstHitFoundIntersection = vec4(find_reflection_incident_point( 
           vec4(dstPos.xyz, 1.f) * constants.lookAt, 
           vec4(srcHitPos.xyz, 1.f) * constants.previousLookAt, 
           vec4(srcPos.xyz, 1.f) * constants.previousLookAt, 
           normalize(srcNormal.xyz) * toNormalMat(constants.previousLookAt)
-        ), 1.f) * constants.lookAtInverse;*/
+        ), 1.f) * constants.lookAtInverse;
       /*srcHitFoundIntersection = vec4(vec4(dstHitFoundIntersection, 1.f)
         * getInstanceTransform(instancedData, surface.indices.x), 1.f)
         * inverse(getPreviousInstanceTransform(instancedData, surface.indices.x));*/

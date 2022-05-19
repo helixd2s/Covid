@@ -26,10 +26,10 @@ void main() {
   const vec3 dstRayDir = normalize(dstRayEnd.xyz - dstRayBegin.xyz);
 
   //
-  PixelSurfaceInfoRef surface = getPixelSurface(pixelId);
-  if (surface.origin.x != 0.f || surface.origin.y != 0.f || surface.origin.z != 0.f) {
-    reproject3D(pixelId, dstRayDir, 0);
-    reproject3D(pixelId, dstRayDir, 1);
+  //PixelSurfaceInfoRef surface = getPixelSurface(pixelId);
+  //if (surface.origin.x != 0.f || surface.origin.y != 0.f || surface.origin.z != 0.f) {
+    //reproject3D(pixelId, dstRayDir, 0);
+    //reproject3D(pixelId, dstRayDir, 1);
     //reprojectDiffuse(pixelId, dstRayDir, 2);
-  };
+  //};
 };
