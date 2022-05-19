@@ -76,6 +76,9 @@ vec4 absmax(in vec4 val, in vec4 mn) {
 
 // for metallic reflection
 vec3 metallicMult(in vec3 rayColor, in vec3 material, in float factor) {
+  rayColor = clamp(rayColor,0.f.xxx,16.f.xxx);
+  material = clamp(material,0.f.xxx,16.f.xxx);
+
   // needs pre-multiply with material due and incorrect bad results
   const float rfactor = clamp(luminance(max(sqrt(rayColor*material),0.f.xxx)), 0.f, 16.f);
 
@@ -86,8 +89,8 @@ vec3 metallicMult(in vec3 rayColor, in vec3 material, in float factor) {
   const float lightness = (mx + mn) / 2.f;
   const float saturation = 1.f - (mn/absmax(mx,1e-9));
 
-  //return mix(clamp(rayColor,0.f.xxx,16.f.xxx), clamp(rayColor * material,0.f.xxx,16.f.xxx), sqrt(factor.xxx));
-  return mix(clamp(rayColor,0.f.xxx,16.f.xxx), clamp(mix(rfactor.xxx * material, rayColor * material, sqrt(1.f-chroma)), 0.f.xxx,16.f.xxx), sqrt(factor.xxx));
+  //
+  return clamp(mix(rayColor, mix(rfactor.xxx * material, rayColor * material, sqrt(1.f-chroma)), sqrt(factor.xxx)), 0.f.xxx, 16.f.xxx);
 };
 
 vec3 inRayNormal(in vec3 dir, in vec3 normal) {

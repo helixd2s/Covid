@@ -345,7 +345,7 @@ RayData pathTrace(inout RayData rayData, inout float hitDist, inout vec3 firstNo
 
     } else 
     {
-      //const vec4 skyColor = vec4(texture(sampler2D(textures[background], samplers[0]), lcts(rayData.direction.xyz)).xyz, 0.f);
+      const vec4 skyColor = fromLinear(vec4(texture(sampler2D(textures[background], samplers[0]), lcts(rayData.direction.xyz)).xyz, 0.f));
 
       // suppose last possible hit-point
       rayData.emission += f16vec4(trueMultColor(rayData.energy.xyz, gamma3(toLinear(skyColor.xyz))), 0.f);
@@ -356,7 +356,7 @@ RayData pathTrace(inout RayData rayData, inout float hitDist, inout vec3 firstNo
         firstNormal = lastNormal;
         if (type == 1 || R == 0) {
           hitDist = currentT = 10000.f;
-          //rayData.origin.xyz = vec4(0.f.xxx, 1.f) * constants.lookAtInverse;
+          rayData.origin.xyz = vec4(0.f.xxx, 1.f) * constants.lookAtInverse;
         } else {
           hitDist = currentT;
         };
