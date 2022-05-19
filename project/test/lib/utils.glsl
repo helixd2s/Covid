@@ -52,20 +52,17 @@ vec3 trueMultColor(in vec3 rayColor, in vec3 material) {
   const float rfactor = clamp(luminance(max(rayColor,0.f.xxx)), 0.f, 16.f);
   const float mfactor = clamp(luminance(max(material,0.f.xxx)), 0.f, 16.f);
   return clamp(material,0.f.xxx,16.f.xxx) * clamp(rayColor,0.f.xxx,16.f.xxx);
-  //return rfactor * materialColor + mfactor * rayColor;
-  //return sqrt((rfactor * clamp(material,0.f.xxx,16.f.xxx)) * (mfactor * clamp(rayColor,0.f.xxx,16.f.xxx)));
-  //return rayColor * material;
 };
-
-//directLighting(rayData.origin.xyz, normals, vec2(random(rayData.launchId.xy), random(rayData.launchId.xy)), 10000.f)
 
 vec4 trueMultColor(in vec4 rayColor, in vec4 material) {
   return vec4(trueMultColor(rayColor.xyz, material.xyz), material.w * rayColor.w);
 };
 
 // for metallic reflection
-vec3 metallicMult(in vec3 rayColor, in vec3 materialColor, in float factor) {
-  return mix(rayColor, trueMultColor(rayColor, materialColor), factor);
+vec3 metallicMult(in vec3 rayColor, in vec3 material, in float factor) {
+  const float rfactor = clamp(luminance(max(rayColor,0.f.xxx)), 0.f, 16.f);
+  const float mfactor = clamp(luminance(max(material,0.f.xxx)), 0.f, 16.f);
+  return mix(clamp(rayColor,0.f.xxx,16.f.xxx), rfactor.xxx * material, factor.xxx);
 };
 
 vec3 inRayNormal(in vec3 dir, in vec3 normal) {
