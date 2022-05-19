@@ -15,13 +15,15 @@
 #include "lib/reprojection.glsl"
 
 //
-layout (local_size_x = 32, local_size_y = 4, local_size_z = 1) in;
+layout (local_size_x = 32, local_size_y = 12, local_size_z = 1) in;
 
 // 
 void main() {
   const uvec2 gcoord = gl_GlobalInvocationID.xy;
   const vec2 tCoord = (vec2(gcoord) + 0.5f)/vec2(extent);
-  const uint pixelId = gcoord.x + extent.x * gcoord.y;
+  const uint linearId = gcoord.x + extent.x * gcoord.y;
+  const uint type = linearId / (extent.x * extent.y);
+  const uint pixelId = linearId % (extent.x * extent.y);
 
   //
   const vec3 srcRayBegin = divW(vec4(vec3(tCoord, 0.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.previousLookAtInverse;//fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId);
@@ -31,8 +33,10 @@ void main() {
   //
   PixelSurfaceInfoRef surface = getPixelSurface(pixelId);
   if (surface.origin.x != 0.f || surface.origin.y != 0.f || surface.origin.z != 0.f) {
-    reprojectDiffuse(pixelId, srcRayDir, 2);
-    reproject3D(pixelId, srcRayDir, 0);
-    reproject3D(pixelId, srcRayDir, 1);
+    if (type == 2) { 
+      reprojectDiffuse(pixelId, srcRayDir, type); 
+    } else { 
+      reproject3D(pixelId, srcRayDir, type); 
+    };
   };
 };

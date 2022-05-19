@@ -22,9 +22,9 @@ vec3 find_reflection_incident_point(in vec3 p0, in vec3 p1, in vec3 v0, in vec3 
 // needs re-creation skybox, or more distance (for example, 100000.f)
 //void reproject3D(in PixelSurfaceInfo surface, in PixelHitInfo data, in uint pixelId, in vec3 srcRayDir, in int type) {
 #ifdef OUTSOURCE
-void reproject3D(in uint pixelId, in vec3 srcRayDir, in int type) 
+void reproject3D(in uint pixelId, in vec3 srcRayDir, in uint type) 
 #else
-void reproject3D(in uint pixelId, in vec3 dstRayDir, in int type) 
+void reproject3D(in uint pixelId, in vec3 dstRayDir, in uint type) 
 #endif
 {
   PixelSurfaceInfoRef surface = getPixelSurface(pixelId);
@@ -180,9 +180,9 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in int type)
 
 //
 #ifdef OUTSOURCE
-void reprojectDiffuse(in uint pixelId, in vec3 srcRayDir, in int type) 
+void reprojectDiffuse(in uint pixelId, in vec3 srcRayDir, in uint type) 
 #else
-void reprojectDiffuse(in uint pixelId, in vec3 dstRayDir, in int type) 
+void reprojectDiffuse(in uint pixelId, in vec3 dstRayDir, in uint type) 
 #endif
 {
   PixelSurfaceInfoRef surface = getPixelSurface(pixelId);
