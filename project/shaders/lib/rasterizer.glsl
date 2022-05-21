@@ -41,7 +41,7 @@ IntersectionInfo rasterizeVector(in InstanceAddressBlock addressInfo, in RayData
   intersection.primitiveId = 0u;
 
   //
-  const mat3x4 lkAt = (previous ? constants.previousLookAt : constants.lookAt);
+  const mat3x4 lkAt = constants.lookAt[previous?1:0];
 
   //
   vec4 ssOriginal = divW(lastPos);
@@ -75,7 +75,6 @@ IntersectionInfo rasterizeVector(in InstanceAddressBlock addressInfo, in RayData
     for (uint i=0;i<3;i++) { 
       vertices[i] = vec4(fullTransform(instanceInfo, vec4(vertices[i].xyz, 1.f), rasterInfo.indices.y, previous?1:0).xyz, 1.f);
       vertices[i] = vec4(vertices[i] * lkAt, 1.f) * constants.perspective;
-      //vertices[i] = vec4(vertices[i] * (previous ? constants.previousLookAt : constants.lookAt), 1.f);
     };
 
     //
@@ -116,8 +115,8 @@ IntersectionInfo rasterize_(in InstanceAddressBlock addressInfo, inout Intersect
   const vec3 bary = texelFetch(textures[framebufferAttachments[uint(previous)][isTrasnlucent][1]], ivec2(rayData.launchId), 0).xyz;
 
   //
-  vec4 viewOrigin = vec4(vec4(rayData.origin.xyz, 1.f) * (previous ? constants.previousLookAt : constants.lookAt), 1.f);
-  vec4 viewEnd = vec4(vec4(rayData.origin.xyz+rayData.direction.xyz, 1.f) * (previous ? constants.previousLookAt : constants.lookAt), 1.f);
+  vec4 viewOrigin = vec4(vec4(rayData.origin.xyz, 1.f) * constants.lookAt[previous?1:0], 1.f);
+  vec4 viewEnd = vec4(vec4(rayData.origin.xyz+rayData.direction.xyz, 1.f) * constants.lookAt[previous?1:0], 1.f);
   vec4 viewDir = (viewEnd - viewOrigin);
   viewDir.xyz = normalize(viewDir.xyz);
 
@@ -160,7 +159,7 @@ IntersectionInfo rasterize(in InstanceAddressBlock addressInfo, in RayData rayDa
 //
 RayData reuseLight(inout RayData rayData) {
   // screen space reuse already lighted pixels
-  vec4 ssPos = divW(vec4(vec4(rayData.origin.xyz, 1.f) * constants.lookAt, 1.f) * constants.perspective);
+  vec4 ssPos = divW(vec4(vec4(rayData.origin.xyz, 1.f) * constants.lookAt[0], 1.f) * constants.perspective);
   ivec2 pxId = ivec2((ssPos.xy * 0.5f + 0.5f) * extent);
 
   //

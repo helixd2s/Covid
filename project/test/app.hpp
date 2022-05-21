@@ -27,12 +27,8 @@ struct Constants
   glm::mat4x4 perspectiveInverse = glm::mat4x4(1.f);
 
   // TODO: make array of
-  glm::mat3x4 lookAt = glm::mat3x4(1.f);
-  glm::mat3x4 previousLookAt = glm::mat3x4(1.f);
-
-  // TODO: make array of
-  glm::mat3x4 lookAtInverse = glm::mat3x4(1.f);
-  glm::mat3x4 previousLookAtInverse = glm::mat3x4(1.f);
+  glm::mat3x4 lookAt[2] = { glm::mat3x4(1.f) };
+  glm::mat3x4 lookAtInverse[2] = { glm::mat3x4(1.f) };
 };
 
 //
@@ -159,10 +155,8 @@ public:
     auto lkat = glm::lookAt(controller->viewPos, controller->viewCnt, controller->viewUp);
     uniformData.constants.perspective = glm::transpose(persp);
     uniformData.constants.perspectiveInverse = glm::transpose(glm::inverse(persp));
-    uniformData.constants.previousLookAt = uniformData.constants.lookAt;
-    uniformData.constants.previousLookAtInverse = uniformData.constants.lookAtInverse;
-    uniformData.constants.lookAt = glm::mat3x4(glm::transpose(lkat));
-    uniformData.constants.lookAtInverse = glm::mat3x4(glm::transpose(glm::inverse(lkat)));
+    uniformData.constants.lookAt[1] = cpp21::exchange(uniformData.constants.lookAt[0], glm::mat3x4(glm::transpose(lkat)));
+    uniformData.constants.lookAtInverse[1] = cpp21::exchange(uniformData.constants.lookAtInverse[0], glm::mat3x4(glm::transpose(glm::inverse(lkat))));
     uniformData.extent = glm::uvec2(renderArea.extent.width, renderArea.extent.height);
     uniformData.frameCounter = 0u;
 

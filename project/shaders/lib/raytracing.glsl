@@ -159,7 +159,7 @@ IntersectionInfo traceRaysTransparent(in InstanceAddressBlock instance, inout In
 
 //
 vec4 directLighting(in vec3 O, in vec3 N, in vec3 tN, in vec3 r, in float t) {
-  const vec3 SO = sunSphere.xyz + (vec4(0.f.xxx, 1.f) * constants.lookAtInverse);
+  const vec3 SO = sunSphere.xyz + (vec4(0.f.xxx, 1.f) * constants.lookAtInverse[0]);
   const vec3 LC = SO - O;
   const float dt = dot(LC, LC);
   const float cosL = sqrt(1.f - clamp((sunSphere.w * sunSphere.w) / dt, 0.f, 1.f));
@@ -356,7 +356,7 @@ RayData pathTrace(inout RayData rayData, inout float hitDist, inout vec3 firstNo
         firstNormal = lastNormal;
         if (type == 1 || R == 0) {
           hitDist = currentT = 10000.f;
-          rayData.origin.xyz = vec4(0.f.xxx, 1.f) * constants.lookAtInverse;
+          rayData.origin.xyz = vec4(0.f.xxx, 1.f) * constants.lookAtInverse[0];
         } else {
           hitDist = currentT;
         };
@@ -521,7 +521,7 @@ void backgroundHit(in uint pixelId, in uint type, in vec3 origin, in vec4 color)
   //
   PixelHitInfoRef hitInfo = getNewHit(pixelId, type);
   hitInfo.indices = uvec4(0u.xxx, type);
-  hitInfo.origin = vec4(vec4(0.f.xxx, 1.f) * constants.lookAtInverse, 10000.f);
+  hitInfo.origin = vec4(vec4(0.f.xxx, 1.f) * constants.lookAtInverse[0], 10000.f);
 };
 
 #endif

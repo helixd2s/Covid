@@ -16,13 +16,9 @@ struct Constants
   mat4x4 perspective;
   mat4x4 perspectiveInverse;
 
-  // TODO: make array of
-  mat3x4 lookAt;
-  mat3x4 previousLookAt;
-
-  // TODO: make array of
-  mat3x4 lookAtInverse;
-  mat3x4 previousLookAtInverse;
+  //
+  mat3x4 lookAt[2];
+  mat3x4 lookAtInverse[2];
 };
 
 // 

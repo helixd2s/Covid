@@ -40,7 +40,7 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in uint type)
     // 
 #ifdef OUTSOURCE
     // 
-    const vec3 srcPos = data.origin.xyz;//(notNull ? surface.origin.xyz : vec4(0.f.xxx, 1.f) * constants.previousLookAtInverse);
+    const vec3 srcPos = data.origin.xyz;
     const vec3 srcHitPos = srcPos + data.origin.w * srcRayDir;
     const vec3 srcNormal = surface.normal.xyz;
 
@@ -59,7 +59,7 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in uint type)
       * toNormalMat(inverse(getInstanceTransform(instancedData, surface.indices.x, 0))));
 #else 
     //
-    const vec3 dstPos = data.origin.xyz;//(notNull ? surface.origin.xyz : vec4(0.f.xxx, 1.f) * constants.lookAtInverse);
+    const vec3 dstPos = data.origin.xyz;
     const vec3 dstHitPos = dstPos + data.origin.w * dstRayDir;
     const vec3 dstNormal = surface.normal.xyz;
 
@@ -79,8 +79,8 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in uint type)
 #endif
 
     // 
-    vec3 srcHitFoundIntersection = srcPos;//(isSurface ? srcPos : vec4(0.f.xxx, 1.f) * constants.previousLookAtInverse);
-    vec3 dstHitFoundIntersection = dstPos;//(isSurface ? dstPos : vec4(0.f.xxx, 1.f) * constants.lookAtInverse);
+    vec3 srcHitFoundIntersection = srcPos;
+    vec3 dstHitFoundIntersection = dstPos;
     if (type == 2) {
       // no changes for diffuse
     } else
@@ -92,37 +92,26 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in uint type)
 #endif
     //if (isSurface) 
     { // only outsource version support
-
-      /*srcHitFoundIntersection = vec4(find_reflection_incident_point( 
-          vec4(dstPos.xyz, 1.f) * constants.lookAt, 
-          vec4(srcHitPos.xyz, 1.f) * constants.previousLookAt, 
-          vec4(srcPos.xyz, 1.f) * constants.previousLookAt, 
-          normalize(srcNormal.xyz) * toNormalMat(constants.previousLookAt)
-        ), 1.f) * constants.previousLookAtInverse;*/
-      //dstHitFoundIntersection = vec4(vec4(srcHitFoundIntersection, 1.f)
-        //* getPreviousInstanceTransform(instancedData, surface.indices.x, 1), 1.f)
-        //* inverse(getInstanceTransform(instancedData, surface.indices.x, 0));
-
       dstHitFoundIntersection = vec4(find_reflection_incident_point( 
-          vec4(dstPos.xyz, 1.f) * constants.lookAt, 
-          vec4(srcHitPos.xyz, 1.f) * constants.previousLookAt, 
-          vec4(srcPos.xyz, 1.f) * constants.previousLookAt, 
-          normalize(srcNormal.xyz) * toNormalMat(constants.previousLookAt)
-        ), 1.f) * constants.lookAtInverse;
+          vec4(dstPos.xyz, 1.f) * constants.lookAt[0],
+          vec4(srcHitPos.xyz, 1.f) * constants.lookAt[1], 
+          vec4(srcPos.xyz, 1.f) * constants.lookAt[1], 
+          normalize(srcNormal.xyz) * toNormalMat(constants.lookAt[1])
+        ), 1.f) * constants.lookAt[0];
       /*srcHitFoundIntersection = vec4(vec4(dstHitFoundIntersection, 1.f)
         * getInstanceTransform(instancedData, surface.indices.x, 0), 1.f)
         * inverse(getPreviousInstanceTransform(instancedData, surface.indices.x, 1));*/
     };
 
     // 
-    const vec4 srcHitPersp = vec4(vec4(srcHitFoundIntersection, 1.f) * constants.previousLookAt, 1.f) * constants.perspective;
+    const vec4 srcHitPersp = vec4(vec4(srcHitFoundIntersection, 1.f) * constants.lookAt[1], 1.f) * constants.perspective;
     const vec2 srcScreen = (srcHitPersp.xy/srcHitPersp.w * 0.5f + 0.5f);
     const ivec2 srcInt = ivec2(srcScreen * vec2(extent));
     const uint srcId = uint(srcInt.x + srcInt.y * extent.x);
     const bool srcValid = srcInt.x >= 0 && srcInt.y >= 0 && srcInt.x < extent.x && srcInt.y < extent.y;
 
     // 
-    const vec4 dstHitPersp = vec4(vec4(dstHitFoundIntersection, 1.f) * constants.lookAt, 1.f) * constants.perspective;
+    const vec4 dstHitPersp = vec4(vec4(dstHitFoundIntersection, 1.f) * constants.lookAt[0], 1.f) * constants.perspective;
     const vec2 dstScreen = (dstHitPersp.xy/dstHitPersp.w * 0.5f + 0.5f);
     const ivec2 dstInt = ivec2(dstScreen * vec2(extent));
     const uint dstId = uint(dstInt.x + dstInt.y * extent.x);
@@ -222,12 +211,12 @@ void reprojectDiffuse(in uint pixelId, in vec3 dstRayDir, in uint type)
 #endif
 
     //
-    const vec4 srcPerspPos = vec4(vec4(srcPos.xyz, 1.f) * constants.previousLookAt, 1.f) * constants.perspective;
+    const vec4 srcPerspPos = vec4(vec4(srcPos.xyz, 1.f) * constants.lookAt[1], 1.f) * constants.perspective;
     const vec2 srcScreen = (srcPerspPos.xy/srcPerspPos.w) * 0.5f + 0.5f;
     const ivec2 srcScreenPos = ivec2(srcScreen * vec2(extent));
 
     //
-    const vec4 dstPerspPos = vec4(vec4(dstPos.xyz, 1.f) * constants.lookAt, 1.f) * constants.perspective;
+    const vec4 dstPerspPos = vec4(vec4(dstPos.xyz, 1.f) * constants.lookAt[0], 1.f) * constants.perspective;
     const vec2 dstScreen = (dstPerspPos.xy/dstPerspPos.w) * 0.5f + 0.5f;
     const ivec2 dstScreenPos = ivec2(dstScreen * vec2(extent));
 
