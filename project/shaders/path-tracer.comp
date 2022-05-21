@@ -70,11 +70,11 @@ void main() {
       GeometryExtAttrib attrib = interpolate(geometry, cmd.intersection.barycentric);
 
       //
-      cmd.rayData.origin = hasHit ? fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], cmd.intersection.geometryId).xyz : (vec4(0.f.xxx, 1.f) * constants.lookAtInverse + cmd.rayData.direction * 10000.f);
+      cmd.rayData.origin = hasHit ? fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], cmd.intersection.geometryId, 0).xyz : (vec4(0.f.xxx, 1.f) * constants.lookAtInverse + cmd.rayData.direction * 10000.f);
       cmd.tbn = f16mat3x3(getTBN(attrib)); //cmd.rayData.origin += outRayNormal(cmd.rayData.direction.xyz, cmd.tbn[2].xyz) * 0.0001f;
-      cmd.tbn[0] = f16vec3(fullTransformNormal(instanceInfo, cmd.tbn[0], cmd.intersection.geometryId));
-      cmd.tbn[1] = f16vec3(fullTransformNormal(instanceInfo, cmd.tbn[1], cmd.intersection.geometryId));
-      cmd.tbn[2] = f16vec3(fullTransformNormal(instanceInfo, cmd.tbn[2], cmd.intersection.geometryId));
+      cmd.tbn[0] = f16vec3(fullTransformNormal(instanceInfo, cmd.tbn[0], cmd.intersection.geometryId, 0));
+      cmd.tbn[1] = f16vec3(fullTransformNormal(instanceInfo, cmd.tbn[1], cmd.intersection.geometryId, 0));
+      cmd.tbn[2] = f16vec3(fullTransformNormal(instanceInfo, cmd.tbn[2], cmd.intersection.geometryId, 0));
 
       //
       const MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), attrib.data[VERTEX_TEXCOORD].xy, cmd.tbn);

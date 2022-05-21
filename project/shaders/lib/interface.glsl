@@ -33,9 +33,8 @@ layout(set = 0, binding = 0, scalar) uniform MatrixBlock
   Constants constants;
   uint64_t pixelData;
   uint64_t writeData;
-  uint64_t rasterData;
+  uint64_t rasterData[2];
   uint64_t surfaceData;
-  uint64_t prevRasterData;
   uint32_t background;
   uint32_t blueNoise;
 };
@@ -104,8 +103,7 @@ PixelHitInfoRef getRpjHit(in uint pixelId, in uint type) {
 };
 
 //
-RasterInfoRef getRasterInfo(in uint rasterId)  { return RasterInfoRef(rasterData) + rasterId; };
-RasterInfoRef getPrevRasterInfo(in uint rasterId)  { return RasterInfoRef(prevRasterData) + rasterId; };
+RasterInfoRef getRasterInfo(in uint rasterId, in uint previous)  { return RasterInfoRef(rasterData[previous]) + rasterId; };
 
 //
 struct GeometryExtData {

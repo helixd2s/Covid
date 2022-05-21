@@ -42,9 +42,8 @@ struct UniformData {
   Constants constants = {};
   uint64_t pixelData = 0ull;
   uint64_t writeData = 0ull;
-  uint64_t rasterData = 0ull;
+  uint64_t rasterData[2] = { 0ull };
   uint64_t surfaceData = 0ull;
-  uint64_t prevRasterData = 0ull;
   uint32_t backgroundObj = 0u;
   uint32_t blueNoiseObj = 0u;
 };
@@ -413,7 +412,7 @@ public:
     fence = std::get<0u>(swapchainObj->presentImage(qfAndQueue));
 
     //
-    std::swap(uniformData.rasterData, uniformData.prevRasterData);
+    std::swap(uniformData.rasterData[0], uniformData.rasterData[1]);
 
     // stop the capture
 //#ifdef ENABLE_RENDERDOC
@@ -483,8 +482,8 @@ public:
     uniformData.surfaceData = surfaceDataObj->getDeviceAddress();
     uniformData.pixelData = pixelDataObj->getDeviceAddress();
     uniformData.writeData = writeDataObj->getDeviceAddress();
-    uniformData.rasterData = rasterDataObj->getDeviceAddress();
-    uniformData.prevRasterData = uniformData.rasterData + sizeof(RasterInfo) * renderArea.extent.width * renderArea.extent.height * 16u;
+    uniformData.rasterData[0] = rasterDataObj->getDeviceAddress();
+    uniformData.rasterData[1] = uniformData.rasterData[0] + sizeof(RasterInfo) * renderArea.extent.width * renderArea.extent.height * 16u;
 
     //
     framebufferObj[0] = ANAMED::FramebufferObj::make(deviceObj.with(0u), ANAMED::FramebufferCreateInfo{

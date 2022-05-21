@@ -48,9 +48,9 @@ void main() {
   //
 #ifdef TRANSLUCENT
   mat3x3 tbn = getTBN(attrib);
-  tbn[0] = fullTransformNormal(instanceInfo, tbn[0], pIndices.y);
-  tbn[1] = fullTransformNormal(instanceInfo, tbn[1], pIndices.y);
-  tbn[2] = fullTransformNormal(instanceInfo, tbn[2], pIndices.y);
+  tbn[0] = fullTransformNormal(instanceInfo, tbn[0], pIndices.y, 0);
+  tbn[1] = fullTransformNormal(instanceInfo, tbn[1], pIndices.y, 0);
+  tbn[2] = fullTransformNormal(instanceInfo, tbn[2], pIndices.y, 0);
   MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), pTexcoord.xy, tbn);
 #endif
 

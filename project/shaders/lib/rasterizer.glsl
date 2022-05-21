@@ -55,7 +55,7 @@ IntersectionInfo rasterizeVector(in InstanceAddressBlock addressInfo, in RayData
   ivec2 sc = ivec2((divW(ss).xy * 0.5f + 0.5f) * extent.xy);
 
   // TODO: separate translucency support
-  uint indice = previous ? imageLoad(imagesR32UI[pingpong.prevImages[0]], sc).x : imageLoad(imagesR32UI[pingpong.images[0]], sc).x;
+  uint indice = imageLoad(imagesR32UI[pingpong.images[previous?1:0][0]], sc).x;
 
   //
   float currentZ = 1.f;
@@ -66,18 +66,14 @@ IntersectionInfo rasterizeVector(in InstanceAddressBlock addressInfo, in RayData
     if (indice <= 0u) break;
 
     //
-    RasterInfoRef rasterInfo = previous ? getPrevRasterInfo(indice-1) : getRasterInfo(indice-1);
+    RasterInfoRef rasterInfo = getRasterInfo(indice-1, previous?1:0);
     InstanceInfo instanceInfo = getInstance(addressInfo, rasterInfo.indices.x);
     GeometryInfo geometryInfo = getGeometry(instanceInfo, rasterInfo.indices.y);
     mat3x4 vertices = readTriangleVertices3One(geometryInfo.vertices, readTriangleIndices(geometryInfo.indices, rasterInfo.indices.z));
 
     //
     for (uint i=0;i<3;i++) { 
-      if (previous) {
-        vertices[i] = vec4(fullPreviousTransform(instanceInfo, vec4(vertices[i].xyz, 1.f), rasterInfo.indices.y).xyz, 1.f);
-      } else {
-        vertices[i] = vec4(fullTransform(instanceInfo, vec4(vertices[i].xyz, 1.f), rasterInfo.indices.y).xyz, 1.f);
-      };
+      vertices[i] = vec4(fullTransform(instanceInfo, vec4(vertices[i].xyz, 1.f), rasterInfo.indices.y, previous?1:0).xyz, 1.f);
       vertices[i] = vec4(vertices[i] * lkAt, 1.f) * constants.perspective;
       //vertices[i] = vec4(vertices[i] * (previous ? constants.previousLookAt : constants.lookAt), 1.f);
     };

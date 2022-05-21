@@ -124,9 +124,9 @@ IntersectionInfo traceRaysTransparent(in InstanceAddressBlock instance, inout In
           GeometryExtData geometry = getGeometryData(geometryInfo, primitiveId);
           GeometryExtAttrib interpol = interpolate(geometry, attribs);
           mat3x3 tbn = getTBN(interpol);
-          tbn[0] = fullTransformNormal(instanceInfo, tbn[0], geometryId);
-          tbn[1] = fullTransformNormal(instanceInfo, tbn[1], geometryId);
-          tbn[2] = fullTransformNormal(instanceInfo, tbn[2], geometryId);
+          tbn[0] = fullTransformNormal(instanceInfo, tbn[0], geometryId, 0);
+          tbn[1] = fullTransformNormal(instanceInfo, tbn[1], geometryId, 0);
+          tbn[2] = fullTransformNormal(instanceInfo, tbn[2], geometryId, 0);
           MaterialPixelInfo material = handleMaterial(getMaterialInfo(geometryInfo), interpol.data[VERTEX_TEXCOORD].xy, tbn);
 
           if (material.color[MATERIAL_ALBEDO].a < (hasRandom ? random(blueNoiseFn(rays.launchId.xy)) : 0.01f)) {
@@ -213,13 +213,13 @@ RayData handleIntersection(inout RayData rayData, inout IntersectionInfo interse
 
   //
   const vec4 texcoord = attrib.data[VERTEX_TEXCOORD];
-  const vec4 vertice = fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId);
+  const vec4 vertice = fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId, 0);
 
   //
   mat3x3 tbn = getTBN(attrib);
-  tbn[0] = fullTransformNormal(instanceInfo, tbn[0], intersection.geometryId);
-  tbn[1] = fullTransformNormal(instanceInfo, tbn[1], intersection.geometryId);
-  tbn[2] = fullTransformNormal(instanceInfo, tbn[2], intersection.geometryId);
+  tbn[0] = fullTransformNormal(instanceInfo, tbn[0], intersection.geometryId, 0);
+  tbn[1] = fullTransformNormal(instanceInfo, tbn[1], intersection.geometryId, 0);
+  tbn[2] = fullTransformNormal(instanceInfo, tbn[2], intersection.geometryId, 0);
 
   //
   const bool inner = dot(tbn[2], rayData.direction.xyz) > 0.f;

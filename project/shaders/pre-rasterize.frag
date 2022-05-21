@@ -45,9 +45,9 @@ void main() {
   //
 #ifdef TRANSLUCENT
   mat3x3 tbn = getTBN(attrib);
-  tbn[0] = fullTransformNormal(instanceInfo, tbn[0], pIndices.y);
-  tbn[1] = fullTransformNormal(instanceInfo, tbn[1], pIndices.y);
-  tbn[2] = fullTransformNormal(instanceInfo, tbn[2], pIndices.y);
+  tbn[0] = fullTransformNormal(instanceInfo, tbn[0], pIndices.y, 0);
+  tbn[1] = fullTransformNormal(instanceInfo, tbn[1], pIndices.y, 0);
+  tbn[2] = fullTransformNormal(instanceInfo, tbn[2], pIndices.y, 0);
   MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), pTexcoord.xy, tbn);
 #endif
 
@@ -65,8 +65,8 @@ void main() {
     // 
     const uint rasterId = atomicAdd(counters[RASTER_COUNTER], 1);//subgroupAtomicAdd(RASTER_COUNTER);
     if (rasterId < extent.x * extent.y * 16) {
-      const uint oldId = imageAtomicExchange(imagesR32UI[pingpong.images[/*translucent*/0]], ivec2(gl_FragCoord.xy), rasterId+1);
-      RasterInfoRef rasterInfo = getRasterInfo(rasterId);
+      const uint oldId = imageAtomicExchange(imagesR32UI[pingpong.images[0][/*translucent*/0]], ivec2(gl_FragCoord.xy), rasterId+1);
+      RasterInfoRef rasterInfo = getRasterInfo(rasterId, 0);
       rasterInfo.indices = uvec4(pIndices.xyz, oldId);
       rasterInfo.barycentric = vec4(pBary, gl_FragCoord.z);
     };

@@ -57,8 +57,7 @@ struct InstanceAddressBlock {
 
 //
 struct PingPongStateInfo {
-  uint32_t prevImages[6];
-  uint32_t images[6];
+  uint32_t images[2][6];
   uint32_t previous;
   uint32_t index;
 };
