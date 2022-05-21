@@ -72,7 +72,7 @@ IntersectionInfo rasterizeVector(in InstanceAddressBlock addressInfo, in RayData
     mat3x4 vertices = readTriangleVertices3One(geometryInfo.vertices, readTriangleIndices(geometryInfo.indices, rasterInfo.indices.z));
 
     //
-    for (uint i=0;i<3;i++) { 
+    [[unroll]] for (uint i=0;i<3;i++) { 
       vertices[i] = vec4(fullTransform(instanceInfo, vec4(vertices[i].xyz, 1.f), rasterInfo.indices.y, previous?1:0).xyz, 1.f);
       vertices[i] = vec4(vertices[i] * lkAt, 1.f) * constants.perspective;
     };

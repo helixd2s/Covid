@@ -117,6 +117,6 @@ void main() {
     reprojHit(pixelId, 2);
 
     //PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
-    //for (uint i=0;i<3;i++) { surfaceInfo.accum[i] = TYPE(0u); };
+    //[[unroll]] for (uint i=0;i<3;i++) { surfaceInfo.accum[i] = TYPE(0u); };
   };
 };

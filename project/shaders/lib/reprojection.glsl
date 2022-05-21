@@ -97,7 +97,8 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in uint type)
           vec4(srcHitPos.xyz, 1.f) * constants.lookAt[1], 
           vec4(srcPos.xyz, 1.f) * constants.lookAt[1], 
           normalize(srcNormal.xyz) * toNormalMat(constants.lookAt[1])
-        ), 1.f) * constants.lookAt[0];
+        ), 1.f) * constants.lookAtInverse[0];
+        
       /*srcHitFoundIntersection = vec4(vec4(dstHitFoundIntersection, 1.f)
         * getInstanceTransform(instancedData, surface.indices.x, 0), 1.f)
         * inverse(getPreviousInstanceTransform(instancedData, surface.indices.x, 1));*/

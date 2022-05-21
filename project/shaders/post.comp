@@ -72,7 +72,7 @@ void main() {
   imageStore(images[swapchain.image], ivec2(gcoord.x, extent.y-1-gcoord.y), fromLinear(finalColor));
 
   //
-  for (uint t=0;t<3;t++) {
+  [[unroll]] for (uint t=0;t<3;t++) {
     PixelSurfaceInfoRef surface = getPixelSurface(pixelId);
 
     // 

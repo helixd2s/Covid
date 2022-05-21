@@ -40,7 +40,7 @@ void main() {
   GeometryExtData geometry = getGeometryData(geometryInfo, gl_PrimitiveIDIn);
 
   //
-  for (uint i=0;i<3;i++) {
+  [[unroll]] for (uint i=0;i<3;i++) {
     //const vec4 vertice = vertices.data[gl_VertexIndex/3u][gl_VertexIndex%3];//geometry.triData[VERTEX_VERTICES][gl_VertexIndex%3];
     const vec4 vertice = vec4(geometry.triData[VERTEX_VERTICES][i].xyz, 1.f);
     const vec4 texcoord = vec4(geometry.triData[VERTEX_TEXCOORD][i].xyz, 1.f);
