@@ -151,6 +151,7 @@ vec3 proj_point_in_plane(in vec3 p, in vec3 v0, in vec3 n, out float d) { return
 // p1 - plane point of previous frame
 // v0 - incident point of current frame
 // v1 - incident point of previous frame
+// thanks by criver#8473
 vec3 find_reflection_incident_point(in vec3 m0, in vec3 t0, in vec3 p0, in vec3 n0) {
   float h1 = dot(m0-p0,n0);
   float h2 = dot(t0-p0,n0);
