@@ -9,12 +9,10 @@ Some functionality still WIP, but almost ready to ***MVP***…
   - 🥀 [VK паблик](https://vk.com/helixd2s)
   - 🥀 [Наш сайт](http://about.helixd2s.su/) (там просто редирект пока что)
 
-## Dependency
+## Screenshots
 
-  - 📀 [VK-utils](https://github.com/helixd2s/vk-utils) 
-  - 📀 [Vcpkg](https://github.com/microsoft/vcpkg)
-  - 📀 [Vulkan SDK](https://vulkan.lunarg.com/)
-  - 📀 [NVIDIA Vulkan Beta Driver](https://developer.nvidia.com/vulkan-driver)
+  <img width="320" src="./images/boombox.png" alt="BoomBox">
+  <img width="320" src="./images/sponza.png" alt="Sponza">
 
 ## Renderer features
 
@@ -103,6 +101,15 @@ Some functionality still WIP, but almost ready to ***MVP***…
   - [ ] 👑 Support for Forge (mod, library)
   - [ ] 👑 Support for Optifine (Forge)
 
+## Dependencies
+
+  - 📀 [VK-utils](https://github.com/helixd2s/vk-utils) 
+  - 📀 [Vcpkg](https://github.com/microsoft/vcpkg) (with `GLFW3`)
+  - 📀 [Vulkan SDK](https://vulkan.lunarg.com/)
+  - 📀 [NVIDIA Vulkan Beta Driver](https://developer.nvidia.com/vulkan-driver)
+
+  But mostly already has with submodules.
+
 ## If you have issues…
 
 ### ASAN AddressSanitizer issues…
@@ -116,13 +123,6 @@ Some functionality still WIP, but almost ready to ***MVP***…
 
   You can read more about this runtime option here: https://docs.microsoft.com/en-us/cpp/sanitizers/asan-runtime?view=msvc-170#msvc-specific-addresssanitizer-runtime-options
   ```
-
-### Dependencies
-
-  - Vulkan SDK (`1.3.211.0`)
-  - `vcpkg` with `glfw3`
-
-  But mostly already has with submodules.
 
 ### Compile instruction?
 
