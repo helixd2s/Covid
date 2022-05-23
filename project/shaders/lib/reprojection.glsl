@@ -154,7 +154,7 @@ void reproject3D(in uint pixelId, in uint type)
 
       // sorry, we doesn't save previous raster data
       const bool dstValidDist = (isSurface ? all(lessThan(abs(dstSamplePos.xyz-(dstHitPersp.xyz/dstHitPersp.w)), vec3(2.f/extent, 0.008f))) : true);
-      const bool srcValidDist = (isSurface ? all(lessThan(abs(srcSamplePos.xyz-(srcHitPersp.xyz/srcHitPersp.w)), vec3(2.f/extent, 0.008f))) : true) && HIT_SRC.origin.w > 0.f && any(greaterThan(abs(HIT_SRC.origin.xyz), 0.f.xxx));
+      const bool srcValidDist = (isSurface ? all(lessThan(abs(srcSamplePos.xyz-(srcHitPersp.xyz/srcHitPersp.w)), vec3(2.f/extent, 0.008f))) : true) && any(greaterThan(abs(HIT_SRC.origin.xyz), 0.f.xxx)) && HIT_SRC.origin.w > 0.f;
 
       // copy to dest, and nullify source
       TYPE original = SURF_SRC.accum[type];
