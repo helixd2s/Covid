@@ -79,7 +79,7 @@ vec3 trueMultColor(in vec3 rayColor, in vec3 material) {
   const float saturation = 1.f - (mn/absmax(mx,1e-9));
 
   //
-  return mix(rayColor * material, rfactor.xxx * material, chroma);
+  return mix(rayColor * material, rfactor.xxx * material, chroma*chroma);
 };
 
 // real-color technology
