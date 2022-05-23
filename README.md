@@ -64,6 +64,10 @@ Some functionality still WIP, but almost ready to ***MVP***…
   - [ ] 🧩 Advanced shadow maps (with simpler RT, **important**)
   - [ ] 🧩 Full subgroups support (incl. variable)
   - [ ] 🧩 Full vulkan memory model support
+  - [ ] 👑️ Console support
+  - [ ] 👑️ Graphic interface
+  - [ ] 👑️ More interactivity
+  - [ ] 👑️ Edit materials
 
 ## Integrations
 
