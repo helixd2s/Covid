@@ -92,16 +92,28 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in uint type)
 #endif
     //if (isSurface) 
     { // only outsource version support
-      dstHitFoundIntersection = vec4(find_reflection_incident_point( 
+       dstHitFoundIntersection = vec4(find_reflection_incident_point( 
           vec4(dstPos.xyz, 1.f) * constants.lookAt[0],
           vec4(srcHitPos.xyz, 1.f) * constants.lookAt[1], 
           vec4(srcPos.xyz, 1.f) * constants.lookAt[1], 
           normalize(srcNormal.xyz) * toNormalMat(constants.lookAt[1])
         ), 1.f) * constants.lookAtInverse[0];
-        
+
       /*srcHitFoundIntersection = vec4(vec4(dstHitFoundIntersection, 1.f)
         * getInstanceTransform(instancedData, surface.indices.x, 0), 1.f)
-        * inverse(getPreviousInstanceTransform(instancedData, surface.indices.x, 1));*/
+        * inverse(getInstanceTransform(instancedData, surface.indices.x, 1));*/
+
+      /*
+      srcHitFoundIntersection = vec4(find_reflection_incident_point( 
+          vec4(dstPos.xyz, 1.f) * constants.lookAt[0],
+          vec4(srcHitPos.xyz, 1.f) * constants.lookAt[1], 
+          vec4(srcPos.xyz, 1.f) * constants.lookAt[1], 
+          normalize(srcNormal.xyz) * toNormalMat(constants.lookAt[1])
+        ), 1.f) * constants.lookAtInverse[1];
+
+      dstHitFoundIntersection = vec4(vec4(srcHitFoundIntersection, 1.f)
+        * getInstanceTransform(instancedData, surface.indices.x, 1), 1.f)
+        * inverse(getInstanceTransform(instancedData, surface.indices.x, 0));*/
     };
 
     // 
@@ -138,7 +150,7 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in uint type)
         RayData rayData;
         rayData.launchId = u16vec2(srcInt);
         rayData.origin = srcHitFoundIntersection.xyz;
-        rayData.direction = normalize(srcHitFoundIntersection.xyz-srcPos.xyz);
+        rayData.direction = normalize(srcHitPos.xyz-srcPos.xyz);
         rasterizeVector(instancedData, rayData, 10000.f, srcSamplePos, true);
       };
 
@@ -147,7 +159,7 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in uint type)
         RayData rayData;
         rayData.launchId = u16vec2(dstInt);
         rayData.origin = dstHitFoundIntersection.xyz;
-        rayData.direction = normalize(dstHitFoundIntersection.xyz-dstPos.xyz);
+        rayData.direction = normalize(dstHitPos.xyz-dstPos.xyz);
         rasterizeVector(instancedData, rayData, 10000.f, dstSamplePos, false);
       };
 
@@ -161,7 +173,7 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in uint type)
       if ( original.w > 0.f && dstValidDist && srcValidDist ) 
       {
         accumulate(SURF_DST, type, original);
-        HIT_DST.origin = vec4(dstHitFoundIntersection, distance(dstHitPos, dstHitFoundIntersection));
+        HIT_DST.origin = vec4(dstHitFoundIntersection, distance(dstHitPos, dstHitPos));
         HIT_DST.indices = HIT_SRC.indices;
       };
     };
