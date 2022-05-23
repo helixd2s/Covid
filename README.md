@@ -55,7 +55,7 @@ The most ambitious rendering project, and at the same time a future mod for Mine
 
   ### Reflection (type 0)
 
-  Currently not found any method of scattering previous frame reflection. Gather method are intolerant to any holes, needs solid reflection frame.
+  Currently not found any method of scattering previous frame reflection. Gather method are intolerant to any holes, needs solid reflection frame, not compatible with checkerboard optimization.
 
   ### Transparency (type 1)
 
