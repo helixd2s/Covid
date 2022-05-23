@@ -11,8 +11,7 @@ Some functionality still WIP, but almost ready to ***MVP***…
 
 ## Screenshots
 
-  <img width="320" src="./images/boombox.png" alt="BoomBox">
-  <img width="320" src="./images/sponza.png" alt="Sponza">
+  <img width="320" src="./images/boombox.png" alt="BoomBox"><img width="320" src="./images/sponza.png" alt="Sponza">
 
 ## Renderer features
 
