@@ -9,6 +9,13 @@ Some functionality still WIP, but almost ready to ***MVP***…
   - 🥀 [VK паблик](https://vk.com/helixd2s)
   - 🥀 [Наш сайт](http://about.helixd2s.su/) (там просто редирект пока что)
 
+## Dependency
+
+  - 📀 [VK-utils](https://github.com/helixd2s/vk-utils) 
+  - 📀 [Vcpkg](https://github.com/microsoft/vcpkg)
+  - 📀 [Vulkan SDK](https://vulkan.lunarg.com/)
+  - 📀 [NVIDIA Vulkan Beta Driver](https://developer.nvidia.com/vulkan-driver)
+
 ## Renderer features
 
   - [x] ♟️ Almost full Vulkan API 1.3
