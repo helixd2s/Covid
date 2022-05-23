@@ -9,7 +9,7 @@
 
 //
 const vec4 sunSphere = vec4(1000.f, 5000.f, 1000.f, 200.f);
-const vec3 sunColor = vec3(0.95f, 0.9f, 0.8f) * 10000.f;
+const vec3 sunColor = vec3(0.95f, 0.9f, 0.8f) * 20000.f;
 const vec4 skyColor = vec4(vec3(135.f,206.f,235.f)/vec3(255.f,255.f,255.f), 1.f);
 
 // 
