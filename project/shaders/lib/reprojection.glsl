@@ -21,7 +21,7 @@ void reproject3D(in uint pixelId, in uint type)
   PixelHitInfoRef data = getRpjHit(pixelId, type);
 
   //
-  const bool isSurface = data.origin.w > 0.f && data.origin.w < 10000.f;
+  const bool isSurface = data.origin.w > 0.f && data.origin.w < 10000.f && any(greaterThan(abs(data.origin.xyz), 0.f.xxx));
 
     // 
 #ifdef OUTSOURCE
@@ -86,6 +86,13 @@ void reproject3D(in uint pixelId, in uint type)
           vec4(srcPos.xyz, 1.f) * constants.lookAt[1],
           normalize(srcNormal.xyz) * toNormalMat(constants.lookAt[1])
         ), 1.f) * constants.lookAtInverse[0];
+
+      /*dstHitFoundIntersection = vec4(find_reflection_incident_point( 
+          vec4(srcPos.xyz, 1.f) * constants.lookAt[1],
+          vec4(dstHitPos.xyz, 1.f) * constants.lookAt[0],
+          vec4(dstPos.xyz, 1.f) * constants.lookAt[0],
+          normalize(dstNormal.xyz) * toNormalMat(constants.lookAt[0])
+        ), 1.f) * constants.lookAtInverse[0];*/
 #else
       // REQUIRED current ray reflection and hit source! 
       // CHECKERBOARD ISN'T SUPPORTED, AS ANY HOLES! 
@@ -147,7 +154,7 @@ void reproject3D(in uint pixelId, in uint type)
 
       // sorry, we doesn't save previous raster data
       const bool dstValidDist = (isSurface ? all(lessThan(abs(dstSamplePos.xyz-(dstHitPersp.xyz/dstHitPersp.w)), vec3(2.f/extent, 0.008f))) : true);
-      const bool srcValidDist = (isSurface ? all(lessThan(abs(srcSamplePos.xyz-(srcHitPersp.xyz/srcHitPersp.w)), vec3(2.f/extent, 0.008f))) : true) && HIT_SRC.origin.w > 0.f;
+      const bool srcValidDist = (isSurface ? all(lessThan(abs(srcSamplePos.xyz-(srcHitPersp.xyz/srcHitPersp.w)), vec3(2.f/extent, 0.008f))) : true) && HIT_SRC.origin.w > 0.f && any(greaterThan(abs(HIT_SRC.origin.xyz), 0.f.xxx));
 
       // copy to dest, and nullify source
       TYPE original = SURF_SRC.accum[type];
