@@ -150,7 +150,7 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in uint type)
         RayData rayData;
         rayData.launchId = u16vec2(srcInt);
         rayData.origin = srcHitFoundIntersection.xyz;
-        rayData.direction = normalize(srcHitPos.xyz-srcPos.xyz);
+        rayData.direction = normalize(srcHitPos.xyz-srcHitFoundIntersection.xyz);
         rasterizeVector(instancedData, rayData, 10000.f, srcSamplePos, true);
       };
 
@@ -159,7 +159,7 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in uint type)
         RayData rayData;
         rayData.launchId = u16vec2(dstInt);
         rayData.origin = dstHitFoundIntersection.xyz;
-        rayData.direction = normalize(dstHitPos.xyz-dstPos.xyz);
+        rayData.direction = normalize(dstHitPos.xyz-dstHitFoundIntersection.xyz);
         rasterizeVector(instancedData, rayData, 10000.f, dstSamplePos, false);
       };
 
@@ -173,7 +173,7 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in uint type)
       if ( original.w > 0.f && dstValidDist && srcValidDist ) 
       {
         accumulate(SURF_DST, type, original);
-        HIT_DST.origin = vec4(dstHitFoundIntersection, distance(dstHitPos, dstPos));
+        HIT_DST.origin = vec4(dstHitFoundIntersection, distance(dstHitPos, dstHitFoundIntersection));
         HIT_DST.indices = HIT_SRC.indices;
       };
     };
