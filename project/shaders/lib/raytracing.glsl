@@ -522,6 +522,7 @@ void reprojHit(in uint pixelId, in uint type) {
 void backgroundHit(in uint pixelId, in uint type, in vec3 origin, in vec4 color) {
   PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
   surfaceInfo.color[type] += cvtRgb16Float((type == 2) ? /*vec4(1.f.xxxx)*/color : vec4(0.f.xxx, 1.f));
+  if (type == 2) { surfaceInfo.origin = origin; };
 
   //
   PixelHitInfoRef hitInfo = getNewHit(pixelId, type);

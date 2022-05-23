@@ -92,7 +92,7 @@ void main() {
       const vec4 skyColor = fromLinear(vec4(texture(sampler2D(textures[background], samplers[0]), lcts(cmd.rayData.direction.xyz)).xyz, 0.f));
       cmd.diffuseColor = f16vec4(vec4(gamma3(toLinear(skyColor.xyz)), 1.f));
       cmd.emissiveColor = f16vec3(0.f.xxx.xyz);
-      cmd.rayData.origin = 0.f.xxx;
+      cmd.rayData.origin = vec4(0.f.xxx, 1.f) * constants.lookAtInverse[0];
       cmd.normals = f16vec3(vec3(0.f.xx, 1.f) * toNormalMat(constants.lookAtInverse[0]));
     };
 

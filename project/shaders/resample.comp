@@ -28,10 +28,6 @@ void main() {
   //
   PixelSurfaceInfoRef surface = getPixelSurface(pixelId);
   if (surface.origin.x != 0.f || surface.origin.y != 0.f || surface.origin.z != 0.f) {
-    [[flatten]] if (type == 2) { 
-      reprojectDiffuse(pixelId, type);
-    } else {
-      reproject3D(pixelId, type);
-    };
+    reproject3D(pixelId, type);
   };
 };
