@@ -26,18 +26,12 @@ void main() {
   const uint pixelId = linearId % (extent.x * extent.y);
 
   //
-  const vec3 srcRayBegin = divW(vec4(vec3(tCoord, 0.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse[1];//fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId);
-  const vec3 srcRayEnd = divW(vec4(vec3(tCoord, 1.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse[1];
-  const vec3 srcRayDir = normalize(srcRayEnd.xyz - srcRayBegin.xyz);
-
-  //
   PixelSurfaceInfoRef surface = getPixelSurface(pixelId);
   if (surface.origin.x != 0.f || surface.origin.y != 0.f || surface.origin.z != 0.f) {
-    if (type == 2) { 
-      //reprojectDiffuse(pixelId, srcRayDir, 2); 
-      reprojectDiffuse(pixelId, srcRayDir, type); 
-    } else { 
-      reproject3D(pixelId, srcRayDir, type); 
+    [[flatten]] if (type == 2) { 
+      reprojectDiffuse(pixelId, type);
+    } else {
+      reproject3D(pixelId, type); 
     };
   };
 };

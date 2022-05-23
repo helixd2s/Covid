@@ -398,6 +398,7 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
 
   //
   vec3 rayDirection = cmd.rayData.direction.xyz;
+  vec3 rayOrigin = cmd.rayData.origin.xyz;
 
   //
   //reuseLight(rayData); // already reprojected!
@@ -435,7 +436,7 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
 
   // 
   hitInfo.indices = uvec4(outp.indices.xyz, type);
-  hitInfo.origin.xyz = cmd.rayData.origin.xyz;
+  hitInfo.origin.xyz = rayOrigin;
   hitInfo.direct.xyz = rayDirection;
 
   //
@@ -468,10 +469,11 @@ void retranslateSurface(inout PathTraceCommand cmd) {
 void blankHit(inout PathTraceCommand cmd, in uint type) {
   PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.rayData.launchId.x + cmd.rayData.launchId.y * extent.x);
   surfaceInfo.color[type] += cvtRgb16Float(vec4(0.f.xxx, 1.f));
-
+  
   //
   PixelHitInfoRef hitInfo = getNewHit(cmd.rayData.launchId.x + cmd.rayData.launchId.y * extent.x, type);
   hitInfo.origin = vec4(cmd.rayData.origin.xyz, 0.f);
+  hitInfo.direct = vec4(cmd.rayData.direction.xyz, 0.f);
 };
 
 // 
@@ -483,6 +485,7 @@ void retranslateHit(in uint pixelId, in uint type, in vec3 origin) {
   //
   PixelHitInfoRef newHitInfo = getNewHit(pixelId, type);
   PixelHitInfoRef hitInfo = getRpjHit(pixelId, type);
+  
   //newHitInfo.indices = hitInfo.indices;
   //newHitInfo.origin = hitInfo.origin;
 };
@@ -499,6 +502,7 @@ void retranslateBackHit(in uint pixelId, in uint type) {
     PixelHitInfoRef newHitInfo = getRpjHit(pixelId, type);
     newHitInfo.indices = hitInfo.indices; hitInfo.indices = uvec4(0u);
     newHitInfo.origin = hitInfo.origin; hitInfo.origin = vec4(0.f);
+    newHitInfo.direct = hitInfo.direct; hitInfo.direct = vec4(0.f);
   };
 };
 
@@ -510,6 +514,7 @@ void reprojHit(in uint pixelId, in uint type) {
   if (surfaceInfo.color[type].w > 0.f) {
     newHitInfo.indices = hitInfo.indices;
     newHitInfo.origin = hitInfo.origin;
+    newHitInfo.direct = hitInfo.direct;
   };
 };
 
@@ -521,7 +526,7 @@ void backgroundHit(in uint pixelId, in uint type, in vec3 origin, in vec4 color)
   //
   PixelHitInfoRef hitInfo = getNewHit(pixelId, type);
   hitInfo.indices = uvec4(0u.xxx, type);
-  hitInfo.origin = vec4(vec4(0.f.xxx, 1.f) * constants.lookAtInverse[0], 10000.f);
+  hitInfo.origin = vec4(0.f.xxxx);//vec4(vec4(0.f.xxx, 1.f) * constants.lookAtInverse[0], 10000.f);
 };
 
 #endif

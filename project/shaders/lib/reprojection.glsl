@@ -8,23 +8,13 @@
 //#define OUTSOURCE
 #define ACCOUNT_TRANSPARENCY
 
-//
-vec3 proj_point_in_plane(in vec3 p, in vec3 v0, in vec3 n, out float d) { return p - ((d = dot(n, p - v0)) * n); };
-vec3 find_reflection_incident_point(in vec3 p0, in vec3 p1, in vec3 v0, in vec3 n) {
-  float d0 = 0; vec3 proj_p0 = proj_point_in_plane(p0, v0, n, d0);
-  float d1 = 0; vec3 proj_p1 = proj_point_in_plane(p1, v0, n, d1);
-  if(d1 < d0) { return (proj_p0 - proj_p1) * d1/(d0+d1) + proj_p1; }
-         else { return (proj_p1 - proj_p0) * d0/(d0+d1) + proj_p0; };
-};
-
-
 // incorrectly reprojected when distance more than 10000.f (i.e. skybox)
 // needs re-creation skybox, or more distance (for example, 100000.f)
 //void reproject3D(in PixelSurfaceInfo surface, in PixelHitInfo data, in uint pixelId, in vec3 srcRayDir, in int type) {
 #ifdef OUTSOURCE
-void reproject3D(in uint pixelId, in vec3 srcRayDir, in uint type) 
+void reproject3D(in uint pixelId, in uint type) 
 #else
-void reproject3D(in uint pixelId, in vec3 dstRayDir, in uint type) 
+void reproject3D(in uint pixelId, in uint type) 
 #endif
 {
   PixelSurfaceInfoRef surface = getPixelSurface(pixelId);
@@ -33,15 +23,11 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in uint type)
   //
   const bool isSurface = data.origin.w > 0.f && data.origin.w < 10000.f;
 
-  //
-  //if (data.origin.x != 0.f || data.origin.y != 0.f || data.origin.z != 0.f) {
-    // 
-
     // 
 #ifdef OUTSOURCE
     // 
     const vec3 srcPos = data.origin.xyz;
-    const vec3 srcHitPos = srcPos + data.origin.w * srcRayDir;
+    const vec3 srcHitPos = srcPos + data.origin.w * data.direct.xyz;
     const vec3 srcNormal = surface.normal.xyz;
 
     //
@@ -54,13 +40,10 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in uint type)
     const vec3 dstNormal = normalize(srcNormal.xyz 
       * toNormalMat(getInstanceTransform(instancedData, surface.indices.x, 1)) 
       * toNormalMat(inverse(getInstanceTransform(instancedData, surface.indices.x, 0))));
-    const vec3 dstRayDir = normalize(srcRayDir.xyz 
-      * toNormalMat(getInstanceTransform(instancedData, surface.indices.x, 1)) 
-      * toNormalMat(inverse(getInstanceTransform(instancedData, surface.indices.x, 0))));
 #else 
-    //
+    // REQUIRED CURRENT RAY AND HIT SOURCE, NOT ANY PREVIOUS, NOT ANY HOLES!
     const vec3 dstPos = data.origin.xyz;
-    const vec3 dstHitPos = dstPos + data.origin.w * dstRayDir;
+    const vec3 dstHitPos = dstPos + data.origin.w * data.direct.xyz;
     const vec3 dstNormal = surface.normal.xyz;
 
     // 
@@ -73,14 +56,13 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in uint type)
     const vec3 srcNormal = normalize(dstNormal.xyz 
       * toNormalMat(inverse(getInstanceTransform(instancedData, surface.indices.x, 0))
       * toNormalMat(getInstanceTransform(instancedData, surface.indices.x, 1))));
-    const vec3 srcRayDir = normalize(dstRayDir.xyz 
-      * toNormalMat(inverse(getInstanceTransform(instancedData, surface.indices.x, 0))
-      * toNormalMat(getInstanceTransform(instancedData, surface.indices.x, 1))));
 #endif
 
-    // 
+    // DON'T TOUCH!
     vec3 srcHitFoundIntersection = srcPos;
     vec3 dstHitFoundIntersection = dstPos;
+
+    // 
     if (type == 2) {
       // no changes for diffuse
     } else
@@ -91,29 +73,29 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in uint type)
     } else
 #endif
     //if (isSurface) 
-    { // only outsource version support
-       dstHitFoundIntersection = vec4(find_reflection_incident_point( 
+    {
+#ifdef OUTSOURCE
+      // incorrect way or arguments
+      // there is NOT any correct way to reproject from source to destination
+      // there is only one way to reprojection
+      // for correct way, needs have reflection sample itself
+      // for me needs destionation point of reflection!
+      dstHitFoundIntersection = vec4(find_reflection_incident_point( 
           vec4(dstPos.xyz, 1.f) * constants.lookAt[0],
-          vec4(srcHitPos.xyz, 1.f) * constants.lookAt[1], 
-          vec4(srcPos.xyz, 1.f) * constants.lookAt[1], 
+          vec4(srcHitPos.xyz, 1.f) * constants.lookAt[1],
+          vec4(srcPos.xyz, 1.f) * constants.lookAt[1],
           normalize(srcNormal.xyz) * toNormalMat(constants.lookAt[1])
         ), 1.f) * constants.lookAtInverse[0];
-
-      /*srcHitFoundIntersection = vec4(vec4(dstHitFoundIntersection, 1.f)
-        * getInstanceTransform(instancedData, surface.indices.x, 0), 1.f)
-        * inverse(getInstanceTransform(instancedData, surface.indices.x, 1));*/
-
-      /*
+#else
+      // REQUIRED current ray reflection and hit source! 
+      // CHECKERBOARD ISN'T SUPPORTED, AS ANY HOLES! 
       srcHitFoundIntersection = vec4(find_reflection_incident_point( 
           vec4(dstPos.xyz, 1.f) * constants.lookAt[0],
           vec4(srcHitPos.xyz, 1.f) * constants.lookAt[1], 
           vec4(srcPos.xyz, 1.f) * constants.lookAt[1], 
           normalize(srcNormal.xyz) * toNormalMat(constants.lookAt[1])
         ), 1.f) * constants.lookAtInverse[1];
-
-      dstHitFoundIntersection = vec4(vec4(srcHitFoundIntersection, 1.f)
-        * getInstanceTransform(instancedData, surface.indices.x, 1), 1.f)
-        * inverse(getInstanceTransform(instancedData, surface.indices.x, 0));*/
+#endif
     };
 
     // 
@@ -168,13 +150,13 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in uint type)
       const bool srcValidDist = (isSurface ? all(lessThan(abs(srcSamplePos.xyz-(srcHitPersp.xyz/srcHitPersp.w)), vec3(2.f/extent, 0.008f))) : true) && HIT_SRC.origin.w > 0.f;
 
       // copy to dest, and nullify source
-      const uint sampled = uint(SURF_DST.color[type].w);
-      TYPE original = SURF_DST.accum[type];
+      TYPE original = SURF_SRC.accum[type];
       if ( original.w > 0.f && dstValidDist && srcValidDist ) 
       {
         accumulate(SURF_DST, type, original);
         HIT_DST.origin = vec4(dstHitFoundIntersection, distance(dstHitPos, dstHitFoundIntersection));
         HIT_DST.indices = HIT_SRC.indices;
+        HIT_DST.direct.xyz = normalize(dstHitPos.xyz-dstHitFoundIntersection.xyz);
       };
     };
   //};
@@ -182,9 +164,9 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in uint type)
 
 //
 #ifdef OUTSOURCE
-void reprojectDiffuse(in uint pixelId, in vec3 srcRayDir, in uint type) 
+void reprojectDiffuse(in uint pixelId, in uint type) 
 #else
-void reprojectDiffuse(in uint pixelId, in vec3 dstRayDir, in uint type) 
+void reprojectDiffuse(in uint pixelId, in uint type) 
 #endif
 {
   PixelSurfaceInfoRef surface = getPixelSurface(pixelId);
@@ -202,9 +184,6 @@ void reprojectDiffuse(in uint pixelId, in vec3 dstRayDir, in uint type)
     const vec3 dstNormal = normalize(srcNormal.xyz 
       * toNormalMat(getInstanceTransform(instancedData, surface.indices.x, 1)) 
       * toNormalMat(inverse(getInstanceTransform(instancedData, surface.indices.x, 0))));
-    const vec3 dstRayDir = normalize(srcRayDir.xyz 
-      * toNormalMat(getInstanceTransform(instancedData, surface.indices.x, 1)) 
-      * toNormalMat(inverse(getInstanceTransform(instancedData, surface.indices.x, 0))));
 
 #else
     //
@@ -218,9 +197,7 @@ void reprojectDiffuse(in uint pixelId, in vec3 dstRayDir, in uint type)
     const vec3 srcNormal = normalize(dstNormal.xyz 
       * toNormalMat(inverse(getInstanceTransform(instancedData, surface.indices.x, 0))
       * toNormalMat(getInstanceTransform(instancedData, surface.indices.x, 1))));
-    const vec3 srcRayDir = normalize(dstRayDir.xyz 
-      * toNormalMat(inverse(getInstanceTransform(instancedData, surface.indices.x, 0))
-      * toNormalMat(getInstanceTransform(instancedData, surface.indices.x, 1))));
+
 #endif
 
     //

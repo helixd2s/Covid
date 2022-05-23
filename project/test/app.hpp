@@ -676,7 +676,7 @@ protected:
 
       //
       int w = 0, h = 0, c = 0;
-      float* data = (float*)stbi_loadf("./HDR_111_Parking_Lot_2_Ref.hdr", &w, &h, &c, STBI_rgb_alpha);
+      float* data = (float*)stbi_loadf("./background.hdr", &w, &h, &c, STBI_rgb_alpha);
 
       //
       backgroundObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
