@@ -1,6 +1,6 @@
 # 🌋 Alter 🌋
 
-Some functionality still WIP, but almost ready to ***MVP***…
+The most ambitious rendering project, and at the same time a future mod for Minecraft. 
 
 ## Важное примечание…
 
