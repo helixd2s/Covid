@@ -26,16 +26,12 @@ Some functionality still WIP, but almost ready to ***MVP***…
   - [x] ♟️ Graphics and compute shaders support
   - [x] ♟️ Async-model support, with sort of GC (alike JS)
   - [x] ♟️ Input lockless and independent rendering
-  - [x] ♟️ Partial basic multi-threading support
   - [x] ♟️ Using same pipelines for rendering
   - [x] ♟️ Almost fully bindless model
-  - [x] ♟️ Basic two-level rendering model
   - [x] ♟️ Resource independent uploader (with full VMA support, and sparse memory)
+  - [x] 🚧 Partial basic multi-threading support
   - [x] 🚧 Multi-draw with instances (TLAS, NOT TESTED)
   - [x] 🚧 Better instancing support (reusing, indexing, NOT TESTED)
-  - [ ] 🧩 Different resolution buffers and anti-aliasing support (**important**)
-  - [ ] 🧩 More temporal technology and techniques (such as TAA, FSR 2.0, DLSS, **important**)
-  - [ ] 🧩 Full subgroups support (incl. variable)
   - [ ] 🧩 Secondary or alternative pipelines
   - [ ] 🧩 Ray-tracing pipelines (currently used ray-query)
   - [ ] 🧩 More extensions support (such as ray-tracing maintenance)
@@ -51,18 +47,23 @@ Some functionality still WIP, but almost ready to ***MVP***…
 
   - [x] ♟️ Test shaders (currently, not a library)
   - [x] ♟️ Reprojection of reflections and transparency
-  - [x] ♟️ Dynamic vertex pulling and rendering
   - [x] ♟️ Checkerboard optimization (for diffuse/reflection)
   - [x] ♟️ Temporal screen-space reprojection (accumulation)
-  - [x] ♟️ Software rasterization misc (barycentrics, vector-sampling)
   - [x] 🚧 Pre-defined shader packages
+  - [ ] 🧩 Rewrite to HLSL (needs features)
+  - [ ] 🧩 Distances, MIP and LoD support
+  - [ ] 🧩 Short-range SSRT support
+
+## Complex engine technology
+
+  - [x] ♟️ Software rasterization misc (barycentrics, vector-sampling)
+  - [x] ♟️ Dynamic vertex pulling and rendering
+  - [x] ♟️ Basic two-level rendering model
   - [ ] 🧩 Different resolution buffers and anti-aliasing support (**important**)
   - [ ] 🧩 More temporal technology and techniques (such as TAA, FSR 2.0, DLSS, **important**)
   - [ ] 🧩 Advanced shadow maps (with simpler RT, **important**)
-  - [ ] 🧩 Rewrite to HLSL (needs features)
+  - [ ] 🧩 Full subgroups support (incl. variable)
   - [ ] 🧩 Full vulkan memory model support
-  - [ ] 🧩 Distances, MIP and LoD support
-  - [ ] 🧩 Short-range SSRT support
 
 ## Integrations
 
