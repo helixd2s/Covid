@@ -31,7 +31,7 @@ void main() {
     [[flatten]] if (type == 2) { 
       reprojectDiffuse(pixelId, type);
     } else {
-      reproject3D(pixelId, type); 
+      reproject3D(pixelId, type);
     };
   };
 };

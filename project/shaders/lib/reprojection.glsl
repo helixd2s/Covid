@@ -6,7 +6,7 @@
 #include "./rasterizer.glsl"
 //
 //#define OUTSOURCE
-#define ACCOUNT_TRANSPARENCY
+//#define ACCOUNT_TRANSPARENCY
 
 // incorrectly reprojected when distance more than 10000.f (i.e. skybox)
 // needs re-creation skybox, or more distance (for example, 100000.f)

@@ -78,7 +78,7 @@ void main() {
 
       //
       const MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), attrib.data[VERTEX_TEXCOORD].xy, cmd.tbn);
-      const bool inner = dot(vec3(cmd.tbn[2]), cmd.rayData.direction.xyz) > 0.f;
+      const bool inner = false;//dot(vec3(cmd.tbn[2]), cmd.rayData.direction.xyz) > 0.f;
 
       //
       cmd.normals = f16vec3(inRayNormal(cmd.rayData.direction.xyz, materialPix.color[MATERIAL_NORMAL].xyz));

@@ -222,7 +222,7 @@ RayData handleIntersection(inout RayData rayData, inout IntersectionInfo interse
   tbn[2] = fullTransformNormal(instanceInfo, tbn[2], intersection.geometryId, 0);
 
   //
-  const bool inner = dot(tbn[2], rayData.direction.xyz) > 0.f;
+  const bool inner = false;//dot(tbn[2], rayData.direction.xyz) > 0.f;
   MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), texcoord.xy, tbn);
   const vec3 normals = inRayNormal(rayData.direction, materialPix.color[MATERIAL_NORMAL].xyz);//materialPix.color[MATERIAL_NORMAL].xyz;
 
