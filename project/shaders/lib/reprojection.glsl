@@ -37,9 +37,9 @@ void reproject3D(in uint pixelId, in uint type)
     const vec3 dstHitPos = vec4(vec4(srcHitPos.xyz, 1.f) 
       * inverse(getInstanceTransform(instancedData, data.indices.x, 1)), 1.f) 
       * getInstanceTransform(instancedData, data.indices.x, 0);
-    const vec3 dstNormal = normalize(srcNormal.xyz 
-      * toNormalMat(getInstanceTransform(instancedData, surface.indices.x, 1)) 
-      * toNormalMat(inverse(getInstanceTransform(instancedData, surface.indices.x, 0))));
+    const vec3 dstNormal = normalize((srcNormal.xyz 
+      * toNormalMat(inverse(getInstanceTransform(instancedData, surface.indices.x, 1))))
+      * toNormalMat(getInstanceTransform(instancedData, surface.indices.x, 0)));
 #else 
     // REQUIRED CURRENT RAY AND HIT SOURCE, NOT ANY PREVIOUS, NOT ANY HOLES!
     const vec3 dstPos = data.origin.xyz;
@@ -53,9 +53,9 @@ void reproject3D(in uint pixelId, in uint type)
     const vec3 srcPos = vec4(vec4(dstPos.xyz, 1.f) 
       * inverse(getInstanceTransform(instancedData, surface.indices.x, 0)), 1.f) 
       * getInstanceTransform(instancedData, surface.indices.x, 1);
-    const vec3 srcNormal = normalize(dstNormal.xyz 
-      * toNormalMat(inverse(getInstanceTransform(instancedData, surface.indices.x, 0))
-      * toNormalMat(getInstanceTransform(instancedData, surface.indices.x, 1))));
+    const vec3 srcNormal = normalize((dstNormal.xyz 
+      * toNormalMat(inverse(getInstanceTransform(instancedData, surface.indices.x, 0))))
+      * toNormalMat(getInstanceTransform(instancedData, surface.indices.x, 1)));
 #endif
 
     // DON'T TOUCH!
@@ -80,11 +80,12 @@ void reproject3D(in uint pixelId, in uint type)
       // there is only one way to reprojection
       // for correct way, needs have reflection sample itself
       // for me needs destionation point of reflection!
-      dstHitFoundIntersection = vec4(find_reflection_incident_point( 
+      // DAMN moving camera...
+      dstHitFoundIntersection = vec4(find_reflection_incident_point(
+          vec4(0.f.xxx, 1.f).xyz,
+          vec4(dstHitPos.xyz, 1.f) * constants.lookAt[0],
           vec4(dstPos.xyz, 1.f) * constants.lookAt[0],
-          vec4(srcHitPos.xyz, 1.f) * constants.lookAt[1],
-          vec4(srcPos.xyz, 1.f) * constants.lookAt[1],
-          normalize(srcNormal.xyz) * toNormalMat(constants.lookAt[1])
+          normalize(dstNormal.xyz) * toNormalMat(constants.lookAt[0])
         ), 1.f) * constants.lookAtInverse[0];
 
       /*dstHitFoundIntersection = vec4(find_reflection_incident_point( 

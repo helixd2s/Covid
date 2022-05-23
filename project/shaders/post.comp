@@ -59,8 +59,16 @@ void main() {
   const vec4 resultEmission = readAndNeighborTex(pixelId, EMISSION_TEX);
   const vec4 resultDiffuse = readAndNeighborTex(pixelId, DIFFUSE_TEX);
 
+  //
+  PixelSurfaceInfoRef surface = getPixelSurface(pixelId);
+
+  const vec3 srcNormal = surface.normal.xyz;
+  const vec3 dstNormal = normalize(srcNormal.xyz 
+      * toNormalMat(getInstanceTransform(instancedData, surface.indices.x, 1)) 
+      * toNormalMat(inverse(getInstanceTransform(instancedData, surface.indices.x, 0))));
+
   // 
-  const vec4 finalColor = vec4(clampCol(
+  vec4 finalColor = vec4(clampCol(
     clampCol(resultTransp) * (1.f - resultDiffuse.a) + 
     clampCol(resultColor) * resultDiffuse.a + 
     //clampCol(trueMultColor(clampCol(resultColor), clampCol(resultDiffuse))) * resultDiffuse.a + 
@@ -68,12 +76,15 @@ void main() {
     clampCol(resultRefl)
   ).xyz, 1.f);
 
+  //
+  //finalColor.xyz = (normalize(dstNormal.xyz) * toNormalMat(constants.lookAt[0])) * 0.5f + 0.5f;
+
   // final color
   imageStore(images[swapchain.image], ivec2(gcoord.x, extent.y-1-gcoord.y), fromLinear(finalColor));
 
   //
   [[unroll]] for (uint t=0;t<3;t++) {
-    PixelSurfaceInfoRef surface = getPixelSurface(pixelId);
+    //PixelSurfaceInfoRef surface = getPixelSurface(pixelId);
 
     // 
     vec4 unlimited = cvtRgb16Acc(surface.color[t]);
