@@ -173,7 +173,7 @@ void reproject3D(in uint pixelId, in vec3 dstRayDir, in uint type)
       if ( original.w > 0.f && dstValidDist && srcValidDist ) 
       {
         accumulate(SURF_DST, type, original);
-        HIT_DST.origin = vec4(dstHitFoundIntersection, distance(dstHitPos, dstHitPos));
+        HIT_DST.origin = vec4(dstHitFoundIntersection, distance(dstHitPos, dstPos));
         HIT_DST.indices = HIT_SRC.indices;
       };
     };
