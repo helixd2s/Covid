@@ -75,11 +75,7 @@ void reproject3D(in uint pixelId, in uint type)
     //if (isSurface) 
     {
 #ifdef OUTSOURCE
-      // incorrect way or arguments
-      // there is NOT any correct way to reproject from source to destination
-      // there is only one way to reprojection
-      // for correct way, needs have reflection sample itself
-      // for me needs destionation point of reflection!
+      // still have problems in curved surfaces...
       // DAMN moving camera...
       dstHitFoundIntersection = vec4(find_reflection_incident_point(
           vec4(0.f.xxx, 1.f).xyz,
@@ -87,18 +83,11 @@ void reproject3D(in uint pixelId, in uint type)
           vec4(dstPos.xyz, 1.f) * constants.lookAt[0],
           normalize(dstNormal.xyz) * toNormalMat(constants.lookAt[0])
         ), 1.f) * constants.lookAtInverse[0];
-
-      /*dstHitFoundIntersection = vec4(find_reflection_incident_point( 
-          vec4(srcPos.xyz, 1.f) * constants.lookAt[1],
-          vec4(dstHitPos.xyz, 1.f) * constants.lookAt[0],
-          vec4(dstPos.xyz, 1.f) * constants.lookAt[0],
-          normalize(dstNormal.xyz) * toNormalMat(constants.lookAt[0])
-        ), 1.f) * constants.lookAtInverse[0];*/
 #else
       // REQUIRED current ray reflection and hit source! 
       // CHECKERBOARD ISN'T SUPPORTED, AS ANY HOLES! 
       srcHitFoundIntersection = vec4(find_reflection_incident_point( 
-          vec4(dstPos.xyz, 1.f) * constants.lookAt[0],
+          vec4(0.f.xxx, 1.f).xyz,
           vec4(srcHitPos.xyz, 1.f) * constants.lookAt[1], 
           vec4(srcPos.xyz, 1.f) * constants.lookAt[1], 
           normalize(srcNormal.xyz) * toNormalMat(constants.lookAt[1])
