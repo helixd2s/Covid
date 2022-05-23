@@ -43,13 +43,27 @@ The most ambitious rendering project, and at the same time a future mod for Mine
 ## Built-in shaders SDK features
 
   - [x] ♟️ Test shaders (currently, not a library)
-  - [x] ♟️ Reprojection of reflections and transparency
   - [x] ♟️ Checkerboard optimization (for diffuse/reflection)
   - [x] ♟️ Temporal screen-space reprojection (accumulation)
+  - [x] 🚧 Reprojection of reflections and transparency
   - [x] 🚧 Pre-defined shader packages
   - [ ] 🧩 Rewrite to HLSL (needs features)
   - [ ] 🧩 Distances, MIP and LoD support
   - [ ] 🧩 Short-range SSRT support
+
+## Reprojection problems
+
+  ### Reflection (type 0)
+
+  Currently not found any method of scattering previous frame reflection. Gather method are intolerant to any holes, needs solid reflection frame.
+
+  ### Transparency (type 1)
+
+  Currently, needs backstage data, problem is same as with reflection, but there is used a stub.
+
+  ### Diffuse (type 2)
+
+  Smelting effect when camera move, don't know why.
 
 ## Complex engine technology
 
