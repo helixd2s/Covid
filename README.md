@@ -33,10 +33,12 @@ Some functionality still WIP, but almost ready to ***MVP***…
   - [x] ♟️ Resource independent uploader (with full VMA support, and sparse memory)
   - [x] 🚧 Multi-draw with instances (TLAS, NOT TESTED)
   - [x] 🚧 Better instancing support (reusing, indexing, NOT TESTED)
+  - [ ] 🧩 Different resolution buffers and anti-aliasing support (**important**)
+  - [ ] 🧩 More temporal technology and techniques (such as TAA, FSR 2.0, DLSS, **important**)
   - [ ] 🧩 Full subgroups support (incl. variable)
   - [ ] 🧩 Secondary or alternative pipelines
-  - [ ] 🧩 Ray-tracing pipelines (currently ray-query)
-  - [ ] 🧩 More extensions support
+  - [ ] 🧩 Ray-tracing pipelines (currently used ray-query)
+  - [ ] 🧩 More extensions support (such as ray-tracing maintenance)
   - [ ] 🧩️ OpenGL support (interop)
   - [ ] 🧩 Interface wrapper and SDK (for C/C++)
   - [ ] 👑 Full and native ReShade support
@@ -54,11 +56,13 @@ Some functionality still WIP, but almost ready to ***MVP***…
   - [x] ♟️ Temporal screen-space reprojection (accumulation)
   - [x] ♟️ Software rasterization misc (barycentrics, vector-sampling)
   - [x] 🚧 Pre-defined shader packages
+  - [ ] 🧩 Different resolution buffers and anti-aliasing support (**important**)
+  - [ ] 🧩 More temporal technology and techniques (such as TAA, FSR 2.0, DLSS, **important**)
+  - [ ] 🧩 Advanced shadow maps (with simpler RT, **important**)
   - [ ] 🧩 Rewrite to HLSL (needs features)
-  - [ ] 🧩 Distances, MIP and LoD support
   - [ ] 🧩 Full vulkan memory model support
+  - [ ] 🧩 Distances, MIP and LoD support
   - [ ] 🧩 Short-range SSRT support
-  - [ ] 🧩 Advanced shadow maps (with simpler RT)
 
 ## Integrations
 
