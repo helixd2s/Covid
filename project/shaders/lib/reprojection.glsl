@@ -10,6 +10,7 @@
 
 // incorrectly reprojected when distance more than 10000.f (i.e. skybox)
 // needs re-creation skybox, or more distance (for example, 100000.f)
+// also, note about there is not enough data for check reflection correctness
 //void reproject3D(in PixelSurfaceInfo surface, in PixelHitInfo data, in uint pixelId, in vec3 srcRayDir, in int type) {
 #ifdef OUTSOURCE
 void reproject3D(in uint pixelId, in uint type) 
@@ -76,6 +77,7 @@ void reproject3D(in uint pixelId, in uint type)
 #ifdef OUTSOURCE
     // still have problems in curved surfaces...
     // incorrect curve when moving camera...
+    // also, note about there is not enough data for check reflection correctness
     dstHitFoundIntersection = vec4(find_reflection_incident_point(
         vec4(0.f.xxx, 1.f).xyz,
         vec4(dstHitPos.xyz, 1.f) * constants.lookAt[0],

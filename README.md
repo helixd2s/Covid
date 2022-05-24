@@ -55,7 +55,7 @@ The most ambitious rendering project, and at the same time a future mod for Mine
 
   ### Reflection (type 0)
 
-  Has curved surface problems.
+  Has curved surface problems. Also, there is no enough data for check reflection correctness.
 
   ### Transparency (type 1)
 
