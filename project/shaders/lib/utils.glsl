@@ -65,12 +65,12 @@ vec4 absmax(in vec4 val, in vec4 mn) {
 
 // for metallic reflection (true-multiply)
 vec3 trueMultColor(in vec3 rayColor, in vec3 material) {
-  rayColor = clamp(rayColor, 0.f.xxx, 16.f.xxx);
-  material = clamp(material, 0.f.xxx, 16.f.xxx);
+  rayColor = clamp(rayColor, 0.f, 16.f);
+  material = clamp(material, 0.f, 16.f);
   const float mn = min(material.r, min(material.g, material.b));
   const float mx = max(material.r, max(material.g, material.b));
   const float chroma = (mx - mn) / absmax(mx,1e-9);
-  const vec3 rayLum = luminance(max(sqrt(rayColor*material),0.f.xxx)).xxx;
+  const vec3 rayLum = luminance(max(min(sqrt(rayColor*material),rayColor),0.f.xxx)).xxx;
   return mix(rayColor, rayLum, chroma*chroma) * material;
 };
 
