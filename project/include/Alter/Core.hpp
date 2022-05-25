@@ -388,7 +388,9 @@ namespace ANAMED {
       "VK_EXT_shader_atomic_float2",
       "VK_EXT_depth_range_unrestricted",
       "VK_EXT_pageable_device_local_memory",
-      "VK_EXT_memory_priority"
+      "VK_EXT_memory_priority",
+      "VK_KHR_fragment_shader_barycentric",
+      "VK_KHR_ray_tracing_maintenance1"
     };
     cpp21::shared_vector<std::string> layerList = std::vector<std::string>{
     };
@@ -1719,7 +1721,10 @@ namespace ANAMED {
 
 
   //
-
+  template<class T> auto handleResult(vk::ResultValue<T> const& rvalue) {
+    rvalue.result;
+    return rvalue.value;
+  };
 
 };
 

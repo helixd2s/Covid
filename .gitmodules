@@ -1,9 +1,6 @@
 [submodule "glm"]
 	path = glm
 	url = https://github.com/g-truc/glm.git
-[submodule "submodules/include/vk-utils"]
-	path = submodules/include/vk-utils
-	url = https://github.com/helixd2s/vk-utils
 [submodule "generator"]
 	path = generator
 	url = https://github.com/TartanLlama/generator.git
@@ -19,3 +16,12 @@
 [submodule "submodules/include/args"]
 	path = submodules/include/args
 	url = https://github.com/Taywee/args.git
+[submodule "Vulkan-Hpp"]
+	path = Vulkan-Hpp
+	url = https://github.com/KhronosGroup/Vulkan-Hpp.git
+[submodule "Vulkan-Headers"]
+	path = Vulkan-Headers
+	url = https://github.com/KhronosGroup/Vulkan-Headers.git
+[submodule "submodules/include/vk-utils"]
+	path = submodules/include/vk-utils
+	url = https://github.com/helixd2s/vk-utils.git

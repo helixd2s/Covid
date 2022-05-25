@@ -86,7 +86,7 @@ namespace ANAMED {
       });
 
       
-      this->handle = std::move<vk::Pipeline>(device.createComputePipeline(descriptors->cache, cmInfo.ref()));
+      this->handle = std::move<vk::Pipeline>(handleResult(device.createComputePipeline(descriptors->cache, cmInfo.ref())));
       //
       //ANAMED::context->get(this->base)->registerObj(this->handle, shared_from_this());
       //return this->SFT();
@@ -225,7 +225,7 @@ namespace ANAMED {
       })->setStages(pipelineStages);
 
       //
-      this->handle = std::move<vk::Pipeline>(device.createGraphicsPipeline(descriptors->cache, pInfo));
+      this->handle = std::move<vk::Pipeline>(handleResult(device.createGraphicsPipeline(descriptors->cache, pInfo)));
     };
 
     // 

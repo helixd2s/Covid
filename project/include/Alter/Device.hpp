@@ -410,12 +410,14 @@ namespace ANAMED {
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceGraphicsPipelineLibraryFeaturesEXT, vk::PhysicalDeviceGraphicsPipelineLibraryFeaturesEXT{
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceShaderAtomicFloatFeaturesEXT, vk::PhysicalDeviceShaderAtomicFloatFeaturesEXT{
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceShaderAtomicFloat2FeaturesEXT, vk::PhysicalDeviceShaderAtomicFloat2FeaturesEXT{
-        //.pNext = PDInfoMap->set(vk::StructureType::ePhysicalDevicePageableDeviceLocalMemoryFeaturesEXT, vk::PhysicalDevicePageableDeviceLocalMemoryFeaturesEXT{ // BECOME LAGGY!
+        .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceFragmentShaderBarycentricFeaturesKHR, vk::PhysicalDeviceFragmentShaderBarycentricFeaturesKHR{ // BECOME LAGGY!
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceMemoryPriorityFeaturesEXT, vk::PhysicalDeviceMemoryPriorityFeaturesEXT{
+        .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceRayTracingMaintenance1FeaturesKHR, vk::PhysicalDeviceRayTracingMaintenance1FeaturesKHR{
         .pNext = nullptr
         })
         })
-        //})
+        })
+        })
         })
         })
         })
@@ -443,7 +445,9 @@ namespace ANAMED {
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceConservativeRasterizationPropertiesEXT, vk::PhysicalDeviceConservativeRasterizationPropertiesEXT{
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceAccelerationStructurePropertiesKHR, vk::PhysicalDeviceAccelerationStructurePropertiesKHR{
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceMultiDrawPropertiesEXT, vk::PhysicalDeviceMultiDrawPropertiesEXT{
+        .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceFragmentShaderBarycentricPropertiesKHR, vk::PhysicalDeviceFragmentShaderBarycentricPropertiesKHR{
         .pNext = nullptr
+        })
         })
         })
         })
