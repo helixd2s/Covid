@@ -156,16 +156,6 @@ mat3x4 readTriangleVertices3One(in BufferViewInfo vertices, in uvec3 indices) {
 };
 
 //
-vec4 interpolate(in mat3x4 vertices, in vec3 barycentric) {
-  return vertices * barycentric;
-};
-
-//
-vec4 interpolate(in mat3x4 vertices, in vec2 barycentric) {
-  return interpolate(vertices, vec3(1.f-barycentric.x-barycentric.y, barycentric.xy));
-};
-
-//
 InstanceInfo getInstance_(in InstanceAddressInfo addressInfo, in uint32_t index) {
   InstanceInfo info = InstanceInfo(0ul);
   //info.data = 0u;

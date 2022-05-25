@@ -165,7 +165,7 @@ vec3 find_reflection_incident_point(in vec3 m0, in vec3 t0, in vec3 p0, in vec3 
          else { return (proj_p1 - proj_p0) * d0/(d0+d1) + proj_p0; };
 };*/
 
-
+// 
 float qdMin(in vec2 qd) {
   return min(min(
     dot(qd, vec2(-0.5f, -0.5f)),
@@ -176,6 +176,7 @@ float qdMin(in vec2 qd) {
   ));
 };
 
+// 
 float qdMax(in vec2 qd) {
   return max(max(
     dot(qd, vec2(-0.5f, -0.5f)),
@@ -185,5 +186,50 @@ float qdMax(in vec2 qd) {
     dot(qd, vec2(  0.5f, 0.5f))
   ));
 };
+
+// dbary => [bary00, bary10, bary01], derrived barycentric
+// dpos  => [pos00, pos10, pos01], derrived position
+// currenly, unused, useless
+// it's reversal interpolation
+mat3x4 recoverTriangle(in mat3x3 dbary, in mat3x4 dpos) {
+  return dpos * inverse(transpose(dbary));
+};
+
+//
+vec4 interpolate(in mat3x4 vertices, in vec3 barycentric) {
+  return vertices * barycentric;
+};
+
+//
+vec4 interpolate(in mat3x4 vertices, in vec2 barycentric) {
+  return interpolate(vertices, vec3(1.f-barycentric.x-barycentric.y, barycentric.xy));
+};
+
+//
+float edgeFunction(in vec3 a, in vec3 b, in vec3 c) { return (c.x - a.x) * (b.y - a.y) - (c.y - a.y) * (b.x - a.x); };
+
+// required view-space as minimum
+vec3 watertightTriangleIntersection(in vec4 vo, in mat3 M, in mat3x4 vt) {
+  mat3x3 vt3 = M * mat3x3(vt[0].xyz-vo.xyz, vt[1].xyz-vo.xyz, vt[2].xyz-vo.xyz);
+  vec3 UVW = vec3(
+    vt3[2].x*vt3[1].y-vt3[2].y*vt3[1].x,
+    vt3[0].x*vt3[2].y-vt3[0].y*vt3[2].x,
+    vt3[1].x*vt3[0].y-vt3[1].y*vt3[0].x
+  );
+  float T = dot(UVW, transpose(vt3)[2].xyz);
+  float det = UVW.x + UVW.y + UVW.z;
+  return abs(det) > 0.f ? UVW/absmax(det, 1e-9) : vec3(0.f);
+};
+
+//
+vec3 computeBary(in vec4 vo, in mat3x4 vt) {
+  mat3x3 vt3 = mat3x3(vec3(vt[0].xy/absmax(vt[0].w, 1e-9), 1.f), vec3(vt[1].xy/absmax(vt[1].w, 1e-9), 1.f), vec3(vt[2].xy/absmax(vt[2].w, 1e-9), 1.f));
+  float det = determinant(vt3);
+  vec3 UVW = inverse(vt3)*vec3(vo.xy/absmax(vo.w, 1e-9),1.f);
+  UVW /= absmax(transpose(vt)[3].xyz, 1e-9.xxx);
+  UVW /= absmax(UVW.x+UVW.y+UVW.z, 1e-9);
+  return abs(det) > 0.f ? UVW : vec3(0.f);
+};
+
 
 #endif

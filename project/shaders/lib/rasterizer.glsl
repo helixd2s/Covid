@@ -4,31 +4,6 @@
 #include "./native.glsl"
 #include "./raytracing.glsl"
 
-float edgeFunction(in vec3 a, in vec3 b, in vec3 c) { return (c.x - a.x) * (b.y - a.y) - (c.y - a.y) * (b.x - a.x); }
-
-//
-vec3 computeBary(in vec4 vo, in mat3 M, in mat3x4 vt) {
-  mat3x3 vt3 = M * mat3x3(vt[0].xyz-vo.xyz, vt[1].xyz-vo.xyz, vt[2].xyz-vo.xyz);
-  vec3 UVW = vec3(
-    vt3[2].x*vt3[1].y-vt3[2].y*vt3[1].x,
-    vt3[0].x*vt3[2].y-vt3[0].y*vt3[2].x,
-    vt3[1].x*vt3[0].y-vt3[1].y*vt3[0].x
-  );
-  float T = dot(UVW, transpose(vt3)[2].xyz);
-  float det = UVW.x + UVW.y + UVW.z;
-  return abs(det) > 0.f ? UVW/absmax(det, 1e-9) : vec3(0.f);
-};
-
-//
-vec3 computeBary(in vec4 vo, in mat3x4 vt) {
-  mat3x3 vt3 = mat3x3(vec3(vt[0].xy/absmax(vt[0].w, 1e-9), 1.f), vec3(vt[1].xy/absmax(vt[1].w, 1e-9), 1.f), vec3(vt[2].xy/absmax(vt[2].w, 1e-9), 1.f));
-  float det = determinant(vt3);
-  vec3 UVW = inverse(vt3)*vec3(vo.xy/absmax(vo.w, 1e-9),1.f);
-  UVW /= absmax(transpose(vt)[3].xyz, 1e-9.xxx);
-  UVW /= absmax(UVW.x+UVW.y+UVW.z, 1e-9);
-  return abs(det) > 0.f ? UVW : vec3(0.f);
-};
-
 // too expensive method of rasterization
 // vector sampling is generally expensive
 // but it's really mostly required
