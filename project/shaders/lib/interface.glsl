@@ -103,6 +103,19 @@ PixelHitInfoRef getRpjHit(in uint pixelId, in uint type) {
 RasterInfoRef getRasterInfo(in uint rasterId, in uint previous)  { return RasterInfoRef(rasterData[previous]) + rasterId; };
 
 //
+float r_min_distance(in uint rasterId, in uint previous) {
+  RasterInfoRef rasterInfo = getRasterInfo(rasterId, previous);
+  return rasterInfo.barycentric.w + qdMin(unpackHalf2x16(rasterInfo.derivatives.w));
+};
+
+//
+float r_max_distance(in uint rasterId, in uint previous) {
+  RasterInfoRef rasterInfo = getRasterInfo(rasterId, previous);
+  return rasterInfo.barycentric.w + qdMax(unpackHalf2x16(rasterInfo.derivatives.w));
+};
+
+
+//
 struct GeometryExtData {
   mat3x4 triData[MAX_VERTEX_DATA];
 };

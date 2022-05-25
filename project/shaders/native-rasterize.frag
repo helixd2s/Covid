@@ -63,7 +63,7 @@ void main() {
 #ifdef TRANSLUCENT
     materialPix.color[MATERIAL_ALBEDO].a < 0.01f || 
 #endif
-    dp <= (gl_FragCoord.z - 0.0001f)
+    false//dp <= (gl_FragCoord.z - 0.0001f)
   ) {
     discard;
   } else 
