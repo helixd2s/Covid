@@ -25,7 +25,8 @@ struct Constants
 layout(set = 0, binding = 0, scalar) uniform MatrixBlock
 {
   uint32_t framebufferAttachments[2][2][8]; // framebuffers
-  uvec2 extent; uint frameCounter, reserved0;
+  u16vec2 extent, scaled, rasterES;
+  uint frameCounter;
   Constants constants;
   uint64_t pixelData;
   uint64_t writeData;
@@ -33,6 +34,16 @@ layout(set = 0, binding = 0, scalar) uniform MatrixBlock
   uint64_t surfaceData;
   uint32_t background;
   uint32_t blueNoise;
+};
+
+//
+uvec2 UR(in uint res) {
+  return uvec2(res&0xFFFF, (res&0xFFFF0000)>>16); // TODO: hardware method
+};
+
+//
+uvec2 UR(in u16vec2 res) {
+  return res; // TODO: hardware method
 };
 
 // 
@@ -89,13 +100,13 @@ PixelSurfaceInfoRef getPixelSurface(in uint pixelId)  { return PixelSurfaceInfoR
 
 //
 PixelHitInfoRef getNewHit(in uint pixelId, in uint type) { 
-  const uint hitId = pixelId + extent.x * extent.y * type;
+  const uint hitId = pixelId + UR(scaled).x * UR(scaled).y * type;
   return PixelHitInfoRef(pixelData) + hitId;
 };
 
 //
 PixelHitInfoRef getRpjHit(in uint pixelId, in uint type) { 
-  const uint hitId = pixelId + extent.x * extent.y * type;
+  const uint hitId = pixelId + UR(scaled).x * UR(scaled).y * type;
   return PixelHitInfoRef(writeData) + hitId;
 };
 

@@ -73,7 +73,7 @@ void main() {
   {
     // 
     const uint rasterId = atomicAdd(counters[RASTER_COUNTER], 1);//subgroupAtomicAdd(RASTER_COUNTER);
-    if (rasterId < extent.x * extent.y * 16) {
+    if (rasterId < UR(scaled).x * UR(scaled).y * 16) {
       const uint oldId = imageAtomicExchange(imagesR32UI[pingpong.images[0][/*translucent*/0]], ivec2(gl_FragCoord.xy), rasterId+1);
 
       RasterInfoRef rasterInfo = getRasterInfo(rasterId, 0);

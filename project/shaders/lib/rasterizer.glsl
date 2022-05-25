@@ -27,7 +27,7 @@ IntersectionInfo rasterizeVector(in InstanceAddressBlock addressInfo, in RayData
 
   //
   vec4 ss = (viewOrigin * constants.perspective);
-  vec2 ssc = (divW(ss).xy * 0.5f + 0.5f) * extent.xy;
+  vec2 ssc = (divW(ss).xy * 0.5f + 0.5f) * UR(rasterES).xy;
   vec2 ssh = floor(ssc.xy) + 0.5f;
   vec2 ssf = ssc - ssh;
   ivec2 sc = ivec2(ssc);
@@ -82,13 +82,6 @@ IntersectionInfo rasterizeVector(in InstanceAddressBlock addressInfo, in RayData
 // very cheap way - NOT RECOMMENDED!
 IntersectionInfo rasterize_(in InstanceAddressBlock addressInfo, inout IntersectionInfo intersection, in RayData rayData, in float maxT, inout vec4 lastPos, in bool previous, in uint isTrasnlucent) {
   //
-  const uvec4 indices = texelFetch(texturesU[framebufferAttachments[uint(previous)][isTrasnlucent][0]], ivec2(rayData.launchId), 0);
-  const uvec4 dr      = texelFetch(texturesU[framebufferAttachments[uint(previous)][isTrasnlucent][1]], ivec2(rayData.launchId), 0);
-  const vec3 br =       texelFetch(textures [framebufferAttachments[uint(previous)][isTrasnlucent][2]], ivec2(rayData.launchId), 0).xyz;
-  const vec4 sp =  vec4(texelFetch(textures [framebufferAttachments[uint(previous)][isTrasnlucent][3]], ivec2(rayData.launchId), 0).xyz, 1.f);
-  const vec4 cp =       texelFetch(textures [framebufferAttachments[uint(previous)][isTrasnlucent][4]], ivec2(rayData.launchId), 0);
-
-  //
   vec4 viewOrigin = vec4(vec4(rayData.origin.xyz, 1.f) * constants.lookAt[previous?1:0], 1.f);
   vec4 viewEnd = vec4(vec4(rayData.origin.xyz+rayData.direction.xyz, 1.f) * constants.lookAt[previous?1:0], 1.f);
   vec4 viewDir = (viewEnd - viewOrigin);
@@ -96,10 +89,17 @@ IntersectionInfo rasterize_(in InstanceAddressBlock addressInfo, inout Intersect
 
   //
   vec4 ss = (viewOrigin * constants.perspective);
-  vec2 ssc = (divW(ss).xy * 0.5f + 0.5f) * extent.xy;
+  vec2 ssc = (divW(ss).xy * 0.5f + 0.5f) * UR(rasterES).xy;
   vec2 ssh = floor(ssc.xy) + 0.5f;
   vec2 ssf = ssc - ssh;
   ivec2 sc = ivec2(ssc);
+
+  //
+  const uvec4 indices = texelFetch(texturesU[framebufferAttachments[uint(previous)][isTrasnlucent][0]], sc, 0);
+  const uvec4 dr      = texelFetch(texturesU[framebufferAttachments[uint(previous)][isTrasnlucent][1]], sc, 0);
+  const vec3 br =       texelFetch(textures [framebufferAttachments[uint(previous)][isTrasnlucent][2]], sc, 0).xyz;
+  const vec4 sp =  vec4(texelFetch(textures [framebufferAttachments[uint(previous)][isTrasnlucent][3]], sc, 0).xyz, 1.f);
+  const vec4 cp =       texelFetch(textures [framebufferAttachments[uint(previous)][isTrasnlucent][4]], sc, 0);
 
   // compute derrivative
   const vec3 bary = vec3(
@@ -142,10 +142,10 @@ IntersectionInfo rasterize(in InstanceAddressBlock addressInfo, in RayData rayDa
 RayData reuseLight(inout RayData rayData) {
   // screen space reuse already lighted pixels
   vec4 ssPos = divW(vec4(vec4(rayData.origin.xyz, 1.f) * constants.lookAt[0], 1.f) * constants.perspective);
-  ivec2 pxId = ivec2((ssPos.xy * 0.5f + 0.5f) * extent);
+  ivec2 pxId = ivec2((ssPos.xy * 0.5f + 0.5f) * UR(scaled));
 
   //
-  if (pxId.x >= 0 && pxId.y >= 0 && pxId.x < extent.x && pxId.y < extent.y) {
+  if (pxId.x >= 0 && pxId.y >= 0 && pxId.x < UR(scaled).x && pxId.y < UR(scaled).y) {
     vec4 ssSurf = ssPos; ssSurf.z = 1.f;
 
     // 
@@ -154,8 +154,8 @@ RayData reuseLight(inout RayData rayData) {
     };
 
     // testing now working correctly, sorry
-    if (all(lessThan(abs(ssPos.xyz-ssSurf.xyz), vec3(2.f/extent, 0.002f)))) {
-      PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pxId.x + pxId.y * extent.x);
+    if (all(lessThan(abs(ssPos.xyz-ssSurf.xyz), vec3(2.f/UR(scaled), 0.002f)))) {
+      PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pxId.x + pxId.y * UR(scaled).x);
       const vec4 color = cvtRgb16Acc(surfaceInfo.accum[2]);
       rayData.emission += f16vec4(trueMultColor(color/color.w, rayData.energy));
     };

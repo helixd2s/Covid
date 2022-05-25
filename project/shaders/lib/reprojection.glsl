@@ -99,16 +99,16 @@ void reproject3D(in uint pixelId, in uint type)
   // 
   const vec4 srcHitPersp = vec4(vec4(srcHitFoundIntersection, 1.f) * constants.lookAt[1], 1.f) * constants.perspective;
   const vec2 srcScreen = (srcHitPersp.xy/srcHitPersp.w * 0.5f + 0.5f);
-  const ivec2 srcInt = ivec2(srcScreen * vec2(extent));
-  const uint srcId = uint(srcInt.x + srcInt.y * extent.x);
-  const bool srcValid = srcInt.x >= 0 && srcInt.y >= 0 && srcInt.x < extent.x && srcInt.y < extent.y;
+  const ivec2 srcInt = ivec2(srcScreen * vec2(UR(scaled)));
+  const uint srcId = uint(srcInt.x + srcInt.y * UR(scaled).x);
+  const bool srcValid = srcInt.x >= 0 && srcInt.y >= 0 && srcInt.x < UR(scaled).x && srcInt.y < UR(scaled).y;
 
   // 
   const vec4 dstHitPersp = vec4(vec4(dstHitFoundIntersection, 1.f) * constants.lookAt[0], 1.f) * constants.perspective;
   const vec2 dstScreen = (dstHitPersp.xy/dstHitPersp.w * 0.5f + 0.5f);
-  const ivec2 dstInt = ivec2(dstScreen * vec2(extent));
-  const uint dstId = uint(dstInt.x + dstInt.y * extent.x);
-  const bool dstValid = dstInt.x >= 0 && dstInt.y >= 0 && dstInt.x < extent.x && dstInt.y < extent.y;
+  const ivec2 dstInt = ivec2(dstScreen * vec2(UR(scaled)));
+  const uint dstId = uint(dstInt.x + dstInt.y * UR(scaled).x);
+  const bool dstValid = dstInt.x >= 0 && dstInt.y >= 0 && dstInt.x < UR(scaled).x && dstInt.y < UR(scaled).y;
 
   // 
   if (srcValid && dstValid) {
@@ -122,8 +122,8 @@ void reproject3D(in uint pixelId, in uint type)
 
     // fallback
     vec4 
-      srcSamplePos = srcHitPersp/srcHitPersp.w,//vec4(linearSrcPos(srcScreen), 1.f), 
-      dstSamplePos = dstHitPersp/dstHitPersp.w;//texture(sampler2D(textures[framebufferAttachments[2]], samplers[0u]), dstScreen);
+      srcSamplePos = srcHitPersp/srcHitPersp.w,
+      dstSamplePos = dstHitPersp/dstHitPersp.w;
 
     // 
     { // 
@@ -144,8 +144,8 @@ void reproject3D(in uint pixelId, in uint type)
     };
 
     // sorry, we doesn't save previous raster data
-    const bool dstValidDist = (isSurface ? all(lessThan(abs(dstSamplePos.xyz-(dstHitPersp.xyz/dstHitPersp.w)), vec3(1.f/extent, 0.001f))) : true);
-    const bool srcValidDist = (isSurface ? all(lessThan(abs(srcSamplePos.xyz-(srcHitPersp.xyz/srcHitPersp.w)), vec3(1.f/extent, 0.001f))) : true) && any(greaterThan(abs(HIT_SRC.origin.xyz), 0.f.xxx)) && (HIT_SRC.origin.w > 0.f || type == 2);
+    const bool dstValidDist = (isSurface ? all(lessThan(abs(dstSamplePos.xyz-(dstHitPersp.xyz/dstHitPersp.w)), vec3(1.f/vec2(UR(scaled)), 0.001f))) : true);
+    const bool srcValidDist = (isSurface ? all(lessThan(abs(srcSamplePos.xyz-(srcHitPersp.xyz/srcHitPersp.w)), vec3(1.f/vec2(UR(scaled)), 0.001f))) : true) && any(greaterThan(abs(HIT_SRC.origin.xyz), 0.f.xxx)) && (HIT_SRC.origin.w > 0.f || type == 2);
 
     // copy to dest, and nullify source
     TYPE original = SURF_SRC.accum[type];

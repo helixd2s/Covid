@@ -12,19 +12,70 @@
 #include "lib/reprojection.glsl"
 
 //
-layout (local_size_x = 32, local_size_y = 8, local_size_z = 1) in;
+layout (local_size_x = 32, local_size_y = 4, local_size_z = 1) in;
+
+//
+vec4 readAndNeighborColor(in uint pixelId, in uint type) {
+  PixelSurfaceInfoRef hitInfo = getPixelSurface(pixelId);
+  TYPE center = hitInfo.accum[type];
+  if (center.w <= 0.f) {
+    center = TYPE(0.f);
+    if ((pixelId + UR(scaled).x) < (UR(scaled).y * UR(scaled).x)) { PixelSurfaceInfoRef info = getPixelSurface(pixelId + UR(scaled).x); if (info.accum[type].w > 0) { center += info.accum[type]; }; };
+    if ((pixelId.x%UR(scaled).x) < UR(scaled).x-1)                { PixelSurfaceInfoRef info = getPixelSurface(pixelId + 1); if (info.accum[type].w > 0) { center += info.accum[type]; }; };
+    if (pixelId >= UR(scaled).x)                                  { PixelSurfaceInfoRef info = getPixelSurface(pixelId - UR(scaled).x); if (info.accum[type].w > 0) { center += info.accum[type]; }; };
+    if ((pixelId.x%UR(scaled).x) >= 1)                            { PixelSurfaceInfoRef info = getPixelSurface(pixelId - 1); if (info.accum[type].w > 0) { center += info.accum[type]; }; };
+  };
+  return cvtRgb16Acc(center);
+};
+
+//
+vec4 readAndNeighborTex(in uint pixelId, in uint tex) {
+  PixelSurfaceInfoRef hitInfo = getPixelSurface(pixelId);
+  vec4 center = hitInfo.tex[tex];
+  return center;
+};
 
 // 
 void main() {
   const uvec2 gcoord = gl_GlobalInvocationID.xy;
-  const vec2 tCoord = (vec2(gcoord) + 0.5f)/vec2(extent);
-  const uint linearId = gcoord.x + extent.x * gcoord.y;
-  const uint type = linearId / (extent.x * extent.y);
-  const uint pixelId = linearId % (extent.x * extent.y);
+  const vec2 tCoord = (vec2(gcoord) + 0.5f)/vec2(UR(scaled));
+  const uint linearId = gcoord.x + UR(scaled).x * gcoord.y;
+  const uint type = linearId / (UR(scaled).x * UR(scaled).y);
+  const uint pixelId = linearId % (UR(scaled).x * UR(scaled).y);
+
+  //
+  const vec3 dstRayBegin = divW(vec4(vec3(tCoord, 0.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse[0];//fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId);
+  const vec3 dstRayEnd = divW(vec4(vec3(tCoord, 1.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse[0];
+  const vec3 dstRayDir = normalize(dstRayEnd.xyz - dstRayBegin.xyz);
+
+  // 
+  const vec4 resultRefl = readAndNeighborColor(pixelId, 0);
+  const vec4 resultTransp = readAndNeighborColor(pixelId, 1);
+  const vec4 resultColor = readAndNeighborColor(pixelId, 2);
+  const vec4 resultEmission = readAndNeighborTex(pixelId, EMISSION_TEX);
+  const vec4 resultDiffuse = readAndNeighborTex(pixelId, DIFFUSE_TEX);
 
   //
   PixelSurfaceInfoRef surface = getPixelSurface(pixelId);
-  //if (surface.origin.x != 0.f || surface.origin.y != 0.f || surface.origin.z != 0.f) {
-    //reproject3D(pixelId, type);
-  //};
+
+  //
+  const vec3 srcNormal = surface.normal.xyz;
+  const vec3 dstNormal = normalize(srcNormal.xyz 
+      * toNormalMat(getInstanceTransform(instancedData, surface.indices.x, 1)) 
+      * toNormalMat(inverse(getInstanceTransform(instancedData, surface.indices.x, 0))));
+
+  // 
+  vec4 finalColor = vec4(clampCol(
+    clampCol(resultTransp) * (1.f - resultDiffuse.a) + 
+    clampCol(resultColor) * resultDiffuse.a + 
+    //clampCol(trueMultColor(clampCol(resultColor), clampCol(resultDiffuse))) * resultDiffuse.a + 
+    clampCol(resultEmission) + 
+    clampCol(resultRefl)
+  ).xyz, 1.f);
+
+  //
+  //finalColor = vec4(dstNormal*0.5f+0.5f, 1.f);
+
+  //
+  imageStore(imagesRgba32F[pingpong.images[0][4]], ivec2(gcoord), finalColor);
 };

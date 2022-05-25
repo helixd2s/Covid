@@ -21,16 +21,16 @@ void main() {
 #endif
   {
 #ifdef ENABLE_CHECKERBOARD
-    const bool firstPart = gcoord_.y < (extent.y/2);
-    const uvec2 gcoord = firstPart ? uvec2(gcoord_.x, gcoord_.y * 2 + ((gcoord_.x&1)^(frameCounter&1))) : uvec2(gcoord_.x, (gcoord_.y - (extent.y/2)) * 2u + ((gcoord_.x&1u)^(1u-(frameCounter&1u))));
+    const bool firstPart = gcoord_.y < (UR(scaled).y/2);
+    const uvec2 gcoord = firstPart ? uvec2(gcoord_.x, gcoord_.y * 2 + ((gcoord_.x&1)^(frameCounter&1))) : uvec2(gcoord_.x, (gcoord_.y - (UR(scaled).y/2)) * 2u + ((gcoord_.x&1u)^(1u-(frameCounter&1u))));
 #else
     const bool firstPart = true;
     const uvec2 gcoord = gl_GlobalInvocationID.xy;
 #endif
 
     // 
-    const vec2 tCoord = (vec2(gcoord)+0.5f)/vec2(extent);
-    const uint pixelId = gcoord.x + extent.x * gcoord.y;
+    const vec2 tCoord = (vec2(gcoord)+0.5f)/vec2(UR(scaled));
+    const uint pixelId = gcoord.x + UR(scaled).x * gcoord.y;
 
     //
     vec4 ssEye = vec4(vec3(tCoord, 0.f) * 2.f - 1.f, 1.f);

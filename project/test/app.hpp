@@ -34,7 +34,9 @@ struct Constants
 //
 struct UniformData {
   uint32_t framebufferAttachments[2][2][8] = {{0u}};
-  glm::uvec2 extent = {}; uint32_t frameCounter, reserved;
+  //glm::uvec2 extent = {}; 
+  glm::u16vec2 extent, scaled, rasterES;
+  uint32_t frameCounter;
   Constants constants = {};
   uint64_t pixelData = 0ull;
   uint64_t writeData = 0ull;
@@ -158,7 +160,6 @@ public:
     uniformData.constants.perspectiveInverse = glm::transpose(glm::inverse(persp));
     uniformData.constants.lookAt[1] = cpp21::exchange(uniformData.constants.lookAt[0], glm::mat3x4(glm::transpose(lkat)));
     uniformData.constants.lookAtInverse[1] = cpp21::exchange(uniformData.constants.lookAtInverse[0], glm::mat3x4(glm::transpose(glm::inverse(lkat))));
-    uniformData.extent = glm::uvec2(renderArea.extent.width, renderArea.extent.height);
     uniformData.frameCounter = 0u;
 
     // 
@@ -326,7 +327,7 @@ public:
     decltype(auto) resortFence = resortObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
       // # yet another std::optional problem (implicit)
       .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
-        .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 32u), cpp21::tiled(renderArea.extent.height, 8u), 1u},
+        .dispatch = vk::Extent3D{cpp21::tiled(uniformData.rasterES.x, 32u), cpp21::tiled(uniformData.rasterES.y, 8u), 1u},
         .layout = descriptorsObj.as<vk::PipelineLayout>(),
         .swapchain = swapchainObj.as<uintptr_t>(),
         .pingpong = pingPongObj.as<uintptr_t>(),
@@ -390,7 +391,7 @@ public:
     decltype(auto) postFence = postObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
       // # yet another std::optional problem (implicit)
       .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
-        .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 32u), cpp21::tiled(renderArea.extent.height, 4u), 1u},
+        .dispatch = vk::Extent3D{cpp21::tiled(uniformData.extent.x, 32u), cpp21::tiled(uniformData.extent.y, 4u), 1u},
         .layout = descriptorsObj.as<vk::PipelineLayout>(),
         .swapchain = swapchainObj.as<uintptr_t>(),
         .pingpong = pingPongObj.as<uintptr_t>(),
@@ -435,7 +436,17 @@ public:
     });
 
     //
+    float xscale = 1.f, yscale = 1.f;
+    glfwGetWindowContentScale(window, &xscale, &yscale);
+
+    //
     renderArea = swapchainObj->getRenderArea();
+    uniformData.extent = glm::uvec2(renderArea.extent.width, renderArea.extent.height);
+
+    //
+    renderArea.extent.width *= 2.f / xscale;
+    renderArea.extent.height *= 2.f / yscale;
+    uniformData.scaled = glm::uvec2(renderArea.extent.width, renderArea.extent.height);
 
     // 
     surfaceDataObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
@@ -481,18 +492,24 @@ public:
     uniformData.rasterData[1] = uniformData.rasterData[0] + sizeof(RasterInfo) * renderArea.extent.width * renderArea.extent.height * 16u;
 
     //
+    uint32_t testDivision = 1u;
+
+    //
     framebufferObj[0] = ANAMED::FramebufferObj::make(deviceObj.with(0u), ANAMED::FramebufferCreateInfo{
       .layout = descriptorsObj.as<vk::PipelineLayout>(),
-      .extent = renderArea.extent,
+      .extent = vk::Extent2D{uniformData.extent.x / testDivision, uniformData.extent.y / testDivision},
       .info = qfAndQueue
     });
 
     //
     framebufferObj[1] = ANAMED::FramebufferObj::make(deviceObj.with(0u), ANAMED::FramebufferCreateInfo{
       .layout = descriptorsObj.as<vk::PipelineLayout>(),
-      .extent = renderArea.extent,
+      .extent = vk::Extent2D{uniformData.extent.x / testDivision, uniformData.extent.y / testDivision},
       .info = qfAndQueue
     });
+
+    //
+    uniformData.rasterES = glm::u16vec2(glm::uvec2(uniformData.extent) / testDivision);
 
     //
     pingPongObj = ANAMED::PingPongObj::make(deviceObj.with(0u), ANAMED::PingPongCreateInfo{
@@ -502,8 +519,8 @@ public:
 
       // first image is accumulation, second image is back buffer, third image is index buffer, fourth image is position buffer
       // 5th for reflection buffer, 6th for reflection back buffer, 7th for transparency, 8th for transparency back
-      .split = std::vector<uint32_t>{ 4, 4, 4, 4, 4},
-      .formats = std::vector<vk::Format>{ vk::Format::eR32Uint, vk::Format::eR32Uint, vk::Format::eR32Uint, vk::Format::eR32Uint, vk::Format::eR32Uint },
+      .split = std::vector<uint32_t>{ 4, 4, 4, 4, 1, 1 },
+      .formats = std::vector<vk::Format>{ vk::Format::eR32Uint, vk::Format::eR32Uint, vk::Format::eR32Uint, vk::Format::eR32Uint, vk::Format::eR32G32B32A32Sfloat, vk::Format::eR32G32B32A32Sfloat },
       .info = qfAndQueue
     });
   };
