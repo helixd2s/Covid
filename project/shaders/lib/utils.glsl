@@ -102,6 +102,11 @@ vec4 divW(in vec4 coord) {
 };
 
 //
+float sum(in vec2 f) {
+  return f.x+f.y;
+};
+
+//
 void genTB(in vec3 N, out vec3 T, out vec3 B) {
   const float s = N.z < 0.0 ? -1.0 : 1.0;
   const float a = -1.0 / (s + N.z);
@@ -159,5 +164,26 @@ vec3 find_reflection_incident_point(in vec3 m0, in vec3 t0, in vec3 p0, in vec3 
   if(d1 < d0) { return (proj_p0 - proj_p1) * d1/(d0+d1) + proj_p1; }
          else { return (proj_p1 - proj_p0) * d0/(d0+d1) + proj_p0; };
 };*/
+
+
+float qdMin(in vec2 qd) {
+  return min(min(
+    dot(qd, vec2(-0.5f, -0.5f)),
+    dot(qd, vec2( 0.5f, -0.5f))
+  ), min(
+    dot(qd, vec2( -0.5f, 0.5f)),
+    dot(qd, vec2(  0.5f, 0.5f))
+  ));
+};
+
+float qdMax(in vec2 qd) {
+  return max(max(
+    dot(qd, vec2(-0.5f, -0.5f)),
+    dot(qd, vec2( 0.5f, -0.5f))
+  ), max(
+    dot(qd, vec2( -0.5f, 0.5f)),
+    dot(qd, vec2(  0.5f, 0.5f))
+  ));
+};
 
 #endif

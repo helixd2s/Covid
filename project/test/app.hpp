@@ -71,6 +71,7 @@ struct PixelSurfaceInfo {
 struct RasterInfo {
   glm::uvec4 indices = glm::uvec4(0u); // indlude .W are pNext
   glm::vec4 barycentric = glm::vec4(0.f);
+  glm::uvec4 derivatives = glm::uvec4(0.f); // f16[dUx, dUy], f16[dVx, dVy], f16[dWx, dWy], f16[dDx, dDy]
 };
 
 // 

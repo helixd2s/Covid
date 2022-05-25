@@ -13,13 +13,6 @@ layout(location = 2) flat in uvec4 pIndices;
 layout(location = 3) in vec4 pScreen;
 layout(location = 4) in vec4 pTexcoord;
 
-// needed for linear interpolation...
-layout(location = 0) out uvec4 indices;
-layout(location = 1) out vec4 baryData;
-layout(location = 2) out vec4 position;
-layout(location = 3) out vec4 texcoord;
-layout(location = 4) out vec4 tcolor;
-
 // CONFLICT WITH CONVERVATIVE RASTERIZATION :(
 //#ifndef TRANSLUCENT
 //layout (early_fragment_tests) in;
@@ -35,6 +28,22 @@ void main() {
 #else
   0u;
 #endif
+
+  //
+  const float depth = pScreen.z/pScreen.w;
+  const uvec4 derrivative = uvec4(
+    packHalf2x16(vec2(dFdx(pBary.x), dFdy(pBary.x))),
+    packHalf2x16(vec2(dFdx(pBary.y), dFdy(pBary.y))),
+    packHalf2x16(vec2(dFdx(pBary.z), dFdy(pBary.z))),
+    packHalf2x16(vec2(dFdx(depth), dFdy(depth)))
+  );
+
+  // minimal depth shifting
+  const vec2 dD = vec2(dFdx(gl_FragCoord.z), dFdy(gl_FragCoord.z));
+
+  // near
+  const float mnD = qdMin(dD);
+  const float mxD = qdMax(dD);
 
   // 
   InstanceInfo instanceInfo = getInstance(instancedData, translucent, pIndices.x);
@@ -52,7 +61,7 @@ void main() {
 #endif
 
   // alpha and depth depth test fail
-  const float dp = texelFetch(textures[framebufferAttachments[0][translucent][5]], ivec2(gl_FragCoord.xy), 0).r;
+  const float dp = texelFetch(textures[framebufferAttachments[0][translucent][5]], ivec2(gl_FragCoord.xy), 0).r + mxD;
   if (
 #ifdef TRANSLUCENT
     materialPix.color[MATERIAL_ALBEDO].a < 0.01f || 
@@ -66,25 +75,12 @@ void main() {
     const uint rasterId = atomicAdd(counters[RASTER_COUNTER], 1);//subgroupAtomicAdd(RASTER_COUNTER);
     if (rasterId < extent.x * extent.y * 16) {
       const uint oldId = imageAtomicExchange(imagesR32UI[pingpong.images[0][/*translucent*/0]], ivec2(gl_FragCoord.xy), rasterId+1);
+
       RasterInfoRef rasterInfo = getRasterInfo(rasterId, 0);
       rasterInfo.indices = uvec4(pIndices.xyz, oldId);
-      rasterInfo.barycentric = vec4(pBary, gl_FragCoord.z);
+      rasterInfo.barycentric = vec4(pBary, depth);
+      rasterInfo.derivatives = derrivative;
     };
-
-    /*
-    //
-    indices = pIndices;
-    baryData = vec4(pBary, 1.f);
-
-    //
-    position = vec4(pScreen.xyz/pScreen.w, 1.f);
-    texcoord = vec4(pTexcoord.xyz,1.f);
-#ifdef TRANSLUCENT
-    tcolor = materialPix.color[MATERIAL_ALBEDO] * vec4(materialPix.color[MATERIAL_ALBEDO].aaa, 1.f);
-#else
-    tcolor = vec4(0.f.xxx, 1.f);
-#endif
-    gl_FragDepth = gl_FragCoord.z;*/
   };
 
 };

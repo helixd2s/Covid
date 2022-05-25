@@ -63,6 +63,7 @@ layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer Pix
 layout(buffer_reference, scalar, buffer_reference_align = 1) buffer RasterInfoRef {
   uvec4 indices;
   vec4 barycentric;
+  uvec4 derivatives; // f16[dUx, dUy], f16[dVx, dVy], f16[dWx, dWy], f32[dDx, dDy]
 };
 
 // but may not to be...

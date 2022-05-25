@@ -52,7 +52,10 @@ IntersectionInfo rasterizeVector(in InstanceAddressBlock addressInfo, in RayData
 
   //
   vec4 ss = (viewOrigin * constants.perspective);
-  ivec2 sc = ivec2((divW(ss).xy * 0.5f + 0.5f) * extent.xy);
+  vec2 ssc = (divW(ss).xy * 0.5f + 0.5f) * extent.xy;
+  vec2 ssh = floor(ssc.xy) + 0.5f;
+  vec2 ssf = ssc - ssh;
+  ivec2 sc = ivec2(ssc);
 
   // TODO: separate translucency support
   uint indice = imageLoad(imagesR32UI[pingpong.images[previous?1:0][0]], sc).x;
@@ -65,21 +68,14 @@ IntersectionInfo rasterizeVector(in InstanceAddressBlock addressInfo, in RayData
   for (uint d=0;d<32;d++) {
     if (indice <= 0u) break;
 
-    //
+    // compute derrivative
     RasterInfoRef rasterInfo = getRasterInfo(indice-1, previous?1:0);
-    InstanceInfo instanceInfo = getInstance(addressInfo, rasterInfo.indices.x);
-    GeometryInfo geometryInfo = getGeometry(instanceInfo, rasterInfo.indices.y);
-    mat3x4 vertices = readTriangleVertices3One(geometryInfo.vertices, readTriangleIndices(geometryInfo.indices, rasterInfo.indices.z));
-
-    //
-    [[unroll]] for (uint i=0;i<3;i++) { 
-      vertices[i] = vec4(fullTransform(instanceInfo, vec4(vertices[i].xyz, 1.f), rasterInfo.indices.y, previous?1:0).xyz, 1.f);
-      vertices[i] = vec4(vertices[i] * lkAt, 1.f) * constants.perspective;
-    };
-
-    //
-    vec3 bary = computeBary(ss, vertices);
-    vec4 pos = divW(vertices * bary);
+    const vec3 bary = vec3(
+      rasterInfo.barycentric.x + dot(unpackHalf2x16(rasterInfo.derivatives.x),ssf), 
+      rasterInfo.barycentric.y + dot(unpackHalf2x16(rasterInfo.derivatives.y),ssf), 
+      rasterInfo.barycentric.z + dot(unpackHalf2x16(rasterInfo.derivatives.z),ssf)
+    );
+    const vec4 pos = vec4(divW(ss).xy, rasterInfo.barycentric.w + dot(unpackHalf2x16(rasterInfo.derivatives.w),ssf), 1.f);
 
     //
     if (
@@ -112,7 +108,10 @@ IntersectionInfo rasterizeVector(in InstanceAddressBlock addressInfo, in RayData
 IntersectionInfo rasterize_(in InstanceAddressBlock addressInfo, inout IntersectionInfo intersection, in RayData rayData, in float maxT, inout vec4 lastPos, in bool previous, in uint isTrasnlucent) {
   //
   const uvec4 indices = texelFetch(texturesU[framebufferAttachments[uint(previous)][isTrasnlucent][0]], ivec2(rayData.launchId), 0);
-  const vec3 bary = texelFetch(textures[framebufferAttachments[uint(previous)][isTrasnlucent][1]], ivec2(rayData.launchId), 0).xyz;
+  const uvec4 dr      = texelFetch(texturesU[framebufferAttachments[uint(previous)][isTrasnlucent][1]], ivec2(rayData.launchId), 0);
+  const vec3 br =       texelFetch(textures [framebufferAttachments[uint(previous)][isTrasnlucent][2]], ivec2(rayData.launchId), 0).xyz;
+  const vec4 sp =  vec4(texelFetch(textures [framebufferAttachments[uint(previous)][isTrasnlucent][3]], ivec2(rayData.launchId), 0).xyz, 1.f);
+  const vec4 cp =       texelFetch(textures [framebufferAttachments[uint(previous)][isTrasnlucent][4]], ivec2(rayData.launchId), 0);
 
   //
   vec4 viewOrigin = vec4(vec4(rayData.origin.xyz, 1.f) * constants.lookAt[previous?1:0], 1.f);
@@ -122,13 +121,21 @@ IntersectionInfo rasterize_(in InstanceAddressBlock addressInfo, inout Intersect
 
   //
   vec4 ss = (viewOrigin * constants.perspective);
-  vec2 sc = (divW(ss).xy * 0.5f + 0.5f);
-  //vec4 sp = vec4(texture(sampler2D(textures[framebufferAttachments[uint(previous)][isTrasnlucent][2]], samplers[0]), sc).xyz, 1.f);
-  vec4 sp = vec4(texelFetch(textures[framebufferAttachments[uint(previous)][isTrasnlucent][2]], ivec2(rayData.launchId), 0).xyz, 1.f);
-  vec4 cp = vec4(texelFetch(textures[framebufferAttachments[uint(previous)][isTrasnlucent][4]], ivec2(rayData.launchId), 0).xyz, 1.f);
+  vec2 ssc = (divW(ss).xy * 0.5f + 0.5f) * extent.xy;
+  vec2 ssh = floor(ssc.xy) + 0.5f;
+  vec2 ssf = ssc - ssh;
+  ivec2 sc = ivec2(ssc);
+
+  // compute derrivative
+  const vec3 bary = vec3(
+    br.x + dot(unpackHalf2x16(dr.x),ssf), 
+    br.y + dot(unpackHalf2x16(dr.y),ssf), 
+    br.z + dot(unpackHalf2x16(dr.z),ssf)
+  );
+  const vec4 pos = vec4(divW(ss).xy, sp.z + dot(unpackHalf2x16(dr.w),ssf), 1.f);
 
   //
-  if ((divW(lastPos).z <= (divW(sp).z + 0.004f) || cp.a >= 1.f) && sp.z < 1.f) {
+  if ((divW(lastPos).z <= (divW(pos).z + 0.004f) || cp.a >= 1.f) && pos.z < 1.f) {
     intersection.barycentric = bary.xyz;
     intersection.instanceId = indices[0];
     intersection.geometryId = indices[1];

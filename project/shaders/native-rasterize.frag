@@ -15,9 +15,9 @@ layout(location = 4) in vec4 pTexcoord;
 
 // needed for linear interpolation...
 layout(location = 0) out uvec4 indices;
-layout(location = 1) out vec4 baryData;
-layout(location = 2) out vec4 position;
-layout(location = 3) out vec4 texcoord;
+layout(location = 1) out uvec4 derivatives;
+layout(location = 2) out vec4 baryData;
+layout(location = 3) out vec4 position;
 layout(location = 4) out vec4 tcolor;
 
 // CONFLICT WITH CONVERVATIVE RASTERIZATION :(
@@ -70,11 +70,14 @@ void main() {
   {
     //
     indices = pIndices;
-    baryData = vec4(pBary, gl_FragCoord.z);
-
-    //
+    baryData = vec4(pBary, pScreen.z/pScreen.w);
     position = vec4(pScreen.xyz/pScreen.w, 1.f);
-    texcoord = vec4(pTexcoord.xyz,1.f);
+    derivatives = uvec4(
+      packHalf2x16(vec2(dFdx(pBary.x), dFdy(pBary.x))),
+      packHalf2x16(vec2(dFdx(pBary.y), dFdy(pBary.y))),
+      packHalf2x16(vec2(dFdx(pBary.z), dFdy(pBary.z))),
+      packHalf2x16(vec2(dFdx(pScreen.z/pScreen.w), dFdy(pScreen.z/pScreen.w)))
+    );
 #ifdef TRANSLUCENT
     tcolor = materialPix.color[MATERIAL_ALBEDO] * vec4(materialPix.color[MATERIAL_ALBEDO].aaa, 1.f);
 #else
