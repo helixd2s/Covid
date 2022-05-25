@@ -4,6 +4,7 @@ glslangValidator --target-env spirv1.6 -t --client vulkan100 resample.comp -o ..
 glslangValidator --target-env spirv1.6 -t --client vulkan100 reserve.comp -o ../prebuild/shaders/reserve.comp.spv
 glslangValidator --target-env spirv1.6 -t --client vulkan100 control.comp -o ../prebuild/shaders/control.comp.spv
 glslangValidator --target-env spirv1.6 -t --client vulkan100 resort.comp -o ../prebuild/shaders/resort.comp.spv
+glslangValidator --target-env spirv1.6 -t --client vulkan100 recopy.comp -o ../prebuild/shaders/recopy.comp.spv
 
 glslangValidator --target-env spirv1.6 -t --client vulkan100 native-rasterize.frag -o ../prebuild/shaders/native-opaque.frag.spv
 glslangValidator --target-env spirv1.6 -t --client vulkan100 native-rasterize.geom -o ../prebuild/shaders/native-opaque.geom.spv
@@ -29,6 +30,7 @@ spirv-opt --skip-validation -O -Os ../prebuild/shaders/resample.comp.spv -o ../p
 spirv-opt --skip-validation -O -Os ../prebuild/shaders/reserve.comp.spv -o ../prebuild/shaders/reserve.comp.spv
 spirv-opt --skip-validation -O -Os ../prebuild/shaders/control.comp.spv -o ../prebuild/shaders/control.comp.spv
 spirv-opt --skip-validation -O -Os ../prebuild/shaders/resort.comp.spv -o ../prebuild/shaders/resort.comp.spv
+spirv-opt --skip-validation -O -Os ../prebuild/shaders/recopy.comp.spv -o ../prebuild/shaders/recopy.comp.spv
 
 spirv-opt --skip-validation -O -Os ../prebuild/shaders/native-opaque.frag.spv -o ../prebuild/shaders/native-opaque.frag.spv
 spirv-opt --skip-validation -O -Os ../prebuild/shaders/native-opaque.geom.spv -o ../prebuild/shaders/native-opaque.geom.spv

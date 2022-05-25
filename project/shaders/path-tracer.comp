@@ -14,19 +14,26 @@
 //
 layout (local_size_x = 32, local_size_y = 4, local_size_z = 1) in;
 
+//
+const uvec2 shift_map[4] = { uvec2(0,0),uvec2(1,0),uvec2(0,1),uvec2(1,1) };
+const uint type_map[4] = { 2, 0, 1, 2 };
+
 // 
 void main() {
-#ifdef ENABLE_CHECKERBOARD
   const uvec2 gcoord_ = gl_GlobalInvocationID.xy;
-#endif
+
   {
-#ifdef ENABLE_CHECKERBOARD
-    const bool firstPart = gcoord_.y < (UR(scaled).y/2);
-    const uvec2 gcoord = firstPart ? uvec2(gcoord_.x, gcoord_.y * 2 + ((gcoord_.x&1)^(frameCounter&1))) : uvec2(gcoord_.x, (gcoord_.y - (UR(scaled).y/2)) * 2u + ((gcoord_.x&1u)^(1u-(frameCounter&1u))));
-#else
-    const bool firstPart = true;
-    const uvec2 gcoord = gl_GlobalInvocationID.xy;
-#endif
+    //const bool firstPart = gcoord_.y < (UR(scaled).y/2);
+    //const uvec2 gcoord = firstPart ? uvec2(gcoord_.x, gcoord_.y * 2 + ((gcoord_.x&1)^(frameCounter&1))) : uvec2(gcoord_.x, (gcoord_.y - (UR(scaled).y/2)) * 2u + ((gcoord_.x&1u)^(1u-(frameCounter&1u))));
+
+    //
+    uvec2 part = (gcoord_ / (UR(scaled)/2));
+    uvec2 jit = (gcoord_ % (UR(scaled)/2)) * 2;
+    uint tmap = (part.x+part.y+frameCounter)%4;
+    uvec2 gcoord = jit + shift_map[tmap];
+
+    //
+    uint type = type_map[tmap];
 
     // 
     const vec2 tCoord = (vec2(gcoord)+0.5f)/vec2(UR(scaled));
@@ -99,22 +106,18 @@ void main() {
     //
     retranslateSurface(cmd);
 
-    // 
-    if (hasHit) {
-      pathTraceCommand(cmd, firstPart && (cmd.diffuseColor.a >= 0.001f && luminance(cmd.diffuseColor.xyz) > 0.f) ? 2 : 0);
-      if (cmd.diffuseColor.a < 1.f) { pathTraceCommand(cmd, 1); } else { blankHit(cmd, 1); };
-    } else {
-      backgroundHit(pixelId, 0, cmd.rayData.origin, cmd.diffuseColor);
-      backgroundHit(pixelId, 1, cmd.rayData.origin, cmd.diffuseColor);
-      backgroundHit(pixelId, 2, cmd.rayData.origin, cmd.diffuseColor);
-    };
+    //
+    bool validTracing = true;
+    if (type == 2) { validTracing = validTracing && cmd.diffuseColor.a >= 0.001f && luminance(cmd.diffuseColor.xyz) > 0.f; };
+    if (type == 1 && cmd.diffuseColor.a >= 1.f) { type = 0; }; // replace by reflection
 
     //
-    prepareHit(pixelId, 0);
-    prepareHit(pixelId, 1);
-    prepareHit(pixelId, 2);
-
-    //PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
-    //[[unroll]] for (uint i=0;i<3;i++) { surfaceInfo.accum[i] = TYPE(0u); };
+    if (hasHit) {
+      if (validTracing) { pathTraceCommand(cmd, (type+0)%3); } else { blankHit(cmd, (type+0)%3); };
+    } else {
+      backgroundHit(pixelId, (type+0)%3, cmd.rayData.origin, cmd.diffuseColor);
+      backgroundHit(pixelId, (type+1)%3, cmd.rayData.origin, cmd.diffuseColor);
+      backgroundHit(pixelId, (type+2)%3, cmd.rayData.origin, cmd.diffuseColor);
+    };
   };
 };

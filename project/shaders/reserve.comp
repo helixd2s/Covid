@@ -1,5 +1,8 @@
 #version 460 core
 
+//
+// TODO! Planned to replace by FSR 2.0 or DLSS!!!
+
 // 
 #extension GL_GOOGLE_include_directive : require
 
@@ -55,15 +58,6 @@ void main() {
   const vec4 resultEmission = readAndNeighborTex(pixelId, EMISSION_TEX);
   const vec4 resultDiffuse = readAndNeighborTex(pixelId, DIFFUSE_TEX);
 
-  //
-  PixelSurfaceInfoRef surface = getPixelSurface(pixelId);
-
-  //
-  const vec3 srcNormal = surface.normal.xyz;
-  const vec3 dstNormal = normalize(srcNormal.xyz 
-      * toNormalMat(getInstanceTransform(instancedData, surface.indices.x, 1)) 
-      * toNormalMat(inverse(getInstanceTransform(instancedData, surface.indices.x, 0))));
-
   // 
   vec4 finalColor = vec4(clampCol(
     clampCol(resultTransp) * (1.f - resultDiffuse.a) + 
@@ -72,9 +66,6 @@ void main() {
     clampCol(resultEmission) + 
     clampCol(resultRefl)
   ).xyz, 1.f);
-
-  //
-  //finalColor = vec4(dstNormal*0.5f+0.5f, 1.f);
 
   //
   imageStore(imagesRgba32F[pingpong.images[0][4]], ivec2(gcoord), finalColor);

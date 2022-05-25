@@ -32,11 +32,11 @@ struct Constants
 };
 
 //
+#pragma pack(push, 1)
 struct UniformData {
   uint32_t framebufferAttachments[2][2][8] = {{0u}};
   //glm::uvec2 extent = {}; 
-  glm::u16vec2 extent, scaled, rasterES;
-  uint32_t frameCounter;
+  glm::u16vec2 extent, scaled, rasterES; uint32_t frameCounter;
   Constants constants = {};
   uint64_t pixelData = 0ull;
   uint64_t writeData = 0ull;
@@ -45,6 +45,7 @@ struct UniformData {
   uint32_t backgroundObj = 0u;
   uint32_t blueNoiseObj = 0u;
 };
+#pragma pack(pop)
 
 //
 struct CounterData {
@@ -89,6 +90,7 @@ protected:
   ANAMED::WrapShared<ANAMED::PipelineObj> resampleObj = {};
   ANAMED::WrapShared<ANAMED::PipelineObj> pathTracerObj = {};
   ANAMED::WrapShared<ANAMED::PipelineObj> resortObj = {};
+  ANAMED::WrapShared<ANAMED::PipelineObj> recopyObj = {};
 
   ANAMED::WrapShared<ANAMED::PipelineObj> preOpaqueObj = {};
   ANAMED::WrapShared<ANAMED::PipelineObj> preTranslucentObj = {};
@@ -160,7 +162,6 @@ public:
     uniformData.constants.perspectiveInverse = glm::transpose(glm::inverse(persp));
     uniformData.constants.lookAt[1] = cpp21::exchange(uniformData.constants.lookAt[0], glm::mat3x4(glm::transpose(lkat)));
     uniformData.constants.lookAtInverse[1] = cpp21::exchange(uniformData.constants.lookAtInverse[0], glm::mat3x4(glm::transpose(glm::inverse(lkat))));
-    uniformData.frameCounter = 0u;
 
     // 
     for (uint32_t i = 0; i < 2; i++) {
@@ -372,7 +373,7 @@ public:
     });
 
     //
-    decltype(auto) reserveFence = reserveObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
+    decltype(auto) recopyFence = recopyObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
       // # yet another std::optional problem (implicit)
       .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
         .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 32u), cpp21::tiled(renderArea.extent.height, 4u), 1u},
@@ -386,6 +387,22 @@ public:
         .info = qfAndQueue
       }
       });
+
+    //
+    decltype(auto) reserveFence = reserveObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
+      // # yet another std::optional problem (implicit)
+      .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
+        .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 32u), cpp21::tiled(renderArea.extent.height, 4u), 1u},
+        .layout = descriptorsObj.as<vk::PipelineLayout>(),
+        .swapchain = swapchainObj.as<uintptr_t>(),
+        .pingpong = pingPongObj.as<uintptr_t>(),
+        // # yet another std::optional problem (implicit)
+        .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
+      }),
+      .submission = ANAMED::SubmissionInfo{
+        .info = qfAndQueue
+      }
+    });
 
     //
     decltype(auto) postFence = postObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
@@ -510,6 +527,7 @@ public:
 
     //
     uniformData.rasterES = glm::u16vec2(glm::uvec2(uniformData.extent) / testDivision);
+    uniformData.frameCounter = 0u;
 
     //
     pingPongObj = ANAMED::PingPongObj::make(deviceObj.with(0u), ANAMED::PingPongCreateInfo{
@@ -597,6 +615,14 @@ protected:
       .layout = descriptorsObj.as<vk::PipelineLayout>(),
       .compute = ANAMED::ComputePipelineCreateInfo{
         .code = cpp21::readBinaryU32("./shaders/resort.comp.spv")
+      }
+      });
+
+    //
+    recopyObj = ANAMED::PipelineObj::make(deviceObj.with(0u), ANAMED::PipelineCreateInfo{
+      .layout = descriptorsObj.as<vk::PipelineLayout>(),
+      .compute = ANAMED::ComputePipelineCreateInfo{
+        .code = cpp21::readBinaryU32("./shaders/recopy.comp.spv")
       }
       });
 
