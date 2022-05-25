@@ -381,6 +381,10 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
   outp.indices.w = type;
 
   //
+  vec3 rayDirection = cmd.rayData.direction.xyz;
+  vec3 rayOrigin = cmd.rayData.origin.xyz;
+
+  //
   if (type == 0) {
     rayData.direction.xyz = normalize(reflective(originSeedXYZ, rayData.direction.xyz, cmd.normals.xyz, cmd.PBR.g));;
     rayData.energy = f16vec4(1.f.xxx, 1.f);//f16vec4(metallicMult(1.f.xxx, cmd.diffuseColor.xyz, cmd.PBR.b), 1.f);
@@ -400,9 +404,7 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
   };
 
 
-  //
-  vec3 rayDirection = cmd.rayData.direction.xyz;
-  vec3 rayOrigin = cmd.rayData.origin.xyz;
+  
 
   //
   //reuseLight(rayData); // already reprojected!
@@ -481,25 +483,17 @@ void blankHit(inout PathTraceCommand cmd, in uint type) {
 };
 
 // 
-void retranslateHit(in uint pixelId, in uint type, in vec3 origin) {
+void prepareHit(in uint pixelId, in uint type) {
   PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
-  //surfaceInfo.color[type] = vec4(0.f);
-  //surfaceInfo.color[type] = cvtRgb16Float(surfaceInfo.accum[type]);
+  //if (surfaceInfo.color[type].w > 0.f) {
+    // 
+    vec4 unlimited = cvtRgb16Acc(surfaceInfo.color[type]);
+    vec4 average = unlimited/max(unlimited.w, 1.f);
+    vec4 limited = average * min(max(unlimited.w, 1.f), 16.f);
 
-  //
-  PixelHitInfoRef newHitInfo = getNewHit(pixelId, type);
-  PixelHitInfoRef hitInfo = getRpjHit(pixelId, type);
-  
-  //newHitInfo.indices = hitInfo.indices;
-  //newHitInfo.origin = hitInfo.origin;
-};
-
-// 
-void retranslateBackHit(in uint pixelId, in uint type) {
-  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
-  if (surfaceInfo.color[type].w > 0.f) {
-    surfaceInfo.accum[type] = surfaceInfo.color[type];
-    surfaceInfo.color[type] = cvtRgb16Float(vec4(0.f));
+    //
+    surfaceInfo.accum[type] = cvtRgb16Float(limited);
+    surfaceInfo.color[type] = TYPE(0u);
 
     //
     PixelHitInfoRef hitInfo = getNewHit(pixelId, type);
@@ -507,19 +501,7 @@ void retranslateBackHit(in uint pixelId, in uint type) {
     newHitInfo.indices = hitInfo.indices; hitInfo.indices = uvec4(0u);
     newHitInfo.origin = hitInfo.origin; hitInfo.origin = vec4(0.f);
     newHitInfo.direct = hitInfo.direct; hitInfo.direct = vec4(0.f);
-  };
-};
-
-// 
-void reprojHit(in uint pixelId, in uint type) {
-  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
-  PixelHitInfoRef newHitInfo = getRpjHit(pixelId, type);
-  PixelHitInfoRef hitInfo = getNewHit(pixelId, type);
-  if (surfaceInfo.color[type].w > 0.f) {
-    newHitInfo.indices = hitInfo.indices;
-    newHitInfo.origin = hitInfo.origin;
-    newHitInfo.direct = hitInfo.direct;
-  };
+  //};
 };
 
 // 

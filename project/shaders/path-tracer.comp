@@ -98,9 +98,6 @@ void main() {
 
     //
     retranslateSurface(cmd);
-    retranslateHit(pixelId, 0, cmd.rayData.origin);
-    retranslateHit(pixelId, 1, cmd.rayData.origin);
-    retranslateHit(pixelId, 2, cmd.rayData.origin);
 
     // 
     if (hasHit) {
@@ -113,9 +110,9 @@ void main() {
     };
 
     //
-    reprojHit(pixelId, 0);
-    reprojHit(pixelId, 1);
-    reprojHit(pixelId, 2);
+    prepareHit(pixelId, 0);
+    prepareHit(pixelId, 1);
+    prepareHit(pixelId, 2);
 
     //PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
     //[[unroll]] for (uint i=0;i<3;i++) { surfaceInfo.accum[i] = TYPE(0u); };

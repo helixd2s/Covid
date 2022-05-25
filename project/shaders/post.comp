@@ -16,13 +16,13 @@ layout (local_size_x = 32, local_size_y = 4, local_size_z = 1) in;
 //
 vec4 readAndNeighborColor(in uint pixelId, in uint type) {
   PixelSurfaceInfoRef hitInfo = getPixelSurface(pixelId);
-  TYPE center = hitInfo.color[type];
+  TYPE center = hitInfo.accum[type];
   if (center.w <= 0.f) {
     center = TYPE(0.f);
-    if ((pixelId + extent.x) < (extent.y * extent.x)) { PixelSurfaceInfoRef info = getPixelSurface(pixelId + extent.x); if (info.color[type].w > 0) { center += info.color[type]; }; };
-    if ((pixelId.x%extent.x) < extent.x-1)            { PixelSurfaceInfoRef info = getPixelSurface(pixelId + 1); if (info.color[type].w > 0) { center += info.color[type]; }; };
-    if (pixelId >= extent.x)                          { PixelSurfaceInfoRef info = getPixelSurface(pixelId - extent.x); if (info.color[type].w > 0) { center += info.color[type]; }; };
-    if ((pixelId.x%extent.x) >= 1)                    { PixelSurfaceInfoRef info = getPixelSurface(pixelId - 1); if (info.color[type].w > 0) { center += info.color[type]; }; };
+    if ((pixelId + extent.x) < (extent.y * extent.x)) { PixelSurfaceInfoRef info = getPixelSurface(pixelId + extent.x); if (info.accum[type].w > 0) { center += info.accum[type]; }; };
+    if ((pixelId.x%extent.x) < extent.x-1)            { PixelSurfaceInfoRef info = getPixelSurface(pixelId + 1); if (info.accum[type].w > 0) { center += info.accum[type]; }; };
+    if (pixelId >= extent.x)                          { PixelSurfaceInfoRef info = getPixelSurface(pixelId - extent.x); if (info.accum[type].w > 0) { center += info.accum[type]; }; };
+    if ((pixelId.x%extent.x) >= 1)                    { PixelSurfaceInfoRef info = getPixelSurface(pixelId - 1); if (info.accum[type].w > 0) { center += info.accum[type]; }; };
   };
   return cvtRgb16Acc(center);
 };
@@ -81,27 +81,4 @@ void main() {
 
   // final color
   imageStore(images[swapchain.image], ivec2(gcoord.x, extent.y-1-gcoord.y), fromLinear(finalColor));
-
-  //
-  [[unroll]] for (uint t=0;t<3;t++) {
-    //PixelSurfaceInfoRef surface = getPixelSurface(pixelId);
-
-    // 
-    vec4 unlimited = cvtRgb16Acc(surface.color[t]);
-    vec4 average = unlimited/max(unlimited.w, 1.f);
-    vec4 limited = average * min(max(unlimited.w, 1.f), 16.f);
-
-    // 
-    surface.color[t] = cvtRgb16Float(limited);
-    surface.accum[t] = TYPE(0u);
-    PixelHitInfoRef newHitInfo = getNewHit(pixelId, t);
-    PixelHitInfoRef hitInfo = getRpjHit(pixelId, t);
-
-    //
-    hitInfo.indices = uvec4(0u);
-    hitInfo.origin = vec4(0.f.xxxx);
-
-    // re-save for reprojection
-    retranslateBackHit(pixelId, t);
-  };
 };
