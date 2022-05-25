@@ -80,6 +80,18 @@ The most ambitious rendering project, and at the same time a future mod for Mine
   - [ ] 👑️ More interactivity
   - [ ] 👑️ Edit materials
 
+## Capital june update (early alpha)
+
+  - [ ] 🧩 Specular lighting support
+  - [ ] 🧩 Caustics, transmission, refraction support
+  - [ ] 🧩 Different resolution buffers and anti-aliasing support (**important**)
+  - [ ] 🧩 Full update to Vulkan 1.3.215 and higher
+  - [ ] 🧩 Add NRD and FidelityFX denoisers support
+  - [ ] 🧩 Re-learn high math
+  - [ ] 🧩 Probably, order independent transparency
+  - [ ] 🧩 Probably, KTX-2 support
+  - [ ] 🧩 Probably, additional test applications
+
 ## Integrations
 
   - [x] ☄️ Basic GLTF support (single model, PBR)
