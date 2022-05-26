@@ -51,6 +51,33 @@ The most ambitious rendering project, and at the same time a future mod for Mine
   - [ ] 🧩 Distances, MIP and LoD support
   - [ ] 🧩 Short-range SSRT support
 
+## Complex engine technology
+
+  - [x] ♟️ Software rasterization misc (barycentrics, vector-sampling)
+  - [x] ♟️ Dynamic vertex pulling and rendering
+  - [x] ♟️ Basic two-level rendering model
+  - [x] 🚧 Different resolution buffers and anti-aliasing support (**important**)
+  - [ ] 🧩 More temporal technology and techniques (such as TAA, FSR 2.0, DLSS, **important**)
+  - [ ] 🧩 Advanced shadow maps (with simpler RT, **important**)
+  - [ ] 🧩 Full subgroups support (incl. variable)
+  - [ ] 🧩 Full vulkan memory model support
+  - [ ] 👑️ Console support
+  - [ ] 👑️ Graphic interface
+  - [ ] 👑️ More interactivity
+  - [ ] 👑️ Edit materials
+
+## Capital june update (early alpha)
+
+  - [x] 🚧 Different resolution buffers and anti-aliasing support (**important**)
+  - [ ] 🧩 Full update to Vulkan 1.3.215 and higher
+  - [ ] 🧩 Caustics, transmission, refraction support
+  - [ ] 🧩 Specular lighting support (sunlight)
+  - [ ] 🧩 Add NRD and FidelityFX denoisers support
+  - [ ] 🧩 Re-learn high math
+  - [ ] 🧩 Probably, order independent transparency
+  - [ ] 🧩 Probably, KTX-2 support
+  - [ ] 🧩 Probably, additional test applications
+
 ## Reprojection problems
 
   ### Reflection (type 0)
@@ -64,33 +91,6 @@ The most ambitious rendering project, and at the same time a future mod for Mine
   ### Diffuse (type 2)
 
   Smelting effect when camera move, don't know why.
-
-## Complex engine technology
-
-  - [x] ♟️ Software rasterization misc (barycentrics, vector-sampling)
-  - [x] ♟️ Dynamic vertex pulling and rendering
-  - [x] ♟️ Basic two-level rendering model
-  - [ ] 🧩 Different resolution buffers and anti-aliasing support (**important**)
-  - [ ] 🧩 More temporal technology and techniques (such as TAA, FSR 2.0, DLSS, **important**)
-  - [ ] 🧩 Advanced shadow maps (with simpler RT, **important**)
-  - [ ] 🧩 Full subgroups support (incl. variable)
-  - [ ] 🧩 Full vulkan memory model support
-  - [ ] 👑️ Console support
-  - [ ] 👑️ Graphic interface
-  - [ ] 👑️ More interactivity
-  - [ ] 👑️ Edit materials
-
-## Capital june update (early alpha)
-
-  - [ ] 🧩 Specular lighting support
-  - [ ] 🧩 Caustics, transmission, refraction support
-  - [ ] 🧩 Different resolution buffers and anti-aliasing support (**important**)
-  - [ ] 🧩 Full update to Vulkan 1.3.215 and higher
-  - [ ] 🧩 Add NRD and FidelityFX denoisers support
-  - [ ] 🧩 Re-learn high math
-  - [ ] 🧩 Probably, order independent transparency
-  - [ ] 🧩 Probably, KTX-2 support
-  - [ ] 🧩 Probably, additional test applications
 
 ## Integrations
 
