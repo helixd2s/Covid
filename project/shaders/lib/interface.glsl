@@ -137,10 +137,8 @@ struct GeometryExtAttrib {
 };
 
 //
-uvec2 blueNoiseFn(in uvec2 coord) {
-  //const ivec2 texSize = textureSize(texturesU[blueNoise], 0);
-  //return texelFetch(texturesU[blueNoise], ivec2(coord) % texSize, 0).r;
-  return coord;
+uint blueNoiseFn(in uvec2 coord) {
+  return pack32(u16vec2(coord));
 };
 
 #endif

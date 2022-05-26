@@ -10,7 +10,7 @@
 //
 layout(location = 0) in vec4 pColor;
 layout(location = 1) flat in uvec4 pIndices;
-//spirv_decorate (extensions = ["SPV_KHR_fragment_shader_barycentric"], 5285) layout(location = 2) in mat3x4 pScreen_;
+//spirv_decorate (extensions = ["SPV_KHR_fragment_shader_barycentric"], capabilities = [5284], 5285) layout(location = 2) in mat3x4 pScreen_;
 layout(location = 2) in vec4 pScreen;
 layout(location = 3) in vec4 pTexcoord;
 
@@ -20,8 +20,8 @@ layout(location = 3) in vec4 pTexcoord;
 //#endif
 
 // yet another vaporware
-spirv_decorate (extensions = ["SPV_KHR_fragment_shader_barycentric"], 11, 5286) in vec3 gl_BaryCoordEXT;
-spirv_decorate (extensions = ["SPV_KHR_fragment_shader_barycentric"], 11, 5287) in vec3 gl_BaryCoordNoPerspEXT;
+spirv_decorate (extensions = ["SPV_KHR_fragment_shader_barycentric"], capabilities = [5284], 11, 5286) in vec3 gl_BaryCoordEXT;
+spirv_decorate (extensions = ["SPV_KHR_fragment_shader_barycentric"], capabilities = [5284], 11, 5287) in vec3 gl_BaryCoordNoPerspEXT;
 
 //
 // We prefer to use refraction and ray-tracing for transparent effects...
