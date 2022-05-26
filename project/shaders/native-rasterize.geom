@@ -16,10 +16,9 @@ layout(location = 1) flat in uint instanceId[];
 
 //
 layout(location = 0) out vec4 pColor;
-layout(location = 1) out vec3 pBary;
-layout(location = 2) flat out uvec4 pIndices;
-layout(location = 3) out vec4 pScreen;
-layout(location = 4) out vec4 pTexcoord;
+layout(location = 1) flat out uvec4 pIndices;
+layout(location = 2) out vec4 pScreen;
+layout(location = 3) out vec4 pTexcoord;
 
 //
 // We prefer to use refraction and ray-tracing for transparent effects...
@@ -57,7 +56,6 @@ void main() {
     //
     gl_Position = position;
     pColor = vec4(0.f.xxx, 0.f);
-    pBary = bary[i];
     pTexcoord = vec4(texcoord.xyz, 1.f);
     pScreen = position;
     EmitVertex();

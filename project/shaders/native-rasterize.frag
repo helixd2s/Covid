@@ -2,16 +2,16 @@
 
 // 
 #extension GL_GOOGLE_include_directive : require
+#extension GL_EXT_spirv_intrinsics : require
 
 //
 #include "lib/native.glsl"
 
 //
 layout(location = 0) in vec4 pColor;
-layout(location = 1) in vec3 pBary;
-layout(location = 2) flat in uvec4 pIndices;
-layout(location = 3) in vec4 pScreen;
-layout(location = 4) in vec4 pTexcoord;
+layout(location = 1) flat in uvec4 pIndices;
+layout(location = 2) in vec4 pScreen;
+layout(location = 3) in vec4 pTexcoord;
 
 // needed for linear interpolation...
 layout(location = 0) out uvec4 indices;
@@ -28,6 +28,10 @@ layout (early_fragment_tests) in;
 // 
 layout (depth_any) out float gl_FragDepth;
 
+// yet another vaporware
+spirv_decorate (extensions = ["SPV_KHR_fragment_shader_barycentric"], 11, 5286) in vec3 gl_BaryCoordEXT;
+spirv_decorate (extensions = ["SPV_KHR_fragment_shader_barycentric"], 11, 5287) in vec3 gl_BaryCoordNoPerspEXT;
+
 //
 // We prefer to use refraction and ray-tracing for transparent effects...
 void main() {
@@ -38,6 +42,7 @@ void main() {
 #else
   0u;
 #endif
+  const vec3 pBary = gl_BaryCoordEXT;
 
   // 
   InstanceInfo instanceInfo = getInstance(instancedData, translucent, pIndices.x);
