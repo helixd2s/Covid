@@ -68,7 +68,7 @@ void main() {
 #endif
 
   // alpha and depth depth test fail
-  const float dp = texelFetch(textures[framebufferAttachments[0][translucent][5]], ivec2(gl_FragCoord.xy), 0).r + mxD;
+  const float dp = texelFetch(textures[framebuffers[0].attachments[translucent][5]], ivec2(gl_FragCoord.xy), 0).r + mxD;
   if (
 #ifdef TRANSLUCENT
     materialPix.color[MATERIAL_ALBEDO].a < 0.01f || 
@@ -80,7 +80,7 @@ void main() {
   {
     // 
     const uint rasterId = atomicAdd(counters[RASTER_COUNTER], 1);//subgroupAtomicAdd(RASTER_COUNTER);
-    if (rasterId < UR(scaled).x * UR(scaled).y * 16) {
+    if (rasterId < UR(pingpong.extent).x * UR(pingpong.extent).y * 16) {
       const uint oldId = imageAtomicExchange(imagesR32UI[pingpong.images[0][/*translucent*/0]], ivec2(gl_FragCoord.xy), rasterId+1);
 
       RasterInfoRef rasterInfo = getRasterInfo(rasterId, 0);

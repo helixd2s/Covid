@@ -434,10 +434,10 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
   if (type == 2) { additional = clampCol(rayData.emission * vec4(((1.f - reflCoef) ).xxx, 1.f)); };
 
   //
-  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.rayData.launchId.x + cmd.rayData.launchId.y * UR(scaled).x);
+  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.rayData.launchId.x + cmd.rayData.launchId.y * UR(pingpong.extent).x);
 
   // avoid critical error for skyboxed, also near have more priority... also, transparency may incorrect, so doing some exception
-  PixelHitInfoRef hitInfo = getNewHit(cmd.rayData.launchId.x + cmd.rayData.launchId.y * UR(scaled).x, type);
+  PixelHitInfoRef hitInfo = getNewHit(cmd.rayData.launchId.x + cmd.rayData.launchId.y * UR(pingpong.extent).x, type);
   surfaceInfo.color[type] += cvtRgb16Float(additional);
 
   // 
@@ -463,7 +463,7 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
 
 //
 void retranslateSurface(inout PathTraceCommand cmd) {
-  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.rayData.launchId.x + cmd.rayData.launchId.y * UR(scaled).x);
+  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.rayData.launchId.x + cmd.rayData.launchId.y * UR(pingpong.extent).x);
   surfaceInfo.indices = uvec4(cmd.intersection.instanceId, cmd.intersection.geometryId, cmd.intersection.primitiveId, 0u);
   surfaceInfo.origin.xyz = cmd.rayData.origin.xyz;
   surfaceInfo.normal = cmd.normals;
@@ -473,11 +473,11 @@ void retranslateSurface(inout PathTraceCommand cmd) {
 
 // 
 void blankHit(inout PathTraceCommand cmd, in uint type) {
-  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.rayData.launchId.x + cmd.rayData.launchId.y * UR(scaled).x);
+  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.rayData.launchId.x + cmd.rayData.launchId.y * UR(pingpong.extent).x);
   surfaceInfo.color[type] += cvtRgb16Float(vec4(0.f.xxx, 1.f));
   
   //
-  PixelHitInfoRef hitInfo = getNewHit(cmd.rayData.launchId.x + cmd.rayData.launchId.y * UR(scaled).x, type);
+  PixelHitInfoRef hitInfo = getNewHit(cmd.rayData.launchId.x + cmd.rayData.launchId.y * UR(pingpong.extent).x, type);
   hitInfo.origin = vec4(cmd.rayData.origin.xyz, 0.f);
   hitInfo.direct = vec4(cmd.rayData.direction.xyz, 0.f);
 };

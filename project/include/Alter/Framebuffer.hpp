@@ -56,12 +56,19 @@ namespace ANAMED {
     uint32_t currentIndex = 0u, previousIndex = 0u;
     vk::Rect2D renderArea = {};
 
+    //
+    FramebufferStateInfo currentState = {};
+
     // 
     inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
     inline decltype(auto) SFT() const { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::const_pointer_cast<T>(std::dynamic_pointer_cast<T const>(shared_from_this()))); };
 
 
   public:
+    //
+    virtual FramebufferStateInfo& getStateInfo() { return currentState; };
+    virtual FramebufferStateInfo const& getStateInfo() const { return currentState; };
+
     // 
     FramebufferObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
       //this->construct(deviceObj, cInfo);
@@ -113,6 +120,16 @@ namespace ANAMED {
     virtual uint32_t& acquireImage(cpp21::const_wrap_arg<ANAMED::QueueGetInfo> qfAndQueue) {
       this->previousIndex = this->currentIndex;
       this->currentIndex = (++this->currentIndex) % this->fbHistory.size();
+
+      // 
+      decltype(auto) framebufferAttachments = this->getImageViewIndices();
+      memcpy(currentState.attachments[0], framebufferAttachments.data(), std::min(framebufferAttachments.size(), 8ull) * sizeof(uint32_t));
+
+      // 
+      decltype(auto) previousFramebufferAttachments = this->getPrevImageViewIndices();
+      memcpy(currentState.attachments[1], previousFramebufferAttachments.data(), std::min(previousFramebufferAttachments.size(), 8ull) * sizeof(uint32_t));
+
+      //
       return this->currentIndex;
     };
 
@@ -395,6 +412,17 @@ namespace ANAMED {
           this->createImage(history, ImageType::eStencilAttachment);
         };
       };
+
+      // 
+      decltype(auto) framebufferAttachments = this->getImageViewIndices();
+      memcpy(currentState.attachments[0], framebufferAttachments.data(), std::min(framebufferAttachments.size(), 8ull) * sizeof(uint32_t));
+
+      // 
+      decltype(auto) previousFramebufferAttachments = this->getPrevImageViewIndices();
+      memcpy(currentState.attachments[1], previousFramebufferAttachments.data(), std::min(previousFramebufferAttachments.size(), 8ull) * sizeof(uint32_t));
+
+      //
+      currentState.extent = glm::uvec2(cInfo->extent.width, cInfo->extent.height);
 
       // 
       descriptorsObj->updateDescriptors();

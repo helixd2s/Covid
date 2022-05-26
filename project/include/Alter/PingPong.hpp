@@ -266,6 +266,9 @@ namespace ANAMED {
         memcpy(this->currentState.images[1], this->sets[this->currentState.previous].imageViewIndices.data(), std::min(uint32_t(this->sets[this->currentState.previous].imageViewIndices.size()), 6u) * 4u);
       };
       memcpy(this->currentState.images[0], this->sets[this->currentState.index].imageViewIndices.data(), std::min(uint32_t(this->sets[this->currentState.index].imageViewIndices.size()), 6u) * 4u);
+
+      //
+      this->currentState.extent = glm::uvec2(this->cInfo->extent.width, this->cInfo->extent.height);
     };
 
   protected:

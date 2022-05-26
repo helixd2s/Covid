@@ -57,6 +57,7 @@ struct InstanceAddressBlock {
 
 //
 struct PingPongStateInfo {
+  uvec2 extent;
   uint32_t images[2][6];
   uint32_t previous;
   uint32_t index;
@@ -64,16 +65,21 @@ struct PingPongStateInfo {
 
 //
 struct SwapchainStateInfo {
+  uvec2 extent;
   uint32_t image;
   uint32_t index;
+};
+
+//
+struct FramebufferStateInfo {
+  uvec2 extent;
+  uint32_t attachments[2][8]; // framebuffers
 };
 
 //
 layout(push_constant, scalar, buffer_reference_align = 1) uniform PConstBlock {
   InstanceAddressBlock instancedData;
   PushConstantData instanceDrawInfo;
-  SwapchainStateInfo swapchain;
-  PingPongStateInfo pingpong;
 };
 
 //

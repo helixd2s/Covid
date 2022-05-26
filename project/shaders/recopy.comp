@@ -17,9 +17,9 @@ layout (local_size_x = 32, local_size_y = 12, local_size_z = 1) in;
 // 
 void main() {
   const uvec2 gcoord = gl_GlobalInvocationID.xy;
-  const uint linearId = gcoord.x + UR(scaled).x * gcoord.y;
-  const uint type = linearId / (UR(scaled).x * UR(scaled).y);
-  const uint pixelId = linearId % (UR(scaled).x * UR(scaled).y);
+  const uint linearId = gcoord.x + UR(pingpong.extent).x * gcoord.y;
+  const uint type = linearId / (UR(pingpong.extent).x * UR(pingpong.extent).y);
+  const uint pixelId = linearId % (UR(pingpong.extent).x * UR(pingpong.extent).y);
 
   //
   prepareHit(pixelId, type);

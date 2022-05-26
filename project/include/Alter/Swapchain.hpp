@@ -245,6 +245,7 @@ namespace ANAMED {
       descriptorsObj->updateDescriptors();
 
       //
+      this->currentState.extent = glm::uvec2(capInfo.capabilities->currentExtent.width, capInfo.capabilities->currentExtent.height);
       this->currentState.index = this->images.size() - 1u;
       this->currentState.image = this->imageViewIndices[this->currentState.index];
       return this->swapchain;

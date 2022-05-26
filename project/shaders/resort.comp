@@ -53,8 +53,8 @@ void sort() {
 // 
 void main() {
   const uvec2 gcoord = gl_GlobalInvocationID.xy;
-  const vec2 tCoord = (vec2(gcoord) + 0.5f)/vec2(UR(rasterES));
-  const uint pixelId = gcoord.x + UR(rasterES).x * gcoord.y;
+  const vec2 tCoord = (vec2(gcoord) + 0.5f)/vec2(UR(framebuffers[0].extent));
+  const uint pixelId = gcoord.x + UR(framebuffers[0].extent).x * gcoord.y;
 
   //
   uint indice = imageLoad(imagesR32UI[pingpong.images[0][0]], ivec2(gcoord)).r;

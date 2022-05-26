@@ -65,7 +65,7 @@ void main() {
   //gl_FragDepth = 1.f;
 
   // alpha and depth depth test fail
-  const float dp = texelFetch(textures[framebufferAttachments[0][0][5]], ivec2(gl_FragCoord.xy), 0).r;
+  const float dp = texelFetch(textures[framebuffers[0].attachments[0][5]], ivec2(gl_FragCoord.xy), 0).r;
   if (
 #ifdef TRANSLUCENT
     materialPix.color[MATERIAL_ALBEDO].a < 0.01f || 

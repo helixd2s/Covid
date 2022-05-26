@@ -34,16 +34,20 @@ struct Constants
 //
 #pragma pack(push, 1)
 struct UniformData {
-  uint32_t framebufferAttachments[2][2][8] = {{0u}};
-  //glm::uvec2 extent = {}; 
-  glm::u16vec2 extent, scaled, rasterES; uint32_t frameCounter;
+  ANAMED::SwapchainStateInfo swapchain;
+  ANAMED::PingPongStateInfo pingpong;
+  ANAMED::FramebufferStateInfo framebuffers[2];
   Constants constants = {};
+
+  //glm::uvec2 extent = {}; 
+  uint32_t r0 = 0u;
+  uint32_t frameCounter = 0u;
+  uint32_t backgroundObj = 0u;
+  uint32_t blueNoiseObj = 0u;
   uint64_t pixelData = 0ull;
   uint64_t writeData = 0ull;
   uint64_t rasterData[2] = { 0ull };
   uint64_t surfaceData = 0ull;
-  uint32_t backgroundObj = 0u;
-  uint32_t blueNoiseObj = 0u;
 };
 #pragma pack(pop)
 
@@ -167,34 +171,6 @@ public:
     for (uint32_t i = 0; i < 2; i++) {
       framebufferObj[i]->acquireImage(qfAndQueue);
       framebufferObj[i]->clearAttachments(qfAndQueue);
-
-      // 
-      decltype(auto) framebufferAttachments = framebufferObj[i]->getImageViewIndices();
-      memcpy(uniformData.framebufferAttachments[0][i], framebufferAttachments.data(), std::min(framebufferAttachments.size(), 8ull) * sizeof(uint32_t));
-
-      // 
-      decltype(auto) previousFramebufferAttachments = framebufferObj[i]->getPrevImageViewIndices();
-      memcpy(uniformData.framebufferAttachments[1][i], previousFramebufferAttachments.data(), std::min(previousFramebufferAttachments.size(), 8ull) * sizeof(uint32_t));
-    };
-
-    // 
-    //gltfLoaderObj->updateInstances(0u, glm::dmat4(1.f) * glm::scale(glm::dmat4(1.0f), glm::dvec3(1.f * scale, 1.f * scale, 1.f * scale)) * glm::rotate(glm::dmat4(1.0f), (controller->time - controller->beginTime) * 0.01, glm::dvec3(0.f, 1.f, 0.f)));
-    //gltfLoaderObj->updateNodes(glm::dmat4(1.f) * glm::scale(glm::dmat4(1.0f), glm::dvec3(1.f * scale, 1.f * scale, 1.f * scale)));
-
-    //
-//#ifdef ENABLE_RENDERDOC
-    //if (rdoc_api) rdoc_api->StartFrameCapture(NULL, NULL);
-//#endif
-
-    //
-    double currentTime = glfwGetTime();
-    frameCount++;
-
-    if (currentTime - previousTime >= 1.0)
-    {
-      // Display the frame count here any way you want.
-      displayFPS(frameCount);
-      previousTime = currentTime;
     };
 
     // 
@@ -202,15 +178,26 @@ public:
     decltype(auto) pingPong = pingPongObj->acquireImage(qfAndQueue);
 
     //
-    pingPongObj->clearImage(qfAndQueue, 0u, glm::uintBitsToFloat(glm::uvec4(0u)));
-    //pingPongObj->clearImage(qfAndQueue, 5u, glm::uintBitsToFloat(glm::uvec4(0u)));
-    //pingPongObj->clearImage(qfAndQueue, 7u, glm::uintBitsToFloat(glm::uvec4(0u)));
+    for (uint32_t i = 0; i < 2; i++) {
+      uniformData.framebuffers[i] = framebufferObj[i]->getStateInfo();
+    };
+    uniformData.swapchain = swapchainObj->getStateInfo();
+    uniformData.pingpong = pingPongObj->getStateInfo();
 
     //
-    //if (controller->needsClear) {
-      //pingPongObj->clearImage(qfAndQueue, 4u, glm::uintBitsToFloat(glm::uvec4(0u)));
-      //controller->needsClear = false;
-    //};
+    double currentTime = glfwGetTime();
+    frameCount++;
+
+    // 
+    if (currentTime - previousTime >= 1.0)
+    {
+      // Display the frame count here any way you want.
+      displayFPS(frameCount);
+      previousTime = currentTime;
+    };
+
+    //
+    pingPongObj->clearImage(qfAndQueue, 0u, glm::uintBitsToFloat(glm::uvec4(0u)));
 
     // wait ready for filling
     auto& fence = (*fences)[acquired];
@@ -238,8 +225,6 @@ public:
       .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
         .dispatch = vk::Extent3D{1u, 1u, 1u},
         .layout = descriptorsObj.as<vk::PipelineLayout>(),
-        .swapchain = swapchainObj.as<uintptr_t>(),
-        .pingpong = pingPongObj.as<uintptr_t>(),
         .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
       }),
       .submission = ANAMED::SubmissionInfo{
@@ -247,27 +232,12 @@ public:
       }
     });
 
-    // 
-    /*decltype(auto) counterFence = descriptorsObj->executeCacheUpdateOnce(ANAMED::CacheDataSet{
-      // # yet another std::optional problem (implicit)
-      .writeInfo = std::optional<ANAMED::CacheDataWriteSet>(ANAMED::CacheDataWriteSet{
-        .region = ANAMED::DataRegion{0ull, 4ull, sizeof(CounterData)},
-        .data = cpp21::data_view<char8_t>((char8_t*)&counterData, 0ull, sizeof(CounterData)),
-        .page = 0u
-      }),
-      .submission = ANAMED::SubmissionInfo{
-        .info = qfAndQueue,
-      }
-    });*/
-
     //
     decltype(auto) nativeOpaqueFence = nativeOpaqueObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
       // # yet another std::optional problem (implicit)
       .graphics = std::optional<ANAMED::WriteGraphicsInfo>(ANAMED::WriteGraphicsInfo{
         .layout = descriptorsObj.as<vk::PipelineLayout>(),
         .framebuffer = framebufferObj[0].as<uintptr_t>(),
-        .swapchain = swapchainObj.as<uintptr_t>(),
-        .pingpong = pingPongObj.as<uintptr_t>(),
         .instanceDraws = modelObj->getDefaultScene()->opaque->instanced->getDrawInfo(),
         .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
       }),
@@ -282,8 +252,6 @@ public:
       .graphics = std::optional<ANAMED::WriteGraphicsInfo>(ANAMED::WriteGraphicsInfo{
         .layout = descriptorsObj.as<vk::PipelineLayout>(),
         .framebuffer = framebufferObj[1].as<uintptr_t>(),
-        .swapchain = swapchainObj.as<uintptr_t>(),
-        .pingpong = pingPongObj.as<uintptr_t>(),
         .instanceDraws = modelObj->getDefaultScene()->translucent->instanced->getDrawInfo(),
         .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
       }),
@@ -298,8 +266,6 @@ public:
       .graphics = std::optional<ANAMED::WriteGraphicsInfo>(ANAMED::WriteGraphicsInfo{
         .layout = descriptorsObj.as<vk::PipelineLayout>(),
         .framebuffer = framebufferObj[0].as<uintptr_t>(),
-        .swapchain = swapchainObj.as<uintptr_t>(),
-        .pingpong = pingPongObj.as<uintptr_t>(),
         .instanceDraws = modelObj->getDefaultScene()->opaque->instanced->getDrawInfo(),
         .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
       }),
@@ -314,8 +280,6 @@ public:
       .graphics = std::optional<ANAMED::WriteGraphicsInfo>(ANAMED::WriteGraphicsInfo{
         .layout = descriptorsObj.as<vk::PipelineLayout>(),
         .framebuffer = framebufferObj[1].as<uintptr_t>(),
-        .swapchain = swapchainObj.as<uintptr_t>(),
-        .pingpong = pingPongObj.as<uintptr_t>(),
         .instanceDraws = modelObj->getDefaultScene()->translucent->instanced->getDrawInfo(),
         .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
       }),
@@ -328,10 +292,8 @@ public:
     decltype(auto) resortFence = resortObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
       // # yet another std::optional problem (implicit)
       .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
-        .dispatch = vk::Extent3D{cpp21::tiled(uniformData.rasterES.x, 32u), cpp21::tiled(uniformData.rasterES.y, 8u), 1u},
+        .dispatch = vk::Extent3D{cpp21::tiled(uniformData.framebuffers[0].extent.x, 32u), cpp21::tiled(uniformData.framebuffers[0].extent.y, 8u), 1u},
         .layout = descriptorsObj.as<vk::PipelineLayout>(),
-        .swapchain = swapchainObj.as<uintptr_t>(),
-        .pingpong = pingPongObj.as<uintptr_t>(),
         // # yet another std::optional problem (implicit)
         .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
       }),
@@ -346,8 +308,6 @@ public:
       .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
         .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 32u), cpp21::tiled(renderArea.extent.height, 4u), 1u},
         .layout = descriptorsObj.as<vk::PipelineLayout>(),
-        .swapchain = swapchainObj.as<uintptr_t>(),
-        .pingpong = pingPongObj.as<uintptr_t>(),
         // # yet another std::optional problem (implicit)
         .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
       }),
@@ -362,8 +322,6 @@ public:
       .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
         .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 32u), cpp21::tiled(renderArea.extent.height, 4u), 1u},
         .layout = descriptorsObj.as<vk::PipelineLayout>(),
-        .swapchain = swapchainObj.as<uintptr_t>(),
-        .pingpong = pingPongObj.as<uintptr_t>(),
         // # yet another std::optional problem (implicit)
         .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
       }),
@@ -378,8 +336,6 @@ public:
       .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
         .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 32u), cpp21::tiled(renderArea.extent.height, 4u), 1u},
         .layout = descriptorsObj.as<vk::PipelineLayout>(),
-        .swapchain = swapchainObj.as<uintptr_t>(),
-        .pingpong = pingPongObj.as<uintptr_t>(),
         // # yet another std::optional problem (implicit)
         .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
       }),
@@ -394,8 +350,6 @@ public:
       .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
         .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 32u), cpp21::tiled(renderArea.extent.height, 4u), 1u},
         .layout = descriptorsObj.as<vk::PipelineLayout>(),
-        .swapchain = swapchainObj.as<uintptr_t>(),
-        .pingpong = pingPongObj.as<uintptr_t>(),
         // # yet another std::optional problem (implicit)
         .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
       }),
@@ -408,10 +362,8 @@ public:
     decltype(auto) postFence = postObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
       // # yet another std::optional problem (implicit)
       .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
-        .dispatch = vk::Extent3D{cpp21::tiled(uniformData.extent.x, 32u), cpp21::tiled(uniformData.extent.y, 4u), 1u},
+        .dispatch = vk::Extent3D{cpp21::tiled(uniformData.swapchain.extent.x, 32u), cpp21::tiled(uniformData.swapchain.extent.y, 4u), 1u},
         .layout = descriptorsObj.as<vk::PipelineLayout>(),
-        .swapchain = swapchainObj.as<uintptr_t>(),
-        .pingpong = pingPongObj.as<uintptr_t>(),
         // # yet another std::optional problem (implicit)
         .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
       }),
@@ -426,11 +378,6 @@ public:
 
     //
     std::swap(uniformData.rasterData[0], uniformData.rasterData[1]);
-
-    // stop the capture
-//#ifdef ENABLE_RENDERDOC
-    //if (rdoc_api) rdoc_api->EndFrameCapture(NULL, NULL);
-//#endif
 
     // 
     co_yield true;
@@ -453,17 +400,16 @@ public:
     });
 
     //
+    uniformData.swapchain = swapchainObj->getStateInfo();
+
+    //
     float xscale = 1.f, yscale = 1.f;
     glfwGetWindowContentScale(window, &xscale, &yscale);
 
     //
     renderArea = swapchainObj->getRenderArea();
-    uniformData.extent = glm::uvec2(renderArea.extent.width, renderArea.extent.height);
-
-    //
     renderArea.extent.width *= 2.f / xscale;
     renderArea.extent.height *= 2.f / yscale;
-    uniformData.scaled = glm::uvec2(renderArea.extent.width, renderArea.extent.height);
 
     // 
     surfaceDataObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
@@ -512,21 +458,16 @@ public:
     uint32_t testDivision = 1u;
 
     //
-    framebufferObj[0] = ANAMED::FramebufferObj::make(deviceObj.with(0u), ANAMED::FramebufferCreateInfo{
-      .layout = descriptorsObj.as<vk::PipelineLayout>(),
-      .extent = vk::Extent2D{uniformData.extent.x / testDivision, uniformData.extent.y / testDivision},
-      .info = qfAndQueue
-    });
+    for (uint32_t i = 0; i < 2; i++) {
+      framebufferObj[i] = ANAMED::FramebufferObj::make(deviceObj.with(0u), ANAMED::FramebufferCreateInfo{
+        .layout = descriptorsObj.as<vk::PipelineLayout>(),
+        .extent = vk::Extent2D{uniformData.swapchain.extent.x / testDivision, uniformData.swapchain.extent.y / testDivision},
+        .info = qfAndQueue
+      });
+      uniformData.framebuffers[i] = framebufferObj[i]->getStateInfo();
+    };
 
     //
-    framebufferObj[1] = ANAMED::FramebufferObj::make(deviceObj.with(0u), ANAMED::FramebufferCreateInfo{
-      .layout = descriptorsObj.as<vk::PipelineLayout>(),
-      .extent = vk::Extent2D{uniformData.extent.x / testDivision, uniformData.extent.y / testDivision},
-      .info = qfAndQueue
-    });
-
-    //
-    uniformData.rasterES = glm::u16vec2(glm::uvec2(uniformData.extent) / testDivision);
     uniformData.frameCounter = 0u;
 
     //
@@ -541,6 +482,10 @@ public:
       .formats = std::vector<vk::Format>{ vk::Format::eR32Uint, vk::Format::eR32Uint, vk::Format::eR32Uint, vk::Format::eR32Uint, vk::Format::eR32G32B32A32Sfloat, vk::Format::eR32G32B32A32Sfloat },
       .info = qfAndQueue
     });
+
+    //
+    uniformData.pingpong = pingPongObj->getStateInfo();
+    
   };
 
   //

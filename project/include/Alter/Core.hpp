@@ -496,6 +496,7 @@ namespace ANAMED {
 #pragma pack(push, 1)
   __declspec(align(1))
   struct SwapchainStateInfo {
+    glm::uvec2 extent = glm::uvec2(0u);
     uint32_t image = uint32_t(0u);
     uint32_t index = uint32_t(-1);
   };
@@ -505,6 +506,7 @@ namespace ANAMED {
 #pragma pack(push, 1)
   __declspec(align(1))
   struct PingPongStateInfo {
+    glm::uvec2 extent = glm::uvec2(0u);
     uint32_t images[2u][6u] = { 0u };
     uint32_t previous = uint32_t(-1);
     uint32_t index = uint32_t(-1);
@@ -513,8 +515,16 @@ namespace ANAMED {
 
   //
 #pragma pack(push, 1)
+  struct FramebufferStateInfo {
+    glm::uvec2 extent = glm::uvec2(0u);
+    uint32_t attachments[2][8]; // framebuffers
+  };
+#pragma pack(pop)
+
+  //
+#pragma pack(push, 1)
   __declspec(align(1))
-  struct PushConstantData {
+  struct InstanceDrawInfo {
     //uint64_t dataAddress = 0ull;
     uint32_t instanceCount = 0u;
     uint32_t instanceIndex = 0u;
@@ -1000,7 +1010,7 @@ namespace ANAMED {
 
   //
   struct InstanceDraw {
-    std::optional<PushConstantData> drawConst = {};
+    std::optional<InstanceDrawInfo> drawConst = {};
     cpp21::shared_vector<vk::MultiDrawInfoEXT> drawInfos = std::vector<vk::MultiDrawInfoEXT>{};
   };
 
@@ -1015,8 +1025,6 @@ namespace ANAMED {
     vk::Extent3D dispatch = { 1u, 1u, 1u };
     vk::PipelineLayout layout = {};
     uintptr_t pipelineIndex = 0ull;
-    uintptr_t swapchain = 0ull;
-    uintptr_t pingpong = 0ull;
 
     //
     std::optional<InstanceAddressBlock> instanceAddressBlock = {};
@@ -1031,8 +1039,6 @@ namespace ANAMED {
     vk::PipelineLayout layout = {};
     uintptr_t pipelineIndex = 0ull;
     uintptr_t framebuffer = 0ull;
-    uintptr_t swapchain = 0ull;
-    uintptr_t pingpong = 0ull;
 
     // needs multiple-levels support
     std::vector<InstanceDraw> instanceDraws = {}; // currently, problematic for dynamic rendering... 

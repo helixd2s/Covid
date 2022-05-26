@@ -218,7 +218,7 @@ namespace ANAMED {
       this->createDescriptorLayout(vk::DescriptorType::eStorageImage, 64u);
 
       // reserve for ping-pong
-      this->pushConstantRanges.push_back(vk::PushConstantRange{ vk::ShaderStageFlagBits::eAll, 0ull, sizeof(PushConstantData) + sizeof(InstanceAddressBlock) + sizeof(PingPongStateInfo) + sizeof(SwapchainStateInfo) });
+      this->pushConstantRanges.push_back(vk::PushConstantRange{ vk::ShaderStageFlagBits::eAll, 0ull, sizeof(InstanceDrawInfo) + sizeof(InstanceAddressBlock) });
       //this->pushConstantRanges.push_back(vk::PushConstantRange{ vk::ShaderStageFlagBits::eAll, sizeof(PushConstantData), sizeof(InstanceAddressBlock) });
 
       //

@@ -173,7 +173,7 @@ namespace ANAMED {
         // 
         if (this->instanceExtBuffer && this->getInstanceInfoResource()) {
           instanceDraw.drawInfos = geometryLevel->getDrawInfo();
-          instanceDraw.drawConst = PushConstantData{ .instanceCount = 1u, .instanceIndex = uint32_t(idx), .drawIndex = 0u };
+          instanceDraw.drawConst = InstanceDrawInfo{ .instanceCount = 1u, .instanceIndex = uint32_t(idx), .drawIndex = 0u };
         };
 
         // 
@@ -226,7 +226,7 @@ namespace ANAMED {
         //
         if (prevInstanceDevInfo.accelerationStructureReference != instanceDevInfo.accelerationStructureReference || (idx <= (this->cInfo->instances->size()-1))) {
           this->instanceDraw->push_back(InstanceDraw{
-            .drawConst = PushConstantData{.instanceCount = instanceCount, .instanceIndex = uint32_t(idx), .drawIndex = 0u},
+            .drawConst = InstanceDrawInfo{.instanceCount = instanceCount, .instanceIndex = uint32_t(idx), .drawIndex = 0u},
             .drawInfos = geometryLevel->getDrawInfo()
           });
           instanceCount = 0u;

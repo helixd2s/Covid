@@ -21,19 +21,28 @@ struct Constants
   mat3x4 lookAtInverse[2];
 };
 
+
 // 
 layout(set = 0, binding = 0, scalar) uniform MatrixBlock
 {
-  uint32_t framebufferAttachments[2][2][8]; // framebuffers
-  u16vec2 extent, scaled, rasterES;
-  uint frameCounter;
+  SwapchainStateInfo swapchain;
+  PingPongStateInfo pingpong;
+  FramebufferStateInfo framebuffers[2];
   Constants constants;
+
+  uint32_t r0;
+  uint32_t frameCounter;
+  uint32_t background;
+  uint32_t blueNoise;
   uint64_t pixelData;
   uint64_t writeData;
   uint64_t rasterData[2];
   uint64_t surfaceData;
-  uint32_t background;
-  uint32_t blueNoise;
+};
+
+//
+uvec2 UR(in uvec2 res) {
+  return res; // TODO: hardware method
 };
 
 //
@@ -100,13 +109,13 @@ PixelSurfaceInfoRef getPixelSurface(in uint pixelId)  { return PixelSurfaceInfoR
 
 //
 PixelHitInfoRef getNewHit(in uint pixelId, in uint type) { 
-  const uint hitId = pixelId + UR(scaled).x * UR(scaled).y * type;
+  const uint hitId = pixelId + UR(pingpong.extent).x * UR(pingpong.extent).y * type;
   return PixelHitInfoRef(pixelData) + hitId;
 };
 
 //
 PixelHitInfoRef getRpjHit(in uint pixelId, in uint type) { 
-  const uint hitId = pixelId + UR(scaled).x * UR(scaled).y * type;
+  const uint hitId = pixelId + UR(pingpong.extent).x * UR(pingpong.extent).y * type;
   return PixelHitInfoRef(writeData) + hitId;
 };
 

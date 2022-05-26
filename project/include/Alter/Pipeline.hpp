@@ -278,12 +278,6 @@ namespace ANAMED {
         if (exec->instanceAddressBlock) {
           exec->cmdBuf.pushConstants(descriptorsObj->handle.as<vk::PipelineLayout>(), vk::ShaderStageFlagBits::eAll, 0u, sizeof(InstanceAddressBlock), &exec->instanceAddressBlock.value());
         };
-        if (exec->swapchain) {
-          exec->cmdBuf.pushConstants(descriptorsObj->handle.as<vk::PipelineLayout>(), vk::ShaderStageFlagBits::eAll, sizeof(InstanceAddressBlock) + sizeof(PushConstantData), sizeof(SwapchainStateInfo), &deviceObj->get<SwapchainObj>(exec->swapchain)->getStateInfo());
-        };
-        if (exec->pingpong) {
-          exec->cmdBuf.pushConstants(descriptorsObj->handle.as<vk::PipelineLayout>(), vk::ShaderStageFlagBits::eAll, sizeof(InstanceAddressBlock) + sizeof(PushConstantData) + sizeof(SwapchainStateInfo), sizeof(PingPongStateInfo), &deviceObj->get<PingPongObj>(exec->pingpong)->getStateInfo());
-        };
         exec->cmdBuf.dispatch(exec->dispatch.width, exec->dispatch.height, exec->dispatch.depth);
         exec->cmdBuf.pipelineBarrier2(depInfo.setMemoryBarriers(memoryBarriersEnd));
       };
@@ -361,7 +355,7 @@ namespace ANAMED {
               uint32_t index = 0u;
               for (decltype(auto) drawInfo : *multiDraw) {
                 decltype(auto) pushed = instInfo.drawConst->with(index++);
-                cmdBuf.pushConstants(pipelineLayout, vk::ShaderStageFlagBits::eAll, sizeof(InstanceAddressBlock), sizeof(PushConstantData), &pushed);
+                cmdBuf.pushConstants(pipelineLayout, vk::ShaderStageFlagBits::eAll, sizeof(InstanceAddressBlock), sizeof(InstanceDrawInfo), &pushed);
                 cmdBuf.draw(drawInfo.vertexCount, instanceCount, drawInfo.firstVertex, 0u);
               };
             });
@@ -371,13 +365,7 @@ namespace ANAMED {
               exec->cmdBuf.pushConstants(descriptorsObj->handle.as<vk::PipelineLayout>(), vk::ShaderStageFlagBits::eAll, 0u, sizeof(InstanceAddressBlock), &exec->instanceAddressBlock.value());
             };
             if (instInfo.drawConst) {
-              exec->cmdBuf.pushConstants(descriptorsObj->handle.as<vk::PipelineLayout>(), vk::ShaderStageFlagBits::eAll, sizeof(InstanceAddressBlock), sizeof(PushConstantData), &instInfo.drawConst.value());
-            };
-            if (exec->swapchain) {
-              exec->cmdBuf.pushConstants(descriptorsObj->handle.as<vk::PipelineLayout>(), vk::ShaderStageFlagBits::eAll, sizeof(InstanceAddressBlock) + sizeof(PushConstantData), sizeof(SwapchainStateInfo), &deviceObj->get<SwapchainObj>(exec->swapchain)->getStateInfo());
-            };
-            if (exec->pingpong) {
-              exec->cmdBuf.pushConstants(descriptorsObj->handle.as<vk::PipelineLayout>(), vk::ShaderStageFlagBits::eAll, sizeof(InstanceAddressBlock) + sizeof(PushConstantData) + sizeof(SwapchainStateInfo), sizeof(PingPongStateInfo), &deviceObj->get<PingPongObj>(exec->pingpong)->getStateInfo());
+              exec->cmdBuf.pushConstants(descriptorsObj->handle.as<vk::PipelineLayout>(), vk::ShaderStageFlagBits::eAll, sizeof(InstanceAddressBlock), sizeof(InstanceDrawInfo), &instInfo.drawConst.value());
             };
             multiDrawDirect(instInfo.drawInfos, instInfo.drawConst ? instInfo.drawConst->instanceCount : 1u);
         };
