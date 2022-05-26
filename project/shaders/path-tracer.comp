@@ -106,10 +106,10 @@ void main() {
     //
     retranslateSurface(cmd);
 
-    //
+    // replace by reflection
     bool validTracing = true;
-    if (type == 2) { validTracing = validTracing && cmd.diffuseColor.a >= 0.001f && luminance(cmd.diffuseColor.xyz) > 0.f; };
-    if (type == 1 && cmd.diffuseColor.a >= 1.f) { type = 0; }; // replace by reflection
+    if (type == 1 && (cmd.diffuseColor.a >=    1.f)) { type = 0; };
+    if (type == 2 && (cmd.diffuseColor.a <  0.001f || luminance(cmd.diffuseColor.xyz) <= 0.f)) { type = 0; };
 
     //
     if (hasHit) {
