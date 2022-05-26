@@ -10,6 +10,7 @@
 //
 layout(location = 0) in vec4 pColor;
 layout(location = 1) flat in uvec4 pIndices;
+//spirv_decorate (extensions = ["SPV_KHR_fragment_shader_barycentric"], 5285) layout(location = 2) in mat3x4 pScreen_;
 layout(location = 2) in vec4 pScreen;
 layout(location = 3) in vec4 pTexcoord;
 
@@ -43,6 +44,7 @@ void main() {
   0u;
 #endif
   const vec3 pBary = gl_BaryCoordEXT;
+  //const vec4 pScreen = pScreen_ * pBary;
 
   // 
   InstanceInfo instanceInfo = getInstance(instancedData, translucent, pIndices.x);
