@@ -55,8 +55,8 @@ layout(scalar) shared PathTraceCommand cmds[4][32];
 
 //
 struct PathTraceOutput {
-  vec3 normals; float hitT;
-  uvec4 indices;
+  vec3 normal; float hitT;
+  uvec4 indices; bool surfaceFound;
 };
 
 //
@@ -280,7 +280,7 @@ RayData handleIntersection(inout RayData rayData, inout IntersectionInfo interse
 };
 
 //
-RayData pathTrace(inout RayData rayData, inout float hitDist, inout vec3 firstNormal, inout uvec4 firstIndices, in uint type) {
+RayData pathTrace(inout RayData rayData, inout PathTraceOutput outp, in uint type) {
   //
   bool surfaceFound = false;
   float currentT = 0.f;
@@ -288,8 +288,8 @@ RayData pathTrace(inout RayData rayData, inout float hitDist, inout vec3 firstNo
   uint R=0, T=0;
 
   // sorry, I hadn't choice
-  uvec4 lastIndices = firstIndices;
-  vec3 lastNormal = firstNormal;
+  uvec4 lastIndices = outp.indices;
+  vec3 lastNormal = outp.normal;
 
   //
   while (R<2 && T<2) {
@@ -308,32 +308,18 @@ RayData pathTrace(inout RayData rayData, inout float hitDist, inout vec3 firstNo
     //
     intersection = traceRaysOpaque(instancedData, intersection, rayData, 10000.f);
     intersection = traceRaysTransparent(instancedData, intersection, rayData, intersection.hitT, true);
-    //IntersectionInfo intersection = traceRaysOpaque(instancedData, rayData, 10000.f);
 
     //
     if (!all(lessThanEqual(intersection.barycentric, 0.f.xxx)) && intersection.hitT < 10000.f) {
-      //PassData opaquePass, pass;
       PassData pass;
       pass.alphaColor = vec4(1.f.xxx, 1.f);
       pass.alphaPassed = false;
       pass.diffusePass = false;
       pass.normals = vec3(0.f.xxx);
       pass.validRay = true;
-      //opaquePass = pass;
 
       //
       rayData = handleIntersection(rayData, intersection, pass, type);
-
-      // if translucent over opaque (decals)
-      //if (pass.alphaPassed && opaqueIntersection.hitT <= (intersection.hitT + 0.0001f)) {
-        //intersection = opaqueIntersection;
-        //rayData = handleIntersection(rayData, intersection, opaquePass);
-        //rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, pass.alphaColor.xyz));
-        //pass = opaquePass;
-      //};
-
-      //
-      //if (pass.alphaPassed) { T++; } else { R++; };
       R++; currentT += intersection.hitT;
 
       // 
@@ -342,12 +328,13 @@ RayData pathTrace(inout RayData rayData, inout float hitDist, inout vec3 firstNo
 
       //
       if (pass.diffusePass && !surfaceFound) { 
-        hitDist = currentT;
-        surfaceFound = true;
-        firstIndices = uvec4(intersection.instanceId, intersection.geometryId, intersection.primitiveId, 0u);
-        firstNormal = pass.normals.xyz;
+        outp.hitT = currentT;
+        outp.surfaceFound = true;
+        outp.indices = uvec4(intersection.instanceId, intersection.geometryId, intersection.primitiveId, 0u);
+        outp.normal = pass.normals.xyz;
       };
 
+      //
       if (!pass.validRay) { break; };
 
     } else 
@@ -359,15 +346,15 @@ RayData pathTrace(inout RayData rayData, inout float hitDist, inout vec3 firstNo
       rayData.energy.xyz *= f16vec3(0.f.xxx);
       if (!surfaceFound) {
         // sorry, I hadn't choice
-        firstIndices = lastIndices;
-        firstNormal = lastNormal;
+        outp.indices = lastIndices;
+        outp.normal = lastNormal;
         if (type == 1 || R == 0) {
-          hitDist = currentT = 10000.f;
+          outp.hitT = currentT = 10000.f;
           rayData.origin.xyz = vec4(0.f.xxx, 1.f) * constants.lookAtInverse[0];
         } else {
-          hitDist = currentT;
+          outp.hitT = currentT;
         };
-        surfaceFound = true;
+        outp.surfaceFound = true;
       };
       break;
     }
@@ -384,8 +371,9 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
   PathTraceOutput outp;
   outp.hitT = 0.f;
   outp.indices = uvec4(0u);
-  outp.normals = cmd.normals.xyz;
+  outp.normal = cmd.normals.xyz;
   outp.indices.w = type;
+  outp.surfaceFound = false;
 
   //
   vec3 rayDirection = cmd.rayData.direction.xyz;
@@ -410,15 +398,9 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
     rayData.emission = f16vec4(trueMultColor(rayData.energy.xyz, directLighting(rayData.origin.xyz, cmd.normals.xyz, cmd.tbn[2], vec3(random(blueNoiseFn(rayData.launchId.xy)), random(blueNoiseFn(rayData.launchId.xy)), random(blueNoiseFn(rayData.launchId.xy))), 10000.f).xyz), 1.f);
   };
 
-
-  
-
-  //
-  //reuseLight(rayData); // already reprojected!
-
   // enforce typic indice
   rayData.origin += outRayNormal(rayData.direction.xyz, cmd.tbn[2].xyz) * 0.0001f;
-  rayData = pathTrace(rayData, outp.hitT, outp.normals, outp.indices, type);
+  rayData = pathTrace(rayData, outp, type);
 
   //
   float transpCoef = clamp(1.f - cmd.diffuseColor.a, 0.f, 1.f);
