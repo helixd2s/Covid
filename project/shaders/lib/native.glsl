@@ -27,6 +27,7 @@
 #extension GL_KHR_shader_subgroup_ballot : require
 //#extension GL_ARB_conservative_depth : require
 #extension GL_EXT_shared_memory_block : require
+#extension GL_EXT_fragment_shader_barycentric : require
 
 #ifdef USE_ATOMIC_FLOAT
 #extension GL_EXT_shader_atomic_float : require

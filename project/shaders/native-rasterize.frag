@@ -8,18 +8,22 @@
 #include "lib/native.glsl"
 
 //
+//layout(location = 0) pervertexEXT in vec4 pColor_[];
+//layout(location = 1) pervertexEXT in uvec4 pIndices_[];
+//layout(location = 2) pervertexEXT in vec4 pScreen_[];
+//layout(location = 3) pervertexEXT in vec4 pTexcoord_[];
 layout(location = 0) in vec4 pColor;
-layout(location = 1) flat in uvec4 pIndices;
-//spirv_decorate (extensions = ["SPV_KHR_fragment_shader_barycentric"], capabilities = [5284], 5285) layout(location = 2) in mat3x4 pScreen_;
+layout(location = 1) in flat uvec4 pIndices;
 layout(location = 2) in vec4 pScreen;
 layout(location = 3) in vec4 pTexcoord;
+layout(location = 4) in mat3x3 pTbn;
 
 // needed for linear interpolation...
-layout(location = 0) out uvec4 indices;
-layout(location = 1) out uvec4 derivatives;
-layout(location = 2) out vec4 baryData;
-layout(location = 3) out vec4 position;
-layout(location = 4) out vec4 tcolor;
+layout(location = 0) out uvec4 oIndices;
+layout(location = 1) out uvec4 oDerivative;
+layout(location = 2) out vec4 oBaryData;
+layout(location = 3) out vec4 oPosition;
+layout(location = 4) out vec4 oColor;
 
 // CONFLICT WITH CONVERVATIVE RASTERIZATION :(
 #ifndef TRANSLUCENT
@@ -28,10 +32,6 @@ layout (early_fragment_tests) in;
 
 // 
 layout (depth_any) out float gl_FragDepth;
-
-// yet another vaporware
-spirv_decorate (extensions = ["SPV_KHR_fragment_shader_barycentric"], capabilities = [5284], 11, 5286) in vec3 gl_BaryCoordEXT;
-spirv_decorate (extensions = ["SPV_KHR_fragment_shader_barycentric"], capabilities = [5284], 11, 5287) in vec3 gl_BaryCoordNoPerspEXT;
 
 //
 // We prefer to use refraction and ray-tracing for transparent effects...
@@ -44,25 +44,31 @@ void main() {
   0u;
 #endif
   const vec3 pBary = gl_BaryCoordEXT;
-  //const vec4 pScreen = pScreen_ * pBary;
+
+  //
+  //const uvec4 pIndices = pIndices_[0];
+  //const vec4 pScreen = cvt3x4(pScreen_) * pBary;
+  //const vec4 pColor = cvt3x4(pColor_) * pBary;
+  //const vec4 pTexcoord = cvt3x4(pTexcoord_) * pBary;
+
+  //
+  const float depth = pScreen.z/pScreen.w;
+  const uvec4 derrivative = uvec4(
+    packHalf2x16(vec2(dFdx(pBary.x), dFdy(pBary.x))),
+    packHalf2x16(vec2(dFdx(pBary.y), dFdy(pBary.y))),
+    packHalf2x16(vec2(dFdx(pBary.z), dFdy(pBary.z))),
+    packHalf2x16(vec2(dFdx(depth), dFdy(depth)))
+  );
 
   // 
   InstanceInfo instanceInfo = getInstance(instancedData, translucent, pIndices.x);
   GeometryInfo geometryInfo = getGeometry(instanceInfo, pIndices.y);
-  GeometryExtData geometry = getGeometryData(geometryInfo, pIndices.z);
-  GeometryExtAttrib attrib = interpolate(geometry, pBary);
 
   //
 #ifdef TRANSLUCENT
-  mat3x3 tbn = getTBN(attrib);
-  tbn[0] = fullTransformNormal(instanceInfo, tbn[0], pIndices.y, 0);
-  tbn[1] = fullTransformNormal(instanceInfo, tbn[1], pIndices.y, 0);
-  tbn[2] = fullTransformNormal(instanceInfo, tbn[2], pIndices.y, 0);
+  const mat3x3 tbn = mat3x3(normalize(pTbn[0]), normalize(pTbn[1]), normalize(pTbn[2]));
   MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), pTexcoord.xy, tbn);
 #endif
-
-  //
-  //gl_FragDepth = 1.f;
 
   // alpha and depth depth test fail
   const float dp = texelFetch(textures[framebuffers[0].attachments[0][5]], ivec2(gl_FragCoord.xy), 0).r;
@@ -70,25 +76,20 @@ void main() {
 #ifdef TRANSLUCENT
     materialPix.color[MATERIAL_ALBEDO].a < 0.01f || 
 #endif
-    false//dp <= (gl_FragCoord.z - 0.0001f)
+    dp <= (gl_FragCoord.z - 0.0001f)
   ) {
     discard;
   } else 
   {
     //
-    indices = pIndices;
-    baryData = vec4(pBary, pScreen.z/pScreen.w);
-    position = vec4(pScreen.xyz/pScreen.w, 1.f);
-    derivatives = uvec4(
-      packHalf2x16(vec2(dFdx(pBary.x), dFdy(pBary.x))),
-      packHalf2x16(vec2(dFdx(pBary.y), dFdy(pBary.y))),
-      packHalf2x16(vec2(dFdx(pBary.z), dFdy(pBary.z))),
-      packHalf2x16(vec2(dFdx(pScreen.z/pScreen.w), dFdy(pScreen.z/pScreen.w)))
-    );
+    oIndices = pIndices;
+    oBaryData = vec4(pBary, depth);
+    oPosition = vec4(pScreen.xyz/pScreen.w, 1.f);
+    oDerivative = derrivative;
 #ifdef TRANSLUCENT
-    tcolor = materialPix.color[MATERIAL_ALBEDO] * vec4(materialPix.color[MATERIAL_ALBEDO].aaa, 1.f);
+    oColor = materialPix.color[MATERIAL_ALBEDO] * vec4(materialPix.color[MATERIAL_ALBEDO].aaa, 1.f);
 #else
-    tcolor = vec4(0.f.xxx, 1.f);
+    oColor = vec4(0.f.xxx, 1.f);
 #endif
     gl_FragDepth = gl_FragCoord.z;
   };

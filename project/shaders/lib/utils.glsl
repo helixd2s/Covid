@@ -231,5 +231,10 @@ vec3 computeBary(in vec4 vo, in mat3x4 vt) {
   return abs(det) > 0.f ? UVW : vec3(0.f);
 };
 
+//
+mat3x4 cvt3x4(in vec4 m[3]) { return mat3x4(m[0],m[1],m[2]); };
+mat3x3 cvt3x3(in vec3 m[3]) { return mat3x3(m[0],m[1],m[2]); };
+mat3x2 cvt3x2(in vec2 m[3]) { return mat3x2(m[0],m[1],m[2]); };
+
 
 #endif
