@@ -200,7 +200,7 @@ namespace ANAMED {
         .maxSets = 6u,
       })->setPoolSizes(this->DPC = std::vector<vk::DescriptorPoolSize>{
         vk::DescriptorPoolSize{ vk::DescriptorType::eSampler, 64u },
-        vk::DescriptorPoolSize{ vk::DescriptorType::eSampledImage, 256u },
+        vk::DescriptorPoolSize{ vk::DescriptorType::eSampledImage, 1024u },
         vk::DescriptorPoolSize{ vk::DescriptorType::eUniformBuffer, 2u },
         vk::DescriptorPoolSize{ vk::DescriptorType::eStorageImage, 64u },
         vk::DescriptorPoolSize{ vk::DescriptorType::eStorageBuffer, 2u },
@@ -215,7 +215,7 @@ namespace ANAMED {
       //this->createDescriptorLayout(vk::DescriptorType::eUniformBuffer, 1u);
       //this->createDescriptorLayout(vk::DescriptorType::eStorageBuffer, 1u);
       this->createDescriptorLayoutUniformStorage(16u);
-      this->createDescriptorLayout(vk::DescriptorType::eSampledImage, 256u);
+      this->createDescriptorLayout(vk::DescriptorType::eSampledImage, 1024u);
       this->createDescriptorLayout(vk::DescriptorType::eSampler, 64u);
       this->createDescriptorLayout(vk::DescriptorType::eStorageImage, 64u);
 

@@ -18,6 +18,7 @@ struct PassData {
   bool alphaPassed;
   bool diffusePass;
   vec3 normals;
+  bool validRay;
   //vec3 origin;
 };
 
@@ -173,7 +174,7 @@ vec4 directLighting(in vec3 O, in vec3 N, in vec3 tN, in vec3 r, in float t) {
   rayData.emission.xyzw = f16vec4(0.f.xxx, 0.f);
 
   // 
-  const bool hasIntersection = intersect(vec4(SO, sunSphere.w), rayData.origin.xyz, rayData.direction.xyz, t);
+  const bool hasIntersection = intersect(vec4(SO, sunSphere.w), rayData.origin.xyz, rayData.direction.xyz, t) && dot( rayData.direction.xyz, tN ) > 0.f;
   IntersectionInfo intersection;
   {
     intersection.barycentric = vec3(0.f.xxx);
@@ -271,6 +272,9 @@ RayData handleIntersection(inout RayData rayData, inout IntersectionInfo interse
   //reuseLight(rayData);
   rayData.origin.xyz += outRayNormal(rayData.direction.xyz, tbn[2]) * 0.0001f;
 
+  //
+  passed.validRay = passed.alphaPassed ? true : dot(rayData.direction.xyz, tbn[2]) > 0.f;
+
   // 
   return rayData;
 };
@@ -314,6 +318,7 @@ RayData pathTrace(inout RayData rayData, inout float hitDist, inout vec3 firstNo
       pass.alphaPassed = false;
       pass.diffusePass = false;
       pass.normals = vec3(0.f.xxx);
+      pass.validRay = true;
       //opaquePass = pass;
 
       //
@@ -342,6 +347,8 @@ RayData pathTrace(inout RayData rayData, inout float hitDist, inout vec3 firstNo
         firstIndices = uvec4(intersection.instanceId, intersection.geometryId, intersection.primitiveId, 0u);
         firstNormal = pass.normals.xyz;
       };
+
+      if (!pass.validRay) { break; };
 
     } else 
     {
