@@ -29,7 +29,7 @@ void main() {
     //
     uvec2 part = (gcoord_ / (UR(deferredBuf.extent)/2));
     uvec2 jit = (gcoord_ % (UR(deferredBuf.extent)/2)) * 2;
-    uint tmap = (part.x+part.y+frameCounter)%4;
+    uint tmap = (part.y*2u+part.x+frameCounter)%4;
     uvec2 gcoord = jit + shift_map[tmap];
 
     //
@@ -106,10 +106,17 @@ void main() {
     //
     retranslateSurface(cmd);
 
+    //
+    const bool needsDiffuse = cmd.diffuseColor.a >= 0.001f && luminance(cmd.diffuseColor.xyz) > 0.f;
+    const bool needsReflection = cmd.reflCoef >= 0.001f;
+    const bool needsTransparency = cmd.diffuseColor.a < 1.f;
+
     // replace by reflection
     bool validTracing = true;
-    if (type == 1 && (cmd.diffuseColor.a >=    1.f)) { type = 0; };
-    if (type == 2 && (cmd.diffuseColor.a <  0.001f || luminance(cmd.diffuseColor.xyz) <= 0.f)) { type = 0; };
+    if (type == 0 && !needsReflection) { type = needsTransparency ? 1 : 2; };
+    if (type == 1 && !needsTransparency) { type = needsReflection ? 0 : 2; };
+    if (type == 2 && !needsDiffuse) { type = needsTransparency ? 1 : 0; };
+    if (!needsTransparency && !needsReflection && !needsDiffuse) { validTracing = false; };
 
     //
     if (hasHit) {

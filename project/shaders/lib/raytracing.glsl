@@ -281,13 +281,11 @@ RayData handleIntersection(inout RayData rayData, inout IntersectionInfo interse
 
 //
 RayData pathTrace(inout RayData rayData, inout PathTraceOutput outp, in uint type) {
-  //
-  bool surfaceFound = false;
-  float currentT = 0.f;
   //for (uint32_t i=0;i<3;i++) {
   uint R=0, T=0;
 
   // sorry, I hadn't choice
+  float currentT = 0.f;
   uvec4 lastIndices = outp.indices;
   vec3 lastNormal = outp.normal;
 
@@ -316,7 +314,7 @@ RayData pathTrace(inout RayData rayData, inout PathTraceOutput outp, in uint typ
       pass.alphaPassed = false;
       pass.diffusePass = false;
       pass.normals = vec3(0.f.xxx);
-      pass.validRay = true;
+      pass.validRay = false;
 
       //
       rayData = handleIntersection(rayData, intersection, pass, type);
@@ -327,11 +325,11 @@ RayData pathTrace(inout RayData rayData, inout PathTraceOutput outp, in uint typ
       lastIndices = uvec4(intersection.instanceId, intersection.geometryId, intersection.primitiveId, 0u);
 
       //
-      if (pass.diffusePass && !surfaceFound) { 
-        outp.hitT = currentT;
+      if (pass.diffusePass && !outp.surfaceFound) { 
         outp.surfaceFound = true;
-        outp.indices = uvec4(intersection.instanceId, intersection.geometryId, intersection.primitiveId, 0u);
-        outp.normal = pass.normals.xyz;
+        outp.hitT = currentT;
+        outp.indices = lastIndices;
+        outp.normal = lastNormal;
       };
 
       //
@@ -344,8 +342,9 @@ RayData pathTrace(inout RayData rayData, inout PathTraceOutput outp, in uint typ
       // suppose last possible hit-point
       rayData.emission += f16vec4(trueMultColor(rayData.energy.xyz, gamma3(toLinear(skyColor.xyz))), 0.f);
       rayData.energy.xyz *= f16vec3(0.f.xxx);
-      if (!surfaceFound) {
+      if (!outp.surfaceFound) {
         // sorry, I hadn't choice
+        outp.surfaceFound = true;
         outp.indices = lastIndices;
         outp.normal = lastNormal;
         if (type == 1 || R == 0) {
@@ -354,7 +353,6 @@ RayData pathTrace(inout RayData rayData, inout PathTraceOutput outp, in uint typ
         } else {
           outp.hitT = currentT;
         };
-        outp.surfaceFound = true;
       };
       break;
     }
@@ -435,16 +433,10 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
   hitInfo.direct.xyz = rayDirection;
 
   //
-  if (outp.hitT > 0.f && 
-    (hitInfo.origin.w <= 0.f || hitInfo.origin.w >= 10000.f || 
-      hitInfo.origin.w > 0.f && (
-        type == 1 && outp.hitT >= hitInfo.origin.w && outp.hitT < 10000.f || 
-        type == 0 && outp.hitT <= hitInfo.origin.w || 
-        type == 2 && outp.hitT <= hitInfo.origin.w
-      )
-    )) {
-      hitInfo.origin.w = outp.hitT;
-    };
+  if (outp.hitT > 0.f) {
+    if (type == 1) { hitInfo.origin.w = max(hitInfo.origin.w < 10000.f ? hitInfo.origin.w :     0.f, outp.hitT); };
+    if (type == 0) { hitInfo.origin.w = min(hitInfo.origin.w >     0.f ? hitInfo.origin.w : 10000.f, outp.hitT); };
+  };
 
   // 
   return outp;

@@ -57,7 +57,7 @@ IntersectionInfo rasterizeVector(in InstanceAddressBlock addressInfo, in RayData
       any(greaterThan(bary, 0.f.xxx)) && 
       all(greaterThan(bary, 1e-9.xxx)) && 
       all(lessThan(bary, 1.f.xxx+1e-9)) && 
-      pos.z <= currentZ && (ssOriginal.z < (pos.z + 0.0001f) || (intersection.instanceId&0x80000000u) == 0u)
+      pos.z <= currentZ && (ssOriginal.z < (pos.z + 0.001f) || (intersection.instanceId&0x80000000u) == 0u)
     ) {
       intersection.instanceId = rasterInfo.indices.x;
       intersection.geometryId = rasterInfo.indices.y;

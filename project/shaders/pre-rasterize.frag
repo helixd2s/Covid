@@ -66,9 +66,9 @@ void main() {
 
   // alpha and depth depth (manually)
 beginInvocationInterlockARB();
-  const float dc = gl_FragCoord.z + mxD;
+  const float dc = gl_FragCoord.z + mnD;
   const float dp = imageLoad(imagesR32F[rasterBuf.images[0][1]], ivec2(gl_FragCoord.xy)).r;//texelFetch(textures[framebuffers[2].attachments[0][5]], ivec2(gl_FragCoord.xy), 0).r;
-  const bool cm = (dc - 0.001f <= dp);//|| !(all(greaterThan(pBary, 1e-9.xxx)) && all(lessThan(pBary, 1.f.xxx+1e-9)));
+  const bool cm = ((dc - 0.001f) <= dp);//|| !(all(greaterThan(pBary, 1e-9.xxx)) && all(lessThan(pBary, 1.f.xxx+1e-9)));
 #ifdef TRANSLUCENT
   const bool invalidHit = materialPix.color[MATERIAL_ALBEDO].a < 0.01f || !cm;
 #else

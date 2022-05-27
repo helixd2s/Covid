@@ -41,7 +41,7 @@ void sort() {
           j1 = 0, j2 = 0;
           for (k = a; k < c; k++)
           {
-            frags[k] = (b + j1 >= c || (j2 < step && r_max_distance(leftArray[j2]-1, 0) <= r_max_distance(frags[b + j1]-1, 0))) ? leftArray[j2++] : frags[b + j1++];
+            frags[k] = (b + j1 >= c || (j2 < step && r_min_distance(leftArray[j2]-1, 0) <= r_min_distance(frags[b + j1]-1, 0))) ? leftArray[j2++] : frags[b + j1++];
           }
           ////////////////////////////////////////////////////////////////////////
           i += 2 * step;
