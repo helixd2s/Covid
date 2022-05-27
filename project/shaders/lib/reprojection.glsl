@@ -135,7 +135,8 @@ void reproject3D(in uint pixelId, in uint type)
     };
 
     //
-    bool validNormal = true;
+    bool dstValidNormal = true;
+#ifdef OUTSOURCE
     if (type == 0 || type == 1) { // 
       RayData rayData;
       rayData.launchId = u16vec2(dstInt);
@@ -168,11 +169,12 @@ void reproject3D(in uint pixelId, in uint type)
         gotNormal = materialPix.color[MATERIAL_NORMAL].xyz;
       };
 
-      validNormal = abs(dot(normalize(gotNormal), dstNormal)) > 0.9999f;
+      dstValidNormal = abs(dot(normalize(gotNormal), dstNormal)) > 0.9999f;
     };
+#endif
 
     // sorry, we doesn't save previous raster data
-    const bool dstValidDist = (isSurface ? all(lessThan(abs(dstSamplePos.xyz-(dstHitPersp.xyz/dstHitPersp.w)), vec3(1.f/vec2(UR(deferredBuf.extent)), 0.008f))) : true) && validNormal;
+    const bool dstValidDist = (isSurface ? all(lessThan(abs(dstSamplePos.xyz-(dstHitPersp.xyz/dstHitPersp.w)), vec3(1.f/vec2(UR(deferredBuf.extent)), 0.008f))) : true) && dstValidNormal;
     const bool srcValidDist = (isSurface ? all(lessThan(abs(srcSamplePos.xyz-(srcHitPersp.xyz/srcHitPersp.w)), vec3(1.f/vec2(UR(deferredBuf.extent)), 0.008f))) : true) && any(greaterThan(abs(HIT_SRC.origin.xyz), 0.f.xxx)) && (HIT_SRC.origin.w > 0.f || type == 2);
 
     // copy to dest, and nullify source
