@@ -166,10 +166,13 @@ void reproject3D(in uint pixelId, in uint type)
         const bool inner = false;//dot(vec3(cmd.tbn[2]), cmd.rayData.direction.xyz) > 0.f;
 
         //
-        gotNormal = materialPix.color[MATERIAL_NORMAL].xyz;
+        gotNormal = tbn[2];//materialPix.color[MATERIAL_NORMAL].xyz;
+
+        //
+        dstValidNormal = abs(dot(normalize(gotNormal), dstNormal)) > 0.9999f;
       };
 
-      dstValidNormal = abs(dot(normalize(gotNormal), dstNormal)) > 0.9999f;
+      
     };
 #endif
 

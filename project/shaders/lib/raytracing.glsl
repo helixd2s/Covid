@@ -434,7 +434,7 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
 
   //
   if (outp.hitT > 0.f) {
-    if (type == 1) { hitInfo.origin.w = max(hitInfo.origin.w < 10000.f ? hitInfo.origin.w :     0.f, outp.hitT); };
+    if (type == 1) { hitInfo.origin.w = min(hitInfo.origin.w >     0.f ? hitInfo.origin.w : 10000.f, outp.hitT); };//max(hitInfo.origin.w < 10000.f ? hitInfo.origin.w :     0.f, outp.hitT); };
     if (type == 0) { hitInfo.origin.w = min(hitInfo.origin.w >     0.f ? hitInfo.origin.w : 10000.f, outp.hitT); };
   };
 
@@ -447,7 +447,7 @@ void retranslateSurface(inout PathTraceCommand cmd) {
   PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.rayData.launchId.x + cmd.rayData.launchId.y * UR(deferredBuf.extent).x);
   surfaceInfo.indices = uvec4(cmd.intersection.instanceId, cmd.intersection.geometryId, cmd.intersection.primitiveId, 0u);
   surfaceInfo.origin.xyz = cmd.rayData.origin.xyz;
-  surfaceInfo.normal = cmd.normals;
+  surfaceInfo.normal = cmd.tbn[2];
   surfaceInfo.tex[EMISSION_TEX] = vec4(cmd.emissiveColor, 1.f);
   surfaceInfo.tex[DIFFUSE_TEX] = cmd.diffuseColor;
 };
