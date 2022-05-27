@@ -25,7 +25,6 @@ void main() {
   0u;
 #endif
   const vec3 pBary = gl_BaryCoordEXT;
-  //const vec4 pScreen = pScreen_ * pBary;
 
   //
   //const uvec4 pIndices = pIndices_[0];
@@ -65,12 +64,12 @@ void main() {
 #ifdef TRANSLUCENT
     materialPix.color[MATERIAL_ALBEDO].a < 0.01f || 
 #endif
-    false//dp <= (gl_FragCoord.z - 0.0001f) // for optimize!
+    (dp <= (gl_FragCoord.z - 0.0001f) && translucent == 0) // for optimize!
   ) {} else 
   {
     // 
     const uint rasterId = atomicAdd(counters[RASTER_COUNTER], 1);//subgroupAtomicAdd(RASTER_COUNTER);
-    if (rasterId < UR(rasterBuf.extent).x * UR(rasterBuf.extent).y * 16) {
+    if (rasterId < UR(rasterBuf.extent).x * UR(rasterBuf.extent).y * 32) {
       const uint oldId = imageAtomicExchange(imagesR32UI[rasterBuf.images[0][/*translucent*/0]], ivec2(gl_FragCoord.xy), rasterId+1);
 
       RasterInfoRef rasterInfo = getRasterInfo(rasterId, 0);

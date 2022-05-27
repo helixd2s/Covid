@@ -446,23 +446,12 @@ public:
       }
     });
 
-    // 
-    rasterDataObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
-      .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
-      .bufferInfo = ANAMED::BufferCreateInfo{
-        .size = sizeof(RasterInfo) * renderArea.extent.width * renderArea.extent.height * 32u,
-        .type = ANAMED::BufferType::eStorage,
-      }
-    });
-
     //
     uniformData.surfaceData = surfaceDataObj->getDeviceAddress();
     uniformData.pixelData = pixelDataObj->getDeviceAddress();
     uniformData.writeData = writeDataObj->getDeviceAddress();
-    uniformData.rasterData[0] = rasterDataObj->getDeviceAddress();
-    uniformData.rasterData[1] = uniformData.rasterData[0] + sizeof(RasterInfo) * renderArea.extent.width * renderArea.extent.height * 16u;
-
-    //
+    
+    // 
     uint32_t testDivision = 1u;
 
     //
@@ -474,6 +463,19 @@ public:
       });
       uniformData.framebuffers[i] = framebufferObj[i]->getStateInfo();
     };
+
+    // 
+    rasterDataObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
+      .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
+      .bufferInfo = ANAMED::BufferCreateInfo{
+        .size = sizeof(RasterInfo) * uniformData.framebuffers[0].extent.x * uniformData.framebuffers[0].extent.y * 64u,
+        .type = ANAMED::BufferType::eStorage,
+      }
+      });
+
+    uniformData.rasterData[0] = rasterDataObj->getDeviceAddress();
+    uniformData.rasterData[1] = uniformData.rasterData[0] + sizeof(RasterInfo) * uniformData.framebuffers[0].extent.x * uniformData.framebuffers[0].extent.y * 32u;
+
 
     // now, you understand why?
     rasterBufObj = ANAMED::PingPongObj::make(deviceObj.with(0u), ANAMED::PingPongCreateInfo{
