@@ -186,27 +186,27 @@ namespace ANAMED {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<PipelineLayoutObj>(this->cInfo->layout);
-      decltype(auto) attachment = descriptorsObj->cInfo->attachments[uint32_t(this->cInfo->type)];
+      decltype(auto) attachment = this->cInfo->attachmentLayout;
 
       //
       std::vector<vk::ClearRect> clearRects = {};
       std::vector<vk::ClearAttachment> clearAttachments = {};
 
       // 
-      clearRects.push_back(vk::ClearRect{ .rect = this->renderArea, .baseArrayLayer = 0u, .layerCount = this->cInfo->type == FramebufferType::eCubemap ? 6u : 1u });
+      clearRects.push_back(vk::ClearRect{ .rect = this->renderArea, .baseArrayLayer = 0u, .layerCount = this->cInfo->attachmentLayout->type == FramebufferType::eCubemap ? 6u : 1u });
       uint32_t i = 0u; for (decltype(auto) color : history.colorAttachments) {
         uint32_t t = i++;
-        clearAttachments.push_back(vk::ClearAttachment{ .aspectMask = vk::ImageAspectFlagBits::eColor, .colorAttachment = t, .clearValue = attachment.colorClearValues[t] });
+        clearAttachments.push_back(vk::ClearAttachment{ .aspectMask = vk::ImageAspectFlagBits::eColor, .colorAttachment = t, .clearValue = attachment->colorClearValues[t] });
       };
 
       //
-      clearAttachments.push_back(vk::ClearAttachment{ .aspectMask = vk::ImageAspectFlagBits::eDepth, .clearValue = attachment.depthClearValue });
-      clearAttachments.push_back(vk::ClearAttachment{ .aspectMask = vk::ImageAspectFlagBits::eStencil, .clearValue = attachment.stencilClearValue });
+      clearAttachments.push_back(vk::ClearAttachment{ .aspectMask = vk::ImageAspectFlagBits::eDepth, .clearValue = attachment->depthClearValue });
+      clearAttachments.push_back(vk::ClearAttachment{ .aspectMask = vk::ImageAspectFlagBits::eStencil, .clearValue = attachment->stencilClearValue });
 
       // 
       cmdBuf->beginRendering(vk::RenderingInfoKHR{
         .renderArea = renderArea,
-        .layerCount = this->cInfo->type == FramebufferType::eCubemap ? 6u : 1u,
+        .layerCount = this->cInfo->attachmentLayout->type == FramebufferType::eCubemap ? 6u : 1u,
         .viewMask = 0x0u,
         .colorAttachmentCount = uint32_t(history.colorAttachments.size()),
         .pColorAttachments = history.colorAttachments.data(),
@@ -291,12 +291,12 @@ namespace ANAMED {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<PipelineLayoutObj>(this->cInfo->layout);
-      decltype(auto) attachment = descriptorsObj->cInfo->attachments[uint32_t(this->cInfo->type)];
-      decltype(auto) lastDepthFormat = attachment.depthAttachmentFormat;
-      decltype(auto) lastStencilFormat = attachment.stencilAttachmentFormat;
+      decltype(auto) attachment = this->cInfo->attachmentLayout;
+      decltype(auto) lastDepthFormat = attachment->depthAttachmentFormat;
+      decltype(auto) lastStencilFormat = attachment->stencilAttachmentFormat;
 
       // 
-      decltype(auto) format = (*imageType) == ImageType::eDepthStencilAttachment ? lastDepthFormat : ((*imageType) == ImageType::eDepthAttachment ? lastDepthFormat : ((*imageType) == ImageType::eStencilAttachment ? lastStencilFormat : attachment.colorAttachmentFormats[history.colorAttachments.size()]));
+      decltype(auto) format = (*imageType) == ImageType::eDepthStencilAttachment ? lastDepthFormat : ((*imageType) == ImageType::eDepthAttachment ? lastDepthFormat : ((*imageType) == ImageType::eStencilAttachment ? lastStencilFormat : attachment->colorAttachmentFormats[history.colorAttachments.size()]));
       decltype(auto) imageLayout = 
         (*imageType) == ImageType::eDepthStencilAttachment ? vk::ImageLayout::eDepthStencilAttachmentOptimal :
         ((*imageType) == ImageType::eDepthAttachment ? vk::ImageLayout::eDepthAttachmentOptimal :
@@ -306,20 +306,20 @@ namespace ANAMED {
       auto imageObj = ResourceObj::make(this->base, ResourceCreateInfo{
         .descriptors = this->cInfo->layout,
         .imageInfo = ImageCreateInfo{
-          .flags = this->cInfo->type == FramebufferType::eCubemap ? vk::ImageCreateFlagBits::eCubeCompatible : vk::ImageCreateFlagBits{},
+          .flags = this->cInfo->attachmentLayout->type == FramebufferType::eCubemap ? vk::ImageCreateFlagBits::eCubeCompatible : vk::ImageCreateFlagBits{},
           .imageType = vk::ImageType::e2D,//this->cInfo->type == FramebufferType::eCubemap ? vk::ImageType::e3D : vk::ImageType::e2D,
           .format = format,
           .extent = vk::Extent3D{ cInfo->extent.width, cInfo->extent.height, /*this->cInfo->type == FramebufferType::eCubemap ? 6u : 1u*/ 1u},
-          .layerCount = this->cInfo->type == FramebufferType::eCubemap ? 6u : 1u,
+          .layerCount = this->cInfo->attachmentLayout->type == FramebufferType::eCubemap ? 6u : 1u,
           .layout = vk::ImageLayout::eShaderReadOnlyOptimal,
           .type = imageType,
         }
       });
 
       //
-      decltype(auto) subresourceRange = imageObj->subresourceRange(0u, this->cInfo->type == FramebufferType::eCubemap ? 6u : 1u, 0u, 1u);
+      decltype(auto) subresourceRange = imageObj->subresourceRange(0u, this->cInfo->attachmentLayout->type == FramebufferType::eCubemap ? 6u : 1u, 0u, 1u);
       decltype(auto) pair = imageObj->createImageView(ImageViewCreateInfo{
-        .viewType = this->cInfo->type == FramebufferType::eCubemap ? vk::ImageViewType::eCube : vk::ImageViewType::e2D,
+        .viewType = this->cInfo->attachmentLayout->type == FramebufferType::eCubemap ? vk::ImageViewType::eCube : vk::ImageViewType::e2D,
         .subresourceRange = subresourceRange,
         .preference = ImageViewPreference::eSampled
       });
@@ -356,19 +356,19 @@ namespace ANAMED {
 
       //
       if ((*imageType) == ImageType::eDepthStencilAttachment) {
-        history.stencilAttachment = history.depthAttachment = vk::RenderingAttachmentInfo{ .imageView = imageView, .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eLoad, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = attachment.depthClearValue };
+        history.stencilAttachment = history.depthAttachment = vk::RenderingAttachmentInfo{ .imageView = imageView, .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eLoad, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = attachment->depthClearValue };
       }
       else
       if ((*imageType) == ImageType::eDepthAttachment) {
-        history.depthAttachment = vk::RenderingAttachmentInfo{ .imageView = imageView, .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eLoad, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = attachment.depthClearValue };
+        history.depthAttachment = vk::RenderingAttachmentInfo{ .imageView = imageView, .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eLoad, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = attachment->depthClearValue };
       }
       else 
       if ((*imageType) == ImageType::eStencilAttachment) {
-        history.stencilAttachment = vk::RenderingAttachmentInfo{ .imageView = imageView, .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eLoad, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = attachment.depthClearValue };
+        history.stencilAttachment = vk::RenderingAttachmentInfo{ .imageView = imageView, .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eLoad, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = attachment->depthClearValue };
       }
       else {
         uintptr_t last = history.colorAttachments.size();
-        history.colorAttachments.push_back(vk::RenderingAttachmentInfo{ .imageView = imageView, .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eLoad, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = attachment.colorClearValues[last] });
+        history.colorAttachments.push_back(vk::RenderingAttachmentInfo{ .imageView = imageView, .imageLayout = imageLayout, .resolveMode = vk::ResolveModeFlagBits::eNone, .loadOp = vk::AttachmentLoadOp::eLoad, .storeOp = vk::AttachmentStoreOp::eStore, .clearValue = attachment->colorClearValues[last] });
       };
     };
 
@@ -399,12 +399,12 @@ namespace ANAMED {
       for (auto& history : this->fbHistory) {
 
         //
-        for (auto& format : descriptorsObj->cInfo->attachments[uint32_t(this->cInfo->type)].colorAttachmentFormats) {
+        for (auto& format : this->cInfo->attachmentLayout->colorAttachmentFormats) {
           this->createImage(history, ImageType::eUniversal);
         };
 
         // 
-        if (descriptorsObj->cInfo->attachments[uint32_t(this->cInfo->type)].depthAttachmentFormat == descriptorsObj->cInfo->attachments[uint32_t(this->cInfo->type)].stencilAttachmentFormat) {
+        if (this->cInfo->attachmentLayout->depthAttachmentFormat == this->cInfo->attachmentLayout->stencilAttachmentFormat) {
           this->createImage(history, ImageType::eDepthStencilAttachment);
         }
         else {

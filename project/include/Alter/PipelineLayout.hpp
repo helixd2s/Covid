@@ -57,7 +57,7 @@ namespace ANAMED {
 
     // 
     std::vector<vk::DescriptorPoolSize> DPC = {};
-    std::optional<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{};
+    std::optional<PipelineLayoutCreateInfo> cInfo = PipelineLayoutCreateInfo{};
 
     //
     //std::shared_ptr<DeviceObj> deviceObj = {};
@@ -88,16 +88,16 @@ namespace ANAMED {
 
 
   public:
-    DescriptorsCreateInfo& getCInfo() { return this->cInfo.value(); };
-    DescriptorsCreateInfo const& getCInfo() const { return this->cInfo.value(); };
+    PipelineLayoutCreateInfo& getCInfo() { return this->cInfo.value(); };
+    PipelineLayoutCreateInfo const& getCInfo() const { return this->cInfo.value(); };
 
     // 
-    PipelineLayoutObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
+    PipelineLayoutObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<PipelineLayoutCreateInfo> cInfo = PipelineLayoutCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
       //this->construct(deviceObj, cInfo);
     };
 
     // 
-    PipelineLayoutObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
+    PipelineLayoutObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<PipelineLayoutCreateInfo> cInfo = PipelineLayoutCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
       //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
@@ -137,7 +137,7 @@ namespace ANAMED {
     inline virtual cpp21::bucket<vk::DescriptorImageInfo> const& getImageDescriptors() const { return images; };
 
     //
-    inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) {
+    inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<PipelineLayoutCreateInfo> cInfo = PipelineLayoutCreateInfo{}) {
       auto shared = std::make_shared<PipelineLayoutObj>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle), cInfo);
       auto wrap = shared->registerSelf();
@@ -189,7 +189,7 @@ namespace ANAMED {
     };
 
     // 
-    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) {
+    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<PipelineLayoutCreateInfo> cInfo = PipelineLayoutCreateInfo{}) {
       //this->deviceObj = deviceObj;
       if (cInfo) { this->cInfo = cInfo; };
 

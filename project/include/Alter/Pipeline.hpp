@@ -123,8 +123,8 @@ namespace ANAMED {
       decltype(auto) pRendering = infoMap->set(vk::StructureType::ePipelineRenderingCreateInfo, vk::PipelineRenderingCreateInfo{
         .pNext = pLibrary.get(),
         .viewMask = 0x0u,
-        .depthAttachmentFormat = descriptors->cInfo->attachments[uint32_t(graphics->framebufferType)].depthAttachmentFormat,
-        .stencilAttachmentFormat = descriptors->cInfo->attachments[uint32_t(graphics->framebufferType)].stencilAttachmentFormat
+        .depthAttachmentFormat = graphics->attachmentLayout->depthAttachmentFormat,
+        .stencilAttachmentFormat = graphics->attachmentLayout->stencilAttachmentFormat
       });
 
       //
@@ -210,7 +210,7 @@ namespace ANAMED {
 
       // 
       decltype(auto) pInfo = infoMap->set(vk::StructureType::eGraphicsPipelineCreateInfo, vk::GraphicsPipelineCreateInfo{
-        .pNext = &pRendering->setColorAttachmentFormats(descriptors->cInfo->attachments[uint32_t(graphics->framebufferType)].colorAttachmentFormats),
+        .pNext = &pRendering->setColorAttachmentFormats(graphics->attachmentLayout->colorAttachmentFormats),
         .flags = vk::PipelineCreateFlags{},
         .pVertexInputState = pVertexInput.get(),
         .pInputAssemblyState = pInputAssembly.get(),
@@ -219,7 +219,7 @@ namespace ANAMED {
         .pRasterizationState = pRasterization.get(),
         .pMultisampleState = pMultisample.get(),
         .pDepthStencilState = pDepthStencil.get(),
-        .pColorBlendState = &pColorBlend->setAttachments(descriptors->cInfo->attachments[uint32_t(graphics->framebufferType)].blendStates),
+        .pColorBlendState = &pColorBlend->setAttachments(graphics->attachmentLayout->blendStates),
         .pDynamicState = &pDynamic->setDynamicStates(this->dynamicStates),
         .layout = this->cInfo->layout
       })->setStages(pipelineStages);
@@ -334,7 +334,7 @@ namespace ANAMED {
       auto _depInfo = depInfo;
       if (framebuffer) { framebuffer->writeSwitchToAttachment(exec->cmdBuf); };
       exec->cmdBuf.pipelineBarrier2(_depInfo.setMemoryBarriers(memoryBarriersBegin));
-      exec->cmdBuf.beginRendering(vk::RenderingInfoKHR{ .renderArea = renderArea, .layerCount = this->cInfo->graphics->framebufferType == FramebufferType::eCubemap ? 6u : 1u, .viewMask = 0x0u, .colorAttachmentCount = uint32_t(colorAttachments.size()), .pColorAttachments = colorAttachments.data(), .pDepthAttachment = &depthAttachment, .pStencilAttachment = &stencilAttachment });
+      exec->cmdBuf.beginRendering(vk::RenderingInfoKHR{ .renderArea = renderArea, .layerCount = this->cInfo->graphics->attachmentLayout->type == FramebufferType::eCubemap ? 6u : 1u, .viewMask = 0x0u, .colorAttachmentCount = uint32_t(colorAttachments.size()), .pColorAttachments = colorAttachments.data(), .pDepthAttachment = &depthAttachment, .pStencilAttachment = &stencilAttachment });
       exec->cmdBuf.bindPipeline(vk::PipelineBindPoint::eGraphics, exec->pipelineIndex == 0u ? this->handle.as<vk::Pipeline>() : this->secondaryPipelines[exec->pipelineIndex - 1u]);
       exec->cmdBuf.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, descriptorsObj->handle.as<vk::PipelineLayout>(), 0u, descriptorsObj->sets, offsets);
       exec->cmdBuf.setViewportWithCount(viewports);

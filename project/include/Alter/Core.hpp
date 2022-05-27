@@ -683,7 +683,7 @@ namespace ANAMED {
   constexpr uint32_t attachDef1[4] = { 0u, 0u, 0u, 0u };
 
   //
-  struct AttachmentsInfo {
+  struct AttachmentLayout {
     vk::ClearValue depthClearValue = vk::ClearValue{ .depthStencil = vk::ClearDepthStencilValue{.depth = 1.f, .stencil = 0u} };
     vk::ClearValue stencilClearValue = vk::ClearValue{ .depthStencil = vk::ClearDepthStencilValue{.depth = 1.f, .stencil = 0u} };
     std::vector<vk::ClearValue> colorClearValues = { 
@@ -754,22 +754,15 @@ namespace ANAMED {
         .colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
       }
     };
+    FramebufferType type = FramebufferType::eUnknown;
   };
+
+  //
+  inline static std::shared_ptr<AttachmentLayout> defaultAttachmentLayout = std::make_shared<AttachmentLayout>();
 
   //
   struct PipelineLayoutCreateInfo : BaseCreateInfo {
     std::optional<QueueGetInfo> info = QueueGetInfo{};
-    std::vector<AttachmentsInfo> attachments = {
-      AttachmentsInfo{}
-    };
-  };
-
-  //
-  struct DescriptorsCreateInfo : BaseCreateInfo {
-    std::optional<QueueGetInfo> info = QueueGetInfo{};
-    std::vector<AttachmentsInfo> attachments = {
-      AttachmentsInfo{}
-    };
   };
 
   //
@@ -1170,8 +1163,8 @@ namespace ANAMED {
 
   //
   struct GraphicsPipelineCreateInfo : BaseCreateInfo {
-    FramebufferType framebufferType = FramebufferType::eUnknown;
     std::unordered_map<vk::ShaderStageFlagBits, cpp21::shared_vector<uint32_t>> stageCodes = {};
+    std::shared_ptr<AttachmentLayout> attachmentLayout = defaultAttachmentLayout;
 
     bool hasDepthTest = true;
     bool hasDepthWrite = true;
@@ -1201,11 +1194,11 @@ namespace ANAMED {
 
   //
   struct FramebufferCreateInfo : BaseCreateInfo {
-    FramebufferType type = FramebufferType::eUnknown;
     vk::PipelineLayout layout = {};
     vk::Extent2D extent = {640u, 480u};
     uint32_t minImageCount = 2u;
     std::optional<QueueGetInfo> info = {};
+    std::shared_ptr<AttachmentLayout> attachmentLayout = defaultAttachmentLayout;
   };
 
   //

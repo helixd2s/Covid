@@ -537,7 +537,7 @@ protected:
     });
 
     // 
-    descriptorsObj = ANAMED::PipelineLayoutObj::make(deviceObj.with(0u), ANAMED::DescriptorsCreateInfo{
+    descriptorsObj = ANAMED::PipelineLayoutObj::make(deviceObj.with(0u), ANAMED::PipelineLayoutCreateInfo{
 
     });
 
