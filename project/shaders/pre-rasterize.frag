@@ -8,11 +8,15 @@
 #include "lib/native.glsl"
 
 //
-layout(location = 0) in vec4 pColor;
-layout(location = 1) in flat uvec4 pIndices;
-layout(location = 2) in vec4 pScreen;
-layout(location = 3) in vec4 pTexcoord;
-layout(location = 4) in mat3x3 pTbn;
+layout (location = 0) in vec4 pColor;
+layout (location = 1) in flat uvec4 pIndices;
+layout (location = 2) in vec4 pScreen;
+layout (location = 3) in vec4 pTexcoord;
+layout (location = 4) in mat3x3 pTbn;
+
+//
+//layout (early_fragment_tests) in;
+layout (depth_any) out float gl_FragDepth;
 
 //
 // We prefer to use refraction and ray-tracing for transparent effects...
@@ -64,7 +68,7 @@ void main() {
 #ifdef TRANSLUCENT
     materialPix.color[MATERIAL_ALBEDO].a < 0.01f || 
 #endif
-    (dp <= (gl_FragCoord.z - 0.0001f) && translucent == 0) // for optimize!
+    false
   ) {} else 
   {
     // 

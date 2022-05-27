@@ -12,18 +12,18 @@
 //layout(location = 1) pervertexEXT in uvec4 pIndices_[];
 //layout(location = 2) pervertexEXT in vec4 pScreen_[];
 //layout(location = 3) pervertexEXT in vec4 pTexcoord_[];
-layout(location = 0) in vec4 pColor;
-layout(location = 1) in flat uvec4 pIndices;
-layout(location = 2) in vec4 pScreen;
-layout(location = 3) in vec4 pTexcoord;
-layout(location = 4) in mat3x3 pTbn;
+layout (location = 0) in vec4 pColor;
+layout (location = 1) in flat uvec4 pIndices;
+layout (location = 2) in vec4 pScreen;
+layout (location = 3) in vec4 pTexcoord;
+layout (location = 4) in mat3x3 pTbn;
 
 // needed for linear interpolation...
-layout(location = 0) out uvec4 oIndices;
-layout(location = 1) out uvec4 oDerivative;
-layout(location = 2) out vec4 oBaryData;
-layout(location = 3) out vec4 oPosition;
-layout(location = 4) out vec4 oColor;
+layout (location = 0) out uvec4 oIndices;
+layout (location = 1) out uvec4 oDerivative;
+layout (location = 2) out vec4 oBaryData;
+layout (location = 3) out vec4 oPosition;
+layout (location = 4) out vec4 oColor;
 
 // CONFLICT WITH CONVERVATIVE RASTERIZATION :(
 #ifndef TRANSLUCENT

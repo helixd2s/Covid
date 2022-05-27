@@ -286,7 +286,7 @@ public:
       // # yet another std::optional problem (implicit)
       .graphics = std::optional<ANAMED::WriteGraphicsInfo>(ANAMED::WriteGraphicsInfo{
         .layout = descriptorsObj.as<vk::PipelineLayout>(),
-        .framebuffer = framebufferObj[1].as<uintptr_t>(),
+        .framebuffer = framebufferObj[0].as<uintptr_t>(),
         .instanceDraws = modelObj->getDefaultScene()->translucent->instanced->getDrawInfo(),
         .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
       }),
@@ -611,7 +611,7 @@ protected:
       .layout = descriptorsObj.as<vk::PipelineLayout>(),
       .graphics = ANAMED::GraphicsPipelineCreateInfo{
         .stageCodes = preOpaqueStageMaps,
-        .hasDepthTest = false,
+        .hasDepthTest = true,
         .hasDepthWrite = false,
         .hasConservativeRaster = true,
       }
@@ -626,7 +626,7 @@ protected:
       .layout = descriptorsObj.as<vk::PipelineLayout>(),
       .graphics = ANAMED::GraphicsPipelineCreateInfo{
         .stageCodes = preTranslucentStageMaps,
-        .hasDepthTest = false,
+        .hasDepthTest = true,
         .hasDepthWrite = false,
         .hasConservativeRaster = true,
       }
