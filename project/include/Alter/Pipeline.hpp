@@ -177,7 +177,7 @@ namespace ANAMED {
       decltype(auto) pDepthStencil = infoMap->set(vk::StructureType::ePipelineDepthStencilStateCreateInfo, vk::PipelineDepthStencilStateCreateInfo{
         .depthTestEnable = graphics->hasDepthTest,
         .depthWriteEnable = graphics->hasDepthWrite,
-        .depthCompareOp = vk::CompareOp::eLessOrEqual,
+        .depthCompareOp = graphics->reversalDepth ? vk::CompareOp::eGreaterOrEqual : vk::CompareOp::eLessOrEqual,
         .depthBoundsTestEnable = false,
         .stencilTestEnable = false,
         .front = vk::StencilOpState{.failOp = vk::StencilOp::eKeep, .passOp = vk::StencilOp::eReplace, .compareOp = vk::CompareOp::eAlways },

@@ -171,8 +171,10 @@ public:
 
     // 
     for (uint32_t i = 0; i < 2; i++) {
+      //if (i == 2) { descriptorsObj->getCInfo().attachments[0].depthClearValue.depthStencil.depth = 0.f; };
       framebufferObj[i]->acquireImage(qfAndQueue);
       framebufferObj[i]->clearAttachments(qfAndQueue);
+      //if (i == 2) { descriptorsObj->getCInfo().attachments[0].depthClearValue.depthStencil.depth = 1.f; };
     };
 
     // 
@@ -184,12 +186,15 @@ public:
     for (uint32_t i = 0; i < 2; i++) {
       uniformData.framebuffers[i] = framebufferObj[i]->getStateInfo();
     };
+
+    //
     uniformData.swapchain = swapchainObj->getStateInfo();
     uniformData.deferredBuf = deferredBufObj->getStateInfo();
     uniformData.rasterBuf = rasterBufObj->getStateInfo();
 
     // 
     rasterBufObj->clearImage(qfAndQueue, 0u, glm::uintBitsToFloat(glm::uvec4(0u)));
+    rasterBufObj->clearImage(qfAndQueue, 1u, glm::vec4(1.f));
 
     //
     double currentTime = glfwGetTime();
@@ -279,21 +284,21 @@ public:
       .submission = ANAMED::SubmissionInfo{
         .info = qfAndQueue,
       }
-      });
+    });
 
     //
     decltype(auto) preTranslucentFence = preTranslucentObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
       // # yet another std::optional problem (implicit)
       .graphics = std::optional<ANAMED::WriteGraphicsInfo>(ANAMED::WriteGraphicsInfo{
         .layout = descriptorsObj.as<vk::PipelineLayout>(),
-        .framebuffer = framebufferObj[0].as<uintptr_t>(),
+        .framebuffer = framebufferObj[1].as<uintptr_t>(),
         .instanceDraws = modelObj->getDefaultScene()->translucent->instanced->getDrawInfo(),
         .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
       }),
       .submission = ANAMED::SubmissionInfo{
         .info = qfAndQueue,
       }
-      });
+    });
 
     //
     decltype(auto) resortFence = resortObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
@@ -483,7 +488,7 @@ public:
       .extent = vk::Extent2D{uniformData.swapchain.extent.x / testDivision, uniformData.swapchain.extent.y / testDivision},
       .minImageCount = 2u,
       .split = std::vector<uint32_t>{ 1, 1 },
-      .formats = std::vector<vk::Format>{ vk::Format::eR32Uint, vk::Format::eR32Uint  },
+      .formats = std::vector<vk::Format>{ vk::Format::eR32Uint, vk::Format::eR32Sfloat },
       .info = qfAndQueue
     });
 
@@ -611,9 +616,10 @@ protected:
       .layout = descriptorsObj.as<vk::PipelineLayout>(),
       .graphics = ANAMED::GraphicsPipelineCreateInfo{
         .stageCodes = preOpaqueStageMaps,
-        .hasDepthTest = true,
+        .hasDepthTest = false,
         .hasDepthWrite = false,
         .hasConservativeRaster = true,
+        .reversalDepth = false
       }
     });
 
@@ -626,9 +632,10 @@ protected:
       .layout = descriptorsObj.as<vk::PipelineLayout>(),
       .graphics = ANAMED::GraphicsPipelineCreateInfo{
         .stageCodes = preTranslucentStageMaps,
-        .hasDepthTest = true,
+        .hasDepthTest = false,
         .hasDepthWrite = false,
         .hasConservativeRaster = true,
+        .reversalDepth = false
       }
     });
 

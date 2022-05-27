@@ -3,6 +3,7 @@
 // 
 #extension GL_GOOGLE_include_directive : require
 #extension GL_EXT_spirv_intrinsics : require
+#extension GL_ARB_fragment_shader_interlock : require
 
 //
 #include "lib/native.glsl"
@@ -17,6 +18,7 @@ layout (location = 4) in mat3x3 pTbn;
 //
 //layout (early_fragment_tests) in;
 layout (depth_any) out float gl_FragDepth;
+layout (pixel_interlock_ordered) in;
 
 //
 // We prefer to use refraction and ray-tracing for transparent effects...
@@ -62,28 +64,36 @@ void main() {
   MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), pTexcoord.xy, tbn);
 #endif
 
-  // alpha and depth depth test fail
-  const float dp = texelFetch(textures[framebuffers[0].attachments[translucent][5]], ivec2(gl_FragCoord.xy), 0).r + mxD;
-  if (
+  // alpha and depth depth (manually)
+beginInvocationInterlockARB();
+  const float dc = gl_FragCoord.z + mxD;
+  const float dp = imageLoad(imagesR32F[rasterBuf.images[0][1]], ivec2(gl_FragCoord.xy)).r;//texelFetch(textures[framebuffers[2].attachments[0][5]], ivec2(gl_FragCoord.xy), 0).r;
+  const bool cm = (dc - 0.001f <= dp);//|| !(all(greaterThan(pBary, 1e-9.xxx)) && all(lessThan(pBary, 1.f.xxx+1e-9)));
 #ifdef TRANSLUCENT
-    materialPix.color[MATERIAL_ALBEDO].a < 0.01f || 
+  const bool invalidHit = materialPix.color[MATERIAL_ALBEDO].a < 0.01f || !cm;
+#else
+  const bool invalidHit = !cm;
 #endif
-    false
-  ) {} else 
-  {
+  if (!invalidHit) {
+    imageStore(imagesR32F[rasterBuf.images[0][1]], ivec2(gl_FragCoord.xy), vec4(dc, 0.f.xxx)); 
+  };
+endInvocationInterlockARB();
+
+  //
+  if (!invalidHit) {
     // 
     const uint rasterId = atomicAdd(counters[RASTER_COUNTER], 1);//subgroupAtomicAdd(RASTER_COUNTER);
     if (rasterId < UR(rasterBuf.extent).x * UR(rasterBuf.extent).y * 32) {
-      const uint oldId = imageAtomicExchange(imagesR32UI[rasterBuf.images[0][/*translucent*/0]], ivec2(gl_FragCoord.xy), rasterId+1);
+      const uint oldId = imageAtomicExchange(imagesR32UI[rasterBuf.images[0][0]], ivec2(gl_FragCoord.xy), rasterId+1);
 
+      //
       RasterInfoRef rasterInfo = getRasterInfo(rasterId, 0);
       rasterInfo.indices = uvec4(pIndices.xyz, oldId);
       rasterInfo.barycentric = vec4(pBary, depth);
       rasterInfo.derivatives = derrivative;
     };
   };
-
+  
   //
   discard;
-
 };

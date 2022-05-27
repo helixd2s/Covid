@@ -267,6 +267,7 @@ namespace ANAMED {
   class ResourceObj;
   class QueueFamilyObj;
   class PipelineLayoutObj;
+  class DescriptorsObj;
   class PipelineObj;
   class UploaderObj;
   class FramebufferObj;
@@ -390,7 +391,8 @@ namespace ANAMED {
       "VK_EXT_pageable_device_local_memory",
       "VK_EXT_memory_priority",
       "VK_KHR_fragment_shader_barycentric",
-      "VK_KHR_ray_tracing_maintenance1"
+      "VK_KHR_ray_tracing_maintenance1",
+      "VK_EXT_fragment_shader_interlock"
     };
     cpp21::shared_vector<std::string> layerList = std::vector<std::string>{
     };
@@ -751,6 +753,14 @@ namespace ANAMED {
         .alphaBlendOp = vk::BlendOp::eAdd,
         .colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
       }
+    };
+  };
+
+  //
+  struct PipelineLayoutCreateInfo : BaseCreateInfo {
+    std::optional<QueueGetInfo> info = QueueGetInfo{};
+    std::vector<AttachmentsInfo> attachments = {
+      AttachmentsInfo{}
     };
   };
 
@@ -1166,6 +1176,7 @@ namespace ANAMED {
     bool hasDepthTest = true;
     bool hasDepthWrite = true;
     bool hasConservativeRaster = false;
+    bool reversalDepth = false;
   };
 
   //

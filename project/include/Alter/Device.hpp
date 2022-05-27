@@ -413,7 +413,9 @@ namespace ANAMED {
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceFragmentShaderBarycentricFeaturesKHR, vk::PhysicalDeviceFragmentShaderBarycentricFeaturesKHR{ // BECOME LAGGY!
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceMemoryPriorityFeaturesEXT, vk::PhysicalDeviceMemoryPriorityFeaturesEXT{
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceRayTracingMaintenance1FeaturesKHR, vk::PhysicalDeviceRayTracingMaintenance1FeaturesKHR{
+        .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceFragmentShaderInterlockFeaturesEXT, vk::PhysicalDeviceFragmentShaderInterlockFeaturesEXT{
         .pNext = nullptr
+        })
         })
         })
         })

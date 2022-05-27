@@ -88,6 +88,8 @@ namespace ANAMED {
 
 
   public:
+    DescriptorsCreateInfo& getCInfo() { return this->cInfo.value(); };
+    DescriptorsCreateInfo const& getCInfo() const { return this->cInfo.value(); };
 
     // 
     PipelineLayoutObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<DescriptorsCreateInfo> cInfo = DescriptorsCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
