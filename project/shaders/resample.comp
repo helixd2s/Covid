@@ -20,10 +20,10 @@ layout (local_size_x = 32, local_size_y = 12, local_size_z = 1) in;
 // 
 void main() {
   const uvec2 gcoord = gl_GlobalInvocationID.xy;
-  const vec2 tCoord = (vec2(gcoord) + 0.5f)/vec2(UR(pingpong.extent));
-  const uint linearId = gcoord.x + UR(pingpong.extent).x * gcoord.y;
-  const uint type = linearId / (UR(pingpong.extent).x * UR(pingpong.extent).y);
-  const uint pixelId = linearId % (UR(pingpong.extent).x * UR(pingpong.extent).y);
+  const vec2 tCoord = (vec2(gcoord) + 0.5f)/vec2(UR(deferredBuf.extent));
+  const uint linearId = gcoord.x + UR(deferredBuf.extent).x * gcoord.y;
+  const uint type = linearId / (UR(deferredBuf.extent).x * UR(deferredBuf.extent).y);
+  const uint pixelId = linearId % (UR(deferredBuf.extent).x * UR(deferredBuf.extent).y);
 
   //
   PixelSurfaceInfoRef surface = getPixelSurface(pixelId);

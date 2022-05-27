@@ -35,7 +35,8 @@ struct Constants
 #pragma pack(push, 1)
 struct UniformData {
   ANAMED::SwapchainStateInfo swapchain;
-  ANAMED::PingPongStateInfo pingpong;
+  ANAMED::PingPongStateInfo deferredBuf;
+  ANAMED::PingPongStateInfo rasterBuf;
   ANAMED::FramebufferStateInfo framebuffers[2];
   Constants constants = {};
 
@@ -107,7 +108,8 @@ protected:
   
   ANAMED::WrapShared<ANAMED::SwapchainObj> swapchainObj = {};
   ANAMED::WrapShared<ANAMED::FramebufferObj> framebufferObj[2] = {};
-  ANAMED::WrapShared<ANAMED::PingPongObj> pingPongObj = {};
+  ANAMED::WrapShared<ANAMED::PingPongObj> rasterBufObj = {};
+  ANAMED::WrapShared<ANAMED::PingPongObj> deferredBufObj = {};
   ANAMED::WrapShared<ANAMED::ResourceObj> backgroundObj = {};
   ANAMED::WrapShared<ANAMED::ResourceObj> blueNoiseObj = {};
   ANAMED::WrapShared<ANAMED::ResourceObj> pixelDataObj = {};
@@ -175,14 +177,19 @@ public:
 
     // 
     decltype(auto) acquired = swapchainObj->acquireImage(qfAndQueue);
-    decltype(auto) pingPong = pingPongObj->acquireImage(qfAndQueue);
+    decltype(auto) deferred = deferredBufObj->acquireImage(qfAndQueue);
+    decltype(auto) raster = rasterBufObj->acquireImage(qfAndQueue);
 
     //
     for (uint32_t i = 0; i < 2; i++) {
       uniformData.framebuffers[i] = framebufferObj[i]->getStateInfo();
     };
     uniformData.swapchain = swapchainObj->getStateInfo();
-    uniformData.pingpong = pingPongObj->getStateInfo();
+    uniformData.deferredBuf = deferredBufObj->getStateInfo();
+    uniformData.rasterBuf = rasterBufObj->getStateInfo();
+
+    // 
+    rasterBufObj->clearImage(qfAndQueue, 0u, glm::uintBitsToFloat(glm::uvec4(0u)));
 
     //
     double currentTime = glfwGetTime();
@@ -197,7 +204,7 @@ public:
     };
 
     //
-    pingPongObj->clearImage(qfAndQueue, 0u, glm::uintBitsToFloat(glm::uvec4(0u)));
+   
 
     // wait ready for filling
     auto& fence = (*fences)[acquired];
@@ -373,7 +380,8 @@ public:
       });
 
     //
-    pingPongObj->presentImage(qfAndQueue);
+    deferredBufObj->presentImage(qfAndQueue);
+    rasterBufObj->presentImage(qfAndQueue);
     fence = std::get<0u>(swapchainObj->presentImage(qfAndQueue));
 
     //
@@ -467,25 +475,30 @@ public:
       uniformData.framebuffers[i] = framebufferObj[i]->getStateInfo();
     };
 
-    //
-    uniformData.frameCounter = 0u;
-
-    //
-    pingPongObj = ANAMED::PingPongObj::make(deviceObj.with(0u), ANAMED::PingPongCreateInfo{
+    // now, you understand why?
+    rasterBufObj = ANAMED::PingPongObj::make(deviceObj.with(0u), ANAMED::PingPongCreateInfo{
       .layout = descriptorsObj.as<vk::PipelineLayout>(),
-      .extent = renderArea.extent,
+      .extent = vk::Extent2D{uniformData.swapchain.extent.x / testDivision, uniformData.swapchain.extent.y / testDivision},
       .minImageCount = 2u,
-
-      // first image is accumulation, second image is back buffer, third image is index buffer, fourth image is position buffer
-      // 5th for reflection buffer, 6th for reflection back buffer, 7th for transparency, 8th for transparency back
-      .split = std::vector<uint32_t>{ 4, 4, 4, 4, 1, 1 },
-      .formats = std::vector<vk::Format>{ vk::Format::eR32Uint, vk::Format::eR32Uint, vk::Format::eR32Uint, vk::Format::eR32Uint, vk::Format::eR32G32B32A32Sfloat, vk::Format::eR32G32B32A32Sfloat },
+      .split = std::vector<uint32_t>{ 1, 1 },
+      .formats = std::vector<vk::Format>{ vk::Format::eR32Uint, vk::Format::eR32Uint  },
       .info = qfAndQueue
     });
 
     //
-    uniformData.pingpong = pingPongObj->getStateInfo();
-    
+    deferredBufObj = ANAMED::PingPongObj::make(deviceObj.with(0u), ANAMED::PingPongCreateInfo{
+      .layout = descriptorsObj.as<vk::PipelineLayout>(),
+      .extent = vk::Extent2D{renderArea.extent.width, renderArea.extent.height},
+      .minImageCount = 2u,
+      .split = std::vector<uint32_t>{ 1, 1 },
+      .formats = std::vector<vk::Format>{ vk::Format::eR32G32B32A32Sfloat, vk::Format::eR32G32B32A32Sfloat },
+      .info = qfAndQueue
+      });
+
+    //
+    uniformData.frameCounter = 0u;
+    uniformData.deferredBuf = deferredBufObj->getStateInfo();
+    uniformData.rasterBuf = rasterBufObj->getStateInfo();
   };
 
   //

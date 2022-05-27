@@ -57,7 +57,7 @@ void main() {
   const uint pixelId = gcoord.x + UR(framebuffers[0].extent).x * gcoord.y;
 
   //
-  uint indice = imageLoad(imagesR32UI[pingpong.images[0][0]], ivec2(gcoord)).r;
+  uint indice = imageLoad(imagesR32UI[rasterBuf.images[0][0]], ivec2(gcoord)).r;
 
   //
   for (uint i=0;i<MAX_FRAGMENTS;i++) {
@@ -70,7 +70,7 @@ void main() {
   sort();
 
   //
-  if (count > 0) { imageStore(imagesR32UI[pingpong.images[0][0]], ivec2(gcoord), uvec4(frags[0], 0u.xxx)); };
+  if (count > 0) { imageStore(imagesR32UI[rasterBuf.images[0][0]], ivec2(gcoord), uvec4(frags[0], 0u.xxx)); };
 
   // re-chain
   for (uint i=1;i<count;i++) {

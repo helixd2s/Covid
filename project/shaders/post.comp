@@ -19,6 +19,6 @@ void main() {
   const vec2 tCoord = (vec2(gcoord)+0.5f)/vec2(UR(swapchain.extent));
 
   // final color
-  const vec4 finalColor = textureBilinear(pingpong.images[0][4], tCoord);
+  const vec4 finalColor = textureBilinear(deferredBuf.images[0][0], tCoord);
   imageStore(images[swapchain.image], ivec2(gcoord.x, UR(swapchain.extent).y-1-gcoord.y), fromLinear(finalColor));
 };

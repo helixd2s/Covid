@@ -23,10 +23,10 @@ vec4 readAndNeighborColor(in uint pixelId, in uint type) {
   TYPE center = hitInfo.accum[type];
   if (center.w <= 0.f) {
     center = TYPE(0.f);
-    if ((pixelId + UR(pingpong.extent).x) < (UR(pingpong.extent).y * UR(pingpong.extent).x)) { PixelSurfaceInfoRef info = getPixelSurface(pixelId + UR(pingpong.extent).x); if (info.accum[type].w > 0) { center += info.accum[type]; }; };
-    if ((pixelId.x%UR(pingpong.extent).x) < UR(pingpong.extent).x-1)                { PixelSurfaceInfoRef info = getPixelSurface(pixelId + 1); if (info.accum[type].w > 0) { center += info.accum[type]; }; };
-    if (pixelId >= UR(pingpong.extent).x)                                  { PixelSurfaceInfoRef info = getPixelSurface(pixelId - UR(pingpong.extent).x); if (info.accum[type].w > 0) { center += info.accum[type]; }; };
-    if ((pixelId.x%UR(pingpong.extent).x) >= 1)                            { PixelSurfaceInfoRef info = getPixelSurface(pixelId - 1); if (info.accum[type].w > 0) { center += info.accum[type]; }; };
+    if ((pixelId + UR(deferredBuf.extent).x) < (UR(deferredBuf.extent).y * UR(deferredBuf.extent).x)) { PixelSurfaceInfoRef info = getPixelSurface(pixelId + UR(deferredBuf.extent).x); if (info.accum[type].w > 0) { center += info.accum[type]; }; };
+    if ((pixelId.x%UR(deferredBuf.extent).x) < UR(deferredBuf.extent).x-1)                { PixelSurfaceInfoRef info = getPixelSurface(pixelId + 1); if (info.accum[type].w > 0) { center += info.accum[type]; }; };
+    if (pixelId >= UR(deferredBuf.extent).x)                                  { PixelSurfaceInfoRef info = getPixelSurface(pixelId - UR(deferredBuf.extent).x); if (info.accum[type].w > 0) { center += info.accum[type]; }; };
+    if ((pixelId.x%UR(deferredBuf.extent).x) >= 1)                            { PixelSurfaceInfoRef info = getPixelSurface(pixelId - 1); if (info.accum[type].w > 0) { center += info.accum[type]; }; };
   };
   return cvtRgb16Acc(center);
 };
@@ -41,10 +41,10 @@ vec4 readAndNeighborTex(in uint pixelId, in uint tex) {
 // 
 void main() {
   const uvec2 gcoord = gl_GlobalInvocationID.xy;
-  const vec2 tCoord = (vec2(gcoord) + 0.5f)/vec2(UR(pingpong.extent));
-  const uint linearId = gcoord.x + UR(pingpong.extent).x * gcoord.y;
-  const uint type = linearId / (UR(pingpong.extent).x * UR(pingpong.extent).y);
-  const uint pixelId = linearId % (UR(pingpong.extent).x * UR(pingpong.extent).y);
+  const vec2 tCoord = (vec2(gcoord) + 0.5f)/vec2(UR(deferredBuf.extent));
+  const uint linearId = gcoord.x + UR(deferredBuf.extent).x * gcoord.y;
+  const uint type = linearId / (UR(deferredBuf.extent).x * UR(deferredBuf.extent).y);
+  const uint pixelId = linearId % (UR(deferredBuf.extent).x * UR(deferredBuf.extent).y);
 
   //
   const vec3 dstRayBegin = divW(vec4(vec3(tCoord, 0.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse[0];//fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId);
@@ -68,5 +68,5 @@ void main() {
   ).xyz, 1.f);
 
   //
-  imageStore(imagesRgba32F[pingpong.images[0][4]], ivec2(gcoord), finalColor);
+  imageStore(imagesRgba32F[deferredBuf.images[0][0]], ivec2(gcoord), finalColor);
 };

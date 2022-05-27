@@ -23,12 +23,12 @@ void main() {
   const uvec2 gcoord_ = gl_GlobalInvocationID.xy;
 
   {
-    //const bool firstPart = gcoord_.y < (UR(pingpong.extent).y/2);
-    //const uvec2 gcoord = firstPart ? uvec2(gcoord_.x, gcoord_.y * 2 + ((gcoord_.x&1)^(frameCounter&1))) : uvec2(gcoord_.x, (gcoord_.y - (UR(pingpong.extent).y/2)) * 2u + ((gcoord_.x&1u)^(1u-(frameCounter&1u))));
+    //const bool firstPart = gcoord_.y < (UR(deferredBuf.extent).y/2);
+    //const uvec2 gcoord = firstPart ? uvec2(gcoord_.x, gcoord_.y * 2 + ((gcoord_.x&1)^(frameCounter&1))) : uvec2(gcoord_.x, (gcoord_.y - (UR(deferredBuf.extent).y/2)) * 2u + ((gcoord_.x&1u)^(1u-(frameCounter&1u))));
 
     //
-    uvec2 part = (gcoord_ / (UR(pingpong.extent)/2));
-    uvec2 jit = (gcoord_ % (UR(pingpong.extent)/2)) * 2;
+    uvec2 part = (gcoord_ / (UR(deferredBuf.extent)/2));
+    uvec2 jit = (gcoord_ % (UR(deferredBuf.extent)/2)) * 2;
     uint tmap = (part.x+part.y+frameCounter)%4;
     uvec2 gcoord = jit + shift_map[tmap];
 
@@ -36,8 +36,8 @@ void main() {
     uint type = type_map[tmap];
 
     // 
-    const vec2 tCoord = (vec2(gcoord)+0.5f)/vec2(UR(pingpong.extent));
-    const uint pixelId = gcoord.x + UR(pingpong.extent).x * gcoord.y;
+    const vec2 tCoord = (vec2(gcoord)+0.5f)/vec2(UR(deferredBuf.extent));
+    const uint pixelId = gcoord.x + UR(deferredBuf.extent).x * gcoord.y;
 
     //
     vec4 ssEye = vec4(vec3(tCoord, 0.f) * 2.f - 1.f, 1.f);

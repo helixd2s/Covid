@@ -33,7 +33,7 @@ IntersectionInfo rasterizeVector(in InstanceAddressBlock addressInfo, in RayData
   ivec2 sc = ivec2(ssc);
 
   // TODO: separate translucency support
-  uint indice = imageLoad(imagesR32UI[pingpong.images[previous?1:0][0]], sc).x;
+  uint indice = imageLoad(imagesR32UI[rasterBuf.images[previous?1:0][0]], sc).x;
 
   //
   float currentZ = 1.f;
@@ -142,10 +142,10 @@ IntersectionInfo rasterize(in InstanceAddressBlock addressInfo, in RayData rayDa
 RayData reuseLight(inout RayData rayData) {
   // screen space reuse already lighted pixels
   vec4 ssPos = divW(vec4(vec4(rayData.origin.xyz, 1.f) * constants.lookAt[0], 1.f) * constants.perspective);
-  ivec2 pxId = ivec2((ssPos.xy * 0.5f + 0.5f) * UR(pingpong.extent));
+  ivec2 pxId = ivec2((ssPos.xy * 0.5f + 0.5f) * UR(rasterBuf.extent));
 
   //
-  if (pxId.x >= 0 && pxId.y >= 0 && pxId.x < UR(pingpong.extent).x && pxId.y < UR(pingpong.extent).y) {
+  if (pxId.x >= 0 && pxId.y >= 0 && pxId.x < UR(rasterBuf.extent).x && pxId.y < UR(rasterBuf.extent).y) {
     vec4 ssSurf = ssPos; ssSurf.z = 1.f;
 
     // 
@@ -154,8 +154,8 @@ RayData reuseLight(inout RayData rayData) {
     };
 
     // testing now working correctly, sorry
-    if (all(lessThan(abs(ssPos.xyz-ssSurf.xyz), vec3(2.f/UR(pingpong.extent), 0.002f)))) {
-      PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pxId.x + pxId.y * UR(pingpong.extent).x);
+    if (all(lessThan(abs(ssPos.xyz-ssSurf.xyz), vec3(2.f/UR(rasterBuf.extent), 0.002f)))) {
+      PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pxId.x + pxId.y * UR(rasterBuf.extent).x);
       const vec4 color = cvtRgb16Acc(surfaceInfo.accum[2]);
       rayData.emission += f16vec4(trueMultColor(color/color.w, rayData.energy));
     };

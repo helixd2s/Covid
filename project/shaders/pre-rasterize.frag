@@ -60,21 +60,20 @@ void main() {
 #endif
 
   // alpha and depth depth test fail
-  //const float dp = texelFetch(textures[framebuffers[0].attachments[translucent][5]], ivec2(gl_FragCoord.xy), 0).r + mxD;
+  const float dp = texelFetch(textures[framebuffers[0].attachments[translucent][5]], ivec2(gl_FragCoord.xy), 0).r + mxD;
   if (
 #ifdef TRANSLUCENT
     materialPix.color[MATERIAL_ALBEDO].a < 0.01f || 
 #endif
-    false
-    //dp <= (gl_FragCoord.z - 0.0001f) // for optimize!
+    false//dp <= (gl_FragCoord.z - 0.0001f) // for optimize!
   ) {
     discard;
   } else 
   {
     // 
     const uint rasterId = atomicAdd(counters[RASTER_COUNTER], 1);//subgroupAtomicAdd(RASTER_COUNTER);
-    if (rasterId < UR(pingpong.extent).x * UR(pingpong.extent).y * 16) {
-      const uint oldId = imageAtomicExchange(imagesR32UI[pingpong.images[0][/*translucent*/0]], ivec2(gl_FragCoord.xy), rasterId+1);
+    if (rasterId < UR(rasterBuf.extent).x * UR(rasterBuf.extent).y * 16) {
+      const uint oldId = imageAtomicExchange(imagesR32UI[rasterBuf.images[0][/*translucent*/0]], ivec2(gl_FragCoord.xy), rasterId+1);
 
       RasterInfoRef rasterInfo = getRasterInfo(rasterId, 0);
       rasterInfo.indices = uvec4(pIndices.xyz, oldId);

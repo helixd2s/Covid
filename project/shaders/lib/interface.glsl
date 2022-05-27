@@ -26,7 +26,8 @@ struct Constants
 layout(set = 0, binding = 0, scalar) uniform MatrixBlock
 {
   SwapchainStateInfo swapchain;
-  PingPongStateInfo pingpong;
+  PingPongStateInfo deferredBuf;
+  PingPongStateInfo rasterBuf;
   FramebufferStateInfo framebuffers[2];
   Constants constants;
 
@@ -109,13 +110,13 @@ PixelSurfaceInfoRef getPixelSurface(in uint pixelId)  { return PixelSurfaceInfoR
 
 //
 PixelHitInfoRef getNewHit(in uint pixelId, in uint type) { 
-  const uint hitId = pixelId + UR(pingpong.extent).x * UR(pingpong.extent).y * type;
+  const uint hitId = pixelId + UR(deferredBuf.extent).x * UR(deferredBuf.extent).y * type;
   return PixelHitInfoRef(pixelData) + hitId;
 };
 
 //
 PixelHitInfoRef getRpjHit(in uint pixelId, in uint type) { 
-  const uint hitId = pixelId + UR(pingpong.extent).x * UR(pingpong.extent).y * type;
+  const uint hitId = pixelId + UR(deferredBuf.extent).x * UR(deferredBuf.extent).y * type;
   return PixelHitInfoRef(writeData) + hitId;
 };
 

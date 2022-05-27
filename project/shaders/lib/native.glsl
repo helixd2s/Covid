@@ -43,7 +43,7 @@ struct InstanceAddressInfo {
 };
 
 // ALWAYS USE Alter INDEX OF `InstanceDrawDatas`
-struct PushConstantData {
+struct InstanceDrawInfo {
   //InstanceData data;
   uint32_t instanceCount;
   uint32_t instanceIndex;
@@ -80,7 +80,7 @@ struct FramebufferStateInfo {
 //
 layout(push_constant, scalar, buffer_reference_align = 1) uniform PConstBlock {
   InstanceAddressBlock instancedData;
-  PushConstantData instanceDrawInfo;
+  InstanceDrawInfo instanceDrawInfo;
 };
 
 //
