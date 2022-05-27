@@ -202,7 +202,7 @@ namespace ANAMED {
         vk::DescriptorPoolSize{ vk::DescriptorType::eSampler, 64u },
         vk::DescriptorPoolSize{ vk::DescriptorType::eSampledImage, 1024u },
         vk::DescriptorPoolSize{ vk::DescriptorType::eUniformBuffer, 2u },
-        vk::DescriptorPoolSize{ vk::DescriptorType::eStorageImage, 64u },
+        vk::DescriptorPoolSize{ vk::DescriptorType::eStorageImage, 256u },
         vk::DescriptorPoolSize{ vk::DescriptorType::eStorageBuffer, 2u },
       });
 
@@ -217,7 +217,7 @@ namespace ANAMED {
       this->createDescriptorLayoutUniformStorage(16u);
       this->createDescriptorLayout(vk::DescriptorType::eSampledImage, 1024u);
       this->createDescriptorLayout(vk::DescriptorType::eSampler, 64u);
-      this->createDescriptorLayout(vk::DescriptorType::eStorageImage, 64u);
+      this->createDescriptorLayout(vk::DescriptorType::eStorageImage, 256u);
 
       // reserve for ping-pong
       this->pushConstantRanges.push_back(vk::PushConstantRange{ vk::ShaderStageFlagBits::eAll, 0ull, sizeof(InstanceDrawInfo) + sizeof(InstanceAddressBlock) });
