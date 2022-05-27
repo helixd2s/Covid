@@ -131,20 +131,48 @@ void reproject3D(in uint pixelId, in uint type)
       rayData.launchId = u16vec2(srcInt);
       rayData.origin = srcHitFoundIntersection.xyz;
       rayData.direction = normalize(srcHitPos.xyz-srcHitFoundIntersection.xyz);
-      rasterizeVector(instancedData, rayData, 10000.f, srcSamplePos, true);
+      IntersectionInfo srcIntersection = rasterizeVector(instancedData, rayData, 10000.f, srcSamplePos, true);
     };
 
     //
-    { // 
+    bool validNormal = true;
+    if (type == 0 || type == 1) { // 
       RayData rayData;
       rayData.launchId = u16vec2(dstInt);
       rayData.origin = dstHitFoundIntersection.xyz;
       rayData.direction = normalize(dstHitPos.xyz-dstHitFoundIntersection.xyz);
-      rasterizeVector(instancedData, rayData, 10000.f, dstSamplePos, false);
+
+      //
+      IntersectionInfo dstIntersection = rasterizeVector(instancedData, rayData, 10000.f, dstSamplePos, false);
+      const bool hasHit = !all(lessThanEqual(dstIntersection.barycentric, 0.f.xxx));
+      vec3 gotNormal = vec3(0.f.xx, 1.f) * toNormalMat(constants.lookAtInverse[0]);
+
+      //
+      if (hasHit) {
+        InstanceInfo instanceInfo = getInstance(instancedData, dstIntersection.instanceId);
+        GeometryInfo geometryInfo = getGeometry(instanceInfo, dstIntersection.geometryId);
+        GeometryExtData geometry = getGeometryData(geometryInfo, dstIntersection.primitiveId);
+        GeometryExtAttrib attrib = interpolate(geometry, dstIntersection.barycentric);
+
+        //
+        mat3x3 tbn = f16mat3x3(getTBN(attrib)); //cmd.rayData.origin += outRayNormal(cmd.rayData.direction.xyz, cmd.tbn[2].xyz) * 0.0001f;
+        tbn[0] = f16vec3(fullTransformNormal(instanceInfo, tbn[0], dstIntersection.geometryId, 0));
+        tbn[1] = f16vec3(fullTransformNormal(instanceInfo, tbn[1], dstIntersection.geometryId, 0));
+        tbn[2] = f16vec3(fullTransformNormal(instanceInfo, tbn[2], dstIntersection.geometryId, 0));
+
+        //
+        const MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), attrib.data[VERTEX_TEXCOORD].xy, tbn);
+        const bool inner = false;//dot(vec3(cmd.tbn[2]), cmd.rayData.direction.xyz) > 0.f;
+
+        //
+        gotNormal = materialPix.color[MATERIAL_NORMAL].xyz;
+      };
+
+      validNormal = abs(dot(normalize(gotNormal), dstNormal)) > 0.9999f;
     };
 
     // sorry, we doesn't save previous raster data
-    const bool dstValidDist = (isSurface ? all(lessThan(abs(dstSamplePos.xyz-(dstHitPersp.xyz/dstHitPersp.w)), vec3(1.f/vec2(UR(deferredBuf.extent)), 0.008f))) : true);
+    const bool dstValidDist = (isSurface ? all(lessThan(abs(dstSamplePos.xyz-(dstHitPersp.xyz/dstHitPersp.w)), vec3(1.f/vec2(UR(deferredBuf.extent)), 0.008f))) : true) && validNormal;
     const bool srcValidDist = (isSurface ? all(lessThan(abs(srcSamplePos.xyz-(srcHitPersp.xyz/srcHitPersp.w)), vec3(1.f/vec2(UR(deferredBuf.extent)), 0.008f))) : true) && any(greaterThan(abs(HIT_SRC.origin.xyz), 0.f.xxx)) && (HIT_SRC.origin.w > 0.f || type == 2);
 
     // copy to dest, and nullify source
