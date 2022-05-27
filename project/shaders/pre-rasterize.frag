@@ -66,9 +66,7 @@ void main() {
     materialPix.color[MATERIAL_ALBEDO].a < 0.01f || 
 #endif
     false//dp <= (gl_FragCoord.z - 0.0001f) // for optimize!
-  ) {
-    discard;
-  } else 
+  ) {} else 
   {
     // 
     const uint rasterId = atomicAdd(counters[RASTER_COUNTER], 1);//subgroupAtomicAdd(RASTER_COUNTER);
@@ -81,5 +79,8 @@ void main() {
       rasterInfo.derivatives = derrivative;
     };
   };
+
+  //
+  discard;
 
 };
