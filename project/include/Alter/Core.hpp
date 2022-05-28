@@ -1162,14 +1162,20 @@ namespace ANAMED {
   };
 
   //
+  struct GraphicsDynamicState {
+    bool hasDepthTest = true;
+    bool hasDepthWrite = true;
+    bool reversalDepth = false;
+  };
+
+  //
   struct GraphicsPipelineCreateInfo : BaseCreateInfo {
     std::unordered_map<vk::ShaderStageFlagBits, cpp21::shared_vector<uint32_t>> stageCodes = {};
     std::shared_ptr<AttachmentLayout> attachmentLayout = defaultAttachmentLayout;
 
-    bool hasDepthTest = true;
-    bool hasDepthWrite = true;
+    
     bool hasConservativeRaster = false;
-    bool reversalDepth = false;
+    std::shared_ptr<GraphicsDynamicState> dynamicState = {};
   };
 
   //

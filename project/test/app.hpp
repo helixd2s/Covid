@@ -617,10 +617,12 @@ protected:
       .layout = descriptorsObj.as<vk::PipelineLayout>(),
       .graphics = ANAMED::GraphicsPipelineCreateInfo{
         .stageCodes = preOpaqueStageMaps,
-        .hasDepthTest = false,
-        .hasDepthWrite = false,
         .hasConservativeRaster = true,
-        .reversalDepth = false
+        .dynamicState = std::make_shared<ANAMED::GraphicsDynamicState>(ANAMED::GraphicsDynamicState{
+          .hasDepthTest = false,
+          .hasDepthWrite = false,
+          .reversalDepth = false
+        })
       }
     });
 
@@ -633,10 +635,12 @@ protected:
       .layout = descriptorsObj.as<vk::PipelineLayout>(),
       .graphics = ANAMED::GraphicsPipelineCreateInfo{
         .stageCodes = preTranslucentStageMaps,
-        .hasDepthTest = false,
-        .hasDepthWrite = false,
         .hasConservativeRaster = true,
-        .reversalDepth = false
+        .dynamicState = std::make_shared<ANAMED::GraphicsDynamicState>(ANAMED::GraphicsDynamicState{
+          .hasDepthTest = false,
+          .hasDepthWrite = false,
+          .reversalDepth = false
+        })
       }
     });
 
@@ -650,9 +654,12 @@ protected:
       .layout = descriptorsObj.as<vk::PipelineLayout>(),
       .graphics = ANAMED::GraphicsPipelineCreateInfo{
         .stageCodes = nativeOpaqueStageMaps,
-        .hasDepthTest = true,
-        .hasDepthWrite = true,
         .hasConservativeRaster = false,
+        .dynamicState = std::make_shared<ANAMED::GraphicsDynamicState>(ANAMED::GraphicsDynamicState{
+          .hasDepthTest = true,
+          .hasDepthWrite = true,
+          .reversalDepth = false
+        })
       }
       });
 
@@ -665,9 +672,12 @@ protected:
       .layout = descriptorsObj.as<vk::PipelineLayout>(),
       .graphics = ANAMED::GraphicsPipelineCreateInfo{
         .stageCodes = nativeTranslucentStageMaps,
-        .hasDepthTest = true,
-        .hasDepthWrite = true,
         .hasConservativeRaster = false,
+        .dynamicState = std::make_shared<ANAMED::GraphicsDynamicState>(ANAMED::GraphicsDynamicState{
+          .hasDepthTest = true,
+          .hasDepthWrite = true,
+          .reversalDepth = false
+        })
       }
       });
 

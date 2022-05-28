@@ -72,6 +72,10 @@ namespace ANAMED {
       return wrap;
     };
 
+    // 
+    PipelineCreateInfo& getCInfo() { return this->cInfo.value(); };
+    PipelineCreateInfo const& getCInfo() const { return this->cInfo.value(); };
+
   protected:
     
     //
@@ -175,9 +179,9 @@ namespace ANAMED {
 
       //
       decltype(auto) pDepthStencil = infoMap->set(vk::StructureType::ePipelineDepthStencilStateCreateInfo, vk::PipelineDepthStencilStateCreateInfo{
-        .depthTestEnable = graphics->hasDepthTest,
-        .depthWriteEnable = graphics->hasDepthWrite,
-        .depthCompareOp = graphics->reversalDepth ? vk::CompareOp::eGreaterOrEqual : vk::CompareOp::eLessOrEqual,
+        .depthTestEnable = graphics->dynamicState->hasDepthTest,
+        .depthWriteEnable = graphics->dynamicState->hasDepthWrite,
+        .depthCompareOp = graphics->dynamicState->reversalDepth ? vk::CompareOp::eGreaterOrEqual : vk::CompareOp::eLessOrEqual,
         .depthBoundsTestEnable = false,
         .stencilTestEnable = false,
         .front = vk::StencilOpState{.failOp = vk::StencilOp::eKeep, .passOp = vk::StencilOp::eReplace, .compareOp = vk::CompareOp::eAlways },
@@ -205,7 +209,10 @@ namespace ANAMED {
       //
       this->dynamicStates.insert(dynamicStates.end(), {
         vk::DynamicState::eScissorWithCount, 
-        vk::DynamicState::eViewportWithCount
+        vk::DynamicState::eViewportWithCount,
+        vk::DynamicState::eDepthCompareOp,
+        vk::DynamicState::eDepthTestEnable,
+        vk::DynamicState::eDepthWriteEnable
       });
 
       // 
@@ -293,6 +300,7 @@ namespace ANAMED {
       decltype(auto) descriptorsObj = deviceObj->get<PipelineLayoutObj>(pipelineLayout);
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
       decltype(auto) framebuffer = deviceObj->get<FramebufferObj>(exec->framebuffer).shared();
+      decltype(auto) dynamicState = this->cInfo->graphics->dynamicState;
 
       //
       decltype(auto) memoryBarriersBegin = std::vector<vk::MemoryBarrier2>{
@@ -339,6 +347,9 @@ namespace ANAMED {
       exec->cmdBuf.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, descriptorsObj->handle.as<vk::PipelineLayout>(), 0u, descriptorsObj->sets, offsets);
       exec->cmdBuf.setViewportWithCount(viewports);
       exec->cmdBuf.setScissorWithCount(scissors);
+      exec->cmdBuf.setDepthTestEnable(dynamicState->hasDepthTest);
+      exec->cmdBuf.setDepthWriteEnable(dynamicState->hasDepthWrite);
+      exec->cmdBuf.setDepthCompareOp(dynamicState->reversalDepth ? vk::CompareOp::eGreaterOrEqual : vk::CompareOp::eLessOrEqual);
 
       //
       using fnT = void(cpp21::shared_vector<vk::MultiDrawInfoEXT> const&, uint32_t const&);
