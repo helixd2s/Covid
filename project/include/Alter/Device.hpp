@@ -448,7 +448,9 @@ namespace ANAMED {
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceAccelerationStructurePropertiesKHR, vk::PhysicalDeviceAccelerationStructurePropertiesKHR{
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceMultiDrawPropertiesEXT, vk::PhysicalDeviceMultiDrawPropertiesEXT{
         .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceFragmentShaderBarycentricPropertiesKHR, vk::PhysicalDeviceFragmentShaderBarycentricPropertiesKHR{
+        .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDevicePushDescriptorPropertiesKHR, vk::PhysicalDevicePushDescriptorPropertiesKHR{
         .pNext = nullptr
+        })
         })
         })
         })

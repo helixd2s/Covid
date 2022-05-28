@@ -155,12 +155,12 @@ namespace ANAMED {
       decltype(auto) layoutInfoMap = this->layoutInfoMaps[last];
       decltype(auto) layoutBindingStack = this->layoutBindings[last];
       layoutBindingStack->bindings.push_back(vk::DescriptorSetLayoutBinding{ .binding = 0u, .descriptorType = type, .descriptorCount = count, .stageFlags = vk::ShaderStageFlagBits::eAll });
-      layoutBindingStack->bindingFlags.push_back(vk::DescriptorBindingFlags{ vk::DescriptorBindingFlagBits::eVariableDescriptorCount | vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind });
+      layoutBindingStack->bindingFlags.push_back(vk::DescriptorBindingFlags{ vk::DescriptorBindingFlagBits::eVariableDescriptorCount | vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind});
       decltype(auto) layoutInfo = layoutInfoMap->set(vk::StructureType::eDescriptorSetLayoutCreateInfo, vk::DescriptorSetLayoutCreateInfo{
         .pNext = &(layoutInfoMap->set(vk::StructureType::eDescriptorSetLayoutBindingFlagsCreateInfo, vk::DescriptorSetLayoutBindingFlagsCreateInfo{
 
         })->setBindingFlags(layoutBindingStack->bindingFlags)),
-        .flags = vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool
+          .flags = vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool /*| vk::DescriptorSetLayoutCreateFlagBits::ePushDescriptorKHR*/
         })->setBindings(layoutBindingStack->bindings);
       this->layouts.push_back(device.createDescriptorSetLayout(layoutInfo));
       this->descriptorCounts.push_back(count);
@@ -177,12 +177,12 @@ namespace ANAMED {
       layoutBindingStack->bindings.push_back(vk::DescriptorSetLayoutBinding{ .binding = 0u, .descriptorType = vk::DescriptorType::eUniformBuffer, .descriptorCount = 1u, .stageFlags = vk::ShaderStageFlagBits::eAll });
       layoutBindingStack->bindings.push_back(vk::DescriptorSetLayoutBinding{ .binding = 1u, .descriptorType = vk::DescriptorType::eStorageBuffer, .descriptorCount = maxPageCount, .stageFlags = vk::ShaderStageFlagBits::eAll });
       layoutBindingStack->bindingFlags.push_back(vk::DescriptorBindingFlags{ vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind });
-      layoutBindingStack->bindingFlags.push_back(vk::DescriptorBindingFlags{ vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind | vk::DescriptorBindingFlagBits::eVariableDescriptorCount });
+      layoutBindingStack->bindingFlags.push_back(vk::DescriptorBindingFlags{ vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind  | vk::DescriptorBindingFlagBits::eVariableDescriptorCount});
       decltype(auto) layoutInfo = layoutInfoMap->set(vk::StructureType::eDescriptorSetLayoutCreateInfo, vk::DescriptorSetLayoutCreateInfo{
         .pNext = &(layoutInfoMap->set(vk::StructureType::eDescriptorSetLayoutBindingFlagsCreateInfo, vk::DescriptorSetLayoutBindingFlagsCreateInfo{
 
         })->setBindingFlags(layoutBindingStack->bindingFlags)),
-        .flags = vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool
+          .flags = vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool /*| vk::DescriptorSetLayoutCreateFlagBits::ePushDescriptorKHR*/
         })->setBindings(layoutBindingStack->bindings);
       this->layouts.push_back(device.createDescriptorSetLayout(layoutInfo));
       this->descriptorCounts.push_back(maxPageCount);
@@ -221,11 +221,10 @@ namespace ANAMED {
 
       // reserve for ping-pong
       this->pushConstantRanges.push_back(vk::PushConstantRange{ vk::ShaderStageFlagBits::eAll, 0ull, sizeof(InstanceDrawInfo) + sizeof(InstanceAddressBlock) });
-      //this->pushConstantRanges.push_back(vk::PushConstantRange{ vk::ShaderStageFlagBits::eAll, sizeof(PushConstantData), sizeof(InstanceAddressBlock) });
 
       //
       this->sets = device.allocateDescriptorSets(this->infoMap->set(vk::StructureType::eDescriptorSetAllocateInfo, vk::DescriptorSetAllocateInfo{
-        .pNext = &this->infoMap->set(vk::StructureType::eDescriptorSetVariableDescriptorCountAllocateInfo, vk::DescriptorSetVariableDescriptorCountAllocateInfo{
+       .pNext = &this->infoMap->set(vk::StructureType::eDescriptorSetVariableDescriptorCountAllocateInfo, vk::DescriptorSetVariableDescriptorCountAllocateInfo{
 
         })->setDescriptorCounts(this->descriptorCounts),
         .descriptorPool = (this->pool = device.createDescriptorPool(DPI))
@@ -262,10 +261,51 @@ namespace ANAMED {
   public:
 
     //
+    virtual void writePushDescriptor(vk::PipelineBindPoint const& bindPoint, cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+      /*
+      decltype(auto) device = this->base.as<vk::Device>();
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) temp = vk::WriteDescriptorSet{ .dstBinding = 0u, .dstArrayElement = 0u, .descriptorType = vk::DescriptorType::eUniformBuffer };
+      decltype(auto) PL = this->handle.as<vk::PipelineLayout>();
+
+      {
+        std::vector<vk::WriteDescriptorSet> writes = {};
+        if (this->uniformBufferDesc) {
+          writes.push_back(vk::WriteDescriptorSet(temp).setDstBinding(0u).setDescriptorType(vk::DescriptorType::eUniformBuffer).setPBufferInfo(&this->uniformBufferDesc.value()).setDescriptorCount(1u));
+        };
+        if (this->cacheBufferDescs.size() > 0) {
+          writes.push_back(vk::WriteDescriptorSet(temp).setDstBinding(1u).setDescriptorType(vk::DescriptorType::eStorageBuffer).setBufferInfo(this->cacheBufferDescs));
+        };
+        cmdBuf->pushDescriptorSetKHR(bindPoint, PL, 0u, writes, deviceObj->getDispatch());
+      };
+
+      if (this->textures->size() > 0ull) { 
+        std::vector<vk::WriteDescriptorSet> writes = {
+          vk::WriteDescriptorSet(temp).setPImageInfo(this->textures.data()).setDescriptorCount(uint32_t(this->textures.size())).setDescriptorType(vk::DescriptorType::eSampledImage)
+        };
+        cmdBuf->pushDescriptorSetKHR(bindPoint, PL, 1u, writes, deviceObj->getDispatch());
+      };
+
+      if (this->samplers->size() > 0ull) { 
+        std::vector<vk::WriteDescriptorSet> writes = {
+          vk::WriteDescriptorSet(temp).setPImageInfo(this->samplers.data()).setDescriptorCount(uint32_t(this->samplers.size())).setDescriptorType(vk::DescriptorType::eSampler)
+        };
+        cmdBuf->pushDescriptorSetKHR(bindPoint, PL, 2u, writes, deviceObj->getDispatch());
+      };
+
+      if (this->images->size() > 0ull) {
+        std::vector<vk::WriteDescriptorSet> writes = {
+          vk::WriteDescriptorSet(temp).setPImageInfo(this->images.data()).setDescriptorCount(uint32_t(this->images.size())).setDescriptorType(vk::DescriptorType::eStorageImage)
+        };
+        cmdBuf->pushDescriptorSetKHR(bindPoint, PL, 3u, writes, deviceObj->getDispatch());
+      };*/
+    };
+
+    //
     virtual void updateDescriptors() {
       decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) writes = std::vector<vk::WriteDescriptorSet>{};
       decltype(auto) temp = vk::WriteDescriptorSet{ .dstSet = this->sets[0u], .dstBinding = 0u, .dstArrayElement = 0u, .descriptorType = vk::DescriptorType::eUniformBuffer };
+      std::vector<vk::WriteDescriptorSet> writes = {};
       if (this->uniformBufferDesc) {
         writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[0u]).setDstBinding(0u).setDescriptorType(vk::DescriptorType::eUniformBuffer).setPBufferInfo(&this->uniformBufferDesc.value()).setDescriptorCount(1u));
       };
@@ -275,6 +315,8 @@ namespace ANAMED {
       if (this->textures->size() > 0ull) { writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[1u]).setPImageInfo(this->textures.data()).setDescriptorCount(uint32_t(this->textures.size())).setDescriptorType(vk::DescriptorType::eSampledImage)); };
       if (this->samplers->size() > 0ull) { writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[2u]).setPImageInfo(this->samplers.data()).setDescriptorCount(uint32_t(this->samplers.size())).setDescriptorType(vk::DescriptorType::eSampler)); };
       if (this->images->size() > 0ull) { writes.push_back(vk::WriteDescriptorSet(temp).setDstSet(this->sets[3u]).setPImageInfo(this->images.data()).setDescriptorCount(uint32_t(this->images.size())).setDescriptorType(vk::DescriptorType::eStorageImage)); };
+      
+      //
       device.updateDescriptorSets(writes, {});
     };
 

@@ -392,7 +392,8 @@ namespace ANAMED {
       "VK_EXT_memory_priority",
       "VK_KHR_fragment_shader_barycentric",
       "VK_KHR_ray_tracing_maintenance1",
-      "VK_EXT_fragment_shader_interlock"
+      "VK_EXT_fragment_shader_interlock",
+      "VK_KHR_push_descriptor"
     };
     cpp21::shared_vector<std::string> layerList = std::vector<std::string>{
     };

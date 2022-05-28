@@ -277,10 +277,12 @@ namespace ANAMED {
 
       // 
       std::vector<uint32_t> offsets = {};
+      decltype(auto) sets = descriptorsObj->sets;
 
       {
         exec->cmdBuf.pipelineBarrier2(depInfo.setMemoryBarriers(memoryBarriersBegin));
-        exec->cmdBuf.bindDescriptorSets(vk::PipelineBindPoint::eCompute, descriptorsObj->handle.as<vk::PipelineLayout>(), 0u, descriptorsObj->sets, offsets);
+        if (sets.size() > 0) { exec->cmdBuf.bindDescriptorSets(vk::PipelineBindPoint::eCompute, descriptorsObj->handle.as<vk::PipelineLayout>(), 0u, sets, offsets); };
+        descriptorsObj->writePushDescriptor(vk::PipelineBindPoint::eCompute, exec->cmdBuf);
         exec->cmdBuf.bindPipeline(vk::PipelineBindPoint::eCompute, exec->pipelineIndex == 0u ? this->handle.as<vk::Pipeline>() : this->secondaryPipelines[exec->pipelineIndex-1u]);
         if (exec->instanceAddressBlock) {
           exec->cmdBuf.pushConstants(descriptorsObj->handle.as<vk::PipelineLayout>(), vk::ShaderStageFlagBits::eAll, 0u, sizeof(InstanceAddressBlock), &exec->instanceAddressBlock.value());
@@ -337,6 +339,7 @@ namespace ANAMED {
 
       // 
       std::vector<uint32_t> offsets = {};
+      decltype(auto) sets = descriptorsObj->sets;
 
       // 
       auto _depInfo = depInfo;
@@ -344,7 +347,8 @@ namespace ANAMED {
       exec->cmdBuf.pipelineBarrier2(_depInfo.setMemoryBarriers(memoryBarriersBegin));
       exec->cmdBuf.beginRendering(vk::RenderingInfoKHR{ .renderArea = renderArea, .layerCount = this->cInfo->graphics->attachmentLayout->type == FramebufferType::eCubemap ? 6u : 1u, .viewMask = 0x0u, .colorAttachmentCount = uint32_t(colorAttachments.size()), .pColorAttachments = colorAttachments.data(), .pDepthAttachment = &depthAttachment, .pStencilAttachment = &stencilAttachment });
       exec->cmdBuf.bindPipeline(vk::PipelineBindPoint::eGraphics, exec->pipelineIndex == 0u ? this->handle.as<vk::Pipeline>() : this->secondaryPipelines[exec->pipelineIndex - 1u]);
-      exec->cmdBuf.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, descriptorsObj->handle.as<vk::PipelineLayout>(), 0u, descriptorsObj->sets, offsets);
+      if (sets.size() > 0) { exec->cmdBuf.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, descriptorsObj->handle.as<vk::PipelineLayout>(), 0u, sets, offsets); };
+      descriptorsObj->writePushDescriptor(vk::PipelineBindPoint::eGraphics, exec->cmdBuf);
       exec->cmdBuf.setViewportWithCount(viewports);
       exec->cmdBuf.setScissorWithCount(scissors);
       exec->cmdBuf.setDepthTestEnable(dynamicState->hasDepthTest);
