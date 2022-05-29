@@ -45,12 +45,12 @@ namespace ANAMED {
 
   public:
     // 
-    DenoiserObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<DenoiserCreateInfo> cInfo = DenoiserCreateInfo{}) : PipelineObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
+    DenoiserObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::carg<DenoiserCreateInfo> cInfo = DenoiserCreateInfo{}) : PipelineObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
       this->construct(deviceObj, cInfo);
     };
 
     // 
-    DenoiserObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<DenoiserCreateInfo> cInfo = DenoiserCreateInfo{}) : PipelineObj(handle), cInfo(cInfo) {
+    DenoiserObj(cpp21::carg<Handle> handle, cpp21::carg<DenoiserCreateInfo> cInfo = DenoiserCreateInfo{}) : PipelineObj(handle), cInfo(cInfo) {
       this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
@@ -60,7 +60,7 @@ namespace ANAMED {
     };
 
     //
-    inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<DenoiserCreateInfo> cInfo = DenoiserCreateInfo{}) {
+    inline static tType make(cpp21::carg<Handle> handle, cpp21::carg<DenoiserCreateInfo> cInfo = DenoiserCreateInfo{}) {
       auto shared = std::make_shared<DenoiserObj>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle), cInfo);
       auto wrap = shared->registerSelf();
@@ -68,7 +68,7 @@ namespace ANAMED {
     };
 
     //
-    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) {
+    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::carg<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
 
@@ -122,7 +122,7 @@ namespace ANAMED {
     };
 
     // 
-    virtual std::tuple<nri::CommandBuffer, NrdUserPool> writeDenoiseCommand(cpp21::const_wrap_arg<DenoiseCommandWriteInfo> info) {
+    virtual std::tuple<nri::CommandBuffer, NrdUserPool> writeDenoiseCommand(cpp21::carg<DenoiseCommandWriteInfo> info) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
 

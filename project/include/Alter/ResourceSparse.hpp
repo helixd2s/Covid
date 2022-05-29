@@ -45,7 +45,7 @@ namespace ANAMED {
   protected:
 
     // 
-    FenceType createBuffer(cpp21::const_wrap_arg<BufferCreateInfo> cInfo = {}) override {
+    FenceType createBuffer(cpp21::carg<BufferCreateInfo> cInfo = {}) override {
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
 
@@ -99,12 +99,12 @@ namespace ANAMED {
 
   public:
     // 
-    ResourceSparseObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : ResourceObj(deviceObj, cInfo) {
+    ResourceSparseObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::carg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : ResourceObj(deviceObj, cInfo) {
       //this->construct(deviceObj, cInfo);
     };
 
     // 
-    ResourceSparseObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : ResourceObj(handle, cInfo) {
+    ResourceSparseObj(cpp21::carg<Handle> handle, cpp21::carg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : ResourceObj(handle, cInfo) {
       //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
@@ -120,7 +120,7 @@ namespace ANAMED {
     };
 
     //
-    inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
+    inline static tType make(cpp21::carg<Handle> handle, cpp21::carg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
       auto shared = std::make_shared<ResourceSparseObj>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle), cInfo);
       auto wrap = shared->registerSelf();
@@ -177,7 +177,7 @@ namespace ANAMED {
     };
 
     // 
-    virtual FenceType bindSparseMemory(cpp21::const_wrap_arg<SubmissionInfo> submission = {}){
+    virtual FenceType bindSparseMemory(cpp21::carg<SubmissionInfo> submission = {}){
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) queue = deviceObj->getQueue(submission->info);

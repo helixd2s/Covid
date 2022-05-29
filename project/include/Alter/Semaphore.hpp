@@ -35,12 +35,12 @@ namespace ANAMED {
   public:
 
     // 
-    SemaphoreObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<SemaphoreCreateInfo> cInfo = SemaphoreCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
+    SemaphoreObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::carg<SemaphoreCreateInfo> cInfo = SemaphoreCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
       this->construct(deviceObj, cInfo);
     };
 
     // 
-    SemaphoreObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<SemaphoreCreateInfo> cInfo = SemaphoreCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
+    SemaphoreObj(cpp21::carg<Handle> handle, cpp21::carg<SemaphoreCreateInfo> cInfo = SemaphoreCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
       this->construct(ANAMED::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
@@ -56,7 +56,7 @@ namespace ANAMED {
     };
 
     //
-    inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<SemaphoreCreateInfo> cInfo = SemaphoreCreateInfo{}) {
+    inline static tType make(cpp21::carg<Handle> handle, cpp21::carg<SemaphoreCreateInfo> cInfo = SemaphoreCreateInfo{}) {
       auto shared = std::make_shared<SemaphoreObj>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle), cInfo);
       auto wrap = shared->registerSelf();
@@ -66,7 +66,7 @@ namespace ANAMED {
   protected:
 
     // 
-    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<SemaphoreCreateInfo> cInfo = SemaphoreCreateInfo{}) {
+    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::carg<SemaphoreCreateInfo> cInfo = SemaphoreCreateInfo{}) {
       if (cInfo) { this->cInfo = cInfo; };
 
       //

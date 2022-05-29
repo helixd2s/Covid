@@ -25,7 +25,7 @@ namespace ANAMED {
   public: 
 
     // 
-    ContextObj(cpp21::const_wrap_arg<Handle> handle = Handle(0ull, HandleType::eUnknown), cpp21::const_wrap_arg<ContextCreateInfo> cInfo = ContextCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
+    ContextObj(cpp21::carg<Handle> handle = Handle(0ull, HandleType::eUnknown), cpp21::carg<ContextCreateInfo> cInfo = ContextCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
       //this->construct(cInfo);
     };
 
@@ -35,7 +35,7 @@ namespace ANAMED {
     };
 
     //
-    inline static tType make(cpp21::const_wrap_arg<Handle> handle = Handle(0ull, HandleType::eUnknown), cpp21::const_wrap_arg<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
+    inline static tType make(cpp21::carg<Handle> handle = Handle(0ull, HandleType::eUnknown), cpp21::carg<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
       auto shared = std::make_shared<ContextObj>(handle, cInfo);
       shared->construct(cInfo);
       auto wrap = shared->SFT();
@@ -44,7 +44,7 @@ namespace ANAMED {
 
   protected: 
     // 
-    virtual void construct(cpp21::const_wrap_arg<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
+    virtual void construct(cpp21::carg<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
       this->base = 0ull;
       if (cInfo) { this->cInfo = cInfo; };
       //return SFT();
@@ -52,10 +52,10 @@ namespace ANAMED {
   };
 
   //
-  inline extern WrapShared<ContextObj> context = { {} };
+  inline extern WrapShared<ContextObj> context = {};
 
   // 
-  inline static decltype(auto) initialize(cpp21::const_wrap_arg<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
+  inline static decltype(auto) initialize(cpp21::carg<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
     ANAMED::registerTypes();
     ANAMED::context = ContextObj::make(Handle(0ull, HandleType::eUnknown), cInfo);
     return ANAMED::context;

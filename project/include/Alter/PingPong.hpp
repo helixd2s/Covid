@@ -18,7 +18,7 @@ namespace ANAMED {
     //std::vector<vk::SurfaceFormat2KHR> formats2 = {};
     //std::vector<vk::PresentModeKHR> presentModes = {};
     //vk::PhysicalDeviceSurfaceInfo2KHR info2 = {};
-    //cpp21::const_wrap_arg<vk::SurfaceCapabilitiesKHR> capabilities = {};
+    //cpp21::carg<vk::SurfaceCapabilitiesKHR> capabilities = {};
     //cpp21::optional_ref<vk::SurfaceFormatKHR> formats = {};
   //};
 
@@ -27,8 +27,8 @@ namespace ANAMED {
     std::vector<vk::Image> images = {};
     std::vector<vk::ImageView> imageViews = {};
     std::vector<uint32_t> imageViewIndices = {};
-    std::vector<std::function<void(cpp21::const_wrap_arg<vk::CommandBuffer>)>> switchToPresentFns = {};
-    std::vector<std::function<void(cpp21::const_wrap_arg<vk::CommandBuffer>)>> switchToReadyFns = {};
+    std::vector<std::function<void(cpp21::carg<vk::CommandBuffer>)>> switchToPresentFns = {};
+    std::vector<std::function<void(cpp21::carg<vk::CommandBuffer>)>> switchToReadyFns = {};
 
     // 
     cpp21::wrap_shared_ptr<vk::SemaphoreSubmitInfo> copySemaphoreInfo = {};
@@ -68,12 +68,12 @@ namespace ANAMED {
 
   public:
     // 
-    PingPongObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<PingPongCreateInfo> cInfo = PingPongCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
+    PingPongObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::carg<PingPongCreateInfo> cInfo = PingPongCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
       //this->construct(deviceObj, cInfo);
     };
 
     // 
-    PingPongObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<PingPongCreateInfo> cInfo = PingPongCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
+    PingPongObj(cpp21::carg<Handle> handle, cpp21::carg<PingPongCreateInfo> cInfo = PingPongCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
       //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
@@ -89,7 +89,7 @@ namespace ANAMED {
     };
 
     //
-    inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<PingPongCreateInfo> cInfo = PingPongCreateInfo{}) {
+    inline static tType make(cpp21::carg<Handle> handle, cpp21::carg<PingPongCreateInfo> cInfo = PingPongCreateInfo{}) {
       auto shared = std::make_shared<PingPongObj>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle), cInfo);
       auto wrap = shared->registerSelf();
@@ -97,14 +97,14 @@ namespace ANAMED {
     };
 
     //
-    virtual FenceType switchToPresent(cpp21::const_wrap_arg<uint32_t> imageIndex, cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}) {
+    virtual FenceType switchToPresent(cpp21::carg<uint32_t> imageIndex, cpp21::carg<QueueGetInfo> info = QueueGetInfo{}) {
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = info ? info.value() : this->cInfo->info } };
       decltype(auto) nextIndex = ((*imageIndex) + 1u) % this->sets.size();
 
       // 
       //submission.submission.signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{ sets[*imageIndex].readySemaphoreInfo };
       submission.submission.signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{ sets[nextIndex].copySemaphoreInfo };
-      submission.commandInits.push_back([this, imageIndex](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+      submission.commandInits.push_back([this, imageIndex](cpp21::carg<vk::CommandBuffer> cmdBuf) {
         for (auto& switchFn : this->sets[*imageIndex].switchToPresentFns) { switchFn(cmdBuf); };
         return cmdBuf;
       });
@@ -117,7 +117,7 @@ namespace ANAMED {
     };
 
     //
-    virtual FenceType switchToReady(cpp21::const_wrap_arg<uint32_t> imageIndex, cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}) {
+    virtual FenceType switchToReady(cpp21::carg<uint32_t> imageIndex, cpp21::carg<QueueGetInfo> info = QueueGetInfo{}) {
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = info ? info.value() : this->cInfo->info } };
 
       // 
@@ -130,7 +130,7 @@ namespace ANAMED {
       };
 
       // but currently there is no any commands...
-      submission.commandInits.push_back([this, imageIndex](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+      submission.commandInits.push_back([this, imageIndex](cpp21::carg<vk::CommandBuffer> cmdBuf) {
         for (auto& switchFn : this->sets[*imageIndex].switchToReadyFns) { switchFn(cmdBuf); };
         return cmdBuf;
       });
@@ -140,7 +140,7 @@ namespace ANAMED {
     };
 
     //
-    virtual uint32_t& acquireImage(cpp21::const_wrap_arg<ANAMED::QueueGetInfo> qfAndQueue) {
+    virtual uint32_t& acquireImage(cpp21::carg<ANAMED::QueueGetInfo> qfAndQueue) {
       this->currentState.previous = this->currentState.index;
       this->currentState.index = (++this->currentState.index) % this->sets.size();
       decltype(auto) fence = this->switchToReady(this->currentState.index, qfAndQueue); // still needs for await semaphores
@@ -150,17 +150,17 @@ namespace ANAMED {
     };
 
     //
-    virtual FenceType presentImage(cpp21::const_wrap_arg<ANAMED::QueueGetInfo> qfAndQueue) {
+    virtual FenceType presentImage(cpp21::carg<ANAMED::QueueGetInfo> qfAndQueue) {
       return this->switchToPresent(this->currentState.index, qfAndQueue);
     };
 
     //
-    virtual FenceType clearImages(cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}, std::vector<glm::vec4> const& clearColors = {}) {
+    virtual FenceType clearImages(cpp21::carg<QueueGetInfo> info = QueueGetInfo{}, std::vector<glm::vec4> const& clearColors = {}) {
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo {.info = info ? info.value() : this->cInfo->info } };
 
       // 
       //submission.submission.waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{ sets[*imageIndex].presentSemaphoreInfo };
-      submission.commandInits.push_back([this, clearColors, queueFamilyIndex= info->queueFamilyIndex](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+      submission.commandInits.push_back([this, clearColors, queueFamilyIndex= info->queueFamilyIndex](cpp21::carg<vk::CommandBuffer> cmdBuf) {
         this->writeClearImages(cmdBuf, queueFamilyIndex, clearColors);
         return cmdBuf;
       });
@@ -170,12 +170,12 @@ namespace ANAMED {
     };
 
     //
-    virtual FenceType clearImage(cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}, uint32_t const& imageIndex = 0u, cpp21::const_wrap_arg<glm::vec4> clearColors = {}) {
+    virtual FenceType clearImage(cpp21::carg<QueueGetInfo> info = QueueGetInfo{}, uint32_t const& imageIndex = 0u, cpp21::carg<glm::vec4> clearColors = {}) {
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo {.info = info ? info.value() : this->cInfo->info } };
 
       // 
       //submission.submission.waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{ sets[*imageIndex].presentSemaphoreInfo };
-      submission.commandInits.push_back([this, clearColors, imageIndex, queueFamilyIndex = info->queueFamilyIndex](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+      submission.commandInits.push_back([this, clearColors, imageIndex, queueFamilyIndex = info->queueFamilyIndex](cpp21::carg<vk::CommandBuffer> cmdBuf) {
         this->writeClearImage(cmdBuf, queueFamilyIndex, imageIndex, clearColors);
         return cmdBuf;
       });
@@ -185,7 +185,7 @@ namespace ANAMED {
     };
 
     //
-    virtual void writeClearImage(cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf, uint32_t const& queueFamilyIndex = 0u, uint32_t const& imageIndex = 0u, cpp21::const_wrap_arg<glm::vec4> clearColors = {}) {
+    virtual void writeClearImage(cpp21::carg<vk::CommandBuffer> cmdBuf, uint32_t const& queueFamilyIndex = 0u, uint32_t const& imageIndex = 0u, cpp21::carg<glm::vec4> clearColors = {}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) image = this->sets[this->currentState.index].images[imageIndex];
@@ -198,7 +198,7 @@ namespace ANAMED {
     };
 
     //
-    virtual void writeClearImages(cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf, uint32_t const& queueFamilyIndex = 0u, std::vector<glm::vec4> const& clearColors = {}) {
+    virtual void writeClearImages(cpp21::carg<vk::CommandBuffer> cmdBuf, uint32_t const& queueFamilyIndex = 0u, std::vector<glm::vec4> const& clearColors = {}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
 
@@ -299,7 +299,7 @@ namespace ANAMED {
     };
 
     //
-    virtual void createImage(SwapchainSet* set, uint32_t index, uint32_t setIndex, cpp21::const_wrap_arg<ImageType> imageType = ImageType::eStorage) {
+    virtual void createImage(SwapchainSet* set, uint32_t index, uint32_t setIndex, cpp21::carg<ImageType> imageType = ImageType::eStorage) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<PipelineLayoutObj>(this->cInfo->layout);
@@ -348,7 +348,7 @@ namespace ANAMED {
       set->imageViewIndices.push_back(std::get<1>(pair));
 
       // currently there is no any command
-      set->switchToReadyFns.push_back([](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+      set->switchToReadyFns.push_back([](cpp21::carg<vk::CommandBuffer> cmdBuf) {
       });
 
       //
@@ -361,7 +361,7 @@ namespace ANAMED {
       }};
 
       // copy into next image in chain (i.e. use ping-pong alike Optifine)
-      set->switchToPresentFns.push_back([this,device,subresourceRange,copyRegions,index,nextSetIndex,image=imageObj.as<vk::Image>()](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+      set->switchToPresentFns.push_back([this,device,subresourceRange,copyRegions,index,nextSetIndex,image=imageObj.as<vk::Image>()](cpp21::carg<vk::CommandBuffer> cmdBuf) {
         // use next index of
         decltype(auto) nextImage = this->sets[nextSetIndex].images[index];
         if (nextImage != image) {
@@ -444,7 +444,7 @@ namespace ANAMED {
     };
 
     // 
-    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<PingPongCreateInfo> cInfo = PingPongCreateInfo{}) {
+    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::carg<PingPongCreateInfo> cInfo = PingPongCreateInfo{}) {
       if (cInfo) { this->cInfo = cInfo; };
       this->handle = uintptr_t(this);
       this->updateSwapchain();

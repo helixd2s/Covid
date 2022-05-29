@@ -62,12 +62,12 @@ namespace ANAMED {
 
   public:
     // 
-    ResourceObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
+    ResourceObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::carg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
       //this->construct(deviceObj, cInfo);
     };
 
     // 
-    ResourceObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
+    ResourceObj(cpp21::carg<Handle> handle, cpp21::carg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
       //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
@@ -102,7 +102,7 @@ namespace ANAMED {
     };
 
     //
-    virtual vk::ComponentMapping componentMapping(cpp21::const_wrap_arg<vk::ComponentMapping> mapping_) {
+    virtual vk::ComponentMapping componentMapping(cpp21::carg<vk::ComponentMapping> mapping_) {
       decltype(auto) mapping = vk::ComponentMapping{.r = vk::ComponentSwizzle::eR, .g = vk::ComponentSwizzle::eG, .b = vk::ComponentSwizzle::eB, .a = vk::ComponentSwizzle::eA};
       decltype(auto) imageInfo = this->cInfo->imageInfo;
 
@@ -152,7 +152,7 @@ namespace ANAMED {
     };
 
     //
-    std::tuple<vk::ImageView, uint32_t> createImageView(cpp21::const_wrap_arg<ImageViewCreateInfo> info = {}) {
+    std::tuple<vk::ImageView, uint32_t> createImageView(cpp21::carg<ImageViewCreateInfo> info = {}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = this->cInfo->descriptors ? deviceObj->get<PipelineLayoutObj>(this->cInfo->descriptors) : WrapShared<PipelineLayoutObj>{};
@@ -209,7 +209,7 @@ namespace ANAMED {
     };
 
     //
-    inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
+    inline static tType make(cpp21::carg<Handle> handle, cpp21::carg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
       auto shared = std::make_shared<ResourceObj>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle), cInfo);
       auto wrap = shared->registerSelf();
@@ -235,14 +235,14 @@ namespace ANAMED {
   protected:
 
     //
-    virtual std::shared_ptr<AllocatedMemory> allocateMemory(cpp21::const_wrap_arg<MemoryRequirements> requirements) {
+    virtual std::shared_ptr<AllocatedMemory> allocateMemory(cpp21::carg<MemoryRequirements> requirements) {
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) memoryAllocatorObj = deviceObj->getExt<MemoryAllocatorObj>(this->cInfo->extUsed && this->cInfo->extUsed->find(ExtensionInfoName::eMemoryAllocator) != this->cInfo->extUsed->end() ? this->cInfo->extUsed->at(ExtensionInfoName::eMemoryAllocator) : ExtensionName::eMemoryAllocator);
       return memoryAllocatorObj->allocateMemory(requirements, this->allocated = std::make_shared<AllocatedMemory>(), this->extHandle, this->cInfo->extInfoMap, this->mappedMemory, this->destructors);
     };
 
     // 
-    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
+    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::carg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
       if (cInfo) { this->cInfo = cInfo; };
       if (this->cInfo) {
         if (this->cInfo->imageInfo) { this->createImage(this->cInfo->imageInfo.value()); };
@@ -370,7 +370,7 @@ namespace ANAMED {
     };
 
     // 
-    virtual FenceType createImage(cpp21::const_wrap_arg<ImageCreateInfo> cInfo = {}) {
+    virtual FenceType createImage(cpp21::carg<ImageCreateInfo> cInfo = {}) {
       // 
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
@@ -450,7 +450,7 @@ namespace ANAMED {
     };
 
     // 
-    virtual FenceType createBuffer(cpp21::const_wrap_arg<BufferCreateInfo> cInfo = {}) {
+    virtual FenceType createBuffer(cpp21::carg<BufferCreateInfo> cInfo = {}) {
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
 
@@ -518,7 +518,7 @@ namespace ANAMED {
   public:
     
     //
-    virtual void writeClearCommand(cpp21::const_wrap_arg<ImageClearWriteInfo> clearInfo) {
+    virtual void writeClearCommand(cpp21::carg<ImageClearWriteInfo> clearInfo) {
       if (this->cInfo->imageInfo && this->handle.type == HandleType::eImage) {
         //decltype(auto) info = switchInfo.info ? switchInfo.info : this->cInfo->imageInfo->info;
         decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
@@ -541,7 +541,7 @@ namespace ANAMED {
     };
 
     //
-    virtual void writeSwitchLayoutCommand(cpp21::const_wrap_arg<ImageLayoutSwitchWriteInfo> switchInfo) {
+    virtual void writeSwitchLayoutCommand(cpp21::carg<ImageLayoutSwitchWriteInfo> switchInfo) {
       if (this->cInfo->imageInfo && this->handle.type == HandleType::eImage) {
         //decltype(auto) info = switchInfo.info ? switchInfo.info : this->cInfo->imageInfo->info;
         decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
@@ -620,7 +620,7 @@ namespace ANAMED {
 
       // 
       if (this->cInfo->bufferInfo && this->handle.type == HandleType::eBuffer) {
-        info->commandInits.push_back([this, bufferInfo, depInfo, bufferBarriersBegin, bufferBarriersEnd](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+        info->commandInits.push_back([this, bufferInfo, depInfo, bufferBarriersBegin, bufferBarriersEnd](cpp21::carg<vk::CommandBuffer> cmdBuf) {
           auto _depInfo = depInfo;
           cmdBuf->pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersBegin));
           cmdBuf->fillBuffer(this->handle.as<vk::Buffer>(), 0ull, bufferInfo->size, 0u);
@@ -638,7 +638,7 @@ namespace ANAMED {
     };
 
     //
-    virtual FenceType executeSwitchLayoutOnce(cpp21::const_wrap_arg<ImageLayoutSwitchInfo> execInfo = {}) {
+    virtual FenceType executeSwitchLayoutOnce(cpp21::carg<ImageLayoutSwitchInfo> execInfo = {}) {
       decltype(auto) switchInfo = execInfo->switchInfo.value();
       decltype(auto) info = execInfo->info ? execInfo->info : this->cInfo->imageInfo->info;
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
@@ -649,7 +649,7 @@ namespace ANAMED {
       // cupola
       if (oldImageLayout != switchInfo.newImageLayout) {
         if (this->cInfo->imageInfo && this->handle.type == HandleType::eImage) {
-          submission.commandInits.push_back([this, switchInfo](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+          submission.commandInits.push_back([this, switchInfo](cpp21::carg<vk::CommandBuffer> cmdBuf) {
             this->writeSwitchLayoutCommand(switchInfo.with(cmdBuf));
             return cmdBuf;
           });
@@ -723,7 +723,7 @@ namespace ANAMED {
   };
 
   // 
-  inline WrapShared<DeviceObj> DeviceObj::writeCopyBuffersCommand(cpp21::const_wrap_arg<CopyBufferWriteInfo> copyInfoRaw) {
+  inline WrapShared<DeviceObj> DeviceObj::writeCopyBuffersCommand(cpp21::carg<CopyBufferWriteInfo> copyInfoRaw) {
     //decltype(auto) submission = CommandOnceSubmission{ .info = QueueGetInfo {.queueFamilyIndex = copyInfoRaw.dst->queueFamilyIndex } };
     decltype(auto) device = this->base.as<vk::Device>();
     decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
@@ -789,7 +789,7 @@ namespace ANAMED {
     };
 
     // 
-    //submission.commandInits.push_back([=](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+    //submission.commandInits.push_back([=](cpp21::carg<vk::CommandBuffer> cmdBuf) {
       auto _copyInfo = copyInfo;
       auto _depInfo = depInfo;
       copyInfoRaw->cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersBegin));
@@ -822,7 +822,7 @@ namespace ANAMED {
   };
 
   //
-  inline WrapShared<UploaderObj> UploaderObj::writeUploadToResourceCmd(cpp21::const_wrap_arg<UploadCommandWriteInfo> copyRegionInfo) {
+  inline WrapShared<UploaderObj> UploaderObj::writeUploadToResourceCmd(cpp21::carg<UploadCommandWriteInfo> copyRegionInfo) {
     //decltype(auto) submission = CommandOnceSubmission{ .info = this->cInfo->info };
     decltype(auto) mappedBuffer = copyRegionInfo->bunchBuffer ? copyRegionInfo->bunchBuffer : this->mappedBuffer;
     decltype(auto) device = this->base.as<vk::Device>();
@@ -979,7 +979,7 @@ namespace ANAMED {
   };
 
   //
-  inline WrapShared<UploaderObj> UploaderObj::writeDownloadToResourceCmd(cpp21::const_wrap_arg<DownloadCommandWriteInfo> info) {
+  inline WrapShared<UploaderObj> UploaderObj::writeDownloadToResourceCmd(cpp21::carg<DownloadCommandWriteInfo> info) {
     decltype(auto) mappedBuffer = info->bunchBuffer ? info->bunchBuffer : this->mappedBuffer;
     decltype(auto) device = this->base.as<vk::Device>();
     decltype(auto) regions = std::vector<vk::BufferCopy2>{  };

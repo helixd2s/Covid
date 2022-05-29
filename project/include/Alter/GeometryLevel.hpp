@@ -52,12 +52,12 @@ namespace ANAMED {
   public:
 
     // 
-    GeometryLevelObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<GeometryLevelCreateInfo> cInfo = GeometryLevelCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
+    GeometryLevelObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::carg<GeometryLevelCreateInfo> cInfo = GeometryLevelCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
       //this->construct(deviceObj, cInfo);
     };
 
     // 
-    GeometryLevelObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<GeometryLevelCreateInfo> cInfo = GeometryLevelCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
+    GeometryLevelObj(cpp21::carg<Handle> handle, cpp21::carg<GeometryLevelCreateInfo> cInfo = GeometryLevelCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
       //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
@@ -73,7 +73,7 @@ namespace ANAMED {
     };
 
     //
-    inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<GeometryLevelCreateInfo> cInfo = GeometryLevelCreateInfo{}) {
+    inline static tType make(cpp21::carg<Handle> handle, cpp21::carg<GeometryLevelCreateInfo> cInfo = GeometryLevelCreateInfo{}) {
       auto shared = std::make_shared<GeometryLevelObj>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle), cInfo);
       auto wrap = shared->registerSelf();
@@ -141,7 +141,7 @@ namespace ANAMED {
     };
 
     //
-    virtual vk::CommandBuffer const& writeBuildStructureCmd(cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf = {}, vk::Buffer const& geometryOffset = {}) {
+    virtual vk::CommandBuffer const& writeBuildStructureCmd(cpp21::carg<vk::CommandBuffer> cmdBuf = {}, vk::Buffer const& geometryOffset = {}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(Handle(this->cInfo->uploader, HandleType::eUploader));
@@ -221,7 +221,7 @@ namespace ANAMED {
     };
 
     //
-    virtual FenceType buildStructure(cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}) {
+    virtual FenceType buildStructure(cpp21::carg<QueueGetInfo> info = QueueGetInfo{}) {
       //
       if (this->cInfo->geometries->size() > 0) {
         if (!this->accelStruct) {
@@ -254,13 +254,13 @@ namespace ANAMED {
         memcpy(memPage->mapped, this->cInfo->geometries->data(), geometrySize);
 
         // TODO: Acceleration Structure Build Barriers per Buffers
-        submission.commandInits.push_back([geometryOffset, dispatch = deviceObj->getDispatch(), memPage, this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+        submission.commandInits.push_back([geometryOffset, dispatch = deviceObj->getDispatch(), memPage, this](cpp21::carg<vk::CommandBuffer> cmdBuf) {
           return this->writeBuildStructureCmd(cmdBuf, memPage->bunchBuffer);
         });
 
         //
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
-        submission.submission.onDone.push_back([memPage, mappedBlock = uploaderObj->getMappedBlock(), geometryAlloc](cpp21::const_wrap_arg<vk::Result> result) {
+        submission.submission.onDone.push_back([memPage, mappedBlock = uploaderObj->getMappedBlock(), geometryAlloc](cpp21::carg<vk::Result> result) {
           vmaVirtualFree(mappedBlock, geometryAlloc);
           memPage->destructor();
         });
@@ -273,7 +273,7 @@ namespace ANAMED {
     };
 
     //
-    virtual FenceType createStructure(cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}, bool const& needsBuild = true) {
+    virtual FenceType createStructure(cpp21::carg<QueueGetInfo> info = QueueGetInfo{}, bool const& needsBuild = true) {
       this->updateGeometries();
 
       //
@@ -353,7 +353,7 @@ namespace ANAMED {
     };
 
     // 
-    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<GeometryLevelCreateInfo> cInfo = GeometryLevelCreateInfo{}) {
+    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::carg<GeometryLevelCreateInfo> cInfo = GeometryLevelCreateInfo{}) {
       if (cInfo) { this->cInfo = cInfo; };
 
       //

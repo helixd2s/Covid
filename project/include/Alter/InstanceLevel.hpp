@@ -67,12 +67,12 @@ namespace ANAMED {
   public:
 
     // 
-    InstanceLevelObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo), instanceDraw(std::vector<InstanceDraw>{}), instanceDevInfo(std::vector<InstanceDevInfo>{}) {
+    InstanceLevelObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::carg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo), instanceDraw(std::vector<InstanceDraw>{}), instanceDevInfo(std::vector<InstanceDevInfo>{}) {
       //this->construct(deviceObj, cInfo);
     };
 
     // 
-    InstanceLevelObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) : BaseObj(handle), cInfo(cInfo), instanceDraw(std::vector<InstanceDraw>{}), instanceDevInfo(std::vector<InstanceDevInfo>{}) {
+    InstanceLevelObj(cpp21::carg<Handle> handle, cpp21::carg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) : BaseObj(handle), cInfo(cInfo), instanceDraw(std::vector<InstanceDraw>{}), instanceDevInfo(std::vector<InstanceDevInfo>{}) {
       //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
@@ -88,7 +88,7 @@ namespace ANAMED {
     };
 
     //
-    inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) {
+    inline static tType make(cpp21::carg<Handle> handle, cpp21::carg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) {
       auto shared = std::make_shared<InstanceLevelObj>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle), cInfo);
       auto wrap = shared->registerSelf();
@@ -252,7 +252,7 @@ namespace ANAMED {
     };
 
     //
-    virtual vk::CommandBuffer const& writeBuildStructureCmd(cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf = {}, vk::Buffer const& instanceDevOffset = {}, vk::Buffer const& instanceOffset = {}) {
+    virtual vk::CommandBuffer const& writeBuildStructureCmd(cpp21::carg<vk::CommandBuffer> cmdBuf = {}, vk::Buffer const& instanceDevOffset = {}, vk::Buffer const& instanceOffset = {}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(Handle(this->cInfo->uploader, HandleType::eUploader));
@@ -340,7 +340,7 @@ namespace ANAMED {
     };
 
     //
-    virtual FenceType buildStructure(cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}) {
+    virtual FenceType buildStructure(cpp21::carg<QueueGetInfo> info = QueueGetInfo{}) {
       // 
       if (this->cInfo->instances->size() > 0) {
         if (!this->accelStruct) {
@@ -381,13 +381,13 @@ namespace ANAMED {
         memcpy(instancePage->mapped, this->instanceInfo->data(), this->instanceInfo->size() * sizeof(InstanceInfo));
 
         // TODO: Acceleration Structure Build Barriers per Buffers
-        submission.commandInits.push_back([instanceDevOffset, instanceOffset, instancePage, instanceDevPage, dispatch = deviceObj->getDispatch(), this](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+        submission.commandInits.push_back([instanceDevOffset, instanceOffset, instancePage, instanceDevPage, dispatch = deviceObj->getDispatch(), this](cpp21::carg<vk::CommandBuffer> cmdBuf) {
           return this->writeBuildStructureCmd(cmdBuf, instanceDevPage->bunchBuffer, instancePage->bunchBuffer);
         });
 
         //
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
-        submission.submission.onDone.push_back([mappedBlock, instanceDevAlloc, instanceAlloc](cpp21::const_wrap_arg<vk::Result> result) {
+        submission.submission.onDone.push_back([mappedBlock, instanceDevAlloc, instanceAlloc](cpp21::carg<vk::Result> result) {
           vmaVirtualFree(mappedBlock, instanceDevAlloc);
           vmaVirtualFree(mappedBlock, instanceAlloc);
           });
@@ -401,7 +401,7 @@ namespace ANAMED {
     };
 
     //
-    virtual FenceType createStructure(cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}, bool const& needsBuild = true) {
+    virtual FenceType createStructure(cpp21::carg<QueueGetInfo> info = QueueGetInfo{}, bool const& needsBuild = true) {
       this->updateInstances();
 
       //
@@ -506,7 +506,7 @@ namespace ANAMED {
   protected:
 
     // 
-    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) {
+    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::carg<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) {
       //this->deviceObj = deviceObj;
       if (cInfo) { this->cInfo = cInfo; };
       decltype(auto) device = this->base.as<vk::Device>();

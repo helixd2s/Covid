@@ -26,9 +26,9 @@ namespace ANAMED {
     vk::RenderingAttachmentInfo stencilAttachment = {};
 
     //
-    std::vector<std::function<void(cpp21::const_wrap_arg<vk::CommandBuffer>, cpp21::const_wrap_arg<FramebufferState>)>> switchToShaderReadFn = {};
-    std::vector<std::function<void(cpp21::const_wrap_arg<vk::CommandBuffer>, cpp21::const_wrap_arg<FramebufferState>)>> switchToAttachmentFn = {};
-    std::vector<std::function<void(cpp21::const_wrap_arg<vk::CommandBuffer>, cpp21::const_wrap_arg<FramebufferState>)>> clearAttachmentFn = {};
+    std::vector<std::function<void(cpp21::carg<vk::CommandBuffer>, cpp21::carg<FramebufferState>)>> switchToShaderReadFn = {};
+    std::vector<std::function<void(cpp21::carg<vk::CommandBuffer>, cpp21::carg<FramebufferState>)>> switchToAttachmentFn = {};
+    std::vector<std::function<void(cpp21::carg<vk::CommandBuffer>, cpp21::carg<FramebufferState>)>> clearAttachmentFn = {};
 
 
   };
@@ -70,12 +70,12 @@ namespace ANAMED {
     virtual FramebufferStateInfo const& getStateInfo() const { return currentState; };
 
     // 
-    FramebufferObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
+    FramebufferObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::carg<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
       //this->construct(deviceObj, cInfo);
     };
 
     // 
-    FramebufferObj(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
+    FramebufferObj(cpp21::carg<Handle> handle, cpp21::carg<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
       //this->construct(ANAMED::context->get<DeviceObj>(this->base = handle), cInfo);
     };
 
@@ -117,7 +117,7 @@ namespace ANAMED {
     };
 
     //
-    virtual uint32_t& acquireImage(cpp21::const_wrap_arg<ANAMED::QueueGetInfo> qfAndQueue) {
+    virtual uint32_t& acquireImage(cpp21::carg<ANAMED::QueueGetInfo> qfAndQueue) {
       this->previousIndex = this->currentIndex;
       this->currentIndex = (++this->currentIndex) % this->fbHistory.size();
 
@@ -143,7 +143,7 @@ namespace ANAMED {
     };
 
     //
-    inline static tType make(cpp21::const_wrap_arg<Handle> handle, cpp21::const_wrap_arg<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{}) {
+    inline static tType make(cpp21::carg<Handle> handle, cpp21::carg<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{}) {
       auto shared = std::make_shared<FramebufferObj>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle), cInfo);
       auto wrap = shared->registerSelf();
@@ -151,7 +151,7 @@ namespace ANAMED {
     };
 
     //
-    virtual tType writeSwitchToShaderRead(FbHistory& history, cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+    virtual tType writeSwitchToShaderRead(FbHistory& history, cpp21::carg<vk::CommandBuffer> cmdBuf) {
       if (history.state != FramebufferState::eShaderRead) {
         for (decltype(auto) fn : history.switchToShaderReadFn) { fn(cmdBuf, history.state); };
         history.state = FramebufferState::eShaderRead;
@@ -160,7 +160,7 @@ namespace ANAMED {
     };
 
     //
-    virtual tType writeSwitchToAttachment(FbHistory& history, cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+    virtual tType writeSwitchToAttachment(FbHistory& history, cpp21::carg<vk::CommandBuffer> cmdBuf) {
       if (history.state != FramebufferState::eAttachment) {
         for (decltype(auto) fn : history.switchToAttachmentFn) { fn(cmdBuf, history.state); };
         history.state = FramebufferState::eAttachment;
@@ -170,19 +170,19 @@ namespace ANAMED {
 
 
     //
-    virtual tType writeSwitchToShaderRead(cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+    virtual tType writeSwitchToShaderRead(cpp21::carg<vk::CommandBuffer> cmdBuf) {
       return writeSwitchToShaderRead(this->fbHistory[this->currentIndex], cmdBuf);
     };
 
     //
-    virtual tType writeSwitchToAttachment(cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+    virtual tType writeSwitchToAttachment(cpp21::carg<vk::CommandBuffer> cmdBuf) {
       return writeSwitchToAttachment(this->fbHistory[this->currentIndex], cmdBuf);
     };
 
 
 
     //
-    virtual tType writeClearAttachments(FbHistory& history, cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+    virtual tType writeClearAttachments(FbHistory& history, cpp21::carg<vk::CommandBuffer> cmdBuf) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<PipelineLayoutObj>(this->cInfo->layout);
@@ -221,10 +221,10 @@ namespace ANAMED {
     };
 
     //
-    virtual FenceType clearAttachments(FbHistory& history, cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}) {
+    virtual FenceType clearAttachments(FbHistory& history, cpp21::carg<QueueGetInfo> info = QueueGetInfo{}) {
       // 
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo{.info = info } };
-      submission.commandInits.push_back([this, &history](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+      submission.commandInits.push_back([this, &history](cpp21::carg<vk::CommandBuffer> cmdBuf) {
         this->writeClearAttachments(history, cmdBuf);
         return cmdBuf;
       });
@@ -235,11 +235,11 @@ namespace ANAMED {
     };
 
     //
-    virtual FenceType switchToShaderRead(FbHistory& history, cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}) {
+    virtual FenceType switchToShaderRead(FbHistory& history, cpp21::carg<QueueGetInfo> info = QueueGetInfo{}) {
       // 
       if (history.state != FramebufferState::eShaderRead) {
         decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo{.info = info } };
-        submission.commandInits.push_back([this, &history](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+        submission.commandInits.push_back([this, &history](cpp21::carg<vk::CommandBuffer> cmdBuf) {
           this->writeSwitchToShaderRead(history, cmdBuf);
           return cmdBuf;
         });
@@ -252,11 +252,11 @@ namespace ANAMED {
     };
 
     //
-    virtual FenceType switchToAttachment(FbHistory& history, cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}) {
+    virtual FenceType switchToAttachment(FbHistory& history, cpp21::carg<QueueGetInfo> info = QueueGetInfo{}) {
       // 
       if (history.state != FramebufferState::eAttachment) {
         decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo{.info = info } };
-        submission.commandInits.push_back([this, &history](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf) {
+        submission.commandInits.push_back([this, &history](cpp21::carg<vk::CommandBuffer> cmdBuf) {
           this->writeSwitchToAttachment(history, cmdBuf);
           return cmdBuf;
         });
@@ -269,17 +269,17 @@ namespace ANAMED {
     };
 
     //
-    virtual FenceType clearAttachments(cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}) {
+    virtual FenceType clearAttachments(cpp21::carg<QueueGetInfo> info = QueueGetInfo{}) {
       return clearAttachments(this->fbHistory[this->currentIndex], info);
     };
 
     //
-    virtual FenceType switchToShaderRead(cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}) {
+    virtual FenceType switchToShaderRead(cpp21::carg<QueueGetInfo> info = QueueGetInfo{}) {
       return switchToShaderRead(this->fbHistory[this->currentIndex], info);
     };
 
     //
-    virtual FenceType switchToAttachment(cpp21::const_wrap_arg<QueueGetInfo> info = QueueGetInfo{}) {
+    virtual FenceType switchToAttachment(cpp21::carg<QueueGetInfo> info = QueueGetInfo{}) {
       return switchToAttachment(this->fbHistory[this->currentIndex], info);
     };
 
@@ -287,7 +287,7 @@ namespace ANAMED {
   protected:
 
     //
-    virtual void createImage(FbHistory& history, cpp21::const_wrap_arg<ImageType> imageType = ImageType::eColorAttachment) {
+    virtual void createImage(FbHistory& history, cpp21::carg<ImageType> imageType = ImageType::eColorAttachment) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<PipelineLayoutObj>(this->cInfo->layout);
@@ -333,7 +333,7 @@ namespace ANAMED {
       decltype(auto) imageView = std::get<0>(pair);
 
       // TODO: use pre-built command buffer
-      history.switchToAttachmentFn.push_back([this, device, imageLayout, subresourceRange, image=imageObj.as<vk::Image>(), &history](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf, cpp21::const_wrap_arg<FramebufferState> previousState = {}) {
+      history.switchToAttachmentFn.push_back([this, device, imageLayout, subresourceRange, image=imageObj.as<vk::Image>(), &history](cpp21::carg<vk::CommandBuffer> cmdBuf, cpp21::carg<FramebufferState> previousState = {}) {
         decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(device);
         decltype(auto) imageObj = deviceObj->get<ResourceObj>(image);
         imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
@@ -344,7 +344,7 @@ namespace ANAMED {
       });
 
       //
-      history.switchToShaderReadFn.push_back([this, device, subresourceRange, image = imageObj.as<vk::Image>(), &history](cpp21::const_wrap_arg<vk::CommandBuffer> cmdBuf, cpp21::const_wrap_arg<FramebufferState> previousState = {}) {
+      history.switchToShaderReadFn.push_back([this, device, subresourceRange, image = imageObj.as<vk::Image>(), &history](cpp21::carg<vk::CommandBuffer> cmdBuf, cpp21::carg<FramebufferState> previousState = {}) {
         decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(device);
         decltype(auto) imageObj = deviceObj->get<ResourceObj>(image);
         imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
@@ -429,7 +429,7 @@ namespace ANAMED {
     };
 
     // 
-    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::const_wrap_arg<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{}) {
+    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::carg<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{}) {
       if (cInfo) { this->cInfo = cInfo; };
       this->handle = uintptr_t(this);
       this->updateFramebuffer();
