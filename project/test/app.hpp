@@ -61,24 +61,26 @@ struct CounterData {
 
 //
 struct PixelHitInfo {
-  glm::uvec4 indices;
+  glm::uvec4 indices[2];
   glm::vec4 origin;
   glm::vec4 direct;
+  glm::vec4 normal;
 };
 
 //
 struct RayHitInfo {
-  glm::uvec4 indices;
+  glm::uvec4 indices[2];
   glm::vec4 origin;
   glm::vec4 direct;
+  glm::vec4 normal;
   glm::vec4 color;
 };
 
 //
 struct PixelSurfaceInfo {
-  glm::uvec4 indices;
-  glm::vec3 origin;
-  glm::vec3 normal;
+  //glm::uvec4 indices;
+  //glm::vec3 origin;
+  //glm::vec3 normal;
   glm::vec4 tex[2];
   glm::uvec4 accum[3];
   glm::uvec4 color[3];
@@ -285,6 +287,7 @@ public:
       }
     });*/
 
+    
     //
     decltype(auto) preOpaqueFence = preOpaqueObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
       // # yet another std::optional problem (implicit)
@@ -313,6 +316,7 @@ public:
       }
     });
 
+    
     //
     decltype(auto) resortFence = resortObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
       // # yet another std::optional problem (implicit)
@@ -341,6 +345,7 @@ public:
       }
       });
 
+    
     //
     decltype(auto) surfaceFence = surfaceCmdObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
       // # yet another std::optional problem (implicit)
@@ -355,6 +360,7 @@ public:
       }
       });
 
+    
     // TODO: path tracing ray count for performance
     decltype(auto) computeFence = pathTracerObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
       // # yet another std::optional problem (implicit)
@@ -373,7 +379,8 @@ public:
     decltype(auto) distrubFence = distrubCmdObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
       // # yet another std::optional problem (implicit)
       .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
-        .dispatch = vk::Extent3D{cpp21::tiled(uniformData.framebuffers[0].extent.x * uniformData.framebuffers[0].extent.y, 256u), 1u, 1u},
+        //.dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 32u), cpp21::tiled(renderArea.extent.height, 4u), 1u},
+        .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width * renderArea.extent.height, 128u), 1u, 1u},
         .layout = descriptorsObj.as<vk::PipelineLayout>(),
         // # yet another std::optional problem (implicit)
         .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
@@ -382,7 +389,6 @@ public:
         .info = qfAndQueue
       }
       });
-
     //
     decltype(auto) recopyFence = recopyObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
       // # yet another std::optional problem (implicit)
@@ -396,6 +402,7 @@ public:
         .info = qfAndQueue
       }
       });
+    
 
     //
     decltype(auto) reserveFence = reserveObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{

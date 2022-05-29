@@ -362,9 +362,6 @@ RayData pathTrace(inout RayData rayData, inout PathTraceOutput outp, in uint typ
 
 //
 PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
-  RayData rayData = cmd.rayData;
-
-  //
   const bool needsDiffuse = cmd.diffuseColor.a >= 0.001f && luminance(cmd.diffuseColor.xyz) > 0.f;
   const bool needsReflection = cmd.reflCoef >= 0.001f;
   const bool needsTransparency = cmd.diffuseColor.a < 1.f;
@@ -377,7 +374,7 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
   if (!needsTransparency && !needsReflection && !needsDiffuse) { validTracing = false; };
 
   //
-  vec3 originSeedXYZ = vec3(random(blueNoiseFn(rayData.launchId.xy)), random(blueNoiseFn(rayData.launchId.xy)), random(blueNoiseFn(rayData.launchId.xy)));
+  vec3 originSeedXYZ = vec3(random(blueNoiseFn(cmd.rayData.launchId.xy)), random(blueNoiseFn(cmd.rayData.launchId.xy)), random(blueNoiseFn(cmd.rayData.launchId.xy)));
   PathTraceOutput outp;
   outp.hitT = 0.f;
   outp.indices = uvec4(0u);
@@ -391,27 +388,27 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
 
   //
   if (type == 0) {
-    rayData.direction.xyz = normalize(reflective(originSeedXYZ, rayData.direction.xyz, cmd.normals.xyz, cmd.PBR.g));;
-    rayData.energy = f16vec4(1.f.xxx, 1.f);//f16vec4(metallicMult(1.f.xxx, cmd.diffuseColor.xyz, cmd.PBR.b), 1.f);
-    rayData.emission = f16vec4(0.f.xxx, 1.f);
-    rayData.energy.xyz = f16vec3(metallicMult(rayData.energy.xyz, cmd.diffuseColor.xyz, cmd.PBR.b));
+    cmd.rayData.direction.xyz = normalize(reflective(originSeedXYZ, cmd.rayData.direction.xyz, cmd.normals.xyz, cmd.PBR.g));;
+    cmd.rayData.energy = f16vec4(1.f.xxx, 1.f);//f16vec4(metallicMult(1.f.xxx, cmd.diffuseColor.xyz, cmd.PBR.b), 1.f);
+    cmd.rayData.emission = f16vec4(0.f.xxx, 1.f);
+    cmd.rayData.energy.xyz = f16vec3(metallicMult(cmd.rayData.energy.xyz, cmd.diffuseColor.xyz, cmd.PBR.b));
   } else 
   if (type == 1) {
-    //rayData.direction.xyz = rayData.direction.xyz;
-    rayData.energy = f16vec4(1.f.xxx, 1.f);//f16vec4(metallicMult(1.f.xxx, materialPix.color[MATERIAL_ALBEDO].xyz, metallicFactor), 1.f);
-    rayData.emission = f16vec4(0.f.xxx, 1.f);
-    //rayData.energy.xyz = f16vec3(metallicMult(rayData.energy.xyz, cmd.diffuseColor.xyz, cmd.PBR.b));
+    //cmd.rayData.direction.xyz = cmd.rayData.direction.xyz;
+    cmd.rayData.energy = f16vec4(1.f.xxx, 1.f);//f16vec4(metallicMult(1.f.xxx, materialPix.color[MATERIAL_ALBEDO].xyz, metallicFactor), 1.f);
+    cmd.rayData.emission = f16vec4(0.f.xxx, 1.f);
+    //cmd.rayData.energy.xyz = f16vec3(metallicMult(cmd.rayData.energy.xyz, cmd.diffuseColor.xyz, cmd.PBR.b));
   } else {
-    rayData.direction.xyz = normalize(randomCosineWeightedHemispherePoint(originSeedXYZ, cmd.normals));
-    rayData.energy = f16vec4(1.f.xxx, 1.f);
-    rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, cmd.diffuseColor.xyz * (1.f - cmd.emissiveColor.xyz)));
-    rayData.emission = f16vec4(trueMultColor(rayData.energy.xyz, directLighting(rayData.origin.xyz, cmd.normals.xyz, cmd.tbn[2], vec3(random(blueNoiseFn(rayData.launchId.xy)), random(blueNoiseFn(rayData.launchId.xy)), random(blueNoiseFn(rayData.launchId.xy))), 10000.f).xyz), 1.f);
+    cmd.rayData.direction.xyz = normalize(randomCosineWeightedHemispherePoint(originSeedXYZ, cmd.normals));
+    cmd.rayData.energy = f16vec4(1.f.xxx, 1.f);
+    cmd.rayData.energy.xyz = f16vec3(trueMultColor(cmd.rayData.energy.xyz, cmd.diffuseColor.xyz * (1.f - cmd.emissiveColor.xyz)));
+    cmd.rayData.emission = f16vec4(trueMultColor(cmd.rayData.energy.xyz, directLighting(cmd.rayData.origin.xyz, cmd.normals.xyz, cmd.tbn[2], vec3(random(blueNoiseFn(cmd.rayData.launchId.xy)), random(blueNoiseFn(cmd.rayData.launchId.xy)), random(blueNoiseFn(cmd.rayData.launchId.xy))), 10000.f).xyz), 1.f);
   };
 
   // enforce typic indice
   if (validTracing) {
-    rayData.origin += outRayNormal(rayData.direction.xyz, cmd.tbn[2].xyz) * 0.0001f;
-    rayData = pathTrace(rayData, outp, type);
+    cmd.rayData.origin += outRayNormal(cmd.rayData.direction.xyz, cmd.tbn[2].xyz) * 0.0001f;
+    cmd.rayData = pathTrace(cmd.rayData, outp, type);
   };
 
   //
@@ -420,30 +417,38 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
 
   //
   /*if (type == 0) {
-    rayData.emission.xyz = f16vec3(metallicMult(rayData.emission.xyz, cmd.diffuseColor.xyz, cmd.PBR.b));
+    cmd.rayData.emission.xyz = f16vec3(metallicMult(cmd.rayData.emission.xyz, cmd.diffuseColor.xyz, cmd.PBR.b));
   } else 
   if (type == 1) {
-    //rayData.emission.xyz = f16vec3(metallicMult(rayData.emission.xyz, cmd.diffuseColor.xyz, cmd.PBR.b));
+    //cmd.rayData.emission.xyz = f16vec3(metallicMult(cmd.rayData.emission.xyz, cmd.diffuseColor.xyz, cmd.PBR.b));
   } else {
-    rayData.emission.xyz = f16vec3(trueMultColor(rayData.emission.xyz, cmd.diffuseColor.xyz * (1.f - cmd.emissiveColor.xyz)));
+    cmd.rayData.emission.xyz = f16vec3(trueMultColor(cmd.rayData.emission.xyz, cmd.diffuseColor.xyz * (1.f - cmd.emissiveColor.xyz)));
   };*/
 
   // 
   vec4 additional = vec4(0.f.xxx, 1.f);
-  if (type == 0) { additional = clampCol(rayData.emission * vec4(reflCoef.xxx, 1.f)); };
-  if (type == 1) { additional = clampCol(rayData.emission * vec4(((1.f - reflCoef) ).xxx, 1.f)); };
-  if (type == 2) { additional = clampCol(rayData.emission * vec4(((1.f - reflCoef) ).xxx, 1.f)); };
+  if (type == 0) { additional = clampCol(cmd.rayData.emission * vec4(reflCoef.xxx, 1.f)); };
+  if (type == 1) { additional = clampCol(cmd.rayData.emission * vec4(((1.f - reflCoef) ).xxx, 1.f)); };
+  if (type == 2) { additional = clampCol(cmd.rayData.emission * vec4(((1.f - reflCoef) ).xxx, 1.f)); };
 
   // avoid critical error for skyboxed, also near have more priority... also, transparency may incorrect, so doing some exception
   uint hitId = atomicAdd(counters[HIT_COUNTER], 1u);
+  //PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.rayData.launchId.x + cmd.rayData.launchId.y * UR(deferredBuf.extent).x);
 
   //
-  RayHitInfoRef hitInfo = getHitInfo(hitId);
-  hitInfo.color = additional;
-  hitInfo.indices = uvec4(outp.indices.xyz, type);
-  hitInfo.origin.xyz = rayOrigin;
-  hitInfo.direct.xyz = rayDirection;
-  hitInfo.origin.w = outp.hitT;
+  RayHitInfoRef hitInfo = getHitInfo(hitId);//getHitInfo(hitId);
+  if (hitId < UR(deferredBuf.extent).x *  UR(deferredBuf.extent).y) {
+    hitInfo.color = additional;
+    hitInfo.indices[0] = uvec4(cmd.intersection.instanceId, cmd.intersection.geometryId, cmd.intersection.primitiveId, type);
+    hitInfo.indices[1] = uvec4(outp.indices.xyz, pack32(cmd.rayData.launchId));
+    hitInfo.origin.xyz = rayOrigin;
+    hitInfo.direct.xyz = rayDirection;
+    hitInfo.normal.xyz = cmd.tbn[2];
+    hitInfo.origin.w = outp.hitT;
+  };
+
+  //
+  //surfaceInfo.accum[type] += additional;
 
   // 
   return outp;
@@ -452,23 +457,23 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
 // 
 void prepareHit(in uint pixelId, in uint type) {
   PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
-  //if (surfaceInfo.color[type].w > 0.f) {
-    // 
-    vec4 unlimited = cvtRgb16Acc(surfaceInfo.color[type]);
-    vec4 average = unlimited/max(unlimited.w, 1.f);
-    vec4 limited = average * min(max(unlimited.w, 1.f), 16.f);
 
-    //
-    surfaceInfo.accum[type] = cvtRgb16Float(limited);
-    surfaceInfo.color[type] = TYPE(0u);
+  //
+  vec4 unlimited = cvtRgb16Acc(surfaceInfo.color[type]);
+  vec4 average = unlimited/max(unlimited.w, 1.f);
+  vec4 limited = average * min(max(unlimited.w, 1.f), 16.f);
 
-    //
-    PixelHitInfoRef hitInfo = getNewHit(pixelId, type);
-    PixelHitInfoRef newHitInfo = getRpjHit(pixelId, type);
-    newHitInfo.indices = hitInfo.indices; hitInfo.indices = uvec4(0u);
-    newHitInfo.origin = hitInfo.origin; hitInfo.origin = vec4(0.f);
-    newHitInfo.direct = hitInfo.direct; hitInfo.direct = vec4(0.f);
-  //};
+  //
+  surfaceInfo.accum[type] = cvtRgb16Float(limited);
+  surfaceInfo.color[type] = TYPE(0u);
+
+  //
+  PixelHitInfoRef hitInfo = getNewHit(pixelId, type);
+  PixelHitInfoRef newHitInfo = getRpjHit(pixelId, type);
+  newHitInfo.indices = hitInfo.indices; hitInfo.indices[0] = uvec4(0u), hitInfo.indices[1] = uvec4(0u);
+  newHitInfo.origin = hitInfo.origin; hitInfo.origin = vec4(0.f);
+  newHitInfo.direct = hitInfo.direct; hitInfo.direct = vec4(0.f);
+  newHitInfo.normal = hitInfo.normal; hitInfo.normal = vec4(0.f);
 };
 
 #endif

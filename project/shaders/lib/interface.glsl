@@ -65,25 +65,29 @@ layout(set = 0, binding = 1, scalar) buffer CounterBlock
 };
 
 // but may not to be...
+// may to be inaccurate in surface
 layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer PixelHitInfoRef {
-  uvec4 indices;
+  uvec4 indices[2];
   vec4 origin;
   vec4 direct;
+  vec4 normal;
 };
 
 // but may not to be...
-layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer RayHitInfoRef {
-  uvec4 indices;
+// may to be inaccurate in surface
+layout(buffer_reference, scalar, buffer_reference_align = 1) buffer RayHitInfoRef {
+  uvec4 indices[2];
   vec4 origin;
   vec4 direct;
+  vec4 normal;
   vec4 color;
 };
 
 // but may not to be...
 layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer PixelSurfaceInfoRef {
-  uvec4 indices;
-  vec3 origin;
-  vec3 normal;
+  //uvec4 indices;
+  //vec3 origin;
+  //vec3 normal;
   vec4 tex[2];
   TYPE accum[3];
   TYPE color[3];

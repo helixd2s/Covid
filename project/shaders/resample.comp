@@ -27,7 +27,7 @@ void main() {
 
   //
   PixelSurfaceInfoRef surface = getPixelSurface(pixelId);
-  if (surface.origin.x != 0.f || surface.origin.y != 0.f || surface.origin.z != 0.f) {
+  if (type < 3) {
     reproject3D(pixelId, type);
   };
 };

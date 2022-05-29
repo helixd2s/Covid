@@ -16,37 +16,46 @@
 //#include "lib/atomic.glsl"
 
 //
-layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+layout (local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
 
 // 
 void main() {
+  //
+  const uint maxCount = min(counters[HIT_COUNTER], UR(deferredBuf.extent).x *  UR(deferredBuf.extent).y);
+  const uint stepT = gl_NumWorkGroups.x * gl_WorkGroupSize.x;
   const uint threadId = gl_GlobalInvocationID.x;
-  for (uint i=threadId;i<counters[HIT_COUNTER];i+= (gl_NumWorkGroups.x*gl_WorkGroupSize.x)) {
-    if (i >= counters[HIT_COUNTER]) { break; };
-
-    //
-    RayHitInfoRef hitInfo = getHitInfo(i);
-
-    // 
-    const vec4 hitPersp = vec4(vec4(hitInfo.origin.xyz, 1.f) * constants.lookAt[0], 1.f) * constants.perspective;
-    const vec2 screen = (hitPersp.xy/hitPersp.w * 0.5f + 0.5f);
-    const ivec2 intc = ivec2(screen * vec2(UR(deferredBuf.extent)));
-    const uint id = uint(intc.x + intc.y * UR(deferredBuf.extent).x);
-    const bool valid = intc.x >= 0 && intc.y >= 0 && intc.x < UR(deferredBuf.extent).x && intc.y < UR(deferredBuf.extent).y;
-
-    //
-    if (valid) {
-      PixelSurfaceInfoRef surface = getPixelSurface(id);
-      PixelHitInfoRef data = getNewHit(id, hitInfo.indices.w);
+  //for (uint threadId = gl_GlobalInvocationID.x; threadId < maxCount; threadId+=stepT) {
+    //if (threadId >= maxCount) { break; }
+    if (threadId < maxCount) {
+      //
+      RayHitInfoRef hitInfo = getHitInfo(threadId);
 
       //
-      data.origin = hitInfo.origin;
-      data.indices = hitInfo.indices;
-      data.direct = hitInfo.direct;
+      if (hitInfo.origin.x != 0.f || hitInfo.origin.y != 0.f || hitInfo.origin.z != 0.f) {
+        const uint type = hitInfo.indices[0].w;
+        const vec4 color = hitInfo.color;
 
-      //
-      accumulate(surface, hitInfo.indices.w, hitInfo.color);
+        // 
+        const vec4 hitPersp = vec4(vec4(hitInfo.origin.xyz, 1.f) * constants.lookAt[0], 1.f) * constants.perspective;
+        const vec2 screen = (hitPersp.xy/hitPersp.w * 0.5f + 0.5f);
+        const ivec2 intc = ivec2(screen * vec2(UR(deferredBuf.extent)));
+        const uint id = uint(intc.x + intc.y * UR(deferredBuf.extent).x);
+        const bool valid = intc.x >= 0 && intc.y >= 0 && intc.x < UR(deferredBuf.extent).x && intc.y < UR(deferredBuf.extent).y;
+
+        //
+        if (id > 0 && valid) {
+          PixelSurfaceInfoRef surface = getPixelSurface(id);
+          PixelHitInfoRef data = getNewHit(id, type);
+
+          // may to be inaccurate in surface
+          data.origin = hitInfo.origin; hitInfo.origin = vec4(0.f.xxxx);
+          data.indices = hitInfo.indices; hitInfo.indices[0] = uvec4(0u), hitInfo.indices[1] = uvec4(0u);;
+          data.direct = hitInfo.direct; hitInfo.direct = vec4(0.f.xxxx);
+          data.normal = hitInfo.normal; hitInfo.normal = vec4(0.f.xxxx);
+          accumulate(surface, type, color); hitInfo.color = vec4(0.f.xxxx);
+        };
+      };
     };
-    
-  };
+  //};
+
 };
