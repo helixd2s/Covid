@@ -41,10 +41,8 @@ const uint REFLECTION_TYPE = 0u;
 const uint TRANSPARENCY_TYPE = 1u;
 
 //
-const uint PIXEL_COUNTER = 0u;
-const uint WRITE_COUNTER = 1u;
-const uint RASTER_COUNTER = 2u;
-const uint SURFACE_COUNTER = 3u;
+const uint RASTER_COUNTER = 0u;
+const uint HIT_COUNTER = 1u;
 
 //
 const vec3 bary[3] = { vec3(1.f,0.f,0.f), vec3(0.f,1.f,0.f), vec3(0.f,0.f,1.f) };

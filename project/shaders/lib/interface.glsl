@@ -39,6 +39,7 @@ layout(set = 0, binding = 0, scalar) uniform MatrixBlock
   uint64_t writeData;
   uint64_t rasterData[2];
   uint64_t surfaceData;
+  uint64_t hitData;
 };
 
 //
@@ -68,6 +69,14 @@ layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer Pix
   uvec4 indices;
   vec4 origin;
   vec4 direct;
+};
+
+// but may not to be...
+layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer RayHitInfoRef {
+  uvec4 indices;
+  vec4 origin;
+  vec4 direct;
+  vec4 color;
 };
 
 // but may not to be...
@@ -103,12 +112,6 @@ uint subgroupAtomicAdd(in uint counterId) {
 };
 
 //
-//#define sizeof(Type) uint64_t(Type(uint64_t(0))+1)
-
-//
-PixelSurfaceInfoRef getPixelSurface(in uint pixelId)  { return PixelSurfaceInfoRef(surfaceData) + pixelId; };
-
-//
 PixelHitInfoRef getNewHit(in uint pixelId, in uint type) { 
   const uint hitId = pixelId + UR(deferredBuf.extent).x * UR(deferredBuf.extent).y * type;
   return PixelHitInfoRef(pixelData) + hitId;
@@ -121,6 +124,8 @@ PixelHitInfoRef getRpjHit(in uint pixelId, in uint type) {
 };
 
 //
+RayHitInfoRef getHitInfo(in uint hitId)  { return RayHitInfoRef(hitData) + hitId; };
+PixelSurfaceInfoRef getPixelSurface(in uint pixelId)  { return PixelSurfaceInfoRef(surfaceData) + pixelId; };
 RasterInfoRef getRasterInfo(in uint rasterId, in uint previous)  { return RasterInfoRef(rasterData[previous]) + rasterId; };
 
 //

@@ -49,6 +49,7 @@ struct UniformData {
   uint64_t writeData = 0ull;
   uint64_t rasterData[2] = { 0ull };
   uint64_t surfaceData = 0ull;
+  uint64_t hitData = 0ull;
 };
 #pragma pack(pop)
 
@@ -63,6 +64,14 @@ struct PixelHitInfo {
   glm::uvec4 indices;
   glm::vec4 origin;
   glm::vec4 direct;
+};
+
+//
+struct RayHitInfo {
+  glm::uvec4 indices;
+  glm::vec4 origin;
+  glm::vec4 direct;
+  glm::vec4 color;
 };
 
 //
@@ -96,6 +105,8 @@ protected:
   ANAMED::WrapShared<ANAMED::PipelineObj> pathTracerObj = {};
   ANAMED::WrapShared<ANAMED::PipelineObj> resortObj = {};
   ANAMED::WrapShared<ANAMED::PipelineObj> recopyObj = {};
+  ANAMED::WrapShared<ANAMED::PipelineObj> surfaceCmdObj = {};
+  ANAMED::WrapShared<ANAMED::PipelineObj> distrubCmdObj = {};
 
   ANAMED::WrapShared<ANAMED::PipelineObj> preOpaqueObj = {};
   ANAMED::WrapShared<ANAMED::PipelineObj> preTranslucentObj = {};
@@ -112,6 +123,7 @@ protected:
   ANAMED::WrapShared<ANAMED::PingPongObj> deferredBufObj = {};
   ANAMED::WrapShared<ANAMED::ResourceVma> backgroundObj = {};
   ANAMED::WrapShared<ANAMED::ResourceVma> blueNoiseObj = {};
+  ANAMED::WrapShared<ANAMED::ResourceVma> hitDataObj = {};
   ANAMED::WrapShared<ANAMED::ResourceVma> pixelDataObj = {};
   ANAMED::WrapShared<ANAMED::ResourceVma> writeDataObj = {};
   ANAMED::WrapShared<ANAMED::ResourceVma> rasterDataObj = {};
@@ -330,6 +342,20 @@ public:
       });
 
     //
+    decltype(auto) surfaceFence = surfaceCmdObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
+      // # yet another std::optional problem (implicit)
+      .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
+        .dispatch = vk::Extent3D{cpp21::tiled(uniformData.framebuffers[0].extent.x, 32u), cpp21::tiled(uniformData.framebuffers[0].extent.y, 4u), 1u},
+        .layout = descriptorsObj.as<vk::PipelineLayout>(),
+        // # yet another std::optional problem (implicit)
+        .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
+      }),
+      .submission = ANAMED::SubmissionInfo{
+        .info = qfAndQueue
+      }
+      });
+
+    // TODO: path tracing ray count for performance
     decltype(auto) computeFence = pathTracerObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
       // # yet another std::optional problem (implicit)
       .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
@@ -342,6 +368,20 @@ public:
         .info = qfAndQueue
       }
     });
+
+    //
+    decltype(auto) distrubFence = distrubCmdObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
+      // # yet another std::optional problem (implicit)
+      .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
+        .dispatch = vk::Extent3D{cpp21::tiled(uniformData.framebuffers[0].extent.x * uniformData.framebuffers[0].extent.y, 256u), 1u, 1u},
+        .layout = descriptorsObj.as<vk::PipelineLayout>(),
+        // # yet another std::optional problem (implicit)
+        .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
+      }),
+      .submission = ANAMED::SubmissionInfo{
+        .info = qfAndQueue
+      }
+      });
 
     //
     decltype(auto) recopyFence = recopyObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
@@ -435,6 +475,15 @@ public:
     });
 
     // 
+    hitDataObj = ANAMED::ResourceVma::make(deviceObj, ANAMED::ResourceCreateInfo{
+      .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
+      .bufferInfo = ANAMED::BufferCreateInfo{
+        .size = sizeof(RayHitInfo) * renderArea.extent.width * renderArea.extent.height,
+        .type = ANAMED::BufferType::eStorage,
+      }
+      });
+
+    // 
     pixelDataObj = ANAMED::ResourceVma::make(deviceObj, ANAMED::ResourceCreateInfo{
       .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
       .bufferInfo = ANAMED::BufferCreateInfo{
@@ -456,6 +505,7 @@ public:
     uniformData.surfaceData = surfaceDataObj->getDeviceAddress();
     uniformData.pixelData = pixelDataObj->getDeviceAddress();
     uniformData.writeData = writeDataObj->getDeviceAddress();
+    uniformData.hitData = hitDataObj->getDeviceAddress();
     
     // 
     uint32_t testDivision = 1u;
@@ -552,7 +602,7 @@ protected:
       .descriptors = descriptorsObj.as<vk::PipelineLayout>()
     });
 
-    //
+    // TODO: path tracing ray count for performance
     pathTracerObj = ANAMED::PipelineObj::make(deviceObj.with(0u), ANAMED::PipelineCreateInfo{
       .layout = descriptorsObj.as<vk::PipelineLayout>(),
       .compute = ANAMED::ComputePipelineCreateInfo{
@@ -589,6 +639,22 @@ protected:
       .layout = descriptorsObj.as<vk::PipelineLayout>(),
       .compute = ANAMED::ComputePipelineCreateInfo{
         .code = cpp21::readBinaryU32("./shaders/recopy.comp.spv")
+      }
+      });
+
+    //
+    surfaceCmdObj = ANAMED::PipelineObj::make(deviceObj.with(0u), ANAMED::PipelineCreateInfo{
+      .layout = descriptorsObj.as<vk::PipelineLayout>(),
+      .compute = ANAMED::ComputePipelineCreateInfo{
+        .code = cpp21::readBinaryU32("./shaders/surface.comp.spv")
+      }
+      });
+
+    //
+    distrubCmdObj = ANAMED::PipelineObj::make(deviceObj.with(0u), ANAMED::PipelineCreateInfo{
+      .layout = descriptorsObj.as<vk::PipelineLayout>(),
+      .compute = ANAMED::ComputePipelineCreateInfo{
+        .code = cpp21::readBinaryU32("./shaders/distrub.comp.spv")
       }
       });
 
