@@ -431,14 +431,17 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
   if (type == 1) { additional = clampCol(cmd.rayData.emission * vec4(((1.f - reflCoef) ).xxx, 1.f)); };
   if (type == 2) { additional = clampCol(cmd.rayData.emission * vec4(((1.f - reflCoef) ).xxx, 1.f)); };
 
-  // avoid critical error for skyboxed, also near have more priority... also, transparency may incorrect, so doing some exception
-  uint hitId = atomicAdd(counters[HIT_COUNTER], 1u);
-  //PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.rayData.launchId.x + cmd.rayData.launchId.y * UR(deferredBuf.extent).x);
-
   //
+  // My GPU probably is broken, `hitData` doesn't supported correctly, or not enough memory
+  /*
+  uint hitId = atomicAdd(counters[HIT_COUNTER], 1u);
   RayHitInfoRef hitInfo = getHitInfo(hitId);//getHitInfo(hitId);
+  */
+
+  uint hitId = cmd.rayData.launchId.x + cmd.rayData.launchId.y * UR(deferredBuf.extent).x;//atomicAdd(counters[HIT_COUNTER], 1u);
+  PixelHitInfoRef hitInfo = getNewHit(hitId, type);
   if (hitId < UR(deferredBuf.extent).x *  UR(deferredBuf.extent).y) {
-    hitInfo.color = additional;
+    //hitInfo.color = additional;
     hitInfo.indices[0] = uvec4(cmd.intersection.instanceId, cmd.intersection.geometryId, cmd.intersection.primitiveId, type);
     hitInfo.indices[1] = uvec4(outp.indices.xyz, pack32(cmd.rayData.launchId));
     hitInfo.origin.xyz = rayOrigin;
@@ -447,8 +450,10 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
     hitInfo.origin.w = outp.hitT;
   };
 
-  //
-  //surfaceInfo.accum[type] += additional;
+  // dedicated distribution broken, no enough memory or GPU was broken, or `hitData` broken
+  // avoid critical error for skyboxed, also near have more priority... also, transparency may incorrect, so doing some exception
+  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.rayData.launchId.x + cmd.rayData.launchId.y * UR(deferredBuf.extent).x);
+  accumulate(surfaceInfo, type, additional);
 
   // 
   return outp;

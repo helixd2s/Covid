@@ -104,6 +104,6 @@ void main() {
     };
 
     //
-    pathTraceCommand(cmd, (type+0)%3);
+    if (hasHit && type < 3) { pathTraceCommand(cmd, type); };
   };
 };
