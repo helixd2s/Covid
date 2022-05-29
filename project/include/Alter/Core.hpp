@@ -759,7 +759,7 @@ namespace ANAMED {
   };
 
   //
-  inline static std::shared_ptr<AttachmentLayout> defaultAttachmentLayout = std::make_shared<AttachmentLayout>();
+  inline static cpp21::obj<AttachmentLayout> defaultAttachmentLayout = std::make_shared<AttachmentLayout>();
 
   //
   struct PipelineLayoutCreateInfo : BaseCreateInfo {
@@ -842,7 +842,7 @@ namespace ANAMED {
     uintptr_t allocation = 0ull;
 
     //
-    std::shared_ptr<std::function<DFun>> destructor = {};
+    cpp21::obj<std::function<DFun>> destructor = {};
   };
 
   //
@@ -1070,11 +1070,6 @@ namespace ANAMED {
     SubmissionInfo submission = {};
   };
 
-  //
-  //struct BufferRegionObj {
-    //std::shared_ptr<ResourceObj> buffer = {};
-    //DataRegion region = {};
-  //};
 
   //
   struct CopyBufferWriteInfo : BaseCreateInfo {
@@ -1172,11 +1167,11 @@ namespace ANAMED {
   //
   struct GraphicsPipelineCreateInfo : BaseCreateInfo {
     std::unordered_map<vk::ShaderStageFlagBits, cpp21::shared_vector<uint32_t>> stageCodes = {};
-    std::shared_ptr<AttachmentLayout> attachmentLayout = defaultAttachmentLayout;
+    cpp21::obj<AttachmentLayout> attachmentLayout = defaultAttachmentLayout;
 
     
     bool hasConservativeRaster = false;
-    std::shared_ptr<GraphicsDynamicState> dynamicState = {};
+    cpp21::obj<GraphicsDynamicState> dynamicState = {};
   };
 
   //
@@ -1205,7 +1200,7 @@ namespace ANAMED {
     vk::Extent2D extent = {640u, 480u};
     uint32_t minImageCount = 2u;
     std::optional<QueueGetInfo> info = {};
-    std::shared_ptr<AttachmentLayout> attachmentLayout = defaultAttachmentLayout;
+    cpp21::obj<AttachmentLayout> attachmentLayout = defaultAttachmentLayout;
   };
 
   //
@@ -1231,7 +1226,7 @@ namespace ANAMED {
     vk::SparseMemoryBind bind = {};
     void* mapped = nullptr;
     std::function<void()> destructor = {};
-    std::shared_ptr<AllocatedMemory> allocated = {};
+    cpp21::obj<AllocatedMemory> allocated = {};
 
     //
     SparseMemoryPage(vk::SparseMemoryBind const& bind = {}, std::function<void()> const& destructor = {}) : bind(bind), destructor(destructor) {
@@ -1445,7 +1440,7 @@ namespace ANAMED {
   };
 
   //
-  template<class T = BaseObj, class Tw = cpp21::wrap_shared_ptr<T>>
+  template<class T = BaseObj, class Tw = cpp21::obj<T>>
   class WrapShared : public Tw {
   public:
     using Tw::Tw;
@@ -1506,7 +1501,7 @@ namespace ANAMED {
   //
   class CallStack : public std::enable_shared_from_this<CallStack> {
   protected:
-    std::array<std::atomic<std::shared_ptr<std::function<void()>>>, 2048> callIds = {};
+    std::array<cpp21::obj<std::function<void()>>, 2048> callIds = {};
     std::atomic_int32_t callbackCount = 0;
     std::atomic_bool threadLocked = false;
     std::atomic_bool actionLocked = false;
@@ -1516,7 +1511,7 @@ namespace ANAMED {
     ~CallStack() { this->process(); };
 
     // USE ONLY FOR OFF-THREADS...
-    void add(std::shared_ptr<std::function<void()>> fn = {}) {
+    void add(cpp21::obj<std::function<void()>> fn = {}) {
       do { /* but nothing to do */ } while (this->threadLocked.load()); this->actionLocked = true;
       if (this->callbackCount < this->callIds.size()) {
         this->callIds[this->callbackCount++] = fn; //std::bind(fn, result)
@@ -1537,7 +1532,7 @@ namespace ANAMED {
         while (this->callbackCount > 0) {
           auto cid = --this->callbackCount;
           if (cid >= 0) { // avoid errors...
-            auto callId = this->callIds[cid].exchange({}); if (callId && *callId) { (*callId)(); };
+            auto callId = this->callIds[cid].exchange(std::shared_ptr<std::function<void()>>{}); if (callId && *callId) { (*callId)(); };
           };
         };
         atomic_max(this->callbackCount, 0);
