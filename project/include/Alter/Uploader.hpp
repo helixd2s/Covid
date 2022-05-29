@@ -140,7 +140,8 @@ namespace ANAMED {
 
       //
       vk::DeviceBufferMemoryRequirements memReqIn = vk::DeviceBufferMemoryRequirements{ .pCreateInfo = bufferInfo.get() };
-      vkGetDeviceBufferMemoryRequirements(VkDevice(device), reinterpret_cast<VkDeviceBufferMemoryRequirements*>(&memReqIn), reinterpret_cast<VkMemoryRequirements2*>(memReqInfo2.get()));
+      //vkGetDeviceBufferMemoryRequirements(VkDevice(device), reinterpret_cast<VkDeviceBufferMemoryRequirements*>(&memReqIn), reinterpret_cast<VkMemoryRequirements2*>(memReqInfo2.get()));
+      device.getBufferMemoryRequirements(&memReqIn, memReqInfo2.get());
 
       // 
       decltype(auto) memReq = memReqInfo2->memoryRequirements; memReq.size = memorySize;
@@ -383,7 +384,8 @@ namespace ANAMED {
 
       //
       vk::DeviceBufferMemoryRequirements memReqIn = vk::DeviceBufferMemoryRequirements{ .pCreateInfo = bufferInfo.get() };
-      vkGetDeviceBufferMemoryRequirements(VkDevice(device), reinterpret_cast<VkDeviceBufferMemoryRequirements*>(&memReqIn), reinterpret_cast<VkMemoryRequirements2*>(memReqInfo2.get()));
+      //vkGetDeviceBufferMemoryRequirements(VkDevice(device), reinterpret_cast<VkDeviceBufferMemoryRequirements*>(&memReqIn), reinterpret_cast<VkMemoryRequirements2*>(memReqInfo2.get()));
+      device.getBufferMemoryRequirements(&memReqIn, memReqInfo2.get());
       //device.getBufferMemoryRequirements2(infoMap->set(vk::StructureType::eBufferMemoryRequirementsInfo2, vk::BufferMemoryRequirementsInfo2{
         //.buffer = (this->mappedBuffer = device.createBuffer(bufferInfo->setQueueFamilyIndices(deviceObj->getQueueFamilies().indices)))
         //}).get(), memReqInfo2.get());
