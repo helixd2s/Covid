@@ -67,7 +67,7 @@ namespace ANAMED
 
     //
     WrapShared<GeometryLevelObj> structure = {};
-    WrapShared<ResourceObj> extensionBuffer = {};
+    WrapShared<ResourceVma> extensionBuffer = {};
   };
 
   //
@@ -82,7 +82,7 @@ namespace ANAMED
     std::vector<BufferRegion> regions = {};
 
     //
-    std::vector<WrapShared<ResourceObj>> images = {};
+    std::vector<WrapShared<ResourceVma>> images = {};
     std::vector<WrapShared<SamplerObj>> samplers = {};
 
     // indices cache
@@ -91,7 +91,7 @@ namespace ANAMED
     std::vector<CTexture> textures = {};
 
     // objects
-    std::vector<WrapShared<ResourceObj>> buffers = {};
+    std::vector<WrapShared<ResourceVma>> buffers = {};
 
     // 
     std::vector<std::shared_ptr<GltfMesh>> opaqueMeshes = {};
@@ -104,7 +104,7 @@ namespace ANAMED
     std::unordered_map<uintptr_t, bool> translucentImages = {};
 
     //
-    WrapShared<ResourceObj> materialBuffer = {};
+    WrapShared<ResourceVma> materialBuffer = {};
 
     //
     uintptr_t defaultScene = 0ull;
@@ -351,7 +351,7 @@ namespace ANAMED
       for (decltype(auto) image : gltf->model.images) { uintptr_t I = i++;
         //
         bool isTranslucent = false;
-        decltype(auto) imageObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
+        decltype(auto) imageObj = ANAMED::ResourceVma::make(deviceObj, ANAMED::ResourceCreateInfo{
           .descriptors = cInfo->descriptors,
           .imageInfo = ANAMED::ImageCreateInfo{
             .format = convertFormat(isTranslucent, image.component, image.bits, image.pixel_type),
@@ -427,7 +427,7 @@ namespace ANAMED
           auto accessor = gltf->model.accessors[accessorIndex];
           auto bv = gltf->regions[accessor.bufferView];
           auto bufferView = gltf->model.bufferViews[accessor.bufferView];
-          auto bufferObj = deviceObj->get<ResourceObj>(bv.buffer);
+          auto bufferObj = deviceObj->get<ResourceVma>(bv.buffer);
           auto address = bufferObj->getDeviceAddress();
 
           //
@@ -468,7 +468,7 @@ namespace ANAMED
       };
 
       //
-      gltf->materialBuffer = ANAMED::ResourceObj::make(handle, ANAMED::ResourceCreateInfo{
+      gltf->materialBuffer = ANAMED::ResourceVma::make(handle, ANAMED::ResourceCreateInfo{
         .descriptors = cInfo->descriptors,
         .bufferInfo = ANAMED::BufferCreateInfo{
           .size = gltf->model.materials.size() * sizeof(ANAMED::MaterialInfo),
@@ -508,7 +508,7 @@ namespace ANAMED
       // 
       for (decltype(auto) buffer : gltf->model.buffers) {
         //
-        decltype(auto) bufferObj = ANAMED::ResourceObj::make(handle, ANAMED::ResourceCreateInfo{
+        decltype(auto) bufferObj = ANAMED::ResourceVma::make(handle, ANAMED::ResourceCreateInfo{
           .descriptors = cInfo->descriptors,
           .bufferInfo = ANAMED::BufferCreateInfo{
             .size = cpp21::bytesize(buffer.data),
@@ -547,7 +547,7 @@ namespace ANAMED
         //
         opaqueMesh->geometries = cpp21::shared_vector<GeometryInfo>();
         opaqueMesh->extensions = cpp21::shared_vector<GeometryExtension>();
-        opaqueMesh->extensionBuffer = ANAMED::ResourceObj::make(handle, ANAMED::ResourceCreateInfo{
+        opaqueMesh->extensionBuffer = ANAMED::ResourceVma::make(handle, ANAMED::ResourceCreateInfo{
           .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
           .bufferInfo = ANAMED::BufferCreateInfo{
             .size = mesh.primitives.size() * sizeof(GeometryExtension),
@@ -558,7 +558,7 @@ namespace ANAMED
         //
         translucentMesh->geometries = cpp21::shared_vector<GeometryInfo>();
         translucentMesh->extensions = cpp21::shared_vector<GeometryExtension>();
-        translucentMesh->extensionBuffer = ANAMED::ResourceObj::make(handle, ANAMED::ResourceCreateInfo{
+        translucentMesh->extensionBuffer = ANAMED::ResourceVma::make(handle, ANAMED::ResourceCreateInfo{
           .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
           .bufferInfo = ANAMED::BufferCreateInfo{
             .size = mesh.primitives.size() * sizeof(GeometryExtension),

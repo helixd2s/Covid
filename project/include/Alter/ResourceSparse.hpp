@@ -114,7 +114,7 @@ namespace ANAMED {
     };
 
     //
-     WrapShared<ResourceObj> registerSelf() override {
+    WrapShared<ResourceObj> registerSelf() override {
       ANAMED::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
       return std::dynamic_pointer_cast<ResourceObj>(shared_from_this());
     };
@@ -123,8 +123,7 @@ namespace ANAMED {
     inline static tType make(cpp21::carg<Handle> handle, cpp21::carg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
       auto shared = std::make_shared<ResourceSparseObj>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle), cInfo);
-      auto wrap = shared->registerSelf();
-      return tType(shared);
+      return std::dynamic_pointer_cast<ResourceSparseObj>(shared->registerSelf().shared());
     };
 
   protected:

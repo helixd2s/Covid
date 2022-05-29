@@ -45,22 +45,21 @@ namespace ANAMED {
     };
 
     // 
-     std::type_info const& type_info() const override {
+    std::type_info const& type_info() const override {
       return typeid(std::decay_t<decltype(this)>);
     };
 
     //
-     WrapShared<ResourceObj> registerSelf() override {
+    WrapShared<ResourceObj> registerSelf() override {
       ANAMED::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
       return std::dynamic_pointer_cast<ResourceObj>(shared_from_this());
     };
 
     //
-    inline static WrapShared<ResourceObj> make(cpp21::carg<Handle> handle, cpp21::carg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
+    inline static tType make(cpp21::carg<Handle> handle, cpp21::carg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
       auto shared = std::make_shared<ResourceVma>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle), cInfo);
-      auto wrap = shared->registerSelf();
-      return wrap;
+      return std::dynamic_pointer_cast<ResourceVma>(shared->registerSelf().shared());
     };
 
   protected:
@@ -112,15 +111,13 @@ namespace ANAMED {
       };
 
       //
-      if ((*this->cInfo->extInfoMap)->find(ExtensionInfoName::eMemoryAllocationVma) == (*this->cInfo->extInfoMap)->end()) {
-        this->cInfo->extInfoMap->set(ExtensionInfoName::eMemoryAllocationVma, VmaAllocationExtension{});
-      };
+      decltype(auto) allocator = memoryAllocatorObj->getHandle().as<VmaAllocator>();
 
       //
-      decltype(auto) alloc = this->cInfo->extInfoMap->get<VmaAllocationExtension>(ExtensionInfoName::eMemoryAllocationVma);
-
-      //
-      vmaCreateImage(memoryAllocatorObj->getHandle().as<VmaAllocator>(), (VkImageCreateInfo*)imageInfo.get(), &vmaCreateInfo, &this->handle.as<VkImage>(), &alloc->allocation, &alloc->allocationInfo);
+      VmaAllocation allocation = {};
+      VmaAllocationInfo allocationInfo = {};
+      vmaCreateImage(allocator, (VkImageCreateInfo*)imageInfo.get(), &vmaCreateInfo, &this->handle.as<VkImage>(), &allocation, &allocationInfo);
+      this->handle.type = HandleType::eImage;
 
       // 
       if (cInfo->info) {
@@ -134,7 +131,7 @@ namespace ANAMED {
       };
 
       //
-      this->destructors.push_back(std::make_shared<std::function<DFun>>([device, image = this->handle.as<vk::Image>(), type = cInfo->type, allocator = memoryAllocatorObj->getHandle().as<VmaAllocator>(), allocation = alloc->allocation](BaseObj const*) {
+      this->destructors.push_back(std::make_shared<std::function<DFun>>([device, image = this->handle.as<vk::Image>(), type = cInfo->type, allocator, allocation](BaseObj const*) {
         if (type != ImageType::eSwapchain) {
           device.waitIdle();
           vmaDestroyImage(allocator, image, allocation);
@@ -184,15 +181,13 @@ namespace ANAMED {
       };
 
       //
-      if ((*this->cInfo->extInfoMap)->find(ExtensionInfoName::eMemoryAllocationVma) == (*this->cInfo->extInfoMap)->end()) {
-        this->cInfo->extInfoMap->set(ExtensionInfoName::eMemoryAllocationVma, VmaAllocationExtension{});
-      };
+      decltype(auto) allocator = memoryAllocatorObj->getHandle().as<VmaAllocator>();
 
       //
-      decltype(auto) alloc = this->cInfo->extInfoMap->get<VmaAllocationExtension>(ExtensionInfoName::eMemoryAllocationVma);
-
-      //
-      vmaCreateBuffer(memoryAllocatorObj->getHandle().as<VmaAllocator>(), (VkBufferCreateInfo*)bufferInfo.get(), &vmaCreateInfo, &this->handle.as<VkBuffer>(), &alloc->allocation, &alloc->allocationInfo);
+      VmaAllocation allocation = {};
+      VmaAllocationInfo allocationInfo = {};
+      vmaCreateBuffer(memoryAllocatorObj->getHandle().as<VmaAllocator>(), (VkBufferCreateInfo*)bufferInfo.get(), &vmaCreateInfo, &this->handle.as<VkBuffer>(), &allocation, &allocationInfo);
+      this->handle.type = HandleType::eBuffer;
 
       // 
       if (bufferUsage & vk::BufferUsageFlagBits::eShaderDeviceAddress) {
@@ -203,7 +198,7 @@ namespace ANAMED {
       };
 
       //
-      this->destructors.push_back(std::make_shared<std::function<DFun>>([device, buffer = this->handle.as<vk::Buffer>(), type = cInfo->type, allocator = memoryAllocatorObj->getHandle().as<VmaAllocator>(), allocation = alloc->allocation](BaseObj const*) {
+      this->destructors.push_back(std::make_shared<std::function<DFun>>([device, buffer = this->handle.as<vk::Buffer>(), type = cInfo->type, allocator, allocation](BaseObj const*) {
         device.waitIdle();
         vmaDestroyBuffer(allocator, buffer, allocation);
       }));

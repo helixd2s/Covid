@@ -110,12 +110,12 @@ protected:
   ANAMED::WrapShared<ANAMED::FramebufferObj> framebufferObj[2] = {};
   ANAMED::WrapShared<ANAMED::PingPongObj> rasterBufObj = {};
   ANAMED::WrapShared<ANAMED::PingPongObj> deferredBufObj = {};
-  ANAMED::WrapShared<ANAMED::ResourceObj> backgroundObj = {};
-  ANAMED::WrapShared<ANAMED::ResourceObj> blueNoiseObj = {};
-  ANAMED::WrapShared<ANAMED::ResourceObj> pixelDataObj = {};
-  ANAMED::WrapShared<ANAMED::ResourceObj> writeDataObj = {};
-  ANAMED::WrapShared<ANAMED::ResourceObj> rasterDataObj = {};
-  ANAMED::WrapShared<ANAMED::ResourceObj> surfaceDataObj = {};
+  ANAMED::WrapShared<ANAMED::ResourceVma> backgroundObj = {};
+  ANAMED::WrapShared<ANAMED::ResourceVma> blueNoiseObj = {};
+  ANAMED::WrapShared<ANAMED::ResourceVma> pixelDataObj = {};
+  ANAMED::WrapShared<ANAMED::ResourceVma> writeDataObj = {};
+  ANAMED::WrapShared<ANAMED::ResourceVma> rasterDataObj = {};
+  ANAMED::WrapShared<ANAMED::ResourceVma> surfaceDataObj = {};
 
   //
   UniformData uniformData = {};
@@ -426,7 +426,7 @@ public:
     renderArea.extent.height *= 2.f / yscale;
 
     // 
-    surfaceDataObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
+    surfaceDataObj = ANAMED::ResourceVma::make(deviceObj, ANAMED::ResourceCreateInfo{
       .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
       .bufferInfo = ANAMED::BufferCreateInfo{
         .size = sizeof(PixelSurfaceInfo) * renderArea.extent.width * renderArea.extent.height,
@@ -435,7 +435,7 @@ public:
     });
 
     // 
-    pixelDataObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
+    pixelDataObj = ANAMED::ResourceVma::make(deviceObj, ANAMED::ResourceCreateInfo{
       .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
       .bufferInfo = ANAMED::BufferCreateInfo{
         .size = sizeof(PixelHitInfo) * renderArea.extent.width * renderArea.extent.height * 3u,
@@ -444,7 +444,7 @@ public:
     });
 
     // 
-    writeDataObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
+    writeDataObj = ANAMED::ResourceVma::make(deviceObj, ANAMED::ResourceCreateInfo{
       .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
       .bufferInfo = ANAMED::BufferCreateInfo{
         .size = sizeof(PixelHitInfo) * renderArea.extent.width * renderArea.extent.height * 3u,
@@ -471,7 +471,7 @@ public:
     };
 
     // 
-    rasterDataObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
+    rasterDataObj = ANAMED::ResourceVma::make(deviceObj, ANAMED::ResourceCreateInfo{
       .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
       .bufferInfo = ANAMED::BufferCreateInfo{
         .size = sizeof(RasterInfo) * uniformData.framebuffers[0].extent.x * uniformData.framebuffers[0].extent.y * 64u,
@@ -701,7 +701,7 @@ protected:
       float* data = (float*)stbi_loadf("./background.hdr", &w, &h, &c, STBI_rgb_alpha);
 
       //
-      backgroundObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
+      backgroundObj = ANAMED::ResourceVma::make(deviceObj, ANAMED::ResourceCreateInfo{
         .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
         .imageInfo = ANAMED::ImageCreateInfo{
           .format = vk::Format::eR32G32B32A32Sfloat,
@@ -740,7 +740,7 @@ protected:
       float* data = (float*)stbi_loadf("./BlueNoise470.png", &w, &h, &c, STBI_rgb_alpha);
 
       //
-      blueNoiseObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
+      blueNoiseObj = ANAMED::ResourceVma::make(deviceObj, ANAMED::ResourceCreateInfo{
         .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
         .imageInfo = ANAMED::ImageCreateInfo{
           .format = vk::Format::eR8G8B8A8Uint,
