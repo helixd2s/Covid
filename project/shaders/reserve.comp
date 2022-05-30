@@ -63,11 +63,11 @@ void main() {
 
   // 
   vec4 finalColor = vec4(clampCol(
-    clampCol(resultTransp) * (1.f - resultDiffuse.a) + 
-    clampCol(resultColor) * resultDiffuse.a + 
-    //clampCol(trueMultColor(clampCol(resultColor), clampCol(resultDiffuse))) * resultDiffuse.a + 
-    clampCol(resultEmission) + 
-    clampCol(resultRefl)
+    clampColW(resultTransp) * (1.f - resultDiffuse.a) + 
+    clampColW(resultColor) * resultDiffuse.a + 
+    //clampColW(trueMultColor(clampColW(resultColor), clampColW(resultDiffuse))) * resultDiffuse.a + 
+    clampColW(resultEmission) + 
+    clampColW(resultRefl)
   ).xyz, 1.f);
 
   //

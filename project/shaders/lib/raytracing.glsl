@@ -9,7 +9,7 @@
 
 //
 const vec4 sunSphere = vec4(1000.f, 5000.f, 1000.f, 200.f);
-const vec3 sunColor = vec3(0.95f, 0.9f, 0.8f) * 20000.f;
+const vec3 sunColor = vec3(0.95f, 0.9f, 0.8f) * 10000.f;
 const vec4 skyColor = vec4(vec3(135.f,206.f,235.f)/vec3(255.f,255.f,255.f), 1.f);
 
 // 
@@ -337,10 +337,10 @@ RayData pathTrace(inout RayData rayData, inout PathTraceOutput outp, inout uint 
 
     } else 
     {
-      const vec4 skyColor = fromLinear(vec4(texture(sampler2D(textures[background], samplers[0]), lcts(rayData.direction.xyz)).xyz, 0.f));
+      const vec4 skyColor = vec4(texture(sampler2D(textures[background], samplers[0]), lcts(rayData.direction.xyz)).xyz, 0.f);
 
       // suppose last possible hit-point
-      rayData.emission += f16vec4(trueMultColor(rayData.energy.xyz, gamma3(toLinear(skyColor.xyz))), 0.f);
+      rayData.emission += f16vec4(trueMultColor(rayData.energy.xyz, skyColor.xyz), 0.f);
       rayData.energy.xyz *= f16vec3(0.f.xxx);
       if (!outp.surfaceFound) {
         // sorry, I hadn't choice
@@ -368,8 +368,8 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, inout uint type) {
 
   // replace by reflection
   bool validTracing = !all(lessThanEqual(cmd.intersection.barycentric, 0.f.xxx));
-  if (type == 0 && !needsReflection) { type = needsTransparency ? 1 : 2; };
-  if (type == 1 && !needsTransparency) { type = needsReflection ? 0 : 2; };
+  if (type == 0 && !needsReflection) { type = needsDiffuse ? 2 : 1; };
+  if (type == 1 && !needsTransparency) { type = needsDiffuse ? 2 : 0; };
   if (type == 2 && !needsDiffuse) { type = needsTransparency ? 1 : 0; };
   if (!needsTransparency && !needsReflection && !needsDiffuse) { validTracing = false; };
 
@@ -470,11 +470,11 @@ void prepareHit(in uint pixelId, inout uint type) {
 
   //
   vec4 unlimited = cvtRgb16Acc(surfaceInfo.color[type]);
-  vec4 average = unlimited/max(unlimited.w, 1.f);
-  vec4 limited = average * min(max(unlimited.w, 1.f), 1024.f);
+  //vec4 average = unlimited/max(unlimited.w, 1.f);
+  //vec4 limited = average * min(max(unlimited.w, 1.f), 1024.f);
 
   //
-  surfaceInfo.accum[type] = cvtRgb16Float(limited);
+  surfaceInfo.accum[type] = cvtRgb16Float(unlimited);
   surfaceInfo.color[type] = TYPE(0u);
 
   //

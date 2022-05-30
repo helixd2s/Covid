@@ -63,10 +63,23 @@ vec4 absmax(in vec4 val, in vec4 mn) {
   vec4 sig = sign(val); return mix(mn, sig * max(abs(val), abs(mn)), greaterThan(abs(sig), 0.f.xxxx));
 };
 
+//
+vec3 clampCol(in vec3 col) { return clamp(col, 0.f.xxx, 256.f.xxx); };
+vec4 clampCol(in vec4 col) {
+  vec4 colw = clamp(col/max(col.w, 1.f), 0.f.xxxx, vec4(256.f.xxx, 1.f));
+  return colw * clamp(col.w, 1.f, 1024.f);
+};
+
+//
+vec4 clampColW(in vec4 col) {
+  const vec4 clamped = clampCol(col);
+  return clamp(clamped/max(clamped.w, 1.f), 0.f.xxxx, 16.f.xxxx);
+};
+
 // for metallic reflection (true-multiply)
 vec3 trueMultColor(in vec3 rayColor, in vec3 material) {
-  rayColor = clamp(rayColor, 0.f, 64.f);
-  material = clamp(material, 0.f, 64.f);
+  rayColor = clampCol(rayColor);
+  material = clampCol(material);
   const float mn = min(material.r, min(material.g, material.b));
   const float mx = max(material.r, max(material.g, material.b));
   const float chroma = (mx - mn) / absmax(mx,1e-9);
@@ -79,13 +92,9 @@ vec4 trueMultColor(in vec4 rayColor, in vec4 material) {
   return vec4(trueMultColor(rayColor.xyz, material.xyz), material.w * rayColor.w);
 };
 
-vec4 clampCol(in vec4 col) {
-  return clamp(max(col,0.f.xxxx)/max(col.w, 1.f), vec4(0.f.xxx, 1.f), vec4(64.f.xxx, 1.f));
-};
-
 // for metallic reflection
 vec3 metallicMult(in vec3 rayColor, in vec3 material, in float factor) {
-  return clamp(mix(rayColor, trueMultColor(rayColor, material), sqrt(factor.xxx)), 0.f.xxx, 64.f.xxx);
+  return clampCol(mix(rayColor, trueMultColor(rayColor, material), sqrt(factor.xxx)));
 };
 
 vec3 inRayNormal(in vec3 dir, in vec3 normal) {
