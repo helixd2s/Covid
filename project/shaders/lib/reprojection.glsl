@@ -134,9 +134,9 @@ void reproject3D(in uint pixelId, in uint type)
       };
 
       //
-      bool dstValidNormal = true;
+      bool dstValidNormal = false;
   #ifdef OUTSOURCE
-      if (type == 0 || type == 1) { // 
+      { // 
         RayData rayData;
         rayData.launchId = u16vec2(dstInt);
         rayData.origin = dstHitFoundIntersection.xyz;
@@ -145,7 +145,6 @@ void reproject3D(in uint pixelId, in uint type)
         //
         IntersectionInfo dstIntersection = rasterizeVector(instancedData, rayData, 10000.f, dstSamplePos, false);
         const bool hasHit = !all(lessThanEqual(dstIntersection.barycentric, 0.f.xxx));
-        vec3 gotNormal = vec3(0.f.xx, 1.f) * toNormalMat(constants.lookAtInverse[0]);
 
         //
         if (hasHit) {
@@ -165,10 +164,7 @@ void reproject3D(in uint pixelId, in uint type)
           const bool inner = false;//dot(vec3(cmd.tbn[2]), cmd.rayData.direction.xyz) > 0.f;
 
           //
-          gotNormal = tbn[2];//materialPix.color[MATERIAL_NORMAL].xyz;
-
-          //
-          dstValidNormal = abs(dot(normalize(gotNormal), dstNormal)) > 0.9999f;
+          dstValidNormal = abs(dot(normalize(tbn[2]), dstNormal)) > 0.9999f;
         };
 
       };
