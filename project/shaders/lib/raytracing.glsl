@@ -440,7 +440,7 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
   PixelHitInfoRef hitInfo = getNewHit(hitId, type);
 
   //
-  if (hitId < UR(deferredBuf.extent).x *  UR(deferredBuf.extent).y) {
+  if (hitId < UR(deferredBuf.extent).x * UR(deferredBuf.extent).y && uint(cmd.rayData.launchId.x) < UR(deferredBuf.extent).x && uint(cmd.rayData.launchId.y) < UR(deferredBuf.extent).y) {
     //hitInfo.color = additional;
     hitInfo.indices[0] = uvec4(cmd.intersection.instanceId, cmd.intersection.geometryId, cmd.intersection.primitiveId, type);
     hitInfo.indices[1] = uvec4(outp.indices.xyz, pack32(cmd.rayData.launchId));
@@ -448,12 +448,12 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
     hitInfo.direct.xyz = rayDirection;
     hitInfo.normal.xyz = cmd.tbn[2];
     hitInfo.origin.w = outp.hitT;
-  };
 
-  // dedicated distribution broken, no enough memory or GPU was broken, or `hitData` broken
-  // avoid critical error for skyboxed, also near have more priority... also, transparency may incorrect, so doing some exception
-  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.rayData.launchId.x + cmd.rayData.launchId.y * UR(deferredBuf.extent).x);
-  accumulate(surfaceInfo, type, additional);
+    // dedicated distribution broken, no enough memory or GPU was broken, or `hitData` broken
+    // avoid critical error for skyboxed, also near have more priority... also, transparency may incorrect, so doing some exception
+    PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.rayData.launchId.x + cmd.rayData.launchId.y * UR(deferredBuf.extent).x);
+    accumulate(surfaceInfo, type, additional);
+  };
 
   // 
   return outp;

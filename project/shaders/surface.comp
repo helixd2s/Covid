@@ -99,6 +99,7 @@ void main() {
         surfaceInfo.color[0] += vec4(0.f.xxx, 1.f);
         surfaceInfo.color[1] += vec4(0.f.xxx, 1.f);
         surfaceInfo.color[2] += vec4(cmd.diffuseColor.xyz, 1.f);
+        //surfaceInfo.color[2] += vec4(1.f.xxx, 1.f);
       };
     };
   };

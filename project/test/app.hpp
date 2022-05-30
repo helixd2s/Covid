@@ -360,12 +360,12 @@ public:
       }
       });
 
-    
+
     // TODO: path tracing ray count for performance
     decltype(auto) computeFence = pathTracerObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
       // # yet another std::optional problem (implicit)
       .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
-        .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 32u), cpp21::tiled(renderArea.extent.height, 4u), 1u},
+        .dispatch = vk::Extent3D{cpp21::tiled(640u, 32u), cpp21::tiled(360u, 4u), 1u},
         .layout = descriptorsObj.as<vk::PipelineLayout>(),
         // # yet another std::optional problem (implicit)
         .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)

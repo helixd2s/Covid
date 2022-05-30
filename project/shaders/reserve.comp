@@ -17,7 +17,8 @@
 //
 layout (local_size_x = 32, local_size_y = 4, local_size_z = 1) in;
 
-//
+// TODO: use library or AI for fill such holes of rendering
+// such as part of DLSS 2.x or FSR 2.0
 vec4 readAndNeighborColor(in uint pixelId, in uint type) {
   PixelSurfaceInfoRef hitInfo = getPixelSurface(pixelId);
   TYPE center = hitInfo.accum[type];
@@ -31,14 +32,16 @@ vec4 readAndNeighborColor(in uint pixelId, in uint type) {
   return cvtRgb16Acc(center);
 };
 
-//
+// TODO: use library or AI for fill such holes of rendering
+// such as part of DLSS 2.x or FSR 2.0
 vec4 readAndNeighborTex(in uint pixelId, in uint tex) {
   PixelSurfaceInfoRef hitInfo = getPixelSurface(pixelId);
   vec4 center = hitInfo.tex[tex];
   return center;
 };
 
-// 
+// TODO: use library or AI for fill such holes of rendering
+// such as part of DLSS 2.x or FSR 2.0
 void main() {
   const uvec2 gcoord = gl_GlobalInvocationID.xy;
   const vec2 tCoord = (vec2(gcoord) + 0.5f)/vec2(UR(deferredBuf.extent));
