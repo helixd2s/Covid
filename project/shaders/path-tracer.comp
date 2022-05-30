@@ -24,14 +24,17 @@ void main() {
 
   //
   if ((gcoord_.x + gcoord_.y * rayCount.x) < (rayCount.x * rayCount.y)) {
-    const uvec2 part = (gcoord_ / rayCount/2);
-    const uvec2 jit = (gcoord_ % rayCount/2) * 2;
-    const uint tmap = (part.y*2u+part.x+frameCounter)%4;
-    const uvec2 ncoord = jit + shift_map[tmap];
+    //const uvec2 part = (gcoord_ / rayCount/2);
+    //const uvec2 jit = (gcoord_ % rayCount/2) * 2;
+    //const uint tmap = (part.y*2u+part.x+frameCounter)%4;
+    //const uvec2 ncoord = jit + shift_map[tmap];
+
+    const uvec2 ncoord = gcoord_;
     const vec2 tCoord = (vec2(ncoord)+vec2(random(ncoord),random(ncoord)))/vec2(rayCount);
 
     // normalized coordinate system
     const ivec2 gcoord = ivec2(tCoord * UR(deferredBuf.extent));
+    const uint tmap = ((gcoord.x&1|((gcoord.y&1)<<1))+frameCounter)&3;
     const uint pixelId = gcoord.x + UR(deferredBuf.extent).x * gcoord.y;
 
     //
@@ -87,8 +90,8 @@ void main() {
 
       //
       cmd.normals = f16vec3(inRayNormal(cmd.rayData.direction.xyz, materialPix.color[MATERIAL_NORMAL].xyz));
-      cmd.diffuseColor = f16vec4(toLinear(hasHit ? materialPix.color[MATERIAL_ALBEDO] : vec4(skyColor.xyz, 1.f)));
-      cmd.emissiveColor = f16vec3(toLinear(hasHit ? materialPix.color[MATERIAL_EMISSIVE] : vec4(0.f.xxx, 1.f)).xyz * 4.f);
+      cmd.diffuseColor = f16vec4(toLinear(materialPix.color[MATERIAL_ALBEDO]));
+      cmd.emissiveColor = f16vec3(toLinear(materialPix.color[MATERIAL_EMISSIVE].xyz) * 4.f);
 
       //
       cmd.PBR = f16vec3(hasHit ? materialPix.color[MATERIAL_PBR].xyz : 0.f.xxx);

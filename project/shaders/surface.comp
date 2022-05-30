@@ -73,15 +73,15 @@ void main() {
 
       //
       cmd.normals = f16vec3(inRayNormal(cmd.rayData.direction.xyz, materialPix.color[MATERIAL_NORMAL].xyz));
-      cmd.diffuseColor = f16vec4(toLinear(hasHit ? materialPix.color[MATERIAL_ALBEDO] : vec4(skyColor.xyz, 1.f)));
-      cmd.emissiveColor = f16vec3(toLinear(hasHit ? materialPix.color[MATERIAL_EMISSIVE] : vec4(0.f.xxx, 1.f)).xyz * 4.f);
+      cmd.diffuseColor = f16vec4(toLinear(materialPix.color[MATERIAL_ALBEDO]));
+      cmd.emissiveColor = f16vec3(toLinear(materialPix.color[MATERIAL_EMISSIVE])*2.f);
 
       //
       cmd.PBR = f16vec3(hasHit ? materialPix.color[MATERIAL_PBR].xyz : 0.f.xxx);
       cmd.reflCoef = (float(cmd.PBR.b) + mix(fresnel_schlick(0.f, dot(reflect(cmd.rayData.direction.xyz, vec3(cmd.normals)), vec3(cmd.normals))), 0.f, float(cmd.PBR.g)) * (1.f - float(cmd.PBR.b))) * (1.f - luminance(cmd.emissiveColor.xyz));
     } else {
-      const vec4 skyColor = fromLinear(vec4(texture(sampler2D(textures[background], samplers[0]), lcts(cmd.rayData.direction.xyz)).xyz, 0.f));
-      cmd.diffuseColor = f16vec4(vec4(toLinear(skyColor.xyz), 1.f));
+      const vec4 skyColor = vec4(texture(sampler2D(textures[background], samplers[0]), lcts(cmd.rayData.direction.xyz)).xyz, 0.f);
+      cmd.diffuseColor = f16vec4(vec4(skyColor.xyz, 1.f));
       cmd.emissiveColor = f16vec3(0.f.xxx.xyz);
       cmd.rayData.origin = vec4(0.f.xxx, 1.f) * constants.lookAtInverse[0];
       cmd.normals = f16vec3(vec3(0.f.xx, 1.f) * toNormalMat(constants.lookAtInverse[0]));
@@ -100,7 +100,7 @@ void main() {
           PixelHitInfoRef hitInfo = getNewHit(pixelId, i);
           hitInfo.origin.xyz = cmd.rayData.origin;
           hitInfo.normal.xyz = cmd.tbn[2];
-          hitInfo.direct = vec4(cmd.rayData.direction.xyz, 0.f);
+          hitInfo.direct = f16vec4(cmd.rayData.direction.xyz, 0.f);
           hitInfo.indices[0] = uvec4(cmd.intersection.instanceId, cmd.intersection.geometryId, cmd.intersection.primitiveId, i);
         };
         if (!hasHit) { surfaceInfo.color[i] += vec4(i == 2 ? cmd.diffuseColor.xyz : 0.f.xxx, 1.f); };

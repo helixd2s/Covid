@@ -63,8 +63,8 @@ struct CounterData {
 struct PixelHitInfo {
   glm::uvec4 indices[2];
   glm::vec4 origin;
-  glm::vec4 direct;
-  glm::vec4 normal;
+  glm::u16vec4 direct;
+  glm::u16vec4 normal;
 };
 
 //

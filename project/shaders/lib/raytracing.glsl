@@ -450,8 +450,8 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, inout uint type) {
     hitInfo.indices[0] = uvec4(cmd.intersection.instanceId, cmd.intersection.geometryId, cmd.intersection.primitiveId, type);
     hitInfo.indices[1] = uvec4(outp.indices.xyz, pack32(cmd.rayData.launchId));
     hitInfo.origin.xyz = rayOrigin;
-    hitInfo.direct.xyz = rayDirection;
-    hitInfo.normal.xyz = cmd.tbn[2];
+    hitInfo.direct.xyz = f16vec3(rayDirection);
+    hitInfo.normal.xyz = f16vec3(cmd.tbn[2]);
     hitInfo.origin.w = outp.hitT;
 
     // dedicated distribution broken, no enough memory or GPU was broken, or `hitData` broken
@@ -470,11 +470,11 @@ void prepareHit(in uint pixelId, inout uint type) {
 
   //
   vec4 unlimited = cvtRgb16Acc(surfaceInfo.color[type]);
-  //vec4 average = unlimited/max(unlimited.w, 1.f);
-  //vec4 limited = average * min(max(unlimited.w, 1.f), 1024.f);
+  vec4 average = unlimited/max(unlimited.w, 1.f);
+  vec4 limited = average * min(max(unlimited.w, 1.f), 1024.f);
 
   //
-  surfaceInfo.accum[type] = cvtRgb16Float(unlimited);
+  surfaceInfo.accum[type] = cvtRgb16Float(limited);
   surfaceInfo.color[type] = TYPE(0u);
 
   //
@@ -482,8 +482,8 @@ void prepareHit(in uint pixelId, inout uint type) {
   PixelHitInfoRef newHitInfo = getRpjHit(pixelId, type);
   newHitInfo.indices = hitInfo.indices; hitInfo.indices[0] = uvec4(0u), hitInfo.indices[1] = uvec4(0u);
   newHitInfo.origin = hitInfo.origin; hitInfo.origin = vec4(0.f);
-  newHitInfo.direct = hitInfo.direct; hitInfo.direct = vec4(0.f);
-  newHitInfo.normal = hitInfo.normal; hitInfo.normal = vec4(0.f);
+  newHitInfo.direct = hitInfo.direct; hitInfo.direct = f16vec4(0.f);
+  newHitInfo.normal = hitInfo.normal; hitInfo.normal = f16vec4(0.f);
 };
 
 #endif

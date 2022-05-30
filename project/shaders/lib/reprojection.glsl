@@ -138,8 +138,8 @@ void reproject3D(in uint pixelId, in uint type)
         accumulate(SURF_DST, type, original);
         HIT_DST.origin = vec4(dstHitFoundIntersection.xyz, distance(dstHitPos.xyz, dstHitFoundIntersection.xyz));
         HIT_DST.indices = HIT_SRC.indices;
-        HIT_DST.direct.xyz = normalize(dstHitPos.xyz-dstHitFoundIntersection.xyz);
-        HIT_DST.normal.xyz = dstNormal;
+        HIT_DST.direct.xyz = f16vec3(normalize(dstHitPos.xyz-dstHitFoundIntersection.xyz));
+        HIT_DST.normal.xyz = f16vec3(dstNormal);
       };
     };
   };
