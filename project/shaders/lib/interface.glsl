@@ -69,8 +69,8 @@ layout(set = 0, binding = 1, scalar) buffer CounterBlock
 layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer PixelHitInfoRef {
   uvec4 indices[2];
   vec4 origin;
-  f16vec4 direct;
-  f16vec4 normal;
+  f16vec3 direct;
+  f16vec3 normal;
 };
 
 // but may not to be...
@@ -78,9 +78,9 @@ layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer Pix
 layout(buffer_reference, scalar, buffer_reference_align = 1) buffer RayHitInfoRef {
   uvec4 indices[2];
   vec4 origin;
-  vec4 direct;
-  vec4 normal;
-  vec4 color;
+  f16vec3 direct;
+  f16vec3 normal;
+  f16vec4 color;
 };
 
 // but may not to be...

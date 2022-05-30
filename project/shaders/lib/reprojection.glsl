@@ -128,12 +128,12 @@ void reproject3D(in uint pixelId, in uint type)
       };
 
       // sorry, we doesn't save previous raster data
-      const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz-(dstHitPersp.xyz/dstHitPersp.w)), vec3(1.f/vec2(UR(deferredBuf.extent)), 0.008f))) && dstValidNormal;
-      const bool srcValidDist = all(lessThan(abs(srcSamplePos.xyz-(srcHitPersp.xyz/srcHitPersp.w)), vec3(1.f/vec2(UR(deferredBuf.extent)), 0.008f))) && any(greaterThan(abs(HIT_SRC.origin.xyz), 0.f.xxx)) && (HIT_SRC.origin.w > 0.f || type == 2);
+      const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz-(dstHitPersp.xyz/dstHitPersp.w)), vec3(2.f/vec2(UR(deferredBuf.extent)), 0.008f))) && dstValidNormal;
+      const bool srcValidDist = all(lessThan(abs(srcSamplePos.xyz-(srcHitPersp.xyz/srcHitPersp.w)), vec3(2.f/vec2(UR(deferredBuf.extent)), 0.008f))) && any(greaterThan(abs(HIT_SRC.origin.xyz), 0.f.xxx)) && (HIT_SRC.origin.w > 0.f || type == 2);
 
       // copy to dest, and nullify source
       TYPE original = SURF_SRC.accum[type];
-      if ( dstValidDist && srcValidDist ) 
+      if ( original.w > 0.f && dstValidDist && srcValidDist ) 
       {
         accumulate(SURF_DST, type, original);
         HIT_DST.origin = vec4(dstHitFoundIntersection.xyz, distance(dstHitPos.xyz, dstHitFoundIntersection.xyz));

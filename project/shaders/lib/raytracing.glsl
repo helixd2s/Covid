@@ -347,7 +347,7 @@ RayData pathTrace(inout RayData rayData, inout PathTraceOutput outp, inout uint 
         outp.surfaceFound = true;
         outp.indices = lastIndices;
         outp.normal = lastNormal;
-        if (type == 1 || R == 0) {
+        if (R == 0) {
           outp.hitT = currentT = 10000.f;
           rayData.origin.xyz = vec4(0.f.xxx, 1.f) * constants.lookAtInverse[0];
         } else {
@@ -482,8 +482,8 @@ void prepareHit(in uint pixelId, inout uint type) {
   PixelHitInfoRef newHitInfo = getRpjHit(pixelId, type);
   newHitInfo.indices = hitInfo.indices; hitInfo.indices[0] = uvec4(0u), hitInfo.indices[1] = uvec4(0u);
   newHitInfo.origin = hitInfo.origin; hitInfo.origin = vec4(0.f);
-  newHitInfo.direct = hitInfo.direct; hitInfo.direct = f16vec4(0.f);
-  newHitInfo.normal = hitInfo.normal; hitInfo.normal = f16vec4(0.f);
+  newHitInfo.direct = hitInfo.direct; hitInfo.direct = f16vec3(0.f);
+  newHitInfo.normal = hitInfo.normal; hitInfo.normal = f16vec3(0.f);
 };
 
 #endif

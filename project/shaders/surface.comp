@@ -99,8 +99,8 @@ void main() {
         {
           PixelHitInfoRef hitInfo = getNewHit(pixelId, i);
           hitInfo.origin.xyz = cmd.rayData.origin;
-          hitInfo.normal.xyz = cmd.tbn[2];
-          hitInfo.direct = f16vec4(cmd.rayData.direction.xyz, 0.f);
+          hitInfo.normal.xyz = f16vec3(cmd.tbn[2]);
+          hitInfo.direct.xyz = f16vec3(cmd.rayData.direction.xyz);
           hitInfo.indices[0] = uvec4(cmd.intersection.instanceId, cmd.intersection.geometryId, cmd.intersection.primitiveId, i);
         };
         if (!hasHit) { surfaceInfo.color[i] += vec4(i == 2 ? cmd.diffuseColor.xyz : 0.f.xxx, 1.f); };
