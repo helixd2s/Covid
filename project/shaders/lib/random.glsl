@@ -26,7 +26,7 @@ float floatConstruct( uint m ) {
     m |= ieeeOne;                                // Add fractional part to 1.0
 
     float  f = uintBitsToFloat( m );             // Range [1:2]
-    return clamp(fract(f - 1.0), 0.f, 0.99999f); // Range [0:1]
+    return fract(f - 1.0); // Range [0:1]
 }
 
 //

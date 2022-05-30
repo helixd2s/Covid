@@ -186,6 +186,7 @@ public:
     uniformData.constants.perspectiveInverse = glm::transpose(glm::inverse(persp));
     uniformData.constants.lookAt[1] = cpp21::exchange(uniformData.constants.lookAt[0], glm::mat3x4(glm::transpose(lkat)));
     uniformData.constants.lookAtInverse[1] = cpp21::exchange(uniformData.constants.lookAtInverse[0], glm::mat3x4(glm::transpose(glm::inverse(lkat))));
+    uniformData.frameCounter++;
 
     // 
     for (uint32_t i = 0; i < 2; i++) {
@@ -233,9 +234,6 @@ public:
     auto& fence = (*fences)[acquired];
     decltype(auto) status = false;
     if (fence) { while (!(status = fence->checkStatus())) { co_yield status; }; };
-
-    //
-    uniformData.frameCounter++;
 
     // 
     decltype(auto) uniformFence = descriptorsObj->executeUniformUpdateOnce(ANAMED::UniformDataSet{
@@ -523,7 +521,7 @@ public:
     for (uint32_t i = 0; i < 2; i++) {
       framebufferObj[i] = ANAMED::FramebufferObj::make(deviceObj.with(0u), ANAMED::FramebufferCreateInfo{
         .layout = descriptorsObj.as<vk::PipelineLayout>(),
-        .extent = vk::Extent2D{uint32_t(uniformData.swapchain.extent.x / xscale * 1.f), uint32_t(uniformData.swapchain.extent.y / yscale * 1.f)},
+        .extent = vk::Extent2D{uint32_t(uniformData.swapchain.extent.x * 1.f), uint32_t(uniformData.swapchain.extent.y * 1.f)},
         .info = qfAndQueue
       });
       uniformData.framebuffers[i] = framebufferObj[i]->getStateInfo();

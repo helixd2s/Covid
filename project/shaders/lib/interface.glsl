@@ -106,7 +106,7 @@ layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer Tra
 };
 
 //
-const uvec2 rayCount = uvec2(640u, 360u);
+const uvec2 rayCount = uvec2(640, 360);
 
 //
 uint subgroupAtomicAdd(in uint counterId) {
