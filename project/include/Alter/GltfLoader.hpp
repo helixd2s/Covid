@@ -142,7 +142,7 @@ namespace ANAMED
     };
 
     //
-    virtual void updateInstance(std::shared_ptr<GltfInstanced> inst, std::shared_ptr<GltfMesh> mesh, glm::dmat4 transform = glm::dmat4(1.f), bool isCreate = false) {
+    virtual void updateInstance(std::shared_ptr<GltfInstanced> inst, std::shared_ptr<GltfMesh> mesh, glm::dmat4 transform = glm::dmat4(1.f), bool isCreate = false, bool isTranslucent = false) {
       decltype(auto) gltf = this;
       decltype(auto) transposed = glm::mat4(glm::transpose(transform));
 
@@ -153,7 +153,7 @@ namespace ANAMED
           .instanceCustomIndex = 0u,
           .mask = 0xFFu,
           .instanceShaderBindingTableRecordOffset = 0u,
-          .flags = uint8_t(vk::GeometryInstanceFlagBitsKHR{}),
+          .flags = uint8_t(isTranslucent ? vk::GeometryInstanceFlagBitsKHR{} : vk::GeometryInstanceFlagBitsKHR::eForceOpaque),
           .accelerationStructureReference = mesh->structure->getDeviceAddress()
           };
           decltype(auto) instanceInfo = InstanceInfo{
@@ -184,8 +184,8 @@ namespace ANAMED
 
       //
       if ((node.mesh >= 0) && (node.mesh < gltf->model.meshes.size())) {
-        updateInstance(scene->opaque, gltf->opaqueMeshes[node.mesh], transform * localTransform, isCreate);
-        updateInstance(scene->translucent, gltf->translucentMeshes[node.mesh], transform * localTransform, isCreate);
+        updateInstance(scene->opaque, gltf->opaqueMeshes[node.mesh], transform * localTransform, isCreate, false);
+        updateInstance(scene->translucent, gltf->translucentMeshes[node.mesh], transform * localTransform, isCreate, true);
       };
 
       //

@@ -440,7 +440,12 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
   PixelHitInfoRef hitInfo = getNewHit(hitId, type);
 
   //
-  if (hitId < UR(deferredBuf.extent).x * UR(deferredBuf.extent).y && uint(cmd.rayData.launchId.x) < UR(deferredBuf.extent).x && uint(cmd.rayData.launchId.y) < UR(deferredBuf.extent).y) {
+  if (
+    //hitId < (rayCount.x * rayCount.y) &&
+    hitId < (UR(deferredBuf.extent).x * UR(deferredBuf.extent).y) && 
+    uint(cmd.rayData.launchId.x) < UR(deferredBuf.extent).x && 
+    uint(cmd.rayData.launchId.y) < UR(deferredBuf.extent).y
+  ) {
     //hitInfo.color = additional;
     hitInfo.indices[0] = uvec4(cmd.intersection.instanceId, cmd.intersection.geometryId, cmd.intersection.primitiveId, type);
     hitInfo.indices[1] = uvec4(outp.indices.xyz, pack32(cmd.rayData.launchId));

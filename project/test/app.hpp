@@ -155,6 +155,9 @@ protected:
   float scale = 1.f;
 
   //
+  glm::uvec2 rayCount = glm::uvec2(640, 360);
+
+  //
 public: 
   App() {
     this->construct();
@@ -349,7 +352,7 @@ public:
     decltype(auto) computeFence = pathTracerObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
       // # yet another std::optional problem (implicit)
       .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
-        .dispatch = vk::Extent3D{cpp21::tiled(640u, 32u), cpp21::tiled(360u, 4u), 1u},
+        .dispatch = vk::Extent3D{cpp21::tiled(rayCount.x, 32u), cpp21::tiled(rayCount.y, 4u), 1u},
         .layout = descriptorsObj.as<vk::PipelineLayout>(),
         // # yet another std::optional problem (implicit)
         .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
@@ -501,7 +504,7 @@ public:
     /*hitDataObj = ANAMED::ResourceVma::make(deviceObj, ANAMED::ResourceCreateInfo{
       .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
       .bufferInfo = ANAMED::BufferCreateInfo{
-        .size = sizeof(RayHitInfo) * renderArea.extent.width * renderArea.extent.height,
+        .size = sizeof(RayHitInfo) * rayCount.x * rayCount.y,
         .type = ANAMED::BufferType::eStorage,
       }
       });*/

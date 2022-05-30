@@ -106,6 +106,9 @@ layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer Tra
 };
 
 //
+const uvec2 rayCount = uvec2(640u, 360u);
+
+//
 uint subgroupAtomicAdd(in uint counterId) {
   const uvec4 allc = subgroupBallot(true);
   const uint sum = subgroupBallotBitCount(allc);
