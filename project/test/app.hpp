@@ -336,6 +336,20 @@ public:
       });
 
     //
+    decltype(auto) surfaceFence = surfaceCmdObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
+      // # yet another std::optional problem (implicit)
+      .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
+        .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 32u), cpp21::tiled(renderArea.extent.height, 4u), 1u},
+        .layout = descriptorsObj.as<vk::PipelineLayout>(),
+        // # yet another std::optional problem (implicit)
+        .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
+      }),
+      .submission = ANAMED::SubmissionInfo{
+        .info = qfAndQueue
+      }
+      });
+
+    //
     decltype(auto) resampleFence = resampleObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
       // # yet another std::optional problem (implicit)
       .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
@@ -348,6 +362,8 @@ public:
         .info = qfAndQueue
       }
       });
+
+    
 
     // TODO: path tracing ray count for performance
     decltype(auto) computeFence = pathTracerObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
@@ -363,19 +379,7 @@ public:
       }
     });
 
-    //
-    decltype(auto) surfaceFence = surfaceCmdObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
-      // # yet another std::optional problem (implicit)
-      .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
-        .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 32u), cpp21::tiled(renderArea.extent.height, 4u), 1u},
-        .layout = descriptorsObj.as<vk::PipelineLayout>(),
-        // # yet another std::optional problem (implicit)
-        .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
-      }),
-      .submission = ANAMED::SubmissionInfo{
-        .info = qfAndQueue
-      }
-      });
+    
 
     //
     decltype(auto) distrubFence = distrubCmdObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{

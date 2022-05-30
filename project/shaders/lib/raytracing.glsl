@@ -206,7 +206,7 @@ vec4 directLighting(in vec3 O, in vec3 N, in vec3 tN, in vec3 r, in float t) {
 RayData reuseLight(inout RayData rayData);
 
 // 
-RayData handleIntersection(inout RayData rayData, inout IntersectionInfo intersection, inout PassData passed, in uint type) {
+RayData handleIntersection(inout RayData rayData, inout IntersectionInfo intersection, inout PassData passed, inout uint type) {
   InstanceInfo instanceInfo = getInstance(instancedData, intersection.instanceId);
   GeometryInfo geometryInfo = getGeometry(instanceInfo, intersection.geometryId);
   GeometryExtData geometry = getGeometryData(geometryInfo, intersection.primitiveId);
@@ -280,7 +280,7 @@ RayData handleIntersection(inout RayData rayData, inout IntersectionInfo interse
 };
 
 //
-RayData pathTrace(inout RayData rayData, inout PathTraceOutput outp, in uint type) {
+RayData pathTrace(inout RayData rayData, inout PathTraceOutput outp, inout uint type) {
   //for (uint32_t i=0;i<3;i++) {
   uint R=0, T=0;
 
@@ -361,7 +361,7 @@ RayData pathTrace(inout RayData rayData, inout PathTraceOutput outp, in uint typ
 };
 
 //
-PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
+PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, inout uint type) {
   const bool needsDiffuse = cmd.diffuseColor.a >= 0.001f && luminance(cmd.diffuseColor.xyz) > 0.f;
   const bool needsReflection = cmd.reflCoef >= 0.001f;
   const bool needsTransparency = cmd.diffuseColor.a < 1.f;
@@ -465,7 +465,7 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
 };
 
 // 
-void prepareHit(in uint pixelId, in uint type) {
+void prepareHit(in uint pixelId, inout uint type) {
   PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
 
   //

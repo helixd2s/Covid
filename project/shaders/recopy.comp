@@ -18,9 +18,9 @@ layout (local_size_x = 32, local_size_y = 12, local_size_z = 1) in;
 void main() {
   const uvec2 gcoord = gl_GlobalInvocationID.xy;
   const uint linearId = gcoord.x + UR(deferredBuf.extent).x * gcoord.y;
-  const uint type = linearId / (UR(deferredBuf.extent).x * UR(deferredBuf.extent).y);
   const uint pixelId = linearId % (UR(deferredBuf.extent).x * UR(deferredBuf.extent).y);
 
   //
+  uint type = linearId / (UR(deferredBuf.extent).x * UR(deferredBuf.extent).y);
   prepareHit(pixelId, type);
 };

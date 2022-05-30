@@ -94,20 +94,16 @@ void main() {
       surfaceInfo.tex[EMISSION_TEX] = vec4(cmd.emissiveColor, 1.f);
       surfaceInfo.tex[DIFFUSE_TEX] = cmd.diffuseColor;
 
-      if (!hasHit) {
-        
-        //surfaceInfo.indices = uvec4(cmd.intersection.instanceId, cmd.intersection.geometryId, cmd.intersection.primitiveId, 0u);
-        //surfaceInfo.origin.xyz = cmd.rayData.origin.xyz;
-        //surfaceInfo.normal = cmd.tbn[2];
-        
-        surfaceInfo.color[0] += vec4(0.f.xxx, 1.f);
-        surfaceInfo.color[1] += vec4(0.f.xxx, 1.f);
-        surfaceInfo.color[2] += vec4(cmd.diffuseColor.xyz, 1.f);
-
-        //for (uint i=0;i<3;i++) {
-           //if (surfaceInfo.color[i].w <= 0.f) 
-            //{ surfaceInfo.color[i] += vec4(i == 2 ? cmd.diffuseColor.xyz : 0.f.xxx, 1.f); };
-        //};
+      //
+      for (uint i=0;i<3;i++) {
+        {
+          PixelHitInfoRef hitInfo = getNewHit(pixelId, i);
+          hitInfo.origin.xyz = cmd.rayData.origin;
+          hitInfo.normal.xyz = cmd.tbn[2];
+          hitInfo.direct = vec4(cmd.rayData.direction.xyz, 0.f);
+          hitInfo.indices[0] = uvec4(cmd.intersection.instanceId, cmd.intersection.geometryId, cmd.intersection.primitiveId, i);
+        };
+        if (!hasHit) { surfaceInfo.color[i] += vec4(i == 2 ? cmd.diffuseColor.xyz : 0.f.xxx, 1.f); };
       };
     };
   };
