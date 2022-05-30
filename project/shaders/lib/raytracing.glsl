@@ -433,13 +433,13 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
 
   //
   // My GPU probably is broken, `hitData` doesn't supported correctly, or not enough memory
-  /*
-  uint hitId = atomicAdd(counters[HIT_COUNTER], 1u);
-  RayHitInfoRef hitInfo = getHitInfo(hitId);//getHitInfo(hitId);
-  */
 
-  uint hitId = cmd.rayData.launchId.x + cmd.rayData.launchId.y * UR(deferredBuf.extent).x;//atomicAdd(counters[HIT_COUNTER], 1u);
+  uint hitId = cmd.rayData.launchId.x + cmd.rayData.launchId.y * UR(deferredBuf.extent).x;
+  //uint hitId = atomicAdd(counters[HIT_COUNTER], 1u);
+  //RayHitInfoRef hitInfo = getHitInfo(hitId);//getHitInfo(hitId);
   PixelHitInfoRef hitInfo = getNewHit(hitId, type);
+
+  //
   if (hitId < UR(deferredBuf.extent).x *  UR(deferredBuf.extent).y) {
     //hitInfo.color = additional;
     hitInfo.indices[0] = uvec4(cmd.intersection.instanceId, cmd.intersection.geometryId, cmd.intersection.primitiveId, type);

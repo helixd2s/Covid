@@ -49,7 +49,7 @@ struct UniformData {
   uint64_t writeData = 0ull;
   uint64_t rasterData[2] = { 0ull };
   uint64_t surfaceData = 0ull;
-  uint64_t hitData = 0ull;
+  //uint64_t hitData = 0ull;
 };
 #pragma pack(pop)
 
@@ -482,15 +482,6 @@ public:
     });
 
     // 
-    hitDataObj = ANAMED::ResourceVma::make(deviceObj, ANAMED::ResourceCreateInfo{
-      .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
-      .bufferInfo = ANAMED::BufferCreateInfo{
-        .size = sizeof(RayHitInfo) * renderArea.extent.width * renderArea.extent.height,
-        .type = ANAMED::BufferType::eStorage,
-      }
-      });
-
-    // 
     pixelDataObj = ANAMED::ResourceVma::make(deviceObj, ANAMED::ResourceCreateInfo{
       .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
       .bufferInfo = ANAMED::BufferCreateInfo{
@@ -508,11 +499,20 @@ public:
       }
     });
 
+    // 
+    /*hitDataObj = ANAMED::ResourceVma::make(deviceObj, ANAMED::ResourceCreateInfo{
+      .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
+      .bufferInfo = ANAMED::BufferCreateInfo{
+        .size = sizeof(RayHitInfo) * renderArea.extent.width * renderArea.extent.height,
+        .type = ANAMED::BufferType::eStorage,
+      }
+      });*/
+
     //
     uniformData.surfaceData = surfaceDataObj->getDeviceAddress();
     uniformData.pixelData = pixelDataObj->getDeviceAddress();
     uniformData.writeData = writeDataObj->getDeviceAddress();
-    uniformData.hitData = hitDataObj->getDeviceAddress();
+    //uniformData.hitData = hitDataObj->getDeviceAddress();
     
     // 
     uint32_t testDivision = 1u;

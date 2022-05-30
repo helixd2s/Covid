@@ -39,7 +39,7 @@ layout(set = 0, binding = 0, scalar) uniform MatrixBlock
   uint64_t writeData;
   uint64_t rasterData[2];
   uint64_t surfaceData;
-  uint64_t hitData;
+  //uint64_t hitData; // probably, no enough GPU memory
 };
 
 //
@@ -128,7 +128,7 @@ PixelHitInfoRef getRpjHit(in uint pixelId, in uint type) {
 };
 
 //
-RayHitInfoRef getHitInfo(in uint hitId)  { return RayHitInfoRef(hitData) + hitId; };
+//RayHitInfoRef getHitInfo(in uint hitId)  { return RayHitInfoRef(hitData) + hitId; };
 PixelSurfaceInfoRef getPixelSurface(in uint pixelId)  { return PixelSurfaceInfoRef(surfaceData) + pixelId; };
 RasterInfoRef getRasterInfo(in uint rasterId, in uint previous)  { return RasterInfoRef(rasterData[previous]) + rasterId; };
 
