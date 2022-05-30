@@ -422,8 +422,13 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, inout uint type) {
   if (type == 1) {
     //cmd.rayData.emission.xyz = f16vec3(metallicMult(cmd.rayData.emission.xyz, cmd.diffuseColor.xyz, cmd.PBR.b));
   } else {
-    cmd.rayData.emission.xyz = f16vec3(trueMultColor(cmd.rayData.emission.xyz, cmd.diffuseColor.xyz * (1.f - cmd.emissiveColor.xyz)));
+    
   };*/
+
+  //
+  //if (type == 2) {
+    //cmd.rayData.emission.xyz = f16vec3(trueMultColor(cmd.rayData.emission.xyz, cmd.diffuseColor.xyz * (1.f - cmd.emissiveColor.xyz)));
+  //};
 
   // 
   vec4 additional = vec4(0.f.xxx, 1.f);

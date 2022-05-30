@@ -17,28 +17,117 @@
 //
 layout (local_size_x = 32, local_size_y = 4, local_size_z = 1) in;
 
-// TODO: use library or AI for fill such holes of rendering
-// such as part of DLSS 2.x or FSR 2.0
-vec4 readAndNeighborColor(in uint pixelId, in uint type) {
-  PixelSurfaceInfoRef hitInfo = getPixelSurface(pixelId);
-  TYPE center = hitInfo.accum[type];
-  /*if (center.w <= 0.f) {
-    center = TYPE(0.f);
-    if ((pixelId + UR(deferredBuf.extent).x) < (UR(deferredBuf.extent).y * UR(deferredBuf.extent).x)) { PixelSurfaceInfoRef info = getPixelSurface(pixelId + UR(deferredBuf.extent).x); if (info.accum[type].w > 0) { center += info.accum[type]; }; };
-    if ((pixelId.x%UR(deferredBuf.extent).x) < UR(deferredBuf.extent).x-1)                { PixelSurfaceInfoRef info = getPixelSurface(pixelId + 1); if (info.accum[type].w > 0) { center += info.accum[type]; }; };
-    if (pixelId >= UR(deferredBuf.extent).x)                                  { PixelSurfaceInfoRef info = getPixelSurface(pixelId - UR(deferredBuf.extent).x); if (info.accum[type].w > 0) { center += info.accum[type]; }; };
-    if ((pixelId.x%UR(deferredBuf.extent).x) >= 1)                            { PixelSurfaceInfoRef info = getPixelSurface(pixelId - 1); if (info.accum[type].w > 0) { center += info.accum[type]; }; };
-  };*/
+//
+vec4 readColor(in ivec2 pixelId, in uint type) {
+  TYPE center = TYPE(0.f);
+  if (pixelId.x < UR(deferredBuf.extent).x && pixelId.y < UR(deferredBuf.extent).y && pixelId.x >= 0 && pixelId.y >= 0) {
+    uint linearId = pixelId.x + pixelId.y * UR(deferredBuf.extent).x;
+    PixelSurfaceInfoRef info = getPixelSurface(linearId); 
+    if (info.accum[type].w > 0) { center += info.accum[type]; };
+  };
   return cvtRgb16Acc(center);
 };
 
-// TODO: use library or AI for fill such holes of rendering
-// such as part of DLSS 2.x or FSR 2.0
-vec4 readAndNeighborTex(in uint pixelId, in uint tex) {
-  PixelSurfaceInfoRef hitInfo = getPixelSurface(pixelId);
-  vec4 center = hitInfo.tex[tex];
+//
+vec4 readPosition(in ivec2 pixelId, in uint type) {
+  vec4 center = vec4(0.f);
+  if (pixelId.x < UR(deferredBuf.extent).x && pixelId.y < UR(deferredBuf.extent).y && pixelId.x >= 0 && pixelId.y >= 0) {
+    uint linearId = pixelId.x + pixelId.y * UR(deferredBuf.extent).x;
+    PixelSurfaceInfoRef info = getPixelSurface(linearId);
+    PixelHitInfoRef hit = getRpjHit(linearId, type);
+    center = vec4(hit.origin.xyz, 1.f);
+  };
+  return cvtRgb16Acc(center);
+};
+
+//
+vec4 readNormal(in ivec2 pixelId, in uint type) {
+  vec4 center = vec4(0.f);
+  if (pixelId.x < UR(deferredBuf.extent).x && pixelId.y < UR(deferredBuf.extent).y && pixelId.x >= 0 && pixelId.y >= 0) {
+    uint linearId = pixelId.x + pixelId.y * UR(deferredBuf.extent).x;
+    PixelSurfaceInfoRef info = getPixelSurface(linearId);
+    PixelHitInfoRef hit = getRpjHit(linearId, type);
+    center = vec4(hit.normal.xyz, 0.f);
+  };
+  return cvtRgb16Acc(center);
+};
+
+//
+uvec4 readIndices(in ivec2 pixelId, in uint type) {
+  uvec4 center = uvec4(0.f);
+  if (pixelId.x < UR(deferredBuf.extent).x && pixelId.y < UR(deferredBuf.extent).y && pixelId.x >= 0 && pixelId.y >= 0) {
+    uint linearId = pixelId.x + pixelId.y * UR(deferredBuf.extent).x;
+    PixelSurfaceInfoRef info = getPixelSurface(linearId);
+    PixelHitInfoRef hit = getRpjHit(linearId, type);
+    center = hit.indices[0];
+  };
   return center;
 };
+
+
+// TODO: use library or AI for fill such holes of rendering
+// such as part of DLSS 2.x or FSR 2.0
+vec4 readAndNeighborTex(in ivec2 pixelId, in uint tex) {
+  vec4 center = vec4(0.f);
+  if (pixelId.x < UR(deferredBuf.extent).x && pixelId.y < UR(deferredBuf.extent).y && pixelId.x >= 0 && pixelId.y >= 0) {
+    uint linearId = pixelId.x + pixelId.y * UR(deferredBuf.extent).x;
+    PixelSurfaceInfoRef info = getPixelSurface(linearId);
+    center = info.tex[tex];
+  };
+  return center;
+};
+
+//
+const ivec2 CH_MAP[4] = { ivec2(1,0),ivec2(-1,0),ivec2(0,1),ivec2(0,-1) };
+const ivec2 DG_MAP[4] = { ivec2(1,1),ivec2(-1,-1),ivec2(-1,1),ivec2(1,-1) };
+const ivec2 FL_MAP[8] = { ivec2(1,0),ivec2(-1,0),ivec2(0,1),ivec2(0,-1),ivec2(1,1),ivec2(-1,-1),ivec2(-1,1),ivec2(1,-1) };
+
+//
+vec4 readColorNeighbor(in ivec2 uv, in uint type) {
+  vec4 center = readColor(uv, type);
+  if (center.w < 1.f) {
+    center = vec4(0.f.xxxx);
+    for (uint i=0;i<4;i++) {
+      const ivec2 offset = CH_MAP[i];
+      center += readColor(uv + offset, type);
+    };
+  };
+  return center;
+};
+
+//
+vec4 readColorComp(in ivec2 pixelId) {
+  const vec4 resultRefl = clampColW(readColorNeighbor(pixelId, 0));
+  const vec4 resultTransp = clampColW(readColorNeighbor(pixelId, 1));
+  const vec4 resultColor = clampColW(readColorNeighbor(pixelId, 2));
+  const vec4 resultDiffuse = clampColW(readAndNeighborTex(pixelId, DIFFUSE_TEX));
+  return clamp(resultTransp * (1.f - resultDiffuse.a) + resultColor * resultDiffuse.a + resultRefl, 0.f.xxxx, 1.f.xxxx);
+};
+
+//
+vec4 readColorFinal(in ivec2 uv) {
+  vec4 center = clampColW(readColorComp(uv));
+  vec4 total = vec4(0.f.xxxx);
+
+  // TODO: filter by primitive area
+  for (uint i=0;i<8;i++) {
+    const ivec2 offset = FL_MAP[i];
+    const vec4 color = readColorComp(uv + offset);
+
+    //
+    const float exponent = 1.f;
+    float weight = 1.0f - abs(dot(color.rgb - center.rgb, vec3(0.25)));
+    weight = pow(weight, exponent);
+
+    //
+    total += color * weight;
+  };
+
+  //
+  return total/max(total.w,1.f);
+};
+
+
 
 // TODO: use library or AI for fill such holes of rendering
 // such as part of DLSS 2.x or FSR 2.0
@@ -55,19 +144,20 @@ void main() {
   const vec3 dstRayDir = normalize(dstRayEnd.xyz - dstRayBegin.xyz);
 
   // 
-  const vec4 resultRefl = readAndNeighborColor(pixelId, 0);
-  const vec4 resultTransp = readAndNeighborColor(pixelId, 1);
-  const vec4 resultColor = readAndNeighborColor(pixelId, 2);
-  const vec4 resultEmission = readAndNeighborTex(pixelId, EMISSION_TEX);
-  const vec4 resultDiffuse = readAndNeighborTex(pixelId, DIFFUSE_TEX);
+  //const vec4 resultRefl = readColorWavelet(ivec2(gcoord), 0);
+  //const vec4 resultTransp = readColorWavelet(ivec2(gcoord), 1);
+  const vec4 resultColor = readColorFinal(ivec2(gcoord));
+  const vec4 resultEmission = readAndNeighborTex(ivec2(gcoord), EMISSION_TEX);
+  const vec4 resultDiffuse = readAndNeighborTex(ivec2(gcoord), DIFFUSE_TEX);
 
   // 
   vec4 finalColor = vec4(clampCol(
-    clampColW(resultTransp) * (1.f - resultDiffuse.a) + 
-    clampColW(resultColor) * resultDiffuse.a + 
+    //resultTransp * (1.f - resultDiffuse.a) + 
+    //resultColor * resultDiffuse.a + 
     //clampColW(trueMultColor(clampColW(resultColor), clampColW(resultDiffuse))) * resultDiffuse.a + 
-    clampColW(resultEmission) + 
-    clampColW(resultRefl)
+    //clampColW(resultEmission) + 
+    //resultRefl
+    resultColor + clampColW(resultEmission)
   ).xyz, 1.f);
 
   //
