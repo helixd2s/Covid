@@ -156,6 +156,7 @@ protected:
 
   //
   glm::uvec2 rayCount = glm::uvec2(640, 360);
+  float xscale = 1.f, yscale = 1.f;
 
   //
 public: 
@@ -366,7 +367,7 @@ public:
     decltype(auto) surfaceFence = surfaceCmdObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
       // # yet another std::optional problem (implicit)
       .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
-        .dispatch = vk::Extent3D{cpp21::tiled(uniformData.framebuffers[0].extent.x, 32u), cpp21::tiled(uniformData.framebuffers[0].extent.y, 4u), 1u},
+        .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 32u), cpp21::tiled(renderArea.extent.height, 4u), 1u},
         .layout = descriptorsObj.as<vk::PipelineLayout>(),
         // # yet another std::optional problem (implicit)
         .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
@@ -465,7 +466,6 @@ public:
     uniformData.swapchain = swapchainObj->getStateInfo();
 
     //
-    float xscale = 1.f, yscale = 1.f;
     glfwGetWindowContentScale(window, &xscale, &yscale);
 
     //
@@ -515,14 +515,11 @@ public:
     uniformData.writeData = writeDataObj->getDeviceAddress();
     //uniformData.hitData = hitDataObj->getDeviceAddress();
     
-    // 
-    uint32_t testDivision = 1u;
-
     //
     for (uint32_t i = 0; i < 2; i++) {
       framebufferObj[i] = ANAMED::FramebufferObj::make(deviceObj.with(0u), ANAMED::FramebufferCreateInfo{
         .layout = descriptorsObj.as<vk::PipelineLayout>(),
-        .extent = vk::Extent2D{uniformData.swapchain.extent.x / testDivision, uniformData.swapchain.extent.y / testDivision},
+        .extent = vk::Extent2D{uint32_t(uniformData.swapchain.extent.x / xscale * 1.f), uint32_t(uniformData.swapchain.extent.y / yscale * 1.f)},
         .info = qfAndQueue
       });
       uniformData.framebuffers[i] = framebufferObj[i]->getStateInfo();
@@ -532,19 +529,19 @@ public:
     rasterDataObj = ANAMED::ResourceVma::make(deviceObj, ANAMED::ResourceCreateInfo{
       .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
       .bufferInfo = ANAMED::BufferCreateInfo{
-        .size = sizeof(RasterInfo) * uniformData.framebuffers[0].extent.x * uniformData.framebuffers[0].extent.y * 64u,
+        .size = sizeof(RasterInfo) * uniformData.framebuffers[0].extent.x * uniformData.framebuffers[0].extent.y * 16u,
         .type = ANAMED::BufferType::eStorage,
       }
       });
 
     uniformData.rasterData[0] = rasterDataObj->getDeviceAddress();
-    uniformData.rasterData[1] = uniformData.rasterData[0] + sizeof(RasterInfo) * uniformData.framebuffers[0].extent.x * uniformData.framebuffers[0].extent.y * 32u;
+    uniformData.rasterData[1] = uniformData.rasterData[0] + sizeof(RasterInfo) * uniformData.framebuffers[0].extent.x * uniformData.framebuffers[0].extent.y * 8u;
 
 
     // now, you understand why?
     rasterBufObj = ANAMED::PingPongObj::make(deviceObj.with(0u), ANAMED::PingPongCreateInfo{
       .layout = descriptorsObj.as<vk::PipelineLayout>(),
-      .extent = vk::Extent2D{uniformData.swapchain.extent.x / testDivision, uniformData.swapchain.extent.y / testDivision},
+      .extent = vk::Extent2D{uniformData.framebuffers[0].extent.x, uniformData.framebuffers[0].extent.y},
       .minImageCount = 2u,
       .split = std::vector<uint32_t>{ 1, 1 },
       .formats = std::vector<vk::Format>{ vk::Format::eR32Uint, vk::Format::eR32Sfloat },

@@ -27,7 +27,7 @@ IntersectionInfo rasterizeVector(in InstanceAddressBlock addressInfo, in RayData
 
   //
   vec4 ss = (viewOrigin * constants.perspective);
-  vec2 ssc = (divW(ss).xy * 0.5f + 0.5f) * UR(framebuffers[0].extent).xy;
+  vec2 ssc = (divW(ss).xy * 0.5f + 0.5f) * UR(rasterBuf.extent).xy;
   vec2 ssh = floor(ssc.xy) + 0.5f;
   vec2 ssf = ssc - ssh;
   ivec2 sc = ivec2(ssc);

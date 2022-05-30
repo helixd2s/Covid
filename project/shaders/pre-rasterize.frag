@@ -83,7 +83,7 @@ endInvocationInterlockARB();
   if (!invalidHit) {
     // 
     const uint rasterId = atomicAdd(counters[RASTER_COUNTER], 1);//subgroupAtomicAdd(RASTER_COUNTER);
-    if (rasterId < UR(rasterBuf.extent).x * UR(rasterBuf.extent).y * 32) {
+    if (rasterId < UR(rasterBuf.extent).x * UR(rasterBuf.extent).y * 8) {
       const uint oldId = imageAtomicExchange(imagesR32UI[rasterBuf.images[0][0]], ivec2(gl_FragCoord.xy), rasterId+1);
 
       //
