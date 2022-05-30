@@ -20,17 +20,17 @@ const uint type_map[4] = { 2, 0, 1, 2 };
 
 // TODO: path tracing ray count for performance
 void main() {
-  const uvec2 gcoord_ = gl_GlobalInvocationID.xy;
+  const uvec2 ncoord = gl_GlobalInvocationID.xy;
 
   //
-  if ((gcoord_.x + gcoord_.y * rayCount.x) < (rayCount.x * rayCount.y)) {
-    //const uvec2 part = (gcoord_ / rayCount/2);
-    //const uvec2 jit = (gcoord_ % rayCount/2) * 2;
+  if ((ncoord.x + ncoord.y * rayCount.x) < (rayCount.x * rayCount.y)) {
+    //const uvec2 part = (ncoord / rayCount/2);
+    //const uvec2 jit = (ncoord % rayCount/2) * 2;
     //const uint tmap = (part.y*2u+part.x+frameCounter)%4;
     //const uvec2 ncoord = jit + shift_map[tmap];
 
-    const uvec2 ncoord = gcoord_;
-    const vec2 tCoord = (vec2(ncoord)+vec2(random(ncoord),random(ncoord)))/vec2(rayCount);
+    //
+    const vec2 tCoord = ((vec2(ncoord)+vec2(random(ncoord),random(ncoord)))/vec2(rayCount)*vec2(UR(deferredBuf.extent))+0.5f)/vec2(UR(deferredBuf.extent));
 
     // normalized coordinate system
     const ivec2 gcoord = ivec2(tCoord * UR(deferredBuf.extent));

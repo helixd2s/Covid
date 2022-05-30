@@ -19,7 +19,7 @@ void main() {
   const uvec2 ncoord = gl_GlobalInvocationID.xy;
 
   {
-    const vec2 tCoord = (vec2(ncoord)+vec2(random(ncoord),random(ncoord)))/vec2(deferredBuf.extent);
+    const vec2 tCoord = (vec2(ncoord)+vec2(0.5f))/vec2(deferredBuf.extent);
 
     // normalized coordinate system
     const ivec2 gcoord = ivec2(tCoord * UR(deferredBuf.extent));
