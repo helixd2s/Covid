@@ -466,7 +466,7 @@ void prepareHit(in uint pixelId, in uint type) {
   //
   vec4 unlimited = cvtRgb16Acc(surfaceInfo.color[type]);
   vec4 average = unlimited/max(unlimited.w, 1.f);
-  vec4 limited = average * min(max(unlimited.w, 1.f), 16.f);
+  vec4 limited = average * min(max(unlimited.w, 1.f), 1024.f);
 
   //
   surfaceInfo.accum[type] = cvtRgb16Float(limited);
