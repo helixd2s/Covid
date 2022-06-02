@@ -101,7 +101,7 @@ vec4 readColorComp(in ivec2 pixelId) {
   const vec4 resultTransp = clampColW(readColorNeighbor(pixelId, 1));
   const vec4 resultColor = clampColW(readColorNeighbor(pixelId, 2));
   const vec4 resultDiffuse = clampColW(readAndNeighborTex(pixelId, DIFFUSE_TEX));
-  return clamp(resultTransp * (1.f - resultDiffuse.a) + resultColor * resultDiffuse.a + resultRefl, 0.f.xxxx, 1.f.xxxx);
+  return (resultTransp * (1.f - resultDiffuse.a) + resultColor * resultDiffuse.a + resultRefl);
 };
 
 
@@ -127,14 +127,14 @@ void main() {
   const vec4 resultDiffuse = readAndNeighborTex(ivec2(gcoord), DIFFUSE_TEX);
 
   // 
-  vec4 finalColor = vec4(clampCol(
+  vec4 finalColor = vec4(clamp(
     //resultTransp * (1.f - resultDiffuse.a) + 
     //resultColor * resultDiffuse.a + 
     //clampColW(trueMultColor(clampColW(resultColor), clampColW(resultDiffuse))) * resultDiffuse.a + 
     //clampColW(resultEmission) + 
     //resultRefl
     resultColor + clampColW(resultEmission)
-  ).xyz, 1.f);
+  , 0.f, 1.f).xyz, 1.f);
 
   //
   imageStore(imagesRgba32F[deferredBuf.images[0][0]], ivec2(gcoord), finalColor);

@@ -199,7 +199,7 @@ vec4 directLighting(in vec3 O, in vec3 N, in vec3 tN, in vec3 r, in float t) {
   };
 
   //
-  return vec4(clampCol(rayData.emission).xyz, 0.f);
+  return vec4(rayData.emission.xyz, 0.f);
 };
 
 //
@@ -431,10 +431,10 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, inout uint type) {
   //};
 
   // 
-  vec4 additional = vec4(0.f.xxx, 1.f);
-  if (type == 0) { additional = clampCol(cmd.rayData.emission * vec4(reflCoef.xxx, 1.f)); };
-  if (type == 1) { additional = clampCol(cmd.rayData.emission * vec4(((1.f - reflCoef) ).xxx, 1.f)); };
-  if (type == 2) { additional = clampCol(cmd.rayData.emission * vec4(((1.f - reflCoef) ).xxx, 1.f)); };
+  vec4 additional = cmd.rayData.emission;
+  if (type == 0) { additional *= vec4(reflCoef.xxx, 1.f); };
+  if (type == 1) { additional *= vec4(((1.f - reflCoef) ).xxx, 1.f); };
+  if (type == 2) { additional *= vec4(((1.f - reflCoef) ).xxx, 1.f); };
 
   //
   // My GPU probably is broken, `hitData` doesn't supported correctly, or not enough memory
@@ -451,7 +451,7 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, inout uint type) {
     uint(cmd.rayData.launchId.x) < UR(deferredBuf.extent).x && 
     uint(cmd.rayData.launchId.y) < UR(deferredBuf.extent).y
   ) {
-    //hitInfo.color = additional;
+    //hitInfo.color = clampColW(additional);
     hitInfo.indices[0] = uvec4(cmd.intersection.instanceId, cmd.intersection.geometryId, cmd.intersection.primitiveId, type);
     hitInfo.indices[1] = uvec4(outp.indices.xyz, pack32(cmd.rayData.launchId));
     hitInfo.origin.xyz = rayOrigin;
@@ -462,7 +462,7 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, inout uint type) {
     // dedicated distribution broken, no enough memory or GPU was broken, or `hitData` broken
     // avoid critical error for skyboxed, also near have more priority... also, transparency may incorrect, so doing some exception
     PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.rayData.launchId.x + cmd.rayData.launchId.y * UR(deferredBuf.extent).x);
-    accumulate(surfaceInfo, type, additional);
+    accumulate(surfaceInfo, type, clampColW(additional));
   };
 
   // 
