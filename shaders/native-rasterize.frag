@@ -60,6 +60,13 @@ void main() {
     packHalf2x16(vec2(dFdx(depth), dFdy(depth)))
   );
 
+  // minimal depth shifting
+  const vec2 dD = vec2(dFdx(gl_FragCoord.z), dFdy(gl_FragCoord.z));
+
+  // near
+  const float mnD = qdMin(dD);
+  const float mxD = qdMax(dD);
+
   // 
   InstanceInfo instanceInfo = getInstance(instancedData, translucent, pIndices.x);
   GeometryInfo geometryInfo = getGeometry(instanceInfo, pIndices.y);
@@ -71,12 +78,12 @@ void main() {
 #endif
 
   // alpha and depth depth test fail
-  const float dp = texelFetch(textures[framebuffers[0].attachments[0][5]], ivec2(gl_FragCoord.xy), 0).r;
+  const float dp = texelFetch(textures[framebuffers[0].attachments[0][5]], ivec2(gl_FragCoord.xy), 0).r + mxD;
   if (
 #ifdef TRANSLUCENT
     materialPix.color[MATERIAL_ALBEDO].a < 0.01f || 
 #endif
-    dp <= (gl_FragCoord.z - 0.0001f)
+    (dp) <= (gl_FragCoord.z + mxD - 0.0001f)
   ) {
     discard;
   } else 
@@ -91,7 +98,7 @@ void main() {
 #else
     oColor = vec4(0.f.xxx, 1.f);
 #endif
-    gl_FragDepth = gl_FragCoord.z;
+    gl_FragDepth = gl_FragCoord.z + mxD;
   };
 
 };

@@ -270,7 +270,6 @@ public:
     });
 
     //
-    /*
     decltype(auto) nativeOpaqueFence = nativeOpaqueObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
       // # yet another std::optional problem (implicit)
       .graphics = std::optional<ANAMED::WriteGraphicsInfo>(ANAMED::WriteGraphicsInfo{
@@ -296,7 +295,7 @@ public:
       .submission = ANAMED::SubmissionInfo{
         .info = qfAndQueue,
       }
-    });*/
+    });
 
     
     //

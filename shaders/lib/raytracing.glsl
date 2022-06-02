@@ -474,12 +474,7 @@ void prepareHit(in uint pixelId, inout uint type) {
   PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
 
   //
-  vec4 unlimited = cvtRgb16Acc(surfaceInfo.color[type]);
-  vec4 average = unlimited/max(unlimited.w, 1.f);
-  vec4 limited = average * min(max(unlimited.w, 1.f), 1024.f);
-
-  //
-  surfaceInfo.accum[type] = cvtRgb16Float(limited);
+  surfaceInfo.accum[type] = cvtRgb16Float(clampCol(cvtRgb16Acc(surfaceInfo.color[type])));
   surfaceInfo.color[type] = TYPE(0u);
 
   //

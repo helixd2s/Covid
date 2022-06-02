@@ -73,7 +73,7 @@ vec4 clampCol(in vec4 col) {
 //
 vec4 clampColW(in vec4 col) {
   const vec4 clamped = clampCol(col);
-  return clamp(clamped/max(clamped.w, 1.f), 0.f.xxxx, 16.f.xxxx);
+  return vec4(clampCol(clamped.xyz/max(clamped.w, 1.f)), clamped.w/max(clamped.w,1.f));
 };
 
 // for metallic reflection (true-multiply)
