@@ -29,6 +29,22 @@
 namespace ANAMED 
 {
 
+  const uint8_t PNGSignature[8] = { 137, 80, 78, 71, 13, 10, 26, 10 };
+
+  struct PNGHeader {
+    uint8_t signature[8] = { 137, 80, 78, 71, 13, 10, 26, 10 };
+    uint32_t IHDR_length = 13;
+    char IHDR_signature[4] = { 'I','H','D','R' };
+    uint32_t BE_width = 1;
+    uint32_t BE_height = 1;
+    uint8_t bit_depth = 8;
+    uint8_t color_type = 4;
+    uint8_t compression = 0;
+    uint8_t filter = 0;
+    uint8_t interlace = 0;
+  };
+
+
   //
   enum class FilterType : uint32_t {
     eEverything = 0u,
@@ -363,6 +379,18 @@ namespace ANAMED
         // can't determine directly
         if (Check_ext(image.uri)) {
           isTranslucent = false;
+        };
+
+        // check-up PNG
+        PNGHeader header = {};
+        std::fstream fh;
+        fh.open(image.uri, std::fstream::in | std::fstream::binary);
+        fh.read((char*)&header, sizeof(PNGHeader));
+        fh.close();
+
+        //
+        if (std::equal(std::begin(header.signature), std::end(header.signature), std::begin(PNGSignature))) {
+          if (header.color_type == 2 || header.color_type == 0) { isTranslucent = false; };
         };
 
         // 
