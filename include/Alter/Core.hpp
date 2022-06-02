@@ -796,7 +796,7 @@ namespace ANAMED {
   //
   struct SamplerCreateInfo : BaseCreateInfo {
     vk::PipelineLayout descriptors = {};
-    vk::SamplerCreateInfo native = {};
+    cpp21::carg<vk::SamplerCreateInfo> native = {};
   };
 
   //
