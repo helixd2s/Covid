@@ -303,7 +303,7 @@ namespace ANAMED {
       auto submitInfo = vk::SubmitInfo2{};
       auto cIndex = 0u; for (auto& fn : submissionRef->commandInits) {
         auto& cmdBuf = commandBuffers[cIndex++];
-        cmdBuf.begin(vk::CommandBufferBeginInfo{ .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit, .pInheritanceInfo = cpp21::pointer(submission.inheritanceInfo) });
+        cmdBuf.begin(vk::CommandBufferBeginInfo{ .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit, .pInheritanceInfo = submission.inheritanceInfo.get() });
         auto result = fn(cmdBuf);
         cmdInfos.push_back(vk::CommandBufferSubmitInfo{
           .commandBuffer = cmdBuf,

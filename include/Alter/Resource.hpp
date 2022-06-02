@@ -59,6 +59,9 @@ namespace ANAMED {
     inline decltype(auto) SFT() { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::dynamic_pointer_cast<T>(shared_from_this())); };
     inline decltype(auto) SFT() const { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::const_pointer_cast<T>(std::dynamic_pointer_cast<T const>(shared_from_this()))); };
 
+    //
+    vk::ImageLayout imageLayout = vk::ImageLayout::eUndefined;
+
 
   public:
     // 
@@ -176,10 +179,10 @@ namespace ANAMED {
       uint32_t imvType = 0u;
       if (descriptorsObj) {
         if ((this->imageUsage & vk::ImageUsageFlagBits::eStorage) && info->preference == ImageViewPreference::eStorage || !(this->imageUsage & vk::ImageUsageFlagBits::eSampled)) {
-          descriptorId = descriptorsObj->images.add(vk::DescriptorImageInfo{ .imageView = imageView, .imageLayout = this->cInfo->imageInfo->layout }); imvType = 1u;
+          descriptorId = descriptorsObj->images.add(vk::DescriptorImageInfo{ .imageView = imageView, .imageLayout = this->getImageLayout() }); imvType = 1u;
         } else
         if ((this->imageUsage & vk::ImageUsageFlagBits::eSampled) && info->preference == ImageViewPreference::eSampled || !(this->imageUsage & vk::ImageUsageFlagBits::eStorage)) {
-          descriptorId = descriptorsObj->textures.add(vk::DescriptorImageInfo{ .imageView = imageView, .imageLayout = this->cInfo->imageInfo->layout }); imvType = 2u;
+          descriptorId = descriptorsObj->textures.add(vk::DescriptorImageInfo{ .imageView = imageView, .imageLayout = this->getImageLayout() }); imvType = 2u;
         };
 
         // 
@@ -221,8 +224,8 @@ namespace ANAMED {
     virtual uintptr_t const& getDeviceAddress() const { return this->deviceAddress; };
 
     //
-    virtual vk::ImageLayout& getImageLayout() { return cInfo->imageInfo->layout; };
-    virtual vk::ImageLayout const& getImageLayout() const { return cInfo->imageInfo->layout; };
+    virtual vk::ImageLayout& getImageLayout() { return imageLayout; };
+    virtual vk::ImageLayout const& getImageLayout() const { return imageLayout; };
 
     //
     virtual vk::ImageUsageFlags& getImageUsage() { return imageUsage; };
@@ -371,6 +374,9 @@ namespace ANAMED {
 
     // 
     virtual FenceType createImage(cpp21::carg<ImageCreateInfo> cInfo = {}) {
+      // default layout
+      this->getImageLayout() = cInfo->layout;
+
       // 
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
@@ -440,7 +446,7 @@ namespace ANAMED {
         return this->executeSwitchLayoutOnce(ImageLayoutSwitchInfo{
           .info = cInfo->info,
           .switchInfo = ImageLayoutSwitchWriteInfo{
-            .newImageLayout = cInfo->layout,
+            .newImageLayout = this->getImageLayout(),
             .oldImageLayout = std::optional<vk::ImageLayout>(imageInfo->initialLayout),
           },
         });
@@ -523,7 +529,6 @@ namespace ANAMED {
         //decltype(auto) info = switchInfo.info ? switchInfo.info : this->cInfo->imageInfo->info;
         decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
         decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
-        decltype(auto) imageLayout = this->cInfo->imageInfo->layout;
         decltype(auto) subresourceRange = clearInfo->subresourceRange ? clearInfo->subresourceRange.value() : this->subresourceRange(0u,imageInfo->arrayLayers,0u,imageInfo->mipLevels);
 
         // 
@@ -546,7 +551,7 @@ namespace ANAMED {
         //decltype(auto) info = switchInfo.info ? switchInfo.info : this->cInfo->imageInfo->info;
         decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
         decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
-        decltype(auto) oldImageLayout = switchInfo->oldImageLayout ? switchInfo->oldImageLayout.value() : this->cInfo->imageInfo->layout;
+        decltype(auto) oldImageLayout = switchInfo->oldImageLayout ? switchInfo->oldImageLayout.value() : this->getImageLayout();
 
         // cupola
         if (oldImageLayout != switchInfo->newImageLayout) {
@@ -568,7 +573,7 @@ namespace ANAMED {
             }
           };
           switchInfo->cmdBuf.pipelineBarrier2(depInfo.setImageMemoryBarriers(transferBarrier));
-          this->cInfo->imageInfo->layout = switchInfo->newImageLayout;
+          this->getImageLayout() = switchInfo->newImageLayout;
         };
       };
 

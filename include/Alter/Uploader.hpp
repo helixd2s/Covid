@@ -269,7 +269,7 @@ namespace ANAMED {
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo {.info = this->cInfo->info } };
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
-      decltype(auto) size = exec->host ? (exec->writeInfo.dstBuffer ? std::min(exec->host->size(), exec->writeInfo.dstBuffer->region.size) : exec->host->size()) : (exec->writeInfo.dstBuffer ? exec->writeInfo.dstBuffer->region.size : VK_WHOLE_SIZE);
+      decltype(auto) size = exec->host ? (exec->writeInfo.dstBuffer ? std::min(exec->host.size(), exec->writeInfo.dstBuffer->region.size) : exec->host.size()) : (exec->writeInfo.dstBuffer ? exec->writeInfo.dstBuffer->region.size : VK_WHOLE_SIZE);
       decltype(auto) mappedBuffer = this->mappedBuffer;
 
       //
@@ -290,7 +290,7 @@ namespace ANAMED {
 
       // 
       if (exec->host) {
-        memcpy(memPage->mapped, exec->host->data(), size);
+        memcpy(memPage->mapped, exec->host.data(), size);
       };
 
       // 
@@ -317,7 +317,7 @@ namespace ANAMED {
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = this->cInfo->info } };
       decltype(auto) mappedBuffer = this->mappedBuffer;
       decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) size = exec->host ? (exec->writeInfo.srcBuffer ? std::min(exec->host->size(), exec->writeInfo.srcBuffer->region.size) : exec->host->size()) : (exec->writeInfo.srcBuffer ? exec->writeInfo.srcBuffer->region.size : VK_WHOLE_SIZE);
+      decltype(auto) size = exec->host ? (exec->writeInfo.srcBuffer ? std::min(exec->host.size(), exec->writeInfo.srcBuffer->region.size) : exec->host.size()) : (exec->writeInfo.srcBuffer ? exec->writeInfo.srcBuffer->region.size : VK_WHOLE_SIZE);
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
 
       // 
@@ -339,7 +339,7 @@ namespace ANAMED {
       //
       if (exec->host) {
         submission.submission.onDone.push_back([offset, size, _host = exec->host, mapped = memPage->mapped](cpp21::carg<vk::Result> result) {
-          memcpy(_host->data(), cpp21::shift(mapped, 0), size);
+          memcpy(_host.data(), cpp21::shift(mapped, 0), size);
         });
 
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
