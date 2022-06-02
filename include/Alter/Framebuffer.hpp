@@ -223,7 +223,7 @@ namespace ANAMED {
     //
     virtual FenceType clearAttachments(FbHistory& history, cpp21::carg<QueueGetInfo> info = QueueGetInfo{}) {
       // 
-      decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo{.info = info } };
+      decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo{.info = info.ref() } };
       submission.commandInits.push_back([this, &history](cpp21::carg<vk::CommandBuffer> cmdBuf) {
         this->writeClearAttachments(history, cmdBuf);
         return cmdBuf;
@@ -238,7 +238,7 @@ namespace ANAMED {
     virtual FenceType switchToShaderRead(FbHistory& history, cpp21::carg<QueueGetInfo> info = QueueGetInfo{}) {
       // 
       if (history.state != FramebufferState::eShaderRead) {
-        decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo{.info = info } };
+        decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo{.info = info.ref() }};
         submission.commandInits.push_back([this, &history](cpp21::carg<vk::CommandBuffer> cmdBuf) {
           this->writeSwitchToShaderRead(history, cmdBuf);
           return cmdBuf;
@@ -255,7 +255,7 @@ namespace ANAMED {
     virtual FenceType switchToAttachment(FbHistory& history, cpp21::carg<QueueGetInfo> info = QueueGetInfo{}) {
       // 
       if (history.state != FramebufferState::eAttachment) {
-        decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo{.info = info } };
+        decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo{.info = info.ref() } };
         submission.commandInits.push_back([this, &history](cpp21::carg<vk::CommandBuffer> cmdBuf) {
           this->writeSwitchToAttachment(history, cmdBuf);
           return cmdBuf;

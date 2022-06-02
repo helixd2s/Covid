@@ -663,7 +663,7 @@ namespace ANAMED {
     uintptr_t uploader = 0ull;
 
     // 
-    std::optional<QueueGetInfo> info = QueueGetInfo{};
+    cpp21::carg<QueueGetInfo> info = QueueGetInfo{};
   };
 
   //
@@ -676,7 +676,7 @@ namespace ANAMED {
     bool isTranslucent = false;
 
     // 
-    std::optional<QueueGetInfo> info = QueueGetInfo{};
+    cpp21::carg<QueueGetInfo> info = QueueGetInfo{};
   };
 
   //
@@ -763,7 +763,7 @@ namespace ANAMED {
 
   //
   struct PipelineLayoutCreateInfo : BaseCreateInfo {
-    std::optional<QueueGetInfo> info = QueueGetInfo{};
+    cpp21::carg<QueueGetInfo> info = QueueGetInfo{};
   };
 
   //
@@ -789,7 +789,7 @@ namespace ANAMED {
 
     vk::ImageLayout layout = vk::ImageLayout::eGeneral;
     std::optional<ImageSwapchainInfo> swapchain = {};
-    std::optional<QueueGetInfo> info = QueueGetInfo{};
+    cpp21::carg<QueueGetInfo> info = QueueGetInfo{};
     ImageType type = ImageType::eStorage;
   };
 
@@ -803,7 +803,7 @@ namespace ANAMED {
   struct BufferCreateInfo : BaseCreateInfo {
     size_t size = 0ull;
     BufferType type = BufferType::eStorage;
-    std::optional<QueueGetInfo> info = QueueGetInfo{};
+    cpp21::carg<QueueGetInfo> info = QueueGetInfo{};
   };
 
   
@@ -912,7 +912,7 @@ namespace ANAMED {
 
   //
   struct SubmissionInfo : BaseCreateInfo {
-    std::optional<QueueGetInfo> info = QueueGetInfo{};
+    cpp21::carg<QueueGetInfo> info = QueueGetInfo{};
     std::optional<vk::CommandBufferInheritanceInfo> inheritanceInfo = {};
     std::vector<std::function<void(cpp21::carg<vk::Result>)>> onDone = {};
     cpp21::shared_vector<vk::SemaphoreSubmitInfo> waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
@@ -921,7 +921,7 @@ namespace ANAMED {
 
   //
   struct ImageLayoutSwitchInfo : BaseCreateInfo {
-    std::optional<QueueGetInfo> info = QueueGetInfo{};
+    cpp21::carg<QueueGetInfo> info = QueueGetInfo{};
     std::optional<ImageLayoutSwitchWriteInfo> switchInfo = {};
 
     // 
@@ -976,7 +976,7 @@ namespace ANAMED {
   //
   struct UniformDataWriteSet : BaseCreateInfo {
     vk::CommandBuffer cmdBuf = {};
-    std::optional<QueueGetInfo> info = QueueGetInfo{};
+    cpp21::carg<QueueGetInfo> info = QueueGetInfo{};
     std::optional<DataRegion> region = DataRegion{};
     cpp21::data_view<char8_t> data = {};
 
@@ -987,7 +987,7 @@ namespace ANAMED {
   //
   struct CacheDataWriteSet : BaseCreateInfo {
     vk::CommandBuffer cmdBuf = {};
-    std::optional<QueueGetInfo> info = QueueGetInfo{};
+    cpp21::carg<QueueGetInfo> info = QueueGetInfo{};
     std::optional<DataRegion> region = DataRegion{};
     cpp21::data_view<char8_t> data = {};
     uintptr_t page = 0ull;
@@ -999,14 +999,14 @@ namespace ANAMED {
   // 
   struct UniformDataSet : BaseCreateInfo {
     std::optional<UniformDataWriteSet> writeInfo = {};
-    std::optional<QueueGetInfo> info = QueueGetInfo{};
+    cpp21::carg<QueueGetInfo> info = QueueGetInfo{};
     SubmissionInfo submission = {};
   };
 
   // 
   struct CacheDataSet : BaseCreateInfo {
     std::optional<CacheDataWriteSet> writeInfo = {};
-    std::optional<QueueGetInfo> info = QueueGetInfo{};
+    cpp21::carg<QueueGetInfo> info = QueueGetInfo{};
     SubmissionInfo submission = {};
   };
 
@@ -1059,7 +1059,7 @@ namespace ANAMED {
   struct ExecutePipelineInfo : BaseCreateInfo {
     std::optional<WriteGraphicsInfo> graphics = {};
     std::optional<WriteComputeInfo> compute = {};
-    std::optional<QueueGetInfo> info = QueueGetInfo{};
+    cpp21::carg<QueueGetInfo> info = QueueGetInfo{};
     SubmissionInfo submission = {};
   };
 
@@ -1147,7 +1147,7 @@ namespace ANAMED {
 
   //
   struct UploaderCreateInfo : BaseCreateInfo {
-    std::optional<QueueGetInfo> info = QueueGetInfo{};
+    cpp21::carg<QueueGetInfo> info = QueueGetInfo{};
     size_t cacheSize = 8192ull * 8192ull * 4ull;
 
     // 
@@ -1199,7 +1199,7 @@ namespace ANAMED {
     vk::PipelineLayout layout = {};
     vk::Extent2D extent = {640u, 480u};
     uint32_t minImageCount = 2u;
-    std::optional<QueueGetInfo> info = {};
+    cpp21::carg<QueueGetInfo> info = {};
     cpp21::obj<AttachmentLayout> attachmentLayout = defaultAttachmentLayout;
   };
 
@@ -1207,7 +1207,7 @@ namespace ANAMED {
   struct SwapchainCreateInfo : BaseCreateInfo {
     vk::PipelineLayout layout = {};
     vk::SurfaceKHR surface = {};
-    std::optional<QueueGetInfo> info = {};
+    cpp21::carg<QueueGetInfo> info = {};
   };
 
   //
@@ -1217,7 +1217,7 @@ namespace ANAMED {
     uint32_t minImageCount = 1u;
     std::vector<uint32_t> split = {};
     std::vector<vk::Format> formats = {};
-    std::optional<QueueGetInfo> info = {};
+    cpp21::carg<QueueGetInfo> info = {};
   };
 
   //

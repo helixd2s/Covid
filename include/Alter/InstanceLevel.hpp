@@ -354,7 +354,7 @@ namespace ANAMED {
 
       //
       if (this->cInfo->instances->size() > 0) {
-        decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo {.info = info ? info.value() : this->cInfo->info } };
+        decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo {.info = info ? info.value() : this->cInfo->info.ref() } };
         decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
         decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(Handle(this->cInfo->uploader, HandleType::eUploader));
 

@@ -108,7 +108,7 @@ namespace ANAMED {
 
     //
     virtual FenceType switchToPresent(cpp21::carg<uint32_t> imageIndex, cpp21::carg<QueueGetInfo> info = QueueGetInfo{}) {
-      decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = info ? info.value() : this->cInfo->info } };
+      decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = info ? info.value() : this->cInfo->info.ref() }};
 
       // 
       submission.submission.signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{ readySemaphoreInfos[*imageIndex] };
@@ -123,7 +123,7 @@ namespace ANAMED {
 
     //
     virtual FenceType switchToReady(cpp21::carg<uint32_t> imageIndex, cpp21::carg<QueueGetInfo> info = QueueGetInfo{}) {
-      decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = info ? info.value() : this->cInfo->info } };
+      decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = info ? info.value() : this->cInfo->info.ref() } };
 
       // 
       submission.submission.waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{ presentSemaphoreInfos[*imageIndex] };
@@ -270,7 +270,7 @@ namespace ANAMED {
           .layout = imageLayout,
           // # first reason of internal error (if use implicit cast, mostly with std::optional)
           .swapchain = std::optional<ImageSwapchainInfo>(swapchainInfo),
-          .info = this->cInfo->info ? this->cInfo->info : QueueGetInfo{0u, 0u},
+          .info = this->cInfo->info ? this->cInfo->info.ref() : QueueGetInfo{0u, 0u},
           .type = imageType
         }
       });

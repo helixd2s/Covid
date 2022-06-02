@@ -205,7 +205,7 @@ namespace ANAMED {
 
       //
       decltype(auto) submission = CommandOnceSubmission{
-        .submission = SubmissionInfo{.info = cInfo->info ? cInfo->info : QueueGetInfo{0u, 0u}}
+        .submission = SubmissionInfo{.info = cInfo->info ? cInfo->info.ref() : QueueGetInfo{0u, 0u}}
       };
 
       // 

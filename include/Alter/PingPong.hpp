@@ -98,7 +98,7 @@ namespace ANAMED {
 
     //
     virtual FenceType switchToPresent(cpp21::carg<uint32_t> imageIndex, cpp21::carg<QueueGetInfo> info = QueueGetInfo{}) {
-      decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = info ? info.value() : this->cInfo->info } };
+      decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = info ? info.value() : this->cInfo->info.ref() } };
       decltype(auto) nextIndex = ((*imageIndex) + 1u) % this->sets.size();
 
       // 
@@ -118,7 +118,7 @@ namespace ANAMED {
 
     //
     virtual FenceType switchToReady(cpp21::carg<uint32_t> imageIndex, cpp21::carg<QueueGetInfo> info = QueueGetInfo{}) {
-      decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = info ? info.value() : this->cInfo->info } };
+      decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = info ? info.value() : this->cInfo->info.ref() } };
 
       // 
       submission.submission.waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
@@ -156,7 +156,7 @@ namespace ANAMED {
 
     //
     virtual FenceType clearImages(cpp21::carg<QueueGetInfo> info = QueueGetInfo{}, std::vector<glm::vec4> const& clearColors = {}) {
-      decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo {.info = info ? info.value() : this->cInfo->info } };
+      decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo {.info = info ? info.value() : this->cInfo->info.ref() } };
 
       // 
       //submission.submission.waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{ sets[*imageIndex].presentSemaphoreInfo };
@@ -171,7 +171,7 @@ namespace ANAMED {
 
     //
     virtual FenceType clearImage(cpp21::carg<QueueGetInfo> info = QueueGetInfo{}, uint32_t const& imageIndex = 0u, cpp21::carg<glm::vec4> clearColors = {}) {
-      decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo {.info = info ? info.value() : this->cInfo->info } };
+      decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo {.info = info ? info.value() : this->cInfo->info.ref() } };
 
       // 
       //submission.submission.waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{ sets[*imageIndex].presentSemaphoreInfo };
@@ -313,7 +313,7 @@ namespace ANAMED {
           .format = this->cInfo->formats[index],
           .extent = extent3D,
           .layout = imageLayout,
-          .info = this->cInfo->info ? this->cInfo->info : QueueGetInfo{0u, 0u},
+          .info = this->cInfo->info ? this->cInfo->info.ref() : QueueGetInfo{0u, 0u},
           .type = imageType
         }
       });
