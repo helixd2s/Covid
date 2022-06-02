@@ -53,12 +53,12 @@ set(CMAKE_CXX_STANDARD 23)
 set(_src_root_path "${PROJECT_SOURCE_DIR}")
 file(GLOB_RECURSE _source_list 
   LIST_DIRECTORIES false
-  "${_src_root_path}/../submodules/include/vk-utils/*.inl"
-  "${_src_root_path}/../submodules/include/vk-utils/*.hpp"
-  "${_src_root_path}/../submodules/include/vk-utils/*.h"
-  "${_src_root_path}/../submodules/include/vk-utils/cpp21/*.inl"
-  "${_src_root_path}/../submodules/include/vk-utils/cpp21/*.hpp"
-  "${_src_root_path}/../submodules/include/vk-utils/cpp21/*.h"
+  "${_src_root_path}/include/vk-utils/*.inl"
+  "${_src_root_path}/include/vk-utils/*.hpp"
+  "${_src_root_path}/include/vk-utils/*.h"
+  "${_src_root_path}/include/vk-utils/cpp21/*.inl"
+  "${_src_root_path}/include/vk-utils/cpp21/*.hpp"
+  "${_src_root_path}/include/vk-utils/cpp21/*.h"
 
   "${_src_root_path}/include/Alter/*.inl"
   "${_src_root_path}/include/Alter/*.hpp"
