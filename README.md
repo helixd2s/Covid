@@ -66,18 +66,6 @@ The most ambitious rendering project, and at the same time a future mod for Mine
   - [ ] 👑️ More interactivity
   - [ ] 👑️ Edit materials
 
-## Capital june update (early alpha)
-
-  - [x] 🚧 Different resolution buffers and anti-aliasing support (**important**)
-  - [ ] 🧩 Full update to Vulkan 1.3.215 and higher
-  - [ ] 🧩 Caustics, transmission, refraction support
-  - [ ] 🧩 Specular lighting support (sunlight)
-  - [ ] 🧩 Add NRD and FidelityFX denoisers support
-  - [ ] 🧩 Re-learn high math
-  - [ ] 🧩 Probably, order independent transparency
-  - [ ] 🧩 Probably, KTX-2 support
-  - [ ] 🧩 Probably, additional test applications
-
 ## Reprojection problems
 
   ### Reflection (type 0)
@@ -113,6 +101,8 @@ The most ambitious rendering project, and at the same time a future mod for Mine
 ## Minecraft and Java 16 spec-operation (project `TNT` or `ANT`)…
 
   ### Main project: [Yet Another Vulkan Mod](https://github.com/helixd2s/YetAnotherVulkanMod)
+
+  ### Planned for July or August, final fight for Minecraft
 
   - [ ] ☕ Latest LWJGL loading, interop and support
   - [ ] ☕ JNI, JavaCPP and Java support (lossless)
