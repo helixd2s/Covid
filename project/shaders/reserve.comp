@@ -104,30 +104,6 @@ vec4 readColorComp(in ivec2 pixelId) {
   return clamp(resultTransp * (1.f - resultDiffuse.a) + resultColor * resultDiffuse.a + resultRefl, 0.f.xxxx, 1.f.xxxx);
 };
 
-//
-vec4 readColorFinal(in ivec2 uv) {
-  vec4 center = clampColW(readColorComp(uv));
-  vec4 total = vec4(0.f.xxxx);
-
-  // TODO: filter by primitive area
-  for (uint i=0;i<8;i++) {
-    const ivec2 offset = FL_MAP[i];
-    const vec4 color = readColorComp(uv + offset);
-
-    //
-    const float exponent = 1.f;
-    float weight = 1.0f - abs(dot(color.rgb - center.rgb, vec3(0.25)));
-    weight = pow(weight, exponent);
-
-    //
-    total += color * weight;
-  };
-
-  //
-  return total/max(total.w,1.f);
-};
-
-
 
 // TODO: use library or AI for fill such holes of rendering
 // such as part of DLSS 2.x or FSR 2.0
@@ -146,7 +122,7 @@ void main() {
   // 
   //const vec4 resultRefl = readColorWavelet(ivec2(gcoord), 0);
   //const vec4 resultTransp = readColorWavelet(ivec2(gcoord), 1);
-  const vec4 resultColor = readColorFinal(ivec2(gcoord));
+  const vec4 resultColor = readColorComp(ivec2(gcoord));
   const vec4 resultEmission = readAndNeighborTex(ivec2(gcoord), EMISSION_TEX);
   const vec4 resultDiffuse = readAndNeighborTex(ivec2(gcoord), DIFFUSE_TEX);
 
