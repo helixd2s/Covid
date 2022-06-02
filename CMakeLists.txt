@@ -50,7 +50,7 @@ find_package(glfw3 REQUIRED)
 # 
 set(CMAKE_C_STANDARD 23)
 set(CMAKE_CXX_STANDARD 23)
-set(_src_root_path "${PROJECT_SOURCE_DIR}/project")
+set(_src_root_path "${PROJECT_SOURCE_DIR}")
 file(GLOB_RECURSE _source_list 
   LIST_DIRECTORIES false
   "${_src_root_path}/../submodules/include/vk-utils/*.inl"
@@ -88,8 +88,7 @@ ENDIF()
 add_executable(${PROJECT_NAME} ${_source_list})
 target_compile_definitions(${PROJECT_NAME} PUBLIC UNICODE ALT_USE_ROBIN_HOOD USE_CMAKE_PCH VULKAN_HPP_NO_CONSTRUCTORS NOMINMAX ALT_ENABLE_VMA ALT_ENABLE_GLTF CPP21_DEBUG_MEMORY TINYGLTF_USE_CPP14 ANAMED=alter ${PLATFORM_DEF})
 target_include_directories(${PROJECT_NAME} PUBLIC 
-  ${PROJECT_SOURCE_DIR}/project/include 
-  ${PROJECT_SOURCE_DIR}/project/
+  ${PROJECT_SOURCE_DIR}/include 
   ${PROJECT_SOURCE_DIR}/*/include 
   ${PROJECT_SOURCE_DIR}/interval-tree/include
   ${PROJECT_SOURCE_DIR}/submodules/include 
@@ -102,15 +101,15 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
 #
 target_link_directories(${PROJECT_NAME} PUBLIC 
-  ${PROJECT_SOURCE_DIR}/project/lib
+  ${PROJECT_SOURCE_DIR}/lib
   ${PROJECT_SOURCE_DIR}/submodules/lib
 )
 
 #
-set (HSOURCES "submodules/include/vk-utils/cpp21/core.hpp" "project/include/Alter/Core.hpp")
+set (HSOURCES "submodules/include/vk-utils/cpp21/core.hpp" "include/Alter/Core.hpp")
 
 #
-ADD_MSVC_PRECOMPILED_HEADER("project/cmake_pch.hxx" "project/cmake_pch.cxx" HSOURCES)
+ADD_MSVC_PRECOMPILED_HEADER("include/cmake_pch.hxx" "include/cmake_pch.cxx" HSOURCES)
 
 #
 target_link_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS} ${Vulkan_LIBRARIES} glfw )

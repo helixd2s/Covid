@@ -1,0 +1,1 @@
+../../Vulkan-Headers/include/vulkan/vk_sdk_platform.h

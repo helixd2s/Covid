@@ -1,36 +1,11 @@
 #pragma once
-#define GLM_FORCE_SWIZZLE
-
-//
 #ifdef __cplusplus
-#ifdef _WIN32
-#ifndef VK_USE_PLATFORM_WIN32_KHR
-#define VK_USE_PLATFORM_WIN32_KHR
-#include <windows.h>
-#endif
-#else
-#ifdef __linux__ 
-//FD defaultly
-#endif
-#endif
 
 //
-#include <tinygltf/tiny_gltf.h>
-#include <tinygltf/stb_image.h>
-#include <glm/gtc/matrix_transform.hpp>
-
-// 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-#ifdef ENABLE_RENDERDOC
-#include "renderdoc_app.h"
-#include <eh.h>
-#endif
+#include "test.hpp"
 
 //
 #include <args/args.hxx>
-#include "controller.hpp"
-#include "app.hpp"
 
 // 
 void error(int errnum, const char* errmsg)

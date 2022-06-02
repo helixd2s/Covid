@@ -1,8 +1,9 @@
 #pragma once
+#ifdef __cplusplus
 #define GLM_FORCE_SWIZZLE
 
+
 //
-#ifdef __cplusplus
 #ifdef _WIN32
 #ifndef VK_USE_PLATFORM_WIN32_KHR
 #define VK_USE_PLATFORM_WIN32_KHR
@@ -15,10 +16,21 @@
 #endif
 
 //
+#include <tinygltf/tiny_gltf.h>
+#include <tinygltf/stb_image.h>
+#include <glm/gtc/matrix_transform.hpp>
+
+// 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#ifdef ENABLE_RENDERDOC
+#include "renderdoc_app.h"
+#include <eh.h>
+#endif
+
+//
 #include <Alter/Alter.hpp>
-#include "./controller.hpp"
+#include "lib/controller.hpp"
 
 //
 struct Constants
