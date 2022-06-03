@@ -95,7 +95,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   ${PROJECT_SOURCE_DIR}/generator/include 
   ${PROJECT_SOURCE_DIR}/robin-hood-hashing/src/include
   ${PROJECT_SOURCE_DIR}/VulkanMemoryAllocator/include
-  ${PROJECT_SOURCE_DIR}/glm/glm
+  ${PROJECT_SOURCE_DIR}/glm
   ${Vulkan_INCLUDE_DIRS}
 )
 

@@ -5,7 +5,6 @@
 #ifdef ALT_ENABLE_GLTF
 #include <tinygltf/tiny_gltf.h>
 #include <tinygltf/stb_image.h>
-#include <glm/gtc/matrix_transform.hpp>
 #endif
 
 // 
