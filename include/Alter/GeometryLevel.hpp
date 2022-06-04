@@ -75,7 +75,7 @@ namespace ANAMED {
     //
     inline static tType make(cpp21::carg<Handle> handle, cpp21::carg<GeometryLevelCreateInfo> cInfo = GeometryLevelCreateInfo{}) {
       auto shared = std::make_shared<GeometryLevelObj>(handle, cInfo);
-      shared->construct(ANAMED::context->get<DeviceObj>(handle), cInfo);
+      shared->construct(ANAMED::context->get<DeviceObj>(handle).shared(), cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
     };

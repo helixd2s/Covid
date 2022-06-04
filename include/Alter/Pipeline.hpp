@@ -67,7 +67,7 @@ namespace ANAMED {
     //
     inline static tType make(cpp21::carg<Handle> handle, cpp21::carg<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) {
       auto shared = std::make_shared<PipelineObj>(handle, cInfo);
-      shared->construct(ANAMED::context->get<DeviceObj>(handle), cInfo);
+      shared->construct(ANAMED::context->get<DeviceObj>(handle).shared(), cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
     };

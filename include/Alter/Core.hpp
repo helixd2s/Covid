@@ -1481,6 +1481,10 @@ namespace ANAMED {
     template<class T = uintptr_t> inline decltype(auto) as() { return this->ptr->getHandle().as<T>(); };
     template<class T = uintptr_t> inline decltype(auto) as() const { return this->ptr->getHandle().as<T>(); };
 
+    //
+    inline operator std::shared_ptr<T>& () { return this->ptr; };
+    inline operator std::shared_ptr<T> const& () const { return this->ptr; };
+
     // 
     inline decltype(auto) with(cpp21::carg<uint32_t> family = 0u) const { return this->ptr->getHandle().with(family); };
 

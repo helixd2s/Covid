@@ -58,7 +58,7 @@ namespace ANAMED {
     //
     inline static tType make(cpp21::carg<Handle> handle, cpp21::carg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
       auto shared = std::make_shared<ResourceVma>(handle, cInfo);
-      shared->construct(ANAMED::context->get<DeviceObj>(handle), cInfo);
+      shared->construct(ANAMED::context->get<DeviceObj>(handle).shared(), cInfo);
       return std::dynamic_pointer_cast<ResourceVma>(shared->registerSelf().shared());
     };
 

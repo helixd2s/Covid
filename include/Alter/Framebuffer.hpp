@@ -145,7 +145,7 @@ namespace ANAMED {
     //
     inline static tType make(cpp21::carg<Handle> handle, cpp21::carg<FramebufferCreateInfo> cInfo = FramebufferCreateInfo{}) {
       auto shared = std::make_shared<FramebufferObj>(handle, cInfo);
-      shared->construct(ANAMED::context->get<DeviceObj>(handle), cInfo);
+      shared->construct(ANAMED::context->get<DeviceObj>(handle).shared(), cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
     };

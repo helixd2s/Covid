@@ -69,7 +69,7 @@ namespace ANAMED {
     //
     inline static tType make(cpp21::carg<Handle> handle, cpp21::carg<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) {
       auto shared = std::make_shared<MemoryAllocatorObj>(handle, cInfo);
-      shared->construct(ANAMED::context->get<DeviceObj>(handle), cInfo);
+      shared->construct(ANAMED::context->get<DeviceObj>(handle).shared(), cInfo);
       auto wrap = shared->registerSelf();
       return wrap;
     };
@@ -152,7 +152,7 @@ namespace ANAMED {
   inline std::shared_ptr<MemoryAllocatorObj> DeviceObj::createDefaultMemoryAllocator() {
     decltype(auto) allocator = MemoryAllocatorObj::make(this->handle, MemoryAllocatorCreateInfo{});
     //this->registerExt<MemoryAllocatorObj>(ExtensionName::eMemoryAllocator, allocator);
-    return allocator;
+    return allocator.shared();
   };
 
 };

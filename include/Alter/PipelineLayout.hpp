@@ -139,7 +139,7 @@ namespace ANAMED {
     //
     inline static tType make(cpp21::carg<Handle> handle, cpp21::carg<PipelineLayoutCreateInfo> cInfo = PipelineLayoutCreateInfo{}) {
       auto shared = std::make_shared<PipelineLayoutObj>(handle, cInfo);
-      shared->construct(ANAMED::context->get<DeviceObj>(handle), cInfo);
+      shared->construct(ANAMED::context->get<DeviceObj>(handle).shared(), cInfo);
       auto wrap = shared->registerSelf();
       wrap->createNullImages();
       return wrap;

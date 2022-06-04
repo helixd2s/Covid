@@ -568,7 +568,7 @@ namespace ANAMED {
     //
     inline static tType make(cpp21::carg<Handle> handle, cpp21::carg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
       auto shared = std::make_shared<DeviceObj>(handle, cInfo);
-      shared->construct(ANAMED::context->get<InstanceObj>(handle), cInfo);
+      shared->construct(ANAMED::context->get<InstanceObj>(handle).shared(), cInfo);
       auto wrap = shared->registerSelf();
       wrap->createDefaultMemoryAllocator();
       return wrap;
