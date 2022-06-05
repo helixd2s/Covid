@@ -76,7 +76,8 @@ namespace ANAMED {
           decltype(auto) optPair = pair->second && pair->second->isAlive() ? pair->second->destroy(this->handle, this->handleObjectMap) : HMAP_I{};
           if (optPair) 
             { pair = optPair.value(); } else 
-            { pair = pair++; };
+            { pair++; };
+          //if (!optPair) { break; };
         };
         map = this->handleObjectMap->erase(map); // always remove the first elements
       };

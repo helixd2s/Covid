@@ -89,7 +89,7 @@ namespace ANAMED {
 
       //
       destructors.push_back(std::make_shared<std::function<DFun>>([device, buffer = this->handle.as<vk::Buffer>()](BaseObj const*) {
-        device.waitIdle();
+        //device.waitIdle();
         device.destroyBuffer(buffer);
       }));
 
@@ -150,7 +150,7 @@ namespace ANAMED {
         .memory = allocated->memory,
         .memoryOffset = allocated->offset
       }, allocated->mapped, [device, allocated](){
-        device.waitIdle();
+        //device.waitIdle();
         if (allocated && allocated->destructor) {
           (*allocated->destructor)(nullptr);
         };

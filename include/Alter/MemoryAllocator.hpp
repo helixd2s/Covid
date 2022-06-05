@@ -130,7 +130,7 @@ namespace ANAMED {
       //
       if (requirements->needsDestructor) {
         destructors.push_back(allocated->destructor = std::make_shared<std::function<DFun>>([device, &memory = allocated->memory, &mapped = allocated->mapped](BaseObj const*) {
-          device.waitIdle();
+          //device.waitIdle();
           if (memory) {
             if (mapped) {
               device.unmapMemory(memory);

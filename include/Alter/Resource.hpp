@@ -418,7 +418,7 @@ namespace ANAMED {
       //
       destructors.push_back(std::make_shared<std::function<DFun>>([device, image = this->handle.as<vk::Image>(), type=cInfo->type](BaseObj const*) {
         if (type!=ImageType::eSwapchain) {
-          device.waitIdle();
+          //device.waitIdle();
           device.destroyImage(image);
         };
       }));
@@ -486,7 +486,7 @@ namespace ANAMED {
 
       //
       destructors.push_back(std::make_shared<std::function<DFun>>([device, buffer = this->handle.as<vk::Buffer>()](BaseObj const*) {
-        device.waitIdle();
+        //device.waitIdle();
         device.destroyBuffer(buffer);
       }));
 

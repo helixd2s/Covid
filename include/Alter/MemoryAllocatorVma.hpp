@@ -184,7 +184,7 @@ namespace ANAMED {
       //
       if (requirements->needsDestructor) {
         destructors.push_back(allocated->destructor = std::make_shared<std::function<DFun>>([device, allocator = this->handle.as<VmaAllocator>(), &allocation = allocated->allocation](BaseObj const*) {
-          device.waitIdle();
+          //device.waitIdle();
           if (allocation) {
             vmaFreeMemory(allocator, reinterpret_cast<VmaAllocation&>(allocation)); allocation = {};
           };

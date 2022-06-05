@@ -486,7 +486,7 @@ namespace ANAMED {
 
       //
       this->destructors.push_back(std::make_shared<std::function<DFun>>([this, device, accellStruct = accelInstInfo->dstAccelerationStructure, dispatch = deviceObj->getDispatch()](BaseObj const* baseObj) {
-        device.waitIdle();
+        //device.waitIdle();
         device.destroyAccelerationStructureKHR(accellStruct, nullptr, dispatch);
         this->bindInstanceBuffer->destroy(baseObj);
         this->bindInstanceScratch->destroy(baseObj);
