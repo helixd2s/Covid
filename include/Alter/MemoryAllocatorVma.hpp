@@ -130,11 +130,10 @@ namespace ANAMED {
     };
 
     //
-    inline static WrapShared<MemoryAllocatorObj> make(cpp21::carg<Handle> handle, cpp21::carg<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) {
+    inline static WrapShared<MemoryAllocatorVma> make(cpp21::carg<Handle> handle, cpp21::carg<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) {
       auto shared = std::make_shared<MemoryAllocatorVma>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle).shared(), cInfo);
-      auto wrap = shared->registerSelf();
-      return wrap;
+      return std::dynamic_pointer_cast<MemoryAllocatorVma>(shared->registerSelf().shared());
     };
 
   public:
