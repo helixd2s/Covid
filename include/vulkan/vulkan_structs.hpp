@@ -1,1 +1,1 @@
-../../Vulkan-Hpp/vulkan/vulkan_structs.hpp
+../../Vulkan-Headers/include/vulkan/vulkan_structs.hpp
