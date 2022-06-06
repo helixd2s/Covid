@@ -54,9 +54,9 @@ namespace ANAMED {
   public:
 
     //
-    virtual std::tuple<uint32_t, uint32_t> findMemoryTypeAndHeapIndex(cpp21::carg<MemoryRequirements> req = MemoryRequirements{}, cpp21::carg<uintptr_t> physicalDeviceIndex = {}) {
-      auto& physicalDevice = this->getPhysicalDevice(physicalDeviceIndex);
-      decltype(auto) PDInfoMap = this->getPhysicalDeviceInfoMap(physicalDeviceIndex);
+    virtual std::tuple<uint32_t, uint32_t> findMemoryTypeAndHeapIndex(cpp21::carg<MemoryRequirements> req = MemoryRequirements{}, std::optional<uintptr_t> physicalDeviceIndex = {}) {
+      auto& physicalDevice = this->getPhysicalDevice(physicalDeviceIndex ? physicalDeviceIndex.value() : this->cInfo->physicalDeviceIndex);
+      decltype(auto) PDInfoMap = this->getPhysicalDeviceInfoMap(physicalDeviceIndex ? physicalDeviceIndex.value() : this->cInfo->physicalDeviceIndex);
       auto memoryProperties2 = PDInfoMap->set(vk::StructureType::ePhysicalDeviceMemoryProperties2, vk::PhysicalDeviceMemoryProperties2{
 
       });
@@ -358,12 +358,12 @@ namespace ANAMED {
     virtual SMAP const& getAddressSpace() const { return this->addressSpace; };
 
     //
-    virtual vk::PhysicalDevice& getPhysicalDevice(cpp21::carg<uintptr_t> physicalDeviceIndex = {}) { return this->physicalDevices[std::min(physicalDeviceIndex ? physicalDeviceIndex.value() : this->cInfo->physicalDeviceIndex, this->physicalDevices.size() - 1)]; };
-    virtual vk::PhysicalDevice const& getPhysicalDevice(cpp21::carg<uintptr_t> physicalDeviceIndex = {}) const { return this->physicalDevices[std::min(physicalDeviceIndex ? physicalDeviceIndex.value() : this->cInfo->physicalDeviceIndex, this->physicalDevices.size() - 1)]; };
+    virtual vk::PhysicalDevice& getPhysicalDevice(std::optional<uintptr_t> physicalDeviceIndex = {}) { return this->physicalDevices[std::min(physicalDeviceIndex ? physicalDeviceIndex.value() : this->cInfo->physicalDeviceIndex, this->physicalDevices.size() - 1)]; };
+    virtual vk::PhysicalDevice const& getPhysicalDevice(std::optional<uintptr_t> physicalDeviceIndex = {}) const { return this->physicalDevices[std::min(physicalDeviceIndex ? physicalDeviceIndex.value() : this->cInfo->physicalDeviceIndex, this->physicalDevices.size() - 1)]; };
 
     //
-    virtual std::shared_ptr<MSS> getPhysicalDeviceInfoMap(cpp21::carg<uintptr_t> physicalDeviceIndex = {}) { return this->PDInfoMaps[std::min(physicalDeviceIndex ? physicalDeviceIndex.value() : this->cInfo->physicalDeviceIndex, this->PDInfoMaps.size() - 1)]; };
-    virtual std::shared_ptr<MSS> getPhysicalDeviceInfoMap(cpp21::carg<uintptr_t> physicalDeviceIndex = {}) const { return this->PDInfoMaps[std::min(physicalDeviceIndex ? physicalDeviceIndex.value() : this->cInfo->physicalDeviceIndex, this->PDInfoMaps.size() - 1)]; };
+    virtual std::shared_ptr<MSS> getPhysicalDeviceInfoMap(std::optional<uintptr_t> physicalDeviceIndex = {}) { return this->PDInfoMaps[std::min(physicalDeviceIndex ? physicalDeviceIndex.value() : this->cInfo->physicalDeviceIndex, this->PDInfoMaps.size() - 1)]; };
+    virtual std::shared_ptr<MSS> getPhysicalDeviceInfoMap(std::optional<uintptr_t> physicalDeviceIndex = {}) const { return this->PDInfoMaps[std::min(physicalDeviceIndex ? physicalDeviceIndex.value() : this->cInfo->physicalDeviceIndex, this->PDInfoMaps.size() - 1)]; };
 
     //
     virtual vk::DispatchLoaderDynamic& getDispatch() { return this->dispatch; };
