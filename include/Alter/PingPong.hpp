@@ -344,8 +344,8 @@ namespace ANAMED {
 
       //
       set->images.push_back(imageObj.as<vk::Image>());
-      set->imageViews.push_back(std::get<0>(pair));
-      set->imageViewIndices.push_back(std::get<1>(pair));
+      set->imageViews.push_back(pair.imageView);
+      set->imageViewIndices.push_back(pair.indice);
 
       // currently there is no any command
       set->switchToReadyFns.push_back([](cpp21::carg<vk::CommandBuffer> cmdBuf) {

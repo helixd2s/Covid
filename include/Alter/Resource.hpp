@@ -155,7 +155,7 @@ namespace ANAMED {
     };
 
     //
-    std::tuple<vk::ImageView, uint32_t> createImageView(cpp21::carg<ImageViewCreateInfo> info = {}) {
+    ImageViewIndex createImageView(cpp21::carg<ImageViewCreateInfo> info = {}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = this->cInfo->descriptors ? deviceObj->get<PipelineLayoutObj>(this->cInfo->descriptors) : WrapShared<PipelineLayoutObj>{};
@@ -197,7 +197,7 @@ namespace ANAMED {
       }));
 
       // 
-      return std::tuple{ imageView, descriptorId }; // don't return reference, may broke vector
+      return ImageViewIndex{ imageView, descriptorId }; // don't return reference, may broke vector
     };
 
     // 
@@ -234,6 +234,11 @@ namespace ANAMED {
     //
     virtual vk::BufferUsageFlags& getBufferUsage() { return bufferUsage; };
     virtual vk::BufferUsageFlags const& getBufferUsage() const { return bufferUsage; };
+
+    //
+    virtual uintptr_t getAllocationOffset() const {
+      return this->allocated ? this->allocated->offset : 0;
+    };
 
   protected:
 

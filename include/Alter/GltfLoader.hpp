@@ -416,7 +416,7 @@ namespace ANAMED
 
         //
         gltf->images.push_back(imageObj);
-        gltf->imageIndices.push_back(std::get<1u>(imgImageView));
+        gltf->imageIndices.push_back(imgImageView.indice);
       };
 
       //

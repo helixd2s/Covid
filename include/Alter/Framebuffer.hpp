@@ -326,11 +326,11 @@ namespace ANAMED {
 
       //
       history.images.push_back(imageObj.as<vk::Image>());
-      history.imageViews.push_back(std::get<0>(pair));
-      history.imageViewIndices.push_back(std::get<1>(pair));
+      history.imageViews.push_back(pair.imageView);
+      history.imageViewIndices.push_back(pair.indice);
 
       //
-      decltype(auto) imageView = std::get<0>(pair);
+      decltype(auto) imageView = pair.imageView;
 
       // TODO: use pre-built command buffer
       history.switchToAttachmentFn.push_back([this, device, imageLayout, subresourceRange, image=imageObj.as<vk::Image>(), &history](cpp21::carg<vk::CommandBuffer> cmdBuf, cpp21::carg<FramebufferState> previousState = {}) {

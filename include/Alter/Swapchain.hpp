@@ -279,14 +279,13 @@ namespace ANAMED {
       decltype(auto) subresourceRange = imageObj->subresourceRange();
 
       // 
-      this->imageViews.push_back(std::get<0>(imageObj->createImageView(ImageViewCreateInfo{
+      decltype(auto) pair = imageObj->createImageView(ImageViewCreateInfo{
         .viewType = vk::ImageViewType::e2D,
         .subresourceRange = subresourceRange,
         .preference = ImageViewPreference::eStorage
-      })));
-
-      // 
-      this->imageViewIndices.push_back(descriptorsObj->images.add(vk::DescriptorImageInfo{ .imageView = this->imageViews.back(), .imageLayout = vk::ImageLayout::eGeneral }));
+      });
+      this->imageViews.push_back(pair.imageView);
+      this->imageViewIndices.push_back(pair.indice);
 
       // TODO: use pre-built command buffer
       this->switchToReadyFn.push_back([device, imageLayout, subresourceRange, image=imageObj.as<vk::Image>()](cpp21::carg<vk::CommandBuffer> cmdBuf) {

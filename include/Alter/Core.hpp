@@ -1020,6 +1020,21 @@ namespace ANAMED {
 
 
 
+  //
+  struct ImageViewIndex {
+    vk::ImageView imageView = {};
+    uint32_t indice = 0;
+
+    //
+    operator uint32_t& () { return indice; };
+    operator uint32_t const& () const { return indice; };
+    ImageViewIndex& operator= (uint32_t const& indice_) { indice = indice_; return *this; };
+
+    //
+    operator vk::ImageView& () { return imageView; };
+    operator vk::ImageView const& () const { return imageView; };
+    ImageViewIndex& operator= (vk::ImageView const& imageView_) { imageView = imageView_; return *this; };
+  };
   
 
 
