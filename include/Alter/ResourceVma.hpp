@@ -119,6 +119,36 @@ namespace ANAMED {
       vmaCreateImage(allocator, (VkImageCreateInfo*)imageInfo.get(), &vmaCreateInfo, &this->handle.as<VkImage>(), &allocation, &allocationInfo);
       this->handle.type = HandleType::eImage;
 
+      //
+      this->allocated = std::make_shared<AllocatedMemory>();
+      *allocated = AllocatedMemory{ allocationInfo.deviceMemory, allocationInfo.offset, allocationInfo.size };
+      allocated->allocation = uintptr_t(allocation);
+
+      //
+      if (memoryUsage == MemoryUsage::eGpuOnly) {
+#ifdef _WIN32
+        extHandle = device.getMemoryWin32HandleKHR(vk::MemoryGetWin32HandleInfoKHR{ .memory = allocated->memory, .handleType = extMemFlagBits }, deviceObj->getDispatch());
+#else
+#ifdef __linux__ 
+        extHandle = device.getMemoryFdKHR(vk::MemoryGetFdInfoKHR{ .memory = allocated->memory, .handleType = extMemFlagBits }, deviceObj->getDispatch());
+#endif
+#endif
+      };
+
+      //
+      device.setMemoryPriorityEXT(allocated->memory, 1.f, deviceObj->getDispatch());
+
+      //
+      destructors.push_back(allocated->destructor = std::make_shared<std::function<DFun>>([device, allocator = this->handle.as<VmaAllocator>(), &allocation = allocated->allocation](BaseObj const*) {
+        //device.waitIdle();
+        if (allocation) {
+          vmaFreeMemory(allocator, reinterpret_cast<VmaAllocation&>(allocation)); allocation = {};
+        };
+      }));
+
+      // 
+      allocated->mapped = allocationInfo.pMappedData;
+
       // 
       if (cInfo->info) {
         return this->executeSwitchLayoutOnce(ImageLayoutSwitchInfo{
@@ -188,6 +218,37 @@ namespace ANAMED {
       VmaAllocationInfo allocationInfo = {};
       vmaCreateBuffer(memoryAllocatorObj->getHandle().as<VmaAllocator>(), (VkBufferCreateInfo*)bufferInfo.get(), &vmaCreateInfo, &this->handle.as<VkBuffer>(), &allocation, &allocationInfo);
       this->handle.type = HandleType::eBuffer;
+
+      //
+      this->allocated = std::make_shared<AllocatedMemory>();
+      *allocated = AllocatedMemory{ allocationInfo.deviceMemory, allocationInfo.offset, allocationInfo.size };
+      allocated->allocation = uintptr_t(allocation);
+
+      //
+      if (memoryUsage == MemoryUsage::eGpuOnly) {
+#ifdef _WIN32
+        extHandle = device.getMemoryWin32HandleKHR(vk::MemoryGetWin32HandleInfoKHR{ .memory = allocated->memory, .handleType = extMemFlagBits }, deviceObj->getDispatch());
+#else
+#ifdef __linux__ 
+        extHandle = device.getMemoryFdKHR(vk::MemoryGetFdInfoKHR{ .memory = allocated->memory, .handleType = extMemFlagBits }, deviceObj->getDispatch());
+#endif
+#endif
+      };
+
+      //
+      device.setMemoryPriorityEXT(allocated->memory, 1.f, deviceObj->getDispatch());
+
+      //
+      destructors.push_back(allocated->destructor = std::make_shared<std::function<DFun>>([device, allocator = this->handle.as<VmaAllocator>(), &allocation = allocated->allocation](BaseObj const*) {
+        //device.waitIdle();
+        if (allocation) {
+          vmaFreeMemory(allocator, reinterpret_cast<VmaAllocation&>(allocation)); allocation = {};
+        };
+      }));
+
+      // 
+      allocated->mapped = allocationInfo.pMappedData;
+
 
       // 
       if (bufferUsage & vk::BufferUsageFlagBits::eShaderDeviceAddress) {
