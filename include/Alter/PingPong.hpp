@@ -96,14 +96,46 @@ namespace ANAMED {
       return wrap;
     };
 
+    // for JavaCpp
+    virtual ExtHandle& getReadyNextSemaphoreExtHandle() { 
+      decltype(auto) semaphoreInfo = sets[(this->currentState.index+1) % this->sets.size()].readySemaphoreInfo;
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) semaphoreObj = deviceObj->get<SemaphoreObj>(semaphoreInfo->semaphore);
+      return semaphoreObj->getExtHandle();
+    };
+
+    // for JavaCpp
+    virtual ExtHandle& getReadySemaphoreExtHandle() {
+      decltype(auto) semaphoreInfo = sets[this->currentState.index % this->sets.size()].readySemaphoreInfo;
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) semaphoreObj = deviceObj->get<SemaphoreObj>(semaphoreInfo->semaphore);
+      return semaphoreObj->getExtHandle();
+    };
+
+    // for JavaCpp
+    virtual ExtHandle& getPresentSemaphoreExtHandle() {
+      decltype(auto) semaphoreInfo = sets[this->currentState.index % this->sets.size()].presentSemaphoreInfo;
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) semaphoreObj = deviceObj->get<SemaphoreObj>(semaphoreInfo->semaphore);
+      return semaphoreObj->getExtHandle();
+    };
+
     //
-    virtual FenceType switchToPresent(cpp21::carg<uint32_t> imageIndex, cpp21::carg<QueueGetInfo> info = QueueGetInfo{}) {
+    virtual FenceType switchToPresent(cpp21::carg<uint32_t> imageIndex, cpp21::carg<QueueGetInfo> info = QueueGetInfo{}, bool const& glSemaphore = false) {
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = info ? info.value() : this->cInfo->info.ref() } };
       decltype(auto) nextIndex = ((*imageIndex) + 1u) % this->sets.size();
 
       // 
-      //submission.submission.signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{ sets[*imageIndex].readySemaphoreInfo };
-      submission.submission.signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{ sets[nextIndex].copySemaphoreInfo };
+      submission.submission.signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
+      submission.submission.waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
+
+      //
+      if (glSemaphore) {
+        submission.submission.signalSemaphores->push_back(*sets[*imageIndex].readySemaphoreInfo);
+      };
+
+      //
+      submission.submission.waitSemaphores->push_back(sets[nextIndex].copySemaphoreInfo);
       submission.commandInits.push_back([this, imageIndex](cpp21::carg<vk::CommandBuffer> cmdBuf) {
         for (auto& switchFn : this->sets[*imageIndex].switchToPresentFns) { switchFn(cmdBuf); };
         return cmdBuf;
@@ -117,16 +149,21 @@ namespace ANAMED {
     };
 
     //
-    virtual FenceType switchToReady(cpp21::carg<uint32_t> imageIndex, cpp21::carg<QueueGetInfo> info = QueueGetInfo{}) {
+    virtual FenceType switchToReady(cpp21::carg<uint32_t> imageIndex, cpp21::carg<QueueGetInfo> info = QueueGetInfo{}, bool const& glSemaphore = false) {
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = info ? info.value() : this->cInfo->info.ref() } };
 
       // 
+      submission.submission.signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
       submission.submission.waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
-      //submission.submission.waitSemaphores.push_back(sets[*imageIndex].presentSemaphoreInfo);
+
+      //
+      if (glSemaphore) {
+        submission.submission.waitSemaphores->push_back(*sets[*imageIndex].presentSemaphoreInfo);
+      };
 
       // 
       if (!firstWait) {
-        submission.submission.waitSemaphores->push_back(sets[*imageIndex].copySemaphoreInfo);
+        submission.submission.waitSemaphores->push_back(*sets[*imageIndex].copySemaphoreInfo);
       };
 
       // but currently there is no any commands...
