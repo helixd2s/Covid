@@ -659,6 +659,10 @@ namespace ANAMED {
   struct GeometryLevelCreateInfo : BaseCreateInfo {
     cpp21::bucket<GeometryInfo> geometries = std::vector<GeometryInfo>{};
     std::vector<uint32_t> limits = {};
+    //union {
+      //std::vector<uint32_t> limits = {};
+      //std::vector<int32_t> limitsInt;
+    //};
     //size_t geometryCount = 1u;
     uintptr_t uploader = 0ull;
 
