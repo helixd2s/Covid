@@ -141,6 +141,31 @@ namespace ANAMED {
     virtual void updateInstances() {
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
 
+      //
+      if (this->cInfo->limit <= 0u) {
+        this->cInfo->limit = this->cInfo->instances->size();
+      };
+
+      //
+      if (this->cInfo->instances->size() < this->cInfo->limit) {
+        for (uintptr_t i = this->cInfo->instances->size(); i < this->cInfo->limit; i++) {
+          decltype(auto) matrix = glm::mat3x4(1.f);
+          this->cInfo->instances->push_back(InstanceDataInfo{
+            .instanceDevInfo = InstanceDevInfo{
+              .transform = reinterpret_cast<vk::TransformMatrixKHR&>(matrix),
+              .instanceCustomIndex = 0u,
+              .mask = 0u,
+              .instanceShaderBindingTableRecordOffset = 0u,
+              .flags = 0u,
+              .accelerationStructureReference = 0u
+            },
+            .instanceInfo = InstanceInfo{
+
+            }
+          });
+        };
+      };
+
       // 
       this->instances = {};
       this->instanceRanges = {};
@@ -409,30 +434,7 @@ namespace ANAMED {
     virtual FenceType createStructure(cpp21::carg<QueueGetInfo> info = QueueGetInfo{}, bool const& needsBuild = true) {
       this->updateInstances();
 
-      //
-      if (this->cInfo->limit <= 0u) {
-        this->cInfo->limit = this->cInfo->instances->size();
-      };
-
-      //
-      if (this->cInfo->instances->size() < this->cInfo->limit) {
-        for (uintptr_t i = this->cInfo->instances->size(); i < this->cInfo->limit; i++) {
-          decltype(auto) matrix = glm::mat3x4(1.f);
-          this->cInfo->instances->push_back(InstanceDataInfo{
-            .instanceDevInfo = InstanceDevInfo{
-              .transform = reinterpret_cast<vk::TransformMatrixKHR&>(matrix),
-              .instanceCustomIndex = 0u,
-              .mask = 0u,
-              .instanceShaderBindingTableRecordOffset = 0u,
-              .flags = 0u,
-              .accelerationStructureReference = 0u
-            },
-            .instanceInfo = InstanceInfo{
-
-            }
-          });
-        };
-      };
+      
 
       // 
       decltype(auto) device = this->base.as<vk::Device>();

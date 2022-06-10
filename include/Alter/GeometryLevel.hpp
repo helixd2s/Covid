@@ -110,6 +110,21 @@ namespace ANAMED {
 
     //
     virtual void updateGeometries() {
+      //
+      if (this->cInfo->limits.size() <= 0) {
+        for (decltype(auto) geometry : (*this->cInfo->geometries)) {
+          this->cInfo->limits.push_back(geometry.primitiveCount);
+        };
+      };
+
+      //
+      if (this->cInfo->geometries->size() < this->cInfo->limits.size()) {
+        for (uintptr_t i = this->cInfo->geometries->size(); i < this->cInfo->limits.size(); i++) {
+          this->cInfo->geometries->push_back(GeometryInfo{});
+        };
+      };
+
+      //
       this->geometryInfos = {};
       this->geometryRanges = {};
       this->multiDraw = std::vector<vk::MultiDrawInfoEXT>{};
@@ -275,20 +290,6 @@ namespace ANAMED {
     //
     virtual FenceType createStructure(cpp21::carg<QueueGetInfo> info = QueueGetInfo{}, bool const& needsBuild = true) {
       this->updateGeometries();
-
-      //
-      if (this->cInfo->limits.size() <= 0) {
-        for (decltype(auto) geometry : (*this->cInfo->geometries)) {
-          this->cInfo->limits.push_back(geometry.primitiveCount);
-        };
-      };
-
-      //
-      if (this->cInfo->geometries->size() < this->cInfo->limits.size()) {
-        for (uintptr_t i = this->cInfo->geometries->size(); i < this->cInfo->limits.size(); i++) {
-          this->cInfo->geometries->push_back(GeometryInfo{});
-        };
-      };
 
       // 
       decltype(auto) device = this->base.as<vk::Device>();
