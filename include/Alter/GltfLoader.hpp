@@ -78,12 +78,12 @@ namespace ANAMED
 
   //
   struct GltfMesh : std::enable_shared_from_this<GltfMesh> {
-    cpp21::shared_vector<GeometryExtension> extensions = {};
+    //cpp21::shared_vector<GeometryExtension> extensions = {};
     cpp21::shared_vector<GeometryInfo> geometries = {};
 
     //
     WrapShared<GeometryLevelObj> structure = {};
-    WrapShared<ResourceVma> extensionBuffer = {};
+    //WrapShared<ResourceVma> extensionBuffer = {};
   };
 
   //
@@ -578,6 +578,9 @@ namespace ANAMED
 
         //
         opaqueMesh->geometries = cpp21::shared_vector<GeometryInfo>();
+        translucentMesh->geometries = cpp21::shared_vector<GeometryInfo>();
+
+        /*
         opaqueMesh->extensions = cpp21::shared_vector<GeometryExtension>();
         opaqueMesh->extensionBuffer = ANAMED::ResourceVma::make(handle, ANAMED::ResourceCreateInfo{
           .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
@@ -588,7 +591,7 @@ namespace ANAMED
         });
 
         //
-        translucentMesh->geometries = cpp21::shared_vector<GeometryInfo>();
+        
         translucentMesh->extensions = cpp21::shared_vector<GeometryExtension>();
         translucentMesh->extensionBuffer = ANAMED::ResourceVma::make(handle, ANAMED::ResourceCreateInfo{
           .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
@@ -596,7 +599,7 @@ namespace ANAMED
             .size = mesh.primitives.size() * sizeof(GeometryExtension),
             .type = ANAMED::BufferType::eUniversal,
           }
-        });
+        });*/
 
         //
         uintptr_t pCount = 0ull;
@@ -604,7 +607,6 @@ namespace ANAMED
           uintptr_t pId = pCount++;
 
           //
-          decltype(auto) vertices = handleAccessor(primitive.attributes.at("POSITION"));
           decltype(auto) indices = handleAccessor(primitive.indices, true);
           decltype(auto) nullView = ANAMED::BufferViewInfo{ .region = ANAMED::BufferViewRegion{.deviceAddress = 0ull, .stride = 0ull, .size = 0ull}, .format = ANAMED::BufferViewFormat::eNone };
 
@@ -615,59 +617,34 @@ namespace ANAMED
 
           //
           meshObj->geometries->push_back(ANAMED::GeometryInfo{
-            .vertices = vertices,
             .indices = primitive.indices >= 0 ? indices : nullView,
-            .extensionRef = meshObj->extensionBuffer->getDeviceAddress() + meshObj->extensions->size() * sizeof(ANAMED::GeometryExtension),
             .materialRef = materialAddress + materialId * sizeof(ANAMED::MaterialInfo),
             .primitiveCount = uint32_t(gltf->model.accessors[primitive.indices >= 0 ? primitive.indices : primitive.attributes.at("POSITION")].count) / 3u,
             .flags = isTranslucent ? vk::GeometryFlagBitsKHR{} : vk::GeometryFlagBitsKHR::eOpaque
           });
 
           //
-          meshObj->extensions->push_back(ANAMED::GeometryExtension{});
-          auto& extension = meshObj->extensions->back();
-
-          //
-          extension.bufferViews[uint32_t(ANAMED::BufferBind::eExtTexcoord)] = nullView;
-          extension.bufferViews[uint32_t(ANAMED::BufferBind::eExtNormals)] = nullView;
-          extension.bufferViews[uint32_t(ANAMED::BufferBind::eExtTangent)] = nullView;
+          auto& extension = meshObj->geometries->back();
+          extension.bufferViews[uint32_t(ANAMED::BufferBind::eVertices)] = handleAccessor(primitive.attributes.at("POSITION"));
+          extension.bufferViews[uint32_t(ANAMED::BufferBind::eTexcoord)] = nullView;
+          extension.bufferViews[uint32_t(ANAMED::BufferBind::eNormals)] = nullView;
+          extension.bufferViews[uint32_t(ANAMED::BufferBind::eTangent)] = nullView;
 
           //
           for (decltype(auto) attrib : primitive.attributes) {
             if (attrib.first == "TEXCOORD_0") {
-              extension.bufferViews[uint32_t(ANAMED::BufferBind::eExtTexcoord)] = handleAccessor(attrib.second);
+              extension.bufferViews[uint32_t(ANAMED::BufferBind::eTexcoord)] = handleAccessor(attrib.second);
             };
             if (attrib.first == "NORMAL") {
-              extension.bufferViews[uint32_t(ANAMED::BufferBind::eExtNormals)] = handleAccessor(attrib.second);
+              extension.bufferViews[uint32_t(ANAMED::BufferBind::eNormals)] = handleAccessor(attrib.second);
             };
             if (attrib.first == "TANGENT") {
-              extension.bufferViews[uint32_t(ANAMED::BufferBind::eExtTangent)] = handleAccessor(attrib.second);
+              extension.bufferViews[uint32_t(ANAMED::BufferBind::eTangent)] = handleAccessor(attrib.second);
             };
           };
         };
 
         {
-          //
-          if (translucentMesh->extensions->size() > 0) {
-            decltype(auto) hostData = cpp21::data_view<char8_t>((char8_t*)translucentMesh->extensions->data(), 0ull, cpp21::bytesize(*translucentMesh->extensions));
-            decltype(auto) translucentStatus = uploaderObj->executeUploadToResourceOnce(ANAMED::UploadExecutionOnce{
-              .host = hostData,
-              .writeInfo = ANAMED::UploadCommandWriteInfo{
-                .dstBuffer = ANAMED::BufferRegion{translucentMesh->extensionBuffer.as<vk::Buffer>(), ANAMED::DataRegion{0ull, sizeof(ANAMED::GeometryExtension), cpp21::bytesize(*translucentMesh->extensions)}},
-              }
-              });
-          };
-
-          //
-          if (opaqueMesh->extensions->size() > 0) {
-            decltype(auto) hostData = cpp21::data_view<char8_t>((char8_t*)opaqueMesh->extensions->data(), 0ull, cpp21::bytesize(*opaqueMesh->extensions));
-            decltype(auto) opaqueStatus = uploaderObj->executeUploadToResourceOnce(ANAMED::UploadExecutionOnce{
-              .host = hostData,
-              .writeInfo = ANAMED::UploadCommandWriteInfo{
-                .dstBuffer = ANAMED::BufferRegion{opaqueMesh->extensionBuffer.as<vk::Buffer>(), ANAMED::DataRegion{0ull, sizeof(ANAMED::GeometryExtension), cpp21::bytesize(*opaqueMesh->extensions)}},
-              }
-              });
-          };
 
           //
           deviceObj->tickProcessing();

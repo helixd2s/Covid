@@ -432,10 +432,10 @@ namespace ANAMED {
     eBitangent = 4u,
 
     // 
-    eExtTexcoord = 0u,
-    eExtNormals = 1u,
-    eExtTangent = 2u,
-    eMAX = 3u
+    //eExtTexcoord = 0u,
+    //eExtNormals = 1u,
+    //eExtTangent = 2u,
+    //eMAX = 3u
   };
 
   //
@@ -466,25 +466,18 @@ namespace ANAMED {
   };
 #pragma pack(pop)
 
-  // but may not to be...
-#pragma pack(push, 1)
-  __declspec(align(1))
-  struct GeometryExtension {
-    BufferViewInfo bufferViews[uint32_t(BufferBind::eMAX)];
-  };
-#pragma pack(pop)
-
   //
 #pragma pack(push, 1)
   __declspec(align(1))
   struct GeometryInfo {
-    BufferViewInfo vertices = {};
+    BufferViewInfo bufferViews[4] = {};
+
+    //
     BufferViewInfo indices = {};
     BufferViewInfo transform = {};
 
     //
     uint64_t previousRef = 0ull;
-    uint64_t extensionRef = 0ull;
     uint64_t materialRef = 0ull;
 
     //

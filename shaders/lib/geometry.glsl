@@ -24,20 +24,16 @@ struct BufferViewInfo {
   uint32_t flags;
 };
 
-// but may not to be...
-layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer GeometryExtension {
-  BufferViewInfo bufferViews[MAX_EXT_VERTEX_DATA];
-};
-
 //
 layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer GeometryInfo {
-  BufferViewInfo vertices;
+  BufferViewInfo bufferViews[4u];
+
   BufferViewInfo indices;
   BufferViewInfo transform;
 
   //
   uint64_t previousRef;
-  uint64_t extensionRef;
+  //uint64_t extensionRef;
   uint64_t materialRef;
 
   //
@@ -202,23 +198,20 @@ GeometryExtData getGeometryData(in GeometryInfo geometryInfo, in uvec3 indices) 
   GeometryExtData result;
 
   //
-  [[unroll]] for (uint i=0;i<3;i++) { 
-    result.triData[VERTEX_TEXCOORD][i] = vec4(0.f.xxxx);
+  [[unroll]] for (uint i=0;i<3;i++) {
     result.triData[VERTEX_VERTICES][i] = vec4(0.f.xxx, 1.f);
+    result.triData[VERTEX_TEXCOORD][i] = vec4(0.f.xxxx);
     result.triData[VERTEX_BITANGENT][i] = vec4(0.f.xxxx);
     result.triData[VERTEX_NORMALS][i] = vec4(0.f.xxxx);
     result.triData[VERTEX_TANGENT][i] = vec4(0.f.xxxx);
   };
 
   //
-  result.triData[VERTEX_VERTICES] = readTriangleVertices3One(geometryInfo.vertices, indices);
-
-  // 
-  if (geometryInfo.extensionRef > 0u) {
-    GeometryExtension extension = GeometryExtension(geometryInfo.extensionRef);
-    [[unroll]] for (uint i=0u;i<MAX_EXT_VERTEX_DATA;i++) { result.triData[i+1u] = readTriangleVertices(extension.bufferViews[i], indices); };
+  [[unroll]] for (uint i=0u;i<4u;i++) { 
+    result.triData[i] = i == 0u ? readTriangleVertices3One(geometryInfo.bufferViews[i], indices) : readTriangleVertices(geometryInfo.bufferViews[i], indices);
   };
 
+  //
   const mat3x4 vp = result.triData[VERTEX_VERTICES];
   const mat3x4 tp = result.triData[VERTEX_TEXCOORD];
   [[unroll]] for (uint32_t i=0;i<3;i++) {

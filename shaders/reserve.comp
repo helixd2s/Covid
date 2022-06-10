@@ -128,8 +128,8 @@ void main() {
 
   // 
   vec4 finalColor = vec4(clamp(
-    //resultColor + clampColW(resultEmission)
-    resultDiffuse
+    resultColor + clampColW(resultEmission)
+    //resultDiffuse
   , 0.f, 1.f).xyz, 1.f);
 
   //

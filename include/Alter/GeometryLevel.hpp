@@ -129,13 +129,14 @@ namespace ANAMED {
       this->geometryRanges = {};
       this->multiDraw = std::vector<vk::MultiDrawInfoEXT>{};
       for (decltype(auto) geometry : (*this->cInfo->geometries)) {
+        decltype(auto) vertices = geometry.bufferViews[0];
         geometryInfos.push_back(vk::AccelerationStructureGeometryKHR{
           .geometryType = vk::GeometryTypeKHR::eTriangles,
           .geometry = vk::AccelerationStructureGeometryDataKHR{.triangles = vk::AccelerationStructureGeometryTrianglesDataKHR{
-            .vertexFormat = cvtFormatRT(geometry.vertices.format),
-            .vertexData = geometry.vertices.region.deviceAddress,
-            .vertexStride = geometry.vertices.region.stride,
-            .maxVertex = uint32_t(cpp21::tiled(geometry.vertices.region.size, geometry.vertices.region.stride)),
+            .vertexFormat = cvtFormatRT(vertices.format),
+            .vertexData = vertices.region.deviceAddress,
+            .vertexStride = vertices.region.stride,
+            .maxVertex = uint32_t(cpp21::tiled(vertices.region.size, vertices.region.stride)),
             .indexType = cvtIndex(geometry.indices.format),
             .indexData = geometry.indices.region.deviceAddress,
             .transformData = geometry.transform.region.deviceAddress

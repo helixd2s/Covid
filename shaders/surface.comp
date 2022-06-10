@@ -86,7 +86,8 @@ void main() {
       //
       //debugColor = vec4(float(cmd.intersection.instanceId)/10.f, float(cmd.intersection.geometryId)/10.f, float(cmd.intersection.primitiveId)/1000.f, 1.f);
       //debugColor = vec4(cmd.intersection.barycentric.xyz, 1.f);
-      debugColor = vec4(attrib.data[VERTEX_TEXCOORD].xyz, 1.f);
+      //debugColor = vec4(attrib.data[VERTEX_TEXCOORD].xyz, 1.f);
+      //debugColor = cmd.diffuseColor;
 
       // DEBUG
       //imageStore(images[swapchain.image], ivec2(cmd.rayData.launchId), vec4(attrib.data[MATERIAL_NORMAL].xyz * 0.5f + 0.5f, 1.f));
@@ -103,7 +104,7 @@ void main() {
       // most impotant thing
       PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
       surfaceInfo.tex[EMISSION_TEX] = vec4(cmd.emissiveColor, 1.f);
-      surfaceInfo.tex[DIFFUSE_TEX] = debugColor;//cmd.diffuseColor;
+      surfaceInfo.tex[DIFFUSE_TEX] = cmd.diffuseColor;
 
       //
       for (uint i=0;i<3;i++) {
