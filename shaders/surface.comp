@@ -54,6 +54,9 @@ void main() {
     const bool hasHit = !all(lessThanEqual(cmd.intersection.barycentric, 0.f.xxx));
 
     // 
+    vec4 debugColor = vec4(0.f.xxx, 1.f);
+
+    // 
     if (hasHit) {
       InstanceInfo instanceInfo = getInstance(instancedData, cmd.intersection.instanceId);
       GeometryInfo geometryInfo = getGeometry(instanceInfo, cmd.intersection.geometryId);
@@ -79,6 +82,12 @@ void main() {
       //
       cmd.PBR = f16vec3(hasHit ? materialPix.color[MATERIAL_PBR].xyz : 0.f.xxx);
       cmd.reflCoef = (float(cmd.PBR.b) + mix(fresnel_schlick(0.f, dot(reflect(cmd.rayData.direction.xyz, vec3(cmd.normals)), vec3(cmd.normals))), 0.f, float(cmd.PBR.g)) * (1.f - float(cmd.PBR.b))) * (1.f - luminance(cmd.emissiveColor.xyz));
+
+      //
+      debugColor = vec4(attrib.data[VERTEX_TEXCOORD].xy, 0.f, 1.f);
+
+      // DEBUG
+      //imageStore(images[swapchain.image], ivec2(cmd.rayData.launchId), vec4(attrib.data[MATERIAL_NORMAL].xyz * 0.5f + 0.5f, 1.f));
     } else {
       //const vec4 skyColor = vec4(texture(sampler2D(textures[background], samplers[0]), lcts(cmd.rayData.direction.xyz)).xyz, 0.f);
       cmd.diffuseColor = f16vec4(vec4(skyColor.xyz, 1.f));
@@ -92,7 +101,7 @@ void main() {
       // most impotant thing
       PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
       surfaceInfo.tex[EMISSION_TEX] = vec4(cmd.emissiveColor, 1.f);
-      surfaceInfo.tex[DIFFUSE_TEX] = cmd.diffuseColor;
+      surfaceInfo.tex[DIFFUSE_TEX] = debugColor;//cmd.diffuseColor;
 
       //
       for (uint i=0;i<3;i++) {
