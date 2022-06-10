@@ -340,6 +340,11 @@ namespace ANAMED {
     };
 
     //
+    virtual void clearInstances() {
+      this->cInfo->instances.clear();
+    };
+
+    //
     virtual FenceType buildStructure(cpp21::carg<QueueGetInfo> info = QueueGetInfo{}) {
       // 
       if (this->cInfo->instances->size() > 0) {

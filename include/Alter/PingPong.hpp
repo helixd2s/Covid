@@ -96,28 +96,36 @@ namespace ANAMED {
       return wrap;
     };
 
-    // for JavaCpp
-    virtual ExtHandle& getReadyNextSemaphoreExtHandle() { 
-      decltype(auto) semaphoreInfo = sets[(this->currentState.index+1) % this->sets.size()].readySemaphoreInfo;
-      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
-      decltype(auto) semaphoreObj = deviceObj->get<SemaphoreObj>(semaphoreInfo->semaphore);
-      return semaphoreObj->getExtHandle();
+    //
+    virtual uintptr_t getNextIndex() {
+      return ((this->currentState.index + 1) % this->sets.size());
     };
 
-    // for JavaCpp
-    virtual ExtHandle& getReadySemaphoreExtHandle() {
-      decltype(auto) semaphoreInfo = sets[this->currentState.index % this->sets.size()].readySemaphoreInfo;
-      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
-      decltype(auto) semaphoreObj = deviceObj->get<SemaphoreObj>(semaphoreInfo->semaphore);
-      return semaphoreObj->getExtHandle();
+    //
+    virtual uintptr_t getCurrentIndex() {
+      return (this->currentState.index % this->sets.size());
     };
 
-    // for JavaCpp
-    virtual ExtHandle& getPresentSemaphoreExtHandle() {
-      decltype(auto) semaphoreInfo = sets[this->currentState.index % this->sets.size()].presentSemaphoreInfo;
+    //
+    virtual std::vector<ExtHandle> getReadySemaphoreExtHandles() {
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
-      decltype(auto) semaphoreObj = deviceObj->get<SemaphoreObj>(semaphoreInfo->semaphore);
-      return semaphoreObj->getExtHandle();
+      std::vector<ExtHandle> handles = {};
+      for (uintptr_t i = 0; i < this->sets.size(); i++) {
+        decltype(auto) semaphoreObj = deviceObj->get<SemaphoreObj>(sets[i].readySemaphoreInfo->semaphore);
+        handles.push_back(semaphoreObj->getExtHandle());
+      };
+      return handles;
+    };
+
+    //
+    virtual std::vector<ExtHandle> getPresentSemaphoreExtHandles() {
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
+      std::vector<ExtHandle> handles = {};
+      for (uintptr_t i = 0; i < this->sets.size(); i++) {
+        decltype(auto) semaphoreObj = deviceObj->get<SemaphoreObj>(sets[i].presentSemaphoreInfo->semaphore);
+        handles.push_back(semaphoreObj->getExtHandle());
+      };
+      return handles;
     };
 
     //
@@ -131,11 +139,13 @@ namespace ANAMED {
 
       //
       if (glSemaphore) {
-        submission.submission.signalSemaphores->push_back(*sets[*imageIndex].readySemaphoreInfo);
+        submission.submission.signalSemaphores->push_back(*sets[*imageIndex].readySemaphoreInfo); // ready for OpenGL draw
       };
 
       //
-      submission.submission.waitSemaphores->push_back(sets[nextIndex].copySemaphoreInfo);
+      submission.submission.signalSemaphores->push_back(sets[nextIndex].copySemaphoreInfo);
+
+      //
       submission.commandInits.push_back([this, imageIndex](cpp21::carg<vk::CommandBuffer> cmdBuf) {
         for (auto& switchFn : this->sets[*imageIndex].switchToPresentFns) { switchFn(cmdBuf); };
         return cmdBuf;
@@ -158,7 +168,7 @@ namespace ANAMED {
 
       //
       if (glSemaphore) {
-        submission.submission.waitSemaphores->push_back(*sets[*imageIndex].presentSemaphoreInfo);
+        submission.submission.waitSemaphores->push_back(*sets[*imageIndex].presentSemaphoreInfo); // waiting OpenGL present
       };
 
       // 

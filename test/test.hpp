@@ -107,7 +107,7 @@ class App {
 protected: 
   ANAMED::WrapShared<ANAMED::InstanceObj> instanceObj = {};
   ANAMED::WrapShared<ANAMED::DeviceObj> deviceObj = {};
-  ANAMED::WrapShared<ANAMED::MemoryAllocatorObj> memoryAllocatorVma = {};
+  ANAMED::WrapShared<ANAMED::MemoryAllocatorVma> memoryAllocatorVma = {};
   ANAMED::WrapShared<ANAMED::PipelineLayoutObj> descriptorsObj = {};
   ANAMED::WrapShared<ANAMED::UploaderObj> uploaderObj = {};
   ANAMED::WrapShared<ANAMED::GltfLoaderObj> gltfLoaderObj = {};
@@ -811,7 +811,7 @@ protected:
       descriptorsObj->updateDescriptors();
 
       //
-      uniformData.backgroundObj = std::get<1u>(pair);
+      uniformData.backgroundObj = pair.indice;
     }
 
     //
@@ -850,7 +850,7 @@ protected:
       descriptorsObj->updateDescriptors();
 
       //
-      uniformData.blueNoiseObj = std::get<1u>(pair);
+      uniformData.blueNoiseObj = pair.indice;
     };
   };
 

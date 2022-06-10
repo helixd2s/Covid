@@ -263,6 +263,7 @@ namespace ANAMED {
 
       //
       decltype(auto) imageObj = ResourceObj::make(this->base, ResourceCreateInfo{
+        .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
         .image = image,
         .imageInfo = ImageCreateInfo{
           .format = format,
