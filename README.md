@@ -9,10 +9,6 @@ The most ambitious rendering project, and at the same time a future mod for Mine
   - 🥀 [VK паблик](https://vk.com/helixd2s)
   - 🥀 [Наш сайт](http://about.helixd2s.su/) (там просто редирект пока что)
 
-## Screenshots
-
-  <img width="320" src="./images/boombox.png" alt="BoomBox"><img width="320" src="./images/sponza.png" alt="Sponza">
-
 ## Renderer features
 
   - [x] ♟️ Almost full Vulkan API 1.3
@@ -41,6 +37,8 @@ The most ambitious rendering project, and at the same time a future mod for Mine
   - [ ] 👑️ Implementation for some games
 
 ## Built-in shaders SDK features
+
+### Needs full rewrite
 
   - [x] ♟️ Test shaders (currently, not a library)
   - [x] ♟️ Checkerboard optimization (for diffuse/reflection)
