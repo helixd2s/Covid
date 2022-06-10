@@ -649,8 +649,9 @@ namespace ANAMED
         {
           //
           if (translucentMesh->extensions->size() > 0) {
+            decltype(auto) hostData = cpp21::data_view<char8_t>((char8_t*)translucentMesh->extensions->data(), 0ull, cpp21::bytesize(*translucentMesh->extensions));
             decltype(auto) translucentStatus = uploaderObj->executeUploadToResourceOnce(ANAMED::UploadExecutionOnce{
-              .host = cpp21::data_view<char8_t>((char8_t*)translucentMesh->extensions->data(), 0ull, cpp21::bytesize(*translucentMesh->extensions)),
+              .host = hostData,
               .writeInfo = ANAMED::UploadCommandWriteInfo{
                 .dstBuffer = ANAMED::BufferRegion{translucentMesh->extensionBuffer.as<vk::Buffer>(), ANAMED::DataRegion{0ull, sizeof(ANAMED::GeometryExtension), cpp21::bytesize(*translucentMesh->extensions)}},
               }
@@ -659,8 +660,9 @@ namespace ANAMED
 
           //
           if (opaqueMesh->extensions->size() > 0) {
+            decltype(auto) hostData = cpp21::data_view<char8_t>((char8_t*)opaqueMesh->extensions->data(), 0ull, cpp21::bytesize(*opaqueMesh->extensions));
             decltype(auto) opaqueStatus = uploaderObj->executeUploadToResourceOnce(ANAMED::UploadExecutionOnce{
-              .host = cpp21::data_view<char8_t>((char8_t*)opaqueMesh->extensions->data(), 0ull, cpp21::bytesize(*opaqueMesh->extensions)),
+              .host = hostData,
               .writeInfo = ANAMED::UploadCommandWriteInfo{
                 .dstBuffer = ANAMED::BufferRegion{opaqueMesh->extensionBuffer.as<vk::Buffer>(), ANAMED::DataRegion{0ull, sizeof(ANAMED::GeometryExtension), cpp21::bytesize(*opaqueMesh->extensions)}},
               }

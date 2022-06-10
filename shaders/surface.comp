@@ -84,7 +84,9 @@ void main() {
       cmd.reflCoef = (float(cmd.PBR.b) + mix(fresnel_schlick(0.f, dot(reflect(cmd.rayData.direction.xyz, vec3(cmd.normals)), vec3(cmd.normals))), 0.f, float(cmd.PBR.g)) * (1.f - float(cmd.PBR.b))) * (1.f - luminance(cmd.emissiveColor.xyz));
 
       //
-      debugColor = vec4(attrib.data[VERTEX_TEXCOORD].xy, 0.f, 1.f);
+      //debugColor = vec4(float(cmd.intersection.instanceId)/10.f, float(cmd.intersection.geometryId)/10.f, float(cmd.intersection.primitiveId)/1000.f, 1.f);
+      //debugColor = vec4(cmd.intersection.barycentric.xyz, 1.f);
+      debugColor = vec4(attrib.data[VERTEX_TEXCOORD].xyz, 1.f);
 
       // DEBUG
       //imageStore(images[swapchain.image], ivec2(cmd.rayData.launchId), vec4(attrib.data[MATERIAL_NORMAL].xyz * 0.5f + 0.5f, 1.f));
