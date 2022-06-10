@@ -1,0 +1,78 @@
+#version 460 core
+
+// 
+#extension GL_GOOGLE_include_directive : require
+
+//
+layout (local_size_x = 32, local_size_y = 8, local_size_z = 1) in;
+
+//
+#include "lib/native.glsl"
+
+// occcupy full local memory
+const uint MAX_FRAGMENTS = 32;
+shared uint a_[8][32][32];
+shared uint b_[8][32][16];
+uint count = 0u;
+
+//
+#define frags a_[gl_LocalInvocationID.y][gl_LocalInvocationID.x]
+#define leftArray b_[gl_LocalInvocationID.y][gl_LocalInvocationID.x]
+
+//merge sort
+void sort() {
+  uint i, j1, j2, k;
+  uint a, b, c;
+  uint step = 1;
+
+  // 
+  while (step <= count)
+  {
+      i = 0;
+      while (i < count - step)
+      {
+          ////////////////////////////////////////////////////////////////////////
+          //merge(step, i, i + step, min(i + step + step, count));
+          a = i;
+          b = i + step;
+          c = (i + step + step) >= count ? count : (i + step + step);
+          for (k = 0; k < step; k++) { leftArray[k] = frags[a + k]; };
+
+          j1 = 0, j2 = 0;
+          for (k = a; k < c; k++)
+          {
+            frags[k] = (b + j1 >= c || (j2 < step && r_min_distance(leftArray[j2]-1, 0) <= r_min_distance(frags[b + j1]-1, 0))) ? leftArray[j2++] : frags[b + j1++];
+          }
+          ////////////////////////////////////////////////////////////////////////
+          i += 2 * step;
+      }
+      step *= 2;
+  } 
+};
+
+// 
+void main() {
+  const uvec2 gcoord = gl_GlobalInvocationID.xy;
+  const uint pixelId = gcoord.x + UR(rasterBuf.extent).x * gcoord.y;
+
+  //
+  uint indice = imageLoad(imagesR32UI[rasterBuf.images[0][0]], ivec2(gcoord)).r;
+
+  //
+  for (uint i=0;i<MAX_FRAGMENTS;i++) {
+    if (indice <= 0u) break;
+    frags[count++] = indice;
+    indice = getRasterInfo(indice-1, 0).indices.w;
+  };
+
+  //
+  sort();
+
+  //
+  if (count > 0) { imageStore(imagesR32UI[rasterBuf.images[0][0]], ivec2(gcoord), uvec4(frags[0], 0u.xxx)); };
+
+  // re-chain
+  for (uint i=1;i<count;i++) {
+    getRasterInfo(frags[i-1]-1, 0).indices.w = frags[i];
+  };
+};

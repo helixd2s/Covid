@@ -568,7 +568,8 @@ namespace ANAMED {
   struct InstanceInfo {
     uint64_t geometryReference = 0ull;
     uint32_t geometryCount = 0u;
-    vk::PrimitiveTopology topology = vk::PrimitiveTopology::eTriangleList;
+    uint32_t reserved0 = 0u;
+    //vk::PrimitiveTopology topology = vk::PrimitiveTopology::eTriangleList;
     glm::mat3x4 transform = glm::mat3x4(1.f);
     glm::mat3x4 prevTransform = glm::mat3x4(1.f);
   };

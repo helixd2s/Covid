@@ -408,8 +408,9 @@ namespace ANAMED
         //vk::ComponentMapping componentMapping = vk::ComponentMapping{ .r = vk::ComponentSwizzle::eR, .r = vk::ComponentSwizzle::eG, .r = vk::ComponentSwizzle::eB, .r = vk::ComponentSwizzle::eA };
         decltype(auto) imgImageView = imageObj->createImageView(ANAMED::ImageViewCreateInfo{
           .viewType = vk::ImageViewType::e2D,
-          .componentMapping = convertComponentMap(image.component, image.bits, image.pixel_type)
-          });
+          .componentMapping = convertComponentMap(image.component, image.bits, image.pixel_type),
+          .preference = ImageViewPreference::eSampled
+        });
 
         //
         deviceObj->tickProcessing();
@@ -418,6 +419,9 @@ namespace ANAMED
         gltf->images.push_back(imageObj);
         gltf->imageIndices.push_back(imgImageView.indice);
       };
+
+      //
+      descriptorsObj->updateDescriptors();
 
       //
       for (decltype(auto) sampler : gltf->model.samplers) {

@@ -1,0 +1,58 @@
+#version 460 core
+
+// 
+#extension GL_GOOGLE_include_directive : require
+
+//
+#define OUTSOURCE
+
+//
+#include "lib/native.glsl"
+#include "lib/fresnel.glsl"
+#include "lib/random.glsl"
+#include "lib/sphere.glsl"
+#include "lib/rasterizer.glsl"
+#include "lib/reprojection.glsl"
+//#include "lib/atomic.glsl"
+
+//
+layout (local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
+
+// 
+void main() {
+  /*
+  // My GPU probably is broken, `hitData` doesn't supported correctly, or not enough memory
+  const uint maxCount = min(counters[HIT_COUNTER], rayCount.x * rayCount.y);
+  const uint stepT = gl_NumWorkGroups.x * gl_WorkGroupSize.x;
+  for (uint threadId = gl_GlobalInvocationID.x; threadId < maxCount; threadId+=stepT) {
+    if (threadId >= maxCount) { break; }
+    if (threadId < maxCount) {
+      RayHitInfoRef hitInfo = getHitInfo(threadId);
+      if (any(notEqual(hitInfo.origin.xyz, 0.f.xxx))) {
+        const uint type = hitInfo.indices[0].w;
+        const vec4 color = hitInfo.color;
+
+        // 
+        const vec4 hitPersp = vec4(vec4(hitInfo.origin.xyz, 1.f) * constants.lookAt[0], 1.f) * constants.perspective;
+        const vec2 screen = (hitPersp.xy/hitPersp.w * 0.5f + 0.5f);
+        const ivec2 intc = ivec2(screen * vec2(UR(deferredBuf.extent)));
+        const uint id = uint(intc.x + intc.y * UR(deferredBuf.extent).x);
+        const bool valid = intc.x >= 0 && intc.y >= 0 && intc.x < UR(deferredBuf.extent).x && intc.y < UR(deferredBuf.extent).y;
+
+        //
+        if (id > 0 && valid) {
+          PixelSurfaceInfoRef surface = getPixelSurface(id);
+          PixelHitInfoRef data = getNewHit(id, type);
+
+          // may to be inaccurate in surface
+          data.origin = hitInfo.origin; hitInfo.origin = vec4(0.f.xxxx);
+          data.indices = hitInfo.indices; hitInfo.indices[0] = uvec4(0u), hitInfo.indices[1] = uvec4(0u);;
+          data.direct = hitInfo.direct; hitInfo.direct = vec4(0.f.xxxx);
+          data.normal = hitInfo.normal; hitInfo.normal = vec4(0.f.xxxx);
+          accumulate(surface, type, color); hitInfo.color = vec4(0.f.xxxx);
+        };
+      };
+    };
+  };*/
+
+};
