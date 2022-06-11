@@ -115,10 +115,10 @@ target_link_directories(${PROJECT_NAME} PUBLIC
 set (HSOURCES "${PROJECT_SOURCE_DIR}/../vk-utils/cpp21/core.hpp" "${PROJECT_SOURCE_DIR}/include/Alter/Core.hpp")
 
 #
-#ADD_MSVC_PRECOMPILED_HEADER(
-  #"${PROJECT_SOURCE_DIR}/include/cmake_pch.hxx" 
-  #"${PROJECT_SOURCE_DIR}/include/cmake_pch.cxx" 
-  #HSOURCES)
+ADD_MSVC_PRECOMPILED_HEADER(
+  "${PROJECT_SOURCE_DIR}/include/cmake_pch.hxx" 
+  "${PROJECT_SOURCE_DIR}/include/cmake_pch.cxx" 
+  HSOURCES)
 
 #
 target_link_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS} ${Vulkan_LIBRARIES} glfw )
