@@ -35,7 +35,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <robin_hood.h>
 #else
-#include <cmake_pch.hxx>
+#include <cmake_pch.hpp>
 #endif
 
 //

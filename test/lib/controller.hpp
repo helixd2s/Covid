@@ -9,7 +9,7 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #else
-#include <cmake_pch.hxx>
+#include <cmake_pch.hpp>
 #endif
 
 // 

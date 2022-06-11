@@ -59,17 +59,20 @@ file(GLOB_RECURSE _source_list
   "${_src_root_path}/../vk-utils/cpp21/*.inl"
   "${_src_root_path}/../vk-utils/cpp21/*.hpp"
   "${_src_root_path}/../vk-utils/cpp21/*.h"
-
+  "${_src_root_path}/include/*.inl"
+  "${_src_root_path}/include/*.hpp"
+  "${_src_root_path}/include/*.cpp"
+  "${_src_root_path}/include/*.hxx"
+  "${_src_root_path}/include/*.cxx"
   "${_src_root_path}/include/Alter/*.inl"
   "${_src_root_path}/include/Alter/*.hpp"
   "${_src_root_path}/include/Alter/*.h"
   "${_src_root_path}/src/Alter/*.inl"
   "${_src_root_path}/src/Alter/*.cpp"
   "${_src_root_path}/src/Alter/*.c"
-  
-  "${_src_root_path}/test/*.cpp"
   "${_src_root_path}/test/test.cpp"
   "${_src_root_path}/test/hdrloader.cpp"
+  "${_src_root_path}/test/*.cpp"
   "${_src_root_path}/test/*.hpp"
   "${_src_root_path}/test/*.h"
 )
@@ -88,6 +91,7 @@ ENDIF()
 add_executable(${PROJECT_NAME} ${_source_list})
 target_compile_definitions(${PROJECT_NAME} PUBLIC ALT_USE_ROBIN_HOOD USE_CMAKE_PCH VULKAN_HPP_NO_CONSTRUCTORS NOMINMAX ALT_ENABLE_VMA ALT_ENABLE_GLTF CPP21_DEBUG_MEMORY TINYGLTF_USE_CPP14 ANAMED=alter ${PLATFORM_DEF})
 target_include_directories(${PROJECT_NAME} PUBLIC 
+  ${PROJECT_SOURCE_DIR}/include/Alter 
   ${PROJECT_SOURCE_DIR}/include 
   ${PROJECT_SOURCE_DIR}/../vk-utils/
   ${PROJECT_SOURCE_DIR}/../vk-utils/interval-tree/include
@@ -108,10 +112,13 @@ target_link_directories(${PROJECT_NAME} PUBLIC
 )
 
 #
-set (HSOURCES "submodules/include/vk-utils/cpp21/core.hpp" "include/Alter/Core.hpp")
+set (HSOURCES "${PROJECT_SOURCE_DIR}/../vk-utils/cpp21/core.hpp" "${PROJECT_SOURCE_DIR}/include/Alter/Core.hpp")
 
 #
-ADD_MSVC_PRECOMPILED_HEADER("include/cmake_pch.hxx" "include/cmake_pch.cxx" HSOURCES)
+#ADD_MSVC_PRECOMPILED_HEADER(
+  #"${PROJECT_SOURCE_DIR}/include/cmake_pch.hxx" 
+  #"${PROJECT_SOURCE_DIR}/include/cmake_pch.cxx" 
+  #HSOURCES)
 
 #
 target_link_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS} ${Vulkan_LIBRARIES} glfw )
