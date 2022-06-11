@@ -1,7 +1,8 @@
 # 🌋 Alter 🌋
 
 ### Probably, will resurrected in July...
-### We waiting new Vulkan SDK, stable drivers, RenderDoc, NSight, etc. needs 1-2 month. 
+### We waiting new Vulkan SDK, stable drivers, RenderDoc, NSight, etc. 
+### For all and everthing needed, needs wait 1-2 month. 
 
 The most ambitious rendering project, and at the same time a future mod for Minecraft. 
 
