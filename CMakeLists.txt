@@ -53,12 +53,12 @@ set(CMAKE_CXX_STANDARD 23)
 set(_src_root_path "${PROJECT_SOURCE_DIR}")
 file(GLOB_RECURSE _source_list 
   LIST_DIRECTORIES false
-  "${_src_root_path}/include/vk-utils/*.inl"
-  "${_src_root_path}/include/vk-utils/*.hpp"
-  "${_src_root_path}/include/vk-utils/*.h"
-  "${_src_root_path}/include/vk-utils/cpp21/*.inl"
-  "${_src_root_path}/include/vk-utils/cpp21/*.hpp"
-  "${_src_root_path}/include/vk-utils/cpp21/*.h"
+  "${_src_root_path}/../vk-utils/*.inl"
+  "${_src_root_path}/../vk-utils/*.hpp"
+  "${_src_root_path}/../vk-utils/*.h"
+  "${_src_root_path}/../vk-utils/cpp21/*.inl"
+  "${_src_root_path}/../vk-utils/cpp21/*.hpp"
+  "${_src_root_path}/../vk-utils/cpp21/*.h"
 
   "${_src_root_path}/include/Alter/*.inl"
   "${_src_root_path}/include/Alter/*.hpp"
@@ -89,20 +89,18 @@ add_executable(${PROJECT_NAME} ${_source_list})
 target_compile_definitions(${PROJECT_NAME} PUBLIC ALT_USE_ROBIN_HOOD USE_CMAKE_PCH VULKAN_HPP_NO_CONSTRUCTORS NOMINMAX ALT_ENABLE_VMA ALT_ENABLE_GLTF CPP21_DEBUG_MEMORY TINYGLTF_USE_CPP14 ANAMED=alter ${PLATFORM_DEF})
 target_include_directories(${PROJECT_NAME} PUBLIC 
   ${PROJECT_SOURCE_DIR}/include 
-  ${PROJECT_SOURCE_DIR}/*/include 
-  ${PROJECT_SOURCE_DIR}/interval-tree/include
-  ${PROJECT_SOURCE_DIR}/submodules/include 
-  ${PROJECT_SOURCE_DIR}/generator/include 
-  ${PROJECT_SOURCE_DIR}/robin-hood-hashing/src/include
-  ${PROJECT_SOURCE_DIR}/VulkanMemoryAllocator/include
-  ${PROJECT_SOURCE_DIR}/glm
+  ${PROJECT_SOURCE_DIR}/../vk-utls/interval-tree/include
+  ${PROJECT_SOURCE_DIR}/../vk-utls/submodules/include 
+  ${PROJECT_SOURCE_DIR}/../vk-utls/generator/include 
+  ${PROJECT_SOURCE_DIR}/../vk-utls/glm
+  ${PROJECT_SOURCE_DIR}/../VulkanMemoryAllocator/include
+  ${PROJECT_SOURCE_DIR}/../Vulkan-Headers/include
   ${Vulkan_INCLUDE_DIRS}
 )
 
 #
 target_link_directories(${PROJECT_NAME} PUBLIC 
   ${PROJECT_SOURCE_DIR}/lib
-  ${PROJECT_SOURCE_DIR}/submodules/lib
 )
 
 #
