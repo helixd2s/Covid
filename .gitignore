@@ -111,6 +111,22 @@ build/*
 */build/
 */build/*
 
+jars
+jars/
+jars/*
+
+/jars
+/jars/
+/jars/*
+
+./jars
+./jars/
+./jars/*
+
+*/jars
+*/jars/
+*/jars/*
+
 submodules
 submodules/
 submodules/*
@@ -126,6 +142,22 @@ submodules/*
 */submodules
 */submodules/
 */submodules/*
+
+src/main/cpp
+src/main/cpp/
+src/main/cpp/*
+
+/src/main/cpp
+/src/main/cpp/
+/src/main/cpp/*
+
+./src/main/cpp
+./src/main/cpp/
+./src/main/cpp/*
+
+*/src/main/cpp
+*/src/main/cpp
+*/src/main/cpp/*
 
 out
 out/
