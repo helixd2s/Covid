@@ -221,7 +221,7 @@ namespace ANAMED {
       uploaderObj->writeUploadToResourceCmd(UploadCommandWriteInfo{
         .cmdBuf = cmdBuf,
         .bunchBuffer = geometryOffset,
-        .dstBuffer = BufferRegion{this->geometryBuffer, DataRegion{ 0ull, sizeof(GeometryInfo), this->cInfo->geometries->size() * sizeof(GeometryInfo) }}
+        .dstBuffer = BufferRegion{this->geometryBuffer, DataRegion{ 0ull, sizeof(GeometryInfo), cpp21::bytesize(*this->cInfo->geometries) }}
       });
 
       //
@@ -258,7 +258,7 @@ namespace ANAMED {
         //
         decltype(auto) memReqs = uploaderObj->getMemoryRequirements();
         uintptr_t geometryOffset = 0ull;
-        uintptr_t geometrySize = cpp21::tiled(this->cInfo->geometries->size() * sizeof(GeometryInfo), memReqs.alignment) * memReqs.alignment;
+        uintptr_t geometrySize = cpp21::tiled(cpp21::bytesize(*this->cInfo->geometries), memReqs.alignment) * memReqs.alignment;
 
         //
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
@@ -303,7 +303,7 @@ namespace ANAMED {
       // 
       this->geometryBuffer = (this->bindGeometryBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
         .bufferInfo = BufferCreateInfo{
-          .size = std::max(cInfo->geometries->size(), cInfo->limits.size()) * sizeof(GeometryInfo),
+          .size = cpp21::bytesize(*this->cInfo->geometries),
           .type = BufferType::eStorage
         }
       })).as<vk::Buffer>();

@@ -292,14 +292,14 @@ namespace ANAMED {
       uploaderObj->writeUploadToResourceCmd(UploadCommandWriteInfo{
         .cmdBuf = cmdBuf,
         .bunchBuffer = instanceDevOffset,
-        .dstBuffer = BufferRegion{this->instanceBuffer, DataRegion{ 0ull, sizeof(InstanceDevInfo), this->cInfo->instances->size() * sizeof(InstanceDevInfo) }}
+        .dstBuffer = BufferRegion{this->instanceBuffer, DataRegion{ 0ull, sizeof(InstanceDevInfo), cpp21::bytesize(*this->instanceDevInfo) }}
       });
 
       // parallelize by offset
       uploaderObj->writeUploadToResourceCmd(UploadCommandWriteInfo{
         .cmdBuf = cmdBuf,
         .bunchBuffer = instanceOffset,
-        .dstBuffer = BufferRegion{this->instanceExtBuffer, DataRegion{ 0ull, sizeof(InstanceInfo), this->cInfo->instances->size() * sizeof(InstanceInfo) }}
+        .dstBuffer = BufferRegion{this->instanceExtBuffer, DataRegion{ 0ull, sizeof(InstanceInfo), cpp21::bytesize(*this->instanceInfo) }}
       });
 
       //
@@ -390,8 +390,8 @@ namespace ANAMED {
 
         //
         decltype(auto) memReqs = uploaderObj->getMemoryRequirements();
-        uintptr_t instanceDevSize = cpp21::tiled(this->cInfo->instances->size() * sizeof(InstanceDevInfo), memReqs.alignment) * memReqs.alignment;
-        uintptr_t instanceSize = cpp21::tiled(this->cInfo->instances->size() * sizeof(InstanceInfo), memReqs.alignment) * memReqs.alignment;
+        uintptr_t instanceDevSize = cpp21::tiled(cpp21::bytesize(*this->instanceDevInfo), memReqs.alignment) * memReqs.alignment;
+        uintptr_t instanceSize = cpp21::tiled(cpp21::bytesize(*this->instanceInfo), memReqs.alignment) * memReqs.alignment;
 
         //
         uintptr_t instanceDevOffset = 0ull;
@@ -407,8 +407,8 @@ namespace ANAMED {
 #endif
 
         // 
-        memcpy(instanceDevPage->mapped, this->instanceDevInfo->data(), this->instanceDevInfo->size() * sizeof(InstanceDevInfo));
-        memcpy(instancePage->mapped, this->instanceInfo->data(), this->instanceInfo->size() * sizeof(InstanceInfo));
+        memcpy(instanceDevPage->mapped, this->instanceDevInfo->data(), cpp21::bytesize(*this->instanceDevInfo));
+        memcpy(instancePage->mapped, this->instanceInfo->data(), cpp21::bytesize(*this->instanceInfo));
 
         // TODO: Acceleration Structure Build Barriers per Buffers
         submission.commandInits.push_back([instanceDevOffset, instanceOffset, instancePage, instanceDevPage, dispatch = deviceObj->getDispatch(), this](vk::CommandBuffer const& cmdBuf) {
@@ -434,8 +434,6 @@ namespace ANAMED {
     virtual FenceType createStructure(cpp21::optional_ref<QueueGetInfo> info = QueueGetInfo{}, bool const& needsBuild = true) {
       this->updateInstances();
 
-      
-
       // 
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
@@ -446,7 +444,7 @@ namespace ANAMED {
       // 
       this->instanceBuffer = (this->bindInstanceBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
         .bufferInfo = BufferCreateInfo{
-          .size = std::max(cInfo->instances->size(), size_t(cInfo->limit)) * sizeof(InstanceDevInfo),
+          .size = cpp21::bytesize(*this->instanceDevInfo),
           .type = BufferType::eStorage
         }
       })).as<vk::Buffer>();
@@ -470,7 +468,7 @@ namespace ANAMED {
       // 
       this->instanceExtBuffer = (this->bindInstanceExtBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
         .bufferInfo = BufferCreateInfo{
-          .size = std::max(cInfo->instances->size(), size_t(cInfo->limit)) * sizeof(InstanceInfo),
+          .size = cpp21::bytesize(*this->instanceInfo),
           .type = BufferType::eStorage
         }
       })).as<vk::Buffer>();
