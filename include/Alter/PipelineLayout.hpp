@@ -92,12 +92,12 @@ namespace ANAMED {
     PipelineLayoutCreateInfo const& getCInfo() const { return this->cInfo.value(); };
 
     // 
-    PipelineLayoutObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::carg<PipelineLayoutCreateInfo> cInfo = PipelineLayoutCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
+    PipelineLayoutObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::optional_ref<PipelineLayoutCreateInfo> cInfo = PipelineLayoutCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
       //this->construct(deviceObj, cInfo);
     };
 
     // 
-    PipelineLayoutObj(cpp21::carg<Handle> handle, cpp21::carg<PipelineLayoutCreateInfo> cInfo = PipelineLayoutCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
+    PipelineLayoutObj(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<PipelineLayoutCreateInfo> cInfo = PipelineLayoutCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
       //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
@@ -137,7 +137,7 @@ namespace ANAMED {
     inline virtual cpp21::bucket<vk::DescriptorImageInfo> const& getImageDescriptors() const { return images; };
 
     //
-    inline static tType make(cpp21::carg<Handle> handle, cpp21::carg<PipelineLayoutCreateInfo> cInfo = PipelineLayoutCreateInfo{}) {
+    inline static tType make(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<PipelineLayoutCreateInfo> cInfo = PipelineLayoutCreateInfo{}) {
       auto shared = std::make_shared<PipelineLayoutObj>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle).shared(), cInfo);
       auto wrap = shared->registerSelf();
@@ -147,7 +147,7 @@ namespace ANAMED {
 
   protected:
     //
-    virtual void createDescriptorLayout(cpp21::carg<vk::DescriptorType> type, cpp21::carg<uint32_t> count = 1u) {
+    virtual void createDescriptorLayout(cpp21::optional_ref<vk::DescriptorType> type, cpp21::optional_ref<uint32_t> count = 1u) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) last = this->layouts.size();
       this->layoutInfoMaps->push_back(std::make_shared<MSS>(MSS()));
@@ -167,7 +167,7 @@ namespace ANAMED {
     };
 
     // 
-    virtual void createDescriptorLayoutUniformStorage(cpp21::carg<uint32_t> maxPageCount = 1u) {
+    virtual void createDescriptorLayoutUniformStorage(cpp21::optional_ref<uint32_t> maxPageCount = 1u) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) last = this->layouts.size();
       this->layoutInfoMaps->push_back(std::make_shared<MSS>(MSS()));
@@ -189,7 +189,7 @@ namespace ANAMED {
     };
 
     // 
-    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::carg<PipelineLayoutCreateInfo> cInfo = PipelineLayoutCreateInfo{}) {
+    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::optional_ref<PipelineLayoutCreateInfo> cInfo = PipelineLayoutCreateInfo{}) {
       //this->deviceObj = deviceObj;
       if (cInfo) { this->cInfo = cInfo; };
 
@@ -261,7 +261,7 @@ namespace ANAMED {
   public:
 
     //
-    virtual void writePushDescriptor(vk::PipelineBindPoint const& bindPoint, cpp21::carg<vk::CommandBuffer> cmdBuf) {
+    virtual void writePushDescriptor(vk::PipelineBindPoint const& bindPoint, cpp21::optional_ref<vk::CommandBuffer> cmdBuf) {
       /*
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
@@ -321,7 +321,7 @@ namespace ANAMED {
     };
 
     //
-    virtual tType writeUniformUpdateCommand(cpp21::carg<UniformDataWriteSet> cInfo) {
+    virtual tType writeUniformUpdateCommand(cpp21::optional_ref<UniformDataWriteSet> cInfo) {
       size_t size = std::min(cInfo->data.size(), cInfo->region->size);
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
@@ -365,7 +365,7 @@ namespace ANAMED {
       return SFT();
     };
 
-    virtual tType writeCacheUpdateCommand(cpp21::carg<CacheDataWriteSet> cInfo) {
+    virtual tType writeCacheUpdateCommand(cpp21::optional_ref<CacheDataWriteSet> cInfo) {
       size_t size = std::min(cInfo->data.size(), cInfo->region->size);
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
@@ -410,11 +410,11 @@ namespace ANAMED {
     };
 
     //
-    virtual FenceType executeUniformUpdateOnce(cpp21::carg<UniformDataSet> cInfo) {
+    virtual FenceType executeUniformUpdateOnce(cpp21::optional_ref<UniformDataSet> cInfo) {
       decltype(auto) submission = CommandOnceSubmission{ .submission = cInfo->submission };
 
       // 
-      submission.commandInits.push_back([this, cInfo](cpp21::carg<vk::CommandBuffer> cmdBuf) {
+      submission.commandInits.push_back([this, cInfo](cpp21::optional_ref<vk::CommandBuffer> cmdBuf) {
         this->writeUniformUpdateCommand(cInfo->writeInfo->with(cmdBuf));
         return cmdBuf;
       });
@@ -424,11 +424,11 @@ namespace ANAMED {
     };
 
     //
-    virtual FenceType executeCacheUpdateOnce(cpp21::carg<CacheDataSet> cInfo) {
+    virtual FenceType executeCacheUpdateOnce(cpp21::optional_ref<CacheDataSet> cInfo) {
       decltype(auto) submission = CommandOnceSubmission{ .submission = cInfo->submission };
 
       // 
-      submission.commandInits.push_back([this, cInfo](cpp21::carg<vk::CommandBuffer> cmdBuf) {
+      submission.commandInits.push_back([this, cInfo](cpp21::optional_ref<vk::CommandBuffer> cmdBuf) {
         this->writeCacheUpdateCommand(cInfo->writeInfo->with(cmdBuf));
         return cmdBuf;
       });

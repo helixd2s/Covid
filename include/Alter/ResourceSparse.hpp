@@ -45,7 +45,7 @@ namespace ANAMED {
   protected:
 
     // 
-    FenceType createBuffer(cpp21::carg<BufferCreateInfo> cInfo = {}) override {
+    FenceType createBuffer(cpp21::optional_ref<BufferCreateInfo> cInfo = {}) override {
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
 
@@ -99,12 +99,12 @@ namespace ANAMED {
 
   public:
     // 
-    ResourceSparseObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::carg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : ResourceObj(deviceObj, cInfo) {
+    ResourceSparseObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::optional_ref<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : ResourceObj(deviceObj, cInfo) {
       //this->construct(deviceObj, cInfo);
     };
 
     // 
-    ResourceSparseObj(cpp21::carg<Handle> handle, cpp21::carg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : ResourceObj(handle, cInfo) {
+    ResourceSparseObj(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : ResourceObj(handle, cInfo) {
       //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
@@ -120,7 +120,7 @@ namespace ANAMED {
     };
 
     //
-    inline static tType make(cpp21::carg<Handle> handle, cpp21::carg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
+    inline static tType make(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
       auto shared = std::make_shared<ResourceSparseObj>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle).shared(), cInfo);
       return std::dynamic_pointer_cast<ResourceSparseObj>(shared->registerSelf().shared());
@@ -176,7 +176,7 @@ namespace ANAMED {
     };
 
     // 
-    virtual FenceType bindSparseMemory(cpp21::carg<SubmissionInfo> submission = {}){
+    virtual FenceType bindSparseMemory(cpp21::optional_ref<SubmissionInfo> submission = {}){
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) queue = deviceObj->getQueue(submission->info);
@@ -225,7 +225,7 @@ namespace ANAMED {
       auto onDone = [device, fence, callstack = std::weak_ptr<CallStack>(deviceObj->getCallstack()), submission, deAllocation]() {
         auto cl = callstack.lock();
         for (auto& fn : submission->onDone) {
-          cl->add(std::bind(fn, device.getFenceStatus(*fence)));
+          if (fn) { cl->add(std::bind(fn, device.getFenceStatus(*fence))); };
         };
         cl->add(deAllocation);
       };
@@ -264,7 +264,7 @@ namespace ANAMED {
 
     //
     auto status = this->cacheBufferObj->bindSparseMemory(SubmissionInfo{
-      .info = this->cInfo->info ? this->cInfo->info.ref() : QueueGetInfo{this->base.family, 0u}
+      .info = this->cInfo->info ? this->cInfo->info.value() : QueueGetInfo{this->base.family, 0u}
     });
 
     //

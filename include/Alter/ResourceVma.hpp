@@ -25,7 +25,7 @@ namespace ANAMED {
   protected:
 
     //
-    virtual std::shared_ptr<AllocatedMemory> allocateMemory(cpp21::carg<MemoryRequirements> requirements) {
+    virtual std::shared_ptr<AllocatedMemory> allocateMemory(cpp21::optional_ref<MemoryRequirements> requirements) {
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) memoryAllocatorObj = deviceObj->getExt<MemoryAllocatorVma>(this->cInfo->extUsed && this->cInfo->extUsed->find(ExtensionInfoName::eMemoryAllocator) != this->cInfo->extUsed->end() ? this->cInfo->extUsed->at(ExtensionInfoName::eMemoryAllocator) : ExtensionName::eMemoryAllocatorVma);
       return memoryAllocatorObj->allocateMemory(requirements, this->allocated = std::make_shared<AllocatedMemory>(), this->extHandle, this->cInfo->extInfoMap, this->mappedMemory, this->destructors);
@@ -37,11 +37,11 @@ namespace ANAMED {
 
   public:
     // 
-    ResourceVma(WrapShared<DeviceObj> deviceObj = {}, cpp21::carg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : ResourceObj(deviceObj, cInfo) {
+    ResourceVma(WrapShared<DeviceObj> deviceObj = {}, cpp21::optional_ref<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : ResourceObj(deviceObj, cInfo) {
     };
 
     // 
-    ResourceVma(cpp21::carg<Handle> handle, cpp21::carg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : ResourceObj(handle, cInfo) {
+    ResourceVma(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : ResourceObj(handle, cInfo) {
     };
 
     // 
@@ -56,7 +56,7 @@ namespace ANAMED {
     };
 
     //
-    inline static tType make(cpp21::carg<Handle> handle, cpp21::carg<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
+    inline static tType make(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
       auto shared = std::make_shared<ResourceVma>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle).shared(), cInfo);
       return std::dynamic_pointer_cast<ResourceVma>(shared->registerSelf().shared());
@@ -65,7 +65,7 @@ namespace ANAMED {
   protected:
 
     // 
-     FenceType createImage(cpp21::carg<ImageCreateInfo> cInfo = {}) override {
+     FenceType createImage(cpp21::optional_ref<ImageCreateInfo> cInfo = {}) override {
       // 
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
@@ -173,7 +173,7 @@ namespace ANAMED {
     };
 
     // 
-     FenceType createBuffer(cpp21::carg<BufferCreateInfo> cInfo = {}) override {
+     FenceType createBuffer(cpp21::optional_ref<BufferCreateInfo> cInfo = {}) override {
       //
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
@@ -266,7 +266,7 @@ namespace ANAMED {
 
       //
       decltype(auto) submission = CommandOnceSubmission{
-        .submission = SubmissionInfo{.info = cInfo->info ? cInfo->info.ref() : QueueGetInfo{0u, 0u}}
+        .submission = SubmissionInfo{.info = cInfo->info ? cInfo->info.value() : QueueGetInfo{0u, 0u}}
       };
 
       // 

@@ -28,12 +28,12 @@ namespace ANAMED {
 
     // 
   public:
-    QueueFamilyObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::carg<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
+    QueueFamilyObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::optional_ref<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
       //this->construct(deviceObj, cInfo);
     };
 
     // 
-    QueueFamilyObj(cpp21::carg<Handle> handle, cpp21::carg<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
+    QueueFamilyObj(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
       //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
@@ -49,7 +49,7 @@ namespace ANAMED {
     };
 
     //
-    inline static tType make(cpp21::carg<Handle> handle, cpp21::carg<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{}) {
+    inline static tType make(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{}) {
       auto shared = std::make_shared<QueueFamilyObj>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle).shared(), cInfo);
       auto wrap = shared->registerSelf();
@@ -58,7 +58,7 @@ namespace ANAMED {
 
     // 
   protected:
-    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::carg<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{}) {
+    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::optional_ref<QueueFamilyCreateInfo> cInfo = QueueFamilyCreateInfo{}) {
       if (cInfo) { this->cInfo = cInfo; };
     };
 

@@ -54,7 +54,7 @@ namespace ANAMED {
   public:
 
     //
-    virtual std::tuple<uint32_t, uint32_t> findMemoryTypeAndHeapIndex(cpp21::carg<MemoryRequirements> req = MemoryRequirements{}, std::optional<uintptr_t> physicalDeviceIndex = {}) {
+    virtual std::tuple<uint32_t, uint32_t> findMemoryTypeAndHeapIndex(cpp21::optional_ref<MemoryRequirements> req = MemoryRequirements{}, std::optional<uintptr_t> physicalDeviceIndex = {}) {
       auto& physicalDevice = this->getPhysicalDevice(physicalDeviceIndex ? physicalDeviceIndex.value() : this->cInfo->physicalDeviceIndex);
       decltype(auto) PDInfoMap = this->getPhysicalDeviceInfoMap(physicalDeviceIndex ? physicalDeviceIndex.value() : this->cInfo->physicalDeviceIndex);
       auto memoryProperties2 = PDInfoMap->set(vk::StructureType::ePhysicalDeviceMemoryProperties2, vk::PhysicalDeviceMemoryProperties2{
@@ -134,7 +134,7 @@ namespace ANAMED {
   protected: 
 
     //
-    virtual std::vector<char const*>& filterLayers(cpp21::carg<vk::PhysicalDevice> physicalDevice, cpp21::carg<std::vector<std::string>> names) {
+    virtual std::vector<char const*>& filterLayers(cpp21::optional_ref<vk::PhysicalDevice> physicalDevice, cpp21::optional_ref<std::vector<std::string>> names) {
       decltype(auto) props = physicalDevice->enumerateDeviceLayerProperties();
       auto& selected = this->layerNames;
 
@@ -158,7 +158,7 @@ namespace ANAMED {
     };
 
     //
-    virtual std::vector<char const*>& filterExtensions(cpp21::carg<vk::PhysicalDevice> physicalDevice, cpp21::carg<std::vector<std::string>> names) {
+    virtual std::vector<char const*>& filterExtensions(cpp21::optional_ref<vk::PhysicalDevice> physicalDevice, cpp21::optional_ref<std::vector<std::string>> names) {
       decltype(auto) props = physicalDevice->enumerateDeviceExtensionProperties(std::string(""));
       auto& selected = (this->extensionNames);
 
@@ -182,7 +182,7 @@ namespace ANAMED {
     };
 
     //
-    virtual std::vector<vk::PhysicalDevice>& filterPhysicalDevices(cpp21::carg<uint32_t> groupIndex = 0u) {
+    virtual std::vector<vk::PhysicalDevice>& filterPhysicalDevices(cpp21::optional_ref<uint32_t> groupIndex = 0u) {
       //this->physicalDevices = {};
       decltype(auto) instanceObj = ANAMED::context->get<InstanceObj>(this->base);
       decltype(auto) deviceGroups = instanceObj->enumeratePhysicalDeviceGroups();
@@ -201,7 +201,7 @@ namespace ANAMED {
     };
 
     // 
-    virtual std::vector<vk::DeviceQueueCreateInfo>& filterQueueFamilies(cpp21::carg<std::vector<QueueFamilyCreateInfo>> qfInfosIn = {}) {
+    virtual std::vector<vk::DeviceQueueCreateInfo>& filterQueueFamilies(cpp21::optional_ref<std::vector<QueueFamilyCreateInfo>> qfInfosIn = {}) {
 
       // TODO: customize queue priorities
       auto& qfInfosVk = (this->queueFamilies.infos = {});
@@ -229,7 +229,7 @@ namespace ANAMED {
     };
 
     //
-    virtual std::vector<vk::CommandPool>& createCommandPools(cpp21::carg<std::vector<QueueFamilyCreateInfo>> qfInfosIn = {}) {
+    virtual std::vector<vk::CommandPool>& createCommandPools(cpp21::optional_ref<std::vector<QueueFamilyCreateInfo>> qfInfosIn = {}) {
       //uintptr_t index = 0u;
       auto& device = this->handle.as<vk::Device>(); // finally found issue
       if (!!device && this->queueFamilies.commandPools.size() <= 0u) {
@@ -248,7 +248,7 @@ namespace ANAMED {
             .flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
             .queueFamilyIndex = qfIndex,
           });
-          qfCommandPools.push_back(device.createCommandPool(qfCmdPoolInfo.ref()));
+          qfCommandPools.push_back(device.createCommandPool(qfCmdPoolInfo.value()));
           for (decltype(auto) i = 0u; i < qfInfoVk->queueCount; i++) {
             qfQueues.push_back(device.getQueue(qfIndex, i));
           };
@@ -283,7 +283,7 @@ namespace ANAMED {
     virtual std::vector<FenceType> const& getFences() const { return this->fences; };
 
     //
-    virtual FenceType executeCommandOnce(cpp21::carg<CommandOnceSubmission> submissionRef_ = {}) {
+    virtual FenceType executeCommandOnce(cpp21::optional_ref<CommandOnceSubmission> submissionRef_ = {}) {
       decltype(auto) submissionRef = std::make_shared<CommandOnceSubmission>(submissionRef_);
       auto& submission = submissionRef->submission;
       auto& device = this->handle.as<vk::Device>();
@@ -303,7 +303,7 @@ namespace ANAMED {
       auto submitInfo = vk::SubmitInfo2{};
       auto cIndex = 0u; for (auto& fn : submissionRef->commandInits) {
         auto& cmdBuf = commandBuffers[cIndex++];
-        cmdBuf.begin(vk::CommandBufferBeginInfo{ .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit, .pInheritanceInfo = submission.inheritanceInfo.get() });
+        cmdBuf.begin(vk::CommandBufferBeginInfo{ .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit, .pInheritanceInfo = cpp21::pointer(submission.inheritanceInfo) });
         auto result = fn(cmdBuf);
         cmdInfos.push_back(vk::CommandBufferSubmitInfo{
           .commandBuffer = cmdBuf,
@@ -379,7 +379,7 @@ namespace ANAMED {
   protected:
 
     // 
-    virtual void construct(std::shared_ptr<InstanceObj> instanceObj = {}, cpp21::carg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
+    virtual void construct(std::shared_ptr<InstanceObj> instanceObj = {}, cpp21::optional_ref<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
       //this->instanceObj = instanceObj;
       this->physicalDevices = {};
       this->extensionNames = {};
@@ -480,14 +480,14 @@ namespace ANAMED {
         std::cout << "" << std::endl;
 
         // 
-        deviceInfo->setQueueCreateInfos(this->filterQueueFamilies(this->cInfo->queueFamilyInfos.ref()));
-        deviceInfo->setPEnabledExtensionNames(this->filterExtensions(physicalDevice, this->cInfo->extensionList.ref()));
-        deviceInfo->setPEnabledLayerNames(this->filterLayers(physicalDevice, this->cInfo->layerList.ref()));
+        deviceInfo->setQueueCreateInfos(this->filterQueueFamilies(this->cInfo->queueFamilyInfos.value()));
+        deviceInfo->setPEnabledExtensionNames(this->filterExtensions(physicalDevice, this->cInfo->extensionList.value()));
+        deviceInfo->setPEnabledLayerNames(this->filterLayers(physicalDevice, this->cInfo->layerList.value()));
 
         // 
         if (deviceInfo) {
           //try {
-            this->handle = physicalDevice.createDevice(deviceInfo.ref(), nullptr, instanceObj->dispatch);
+            this->handle = physicalDevice.createDevice(deviceInfo.value(), nullptr, instanceObj->dispatch);
           //}
           //catch (std::exception e) {
             //std::cerr << "Unable to create device..." << std::endl;
@@ -497,7 +497,7 @@ namespace ANAMED {
         if (this->handle) {
           //VULKAN_HPP_DEFAULT_DISPATCHER.init(this->handle.as<vk::Device>());
           this->dispatch = vk::DispatchLoaderDynamic(this->base.as<vk::Instance>(), vkGetInstanceProcAddr, this->handle.as<vk::Device>(), vkGetDeviceProcAddr);
-          this->createCommandPools(this->cInfo->queueFamilyInfos.ref());
+          this->createCommandPools(this->cInfo->queueFamilyInfos.value());
         };
 
         // 
@@ -512,7 +512,7 @@ namespace ANAMED {
   public:
 
     // TODO: caching...
-    virtual vk::Queue const& getQueue(cpp21::carg<QueueGetInfo> info = {}) const {
+    virtual vk::Queue const& getQueue(cpp21::optional_ref<QueueGetInfo> info = {}) const {
       //return this->device.getQueue(info->queueFamilyIndex, info->queueIndex);
       decltype(auto) qfIndices = (this->queueFamilies.indices);
       decltype(auto) qfQueuesStack = (this->queueFamilies.queues);
@@ -521,16 +521,16 @@ namespace ANAMED {
     };
 
     //
-    virtual tType writeCopyBuffersCommand(cpp21::carg<CopyBufferWriteInfo> copyInfoRaw);
+    virtual tType writeCopyBuffersCommand(cpp21::optional_ref<CopyBufferWriteInfo> copyInfoRaw);
 
     //
-    virtual FenceType copyBuffersOnce(cpp21::carg<CopyBuffersExecutionOnce> copyInfo) {
+    virtual FenceType copyBuffersOnce(cpp21::optional_ref<CopyBuffersExecutionOnce> copyInfo) {
       decltype(auto) submission = CommandOnceSubmission{ .submission = copyInfo->submission };
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       
       // 
-      submission.commandInits.push_back([copyInfo, this](cpp21::carg<vk::CommandBuffer> cmdBuf) {
+      submission.commandInits.push_back([copyInfo, this](cpp21::optional_ref<vk::CommandBuffer> cmdBuf) {
         this->writeCopyBuffersCommand(copyInfo->writeInfo.with(cmdBuf));
         return cmdBuf;
       });
@@ -545,12 +545,12 @@ namespace ANAMED {
     };
 
     // 
-    DeviceObj(WrapShared<InstanceObj> instanceObj = {}, cpp21::carg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) : BaseObj(std::move(instanceObj->getHandle())), cInfo(cInfo) {
+    DeviceObj(WrapShared<InstanceObj> instanceObj = {}, cpp21::optional_ref<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) : BaseObj(std::move(instanceObj->getHandle())), cInfo(cInfo) {
       //this->construct(instanceObj, cInfo);
     };
 
     // 
-    DeviceObj(cpp21::carg<Handle> handle, cpp21::carg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
+    DeviceObj(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
       //this->construct(ANAMED::context->get<InstanceObj>(this->base), cInfo);
     };
 
@@ -566,7 +566,7 @@ namespace ANAMED {
     };
 
     //
-    inline static tType make(cpp21::carg<Handle> handle, cpp21::carg<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
+    inline static tType make(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
       auto shared = std::make_shared<DeviceObj>(handle, cInfo);
       shared->construct(ANAMED::context->get<InstanceObj>(handle).shared(), cInfo);
       auto wrap = shared->registerSelf();

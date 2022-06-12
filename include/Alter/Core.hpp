@@ -63,23 +63,6 @@ namespace ANAMED {
   };
 #endif
 
-#ifdef TYPE_SAFE_OPTIONAL_REF_HPP_INCLUDED
-  template<class T = cpp21::void_t> using optional_ref = ts::optional_ref<T>;
-  CPP21_FN_ALIAS(opt_ref, ts::opt_ref);
-  CPP21_FN_ALIAS(opt_cref, ts::opt_cref);
-#else 
-  template<class T = cpp21::void_t> using optional_ref = cpp21::optional_ref<T>;
-  CPP21_FN_ALIAS(opt_ref, cpp21::opt_ref);
-  CPP21_FN_ALIAS(opt_cref, cpp21::opt_cref);
-#endif
-
-//
-//#ifdef ALT_USE_ROBIN_HOOD
-//#define ALT_UNORDERED_MAP robin_hood::unordered_map
-//#else
-//#define ALT_UNORDERED_MAP std::unordered_map
-//#endif
-
   //
   enum class MemoryUsage : uint32_t {
     eUnknown = 0u,
@@ -317,7 +300,7 @@ namespace ANAMED {
 
     bool hasDeviceAddress = false;
     bool needsDestructor = true;
-    cpp21::carg<DedicatedMemory> dedicated = {};
+    std::optional<DedicatedMemory> dedicated = {};
   };
 
   // 
@@ -656,7 +639,7 @@ namespace ANAMED {
     uintptr_t uploader = 0ull;
 
     // 
-    cpp21::carg<QueueGetInfo> info = QueueGetInfo{};
+    std::optional<QueueGetInfo> info = QueueGetInfo{};
   };
 
   //
@@ -669,7 +652,7 @@ namespace ANAMED {
     bool isTranslucent = false;
 
     // 
-    cpp21::carg<QueueGetInfo> info = QueueGetInfo{};
+    std::optional<QueueGetInfo> info = QueueGetInfo{};
   };
 
   //
@@ -756,7 +739,7 @@ namespace ANAMED {
 
   //
   struct PipelineLayoutCreateInfo : BaseCreateInfo {
-    cpp21::carg<QueueGetInfo> info = QueueGetInfo{};
+    std::optional<QueueGetInfo> info = QueueGetInfo{};
   };
 
   //
@@ -781,22 +764,22 @@ namespace ANAMED {
     uint32_t layerCount = 1u;
 
     vk::ImageLayout layout = vk::ImageLayout::eGeneral;
-    cpp21::carg<ImageSwapchainInfo> swapchain = {};
-    cpp21::carg<QueueGetInfo> info = QueueGetInfo{};
+    std::optional<ImageSwapchainInfo> swapchain = {};
+    std::optional<QueueGetInfo> info = QueueGetInfo{};
     ImageType type = ImageType::eStorage;
   };
 
   //
   struct SamplerCreateInfo : BaseCreateInfo {
     vk::PipelineLayout descriptors = {};
-    cpp21::carg<vk::SamplerCreateInfo> native = {};
+    std::optional<vk::SamplerCreateInfo> native = {};
   };
 
   //
   struct BufferCreateInfo : BaseCreateInfo {
     size_t size = 0ull;
     BufferType type = BufferType::eStorage;
-    cpp21::carg<QueueGetInfo> info = QueueGetInfo{};
+    std::optional<QueueGetInfo> info = QueueGetInfo{};
   };
 
   
@@ -806,11 +789,11 @@ namespace ANAMED {
     vk::PipelineLayout descriptors = {};
     std::optional<vk::Buffer> buffer = {};
     std::optional<vk::Image> image = {};
-    cpp21::carg<BufferCreateInfo> bufferInfo = {};
-    cpp21::carg<ImageCreateInfo> imageInfo = {};
+    std::optional<BufferCreateInfo> bufferInfo = {};
+    std::optional<ImageCreateInfo> imageInfo = {};
 
     // 
-    ResourceCreateInfo use(cpp21::carg<ExtensionName> extName = ExtensionName::eMemoryAllocator) {
+    ResourceCreateInfo use(cpp21::optional_ref<ExtensionName> extName = ExtensionName::eMemoryAllocator) {
 
       decltype(auto) copy = *this; if (!copy.extUsed) { copy.extUsed = std::make_shared<EXIP>(); }; if (copy.extUsed) { (*copy.extUsed)[ExtensionInfoName::eMemoryAllocator] = extName; }; return copy;
     };
@@ -819,8 +802,8 @@ namespace ANAMED {
   // TODO: optional componentMapping
   struct ImageViewCreateInfo : BaseCreateInfo {
     vk::ImageViewType viewType = vk::ImageViewType::e2D;
-    cpp21::carg<vk::ImageSubresourceRange> subresourceRange = {};
-    cpp21::carg<vk::ComponentMapping> componentMapping = {};
+    std::optional<vk::ImageSubresourceRange> subresourceRange = {};
+    std::optional<vk::ComponentMapping> componentMapping = {};
     ImageViewPreference preference = ImageViewPreference::eSampled;
   };
 
@@ -884,10 +867,10 @@ namespace ANAMED {
 
     // 
     std::optional<vk::ImageLayout> oldImageLayout = {};
-    cpp21::carg<vk::ImageSubresourceRange> subresourceRange = {};
+    std::optional<vk::ImageSubresourceRange> subresourceRange = {};
     
     //
-    decltype(auto) with(cpp21::carg<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
+    decltype(auto) with(cpp21::optional_ref<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
   };
 
   //
@@ -897,25 +880,25 @@ namespace ANAMED {
     uint32_t queueFamilyIndex = 0u;
 
     //
-    cpp21::carg<vk::ImageSubresourceRange> subresourceRange = {};
+    std::optional<vk::ImageSubresourceRange> subresourceRange = {};
 
     //
-    decltype(auto) with(cpp21::carg<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
+    decltype(auto) with(cpp21::optional_ref<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
   };
 
   //
   struct SubmissionInfo : BaseCreateInfo {
-    cpp21::carg<QueueGetInfo> info = QueueGetInfo{};
-    cpp21::carg<vk::CommandBufferInheritanceInfo> inheritanceInfo = {};
-    std::vector<std::function<void(cpp21::carg<vk::Result>)>> onDone = {};
+    std::optional<QueueGetInfo> info = QueueGetInfo{};
+    std::optional<vk::CommandBufferInheritanceInfo> inheritanceInfo = {};
+    std::vector<std::function<void(vk::Result)>> onDone = {};
     cpp21::shared_vector<vk::SemaphoreSubmitInfo> waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
     cpp21::shared_vector<vk::SemaphoreSubmitInfo> signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
   };
 
   //
   struct ImageLayoutSwitchInfo : BaseCreateInfo {
-    cpp21::carg<QueueGetInfo> info = QueueGetInfo{};
-    cpp21::carg<ImageLayoutSwitchWriteInfo> switchInfo = {};
+    std::optional<QueueGetInfo> info = QueueGetInfo{};
+    std::optional<ImageLayoutSwitchWriteInfo> switchInfo = {};
 
     // 
     SubmissionInfo submission = {};
@@ -969,37 +952,37 @@ namespace ANAMED {
   //
   struct UniformDataWriteSet : BaseCreateInfo {
     vk::CommandBuffer cmdBuf = {};
-    cpp21::carg<QueueGetInfo> info = QueueGetInfo{};
-    cpp21::carg<DataRegion> region = DataRegion{};
+    std::optional<QueueGetInfo> info = QueueGetInfo{};
+    std::optional<DataRegion> region = DataRegion{};
     cpp21::data_view<char8_t> data = {};
 
     //
-    decltype(auto) with(cpp21::carg<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
+    decltype(auto) with(cpp21::optional_ref<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
   };
 
   //
   struct CacheDataWriteSet : BaseCreateInfo {
     vk::CommandBuffer cmdBuf = {};
-    cpp21::carg<QueueGetInfo> info = QueueGetInfo{};
-    cpp21::carg<DataRegion> region = DataRegion{};
+    std::optional<QueueGetInfo> info = QueueGetInfo{};
+    std::optional<DataRegion> region = DataRegion{};
     cpp21::data_view<char8_t> data = {};
     uintptr_t page = 0ull;
 
     //
-    decltype(auto) with(cpp21::carg<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
+    decltype(auto) with(cpp21::optional_ref<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
   };
 
   // 
   struct UniformDataSet : BaseCreateInfo {
-    cpp21::carg<UniformDataWriteSet> writeInfo = {};
-    cpp21::carg<QueueGetInfo> info = QueueGetInfo{};
+    std::optional<UniformDataWriteSet> writeInfo = {};
+    std::optional<QueueGetInfo> info = QueueGetInfo{};
     SubmissionInfo submission = {};
   };
 
   // 
   struct CacheDataSet : BaseCreateInfo {
-    cpp21::carg<CacheDataWriteSet> writeInfo = {};
-    cpp21::carg<QueueGetInfo> info = QueueGetInfo{};
+    std::optional<CacheDataWriteSet> writeInfo = {};
+    std::optional<QueueGetInfo> info = QueueGetInfo{};
     SubmissionInfo submission = {};
   };
 
@@ -1007,7 +990,7 @@ namespace ANAMED {
 
   //
   struct InstanceDraw {
-    cpp21::carg<InstanceDrawInfo> drawConst = {};
+    std::optional<InstanceDrawInfo> drawConst = {};
     cpp21::shared_vector<vk::MultiDrawInfoEXT> drawInfos = std::vector<vk::MultiDrawInfoEXT>{};
   };
 
@@ -1039,10 +1022,10 @@ namespace ANAMED {
     uintptr_t pipelineIndex = 0ull;
 
     //
-    cpp21::carg<InstanceAddressBlock> instanceAddressBlock = {};
+    std::optional<InstanceAddressBlock> instanceAddressBlock = {};
 
     //
-    decltype(auto) with(cpp21::carg<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
+    decltype(auto) with(cpp21::optional_ref<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
   };
 
   //
@@ -1056,25 +1039,25 @@ namespace ANAMED {
     std::vector<InstanceDraw> instanceDraws = {}; // currently, problematic for dynamic rendering... 
 
     // 
-    cpp21::carg<InstanceAddressBlock> instanceAddressBlock = {};
+    std::optional<InstanceAddressBlock> instanceAddressBlock = {};
 
     //
-    decltype(auto) with(cpp21::carg<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
+    decltype(auto) with(cpp21::optional_ref<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
   };
 
 
   //
   struct ExecutePipelineInfo : BaseCreateInfo {
-    cpp21::carg<WriteGraphicsInfo> graphics = {};
-    cpp21::carg<WriteComputeInfo> compute = {};
-    cpp21::carg<QueueGetInfo> info = QueueGetInfo{};
+    std::optional<WriteGraphicsInfo> graphics = {};
+    std::optional<WriteComputeInfo> compute = {};
+    std::optional<QueueGetInfo> info = QueueGetInfo{};
     SubmissionInfo submission = {};
   };
 
 
   //
   struct CommandOnceSubmission : BaseCreateInfo {
-    std::vector<std::function<cpp21::carg<vk::CommandBuffer>(cpp21::carg<vk::CommandBuffer>)>> commandInits = {};
+    std::vector<std::function<vk::CommandBuffer(vk::CommandBuffer const&)>> commandInits = {};
     SubmissionInfo submission = {};
   };
 
@@ -1084,11 +1067,11 @@ namespace ANAMED {
     vk::CommandBuffer cmdBuf = {};
 
     // 
-    cpp21::carg<BufferRegion> src = BufferRegion{};
-    cpp21::carg<BufferRegion> dst = BufferRegion{};
+    std::optional<BufferRegion> src = BufferRegion{};
+    std::optional<BufferRegion> dst = BufferRegion{};
 
     //
-    decltype(auto) with(cpp21::carg<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
+    decltype(auto) with(cpp21::optional_ref<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
   };
 
 
@@ -1098,7 +1081,7 @@ namespace ANAMED {
     std::vector<vk::Image> images = {};
 
     //
-    decltype(auto) with(cpp21::carg<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
+    decltype(auto) with(cpp21::optional_ref<vk::CommandBuffer> cmd) const { auto copy = *this; copy.cmdBuf = cmd; return copy; };
   };
 
   //
@@ -1108,12 +1091,12 @@ namespace ANAMED {
     uintptr_t hostMapOffset = 0ull;
 
     // 
-    cpp21::carg<ImageRegion> dstImage = {};
-    cpp21::carg<BufferRegion> dstBuffer = {};
+    std::optional<ImageRegion> dstImage = {};
+    std::optional<BufferRegion> dstBuffer = {};
 
     //
-    decltype(auto) with(cpp21::carg<vk::CommandBuffer> cmd, cpp21::carg<vk::Buffer> buffer = {}) const { auto copy = *this; copy.cmdBuf = cmd; if (buffer && *buffer) { copy.bunchBuffer = buffer; }; return copy; };
-    decltype(auto) mapOffset(cpp21::carg<uintptr_t> offset) const { auto copy = *this; copy.hostMapOffset = offset; return copy; };
+    decltype(auto) with(cpp21::optional_ref<vk::CommandBuffer> cmd, cpp21::optional_ref<vk::Buffer> buffer = {}) const { auto copy = *this; copy.cmdBuf = cmd; if (buffer && *buffer) { copy.bunchBuffer = buffer; }; return copy; };
+    decltype(auto) mapOffset(cpp21::optional_ref<uintptr_t> offset) const { auto copy = *this; copy.hostMapOffset = offset; return copy; };
   };
 
   //
@@ -1123,11 +1106,11 @@ namespace ANAMED {
     uintptr_t hostMapOffset = 0ull;
 
     // 
-    cpp21::carg<BufferRegion> srcBuffer = {};
+    std::optional<BufferRegion> srcBuffer = {};
 
     //
-    decltype(auto) with(cpp21::carg<vk::CommandBuffer> cmd, cpp21::carg<vk::Buffer> buffer = {}) const { auto copy = *this; copy.cmdBuf = cmd; if (buffer && *buffer) { copy.bunchBuffer = buffer; }; return copy; };
-    decltype(auto) mapOffset(cpp21::carg<uintptr_t> offset) const { auto copy = *this; copy.hostMapOffset = offset; return copy; };
+    decltype(auto) with(cpp21::optional_ref<vk::CommandBuffer> cmd, cpp21::optional_ref<vk::Buffer> buffer = {}) const { auto copy = *this; copy.cmdBuf = cmd; if (buffer && *buffer) { copy.bunchBuffer = buffer; }; return copy; };
+    decltype(auto) mapOffset(cpp21::optional_ref<uintptr_t> offset) const { auto copy = *this; copy.hostMapOffset = offset; return copy; };
   };
 
 
@@ -1155,11 +1138,11 @@ namespace ANAMED {
 
   //
   struct UploaderCreateInfo : BaseCreateInfo {
-    cpp21::carg<QueueGetInfo> info = QueueGetInfo{};
+    std::optional<QueueGetInfo> info = QueueGetInfo{};
     size_t cacheSize = 8192ull * 8192ull * 4ull;
 
     // 
-    UploaderCreateInfo use(cpp21::carg<ExtensionName> extName = ExtensionName::eMemoryAllocator) {
+    UploaderCreateInfo use(cpp21::optional_ref<ExtensionName> extName = ExtensionName::eMemoryAllocator) {
 
       decltype(auto) copy = *this; if (!copy.extUsed) { copy.extUsed = std::make_shared<EXIP>(); }; if (copy.extUsed) { (*copy.extUsed)[ExtensionInfoName::eMemoryAllocator] = extName; }; return copy;
     };
@@ -1190,8 +1173,8 @@ namespace ANAMED {
   //
   struct PipelineCreateInfo : BaseCreateInfo {
     vk::PipelineLayout layout = {};
-    cpp21::carg<ComputePipelineCreateInfo> compute = {};
-    cpp21::carg<GraphicsPipelineCreateInfo> graphics = {};
+    std::optional<ComputePipelineCreateInfo> compute = {};
+    std::optional<GraphicsPipelineCreateInfo> graphics = {};
   };
 
   //
@@ -1207,7 +1190,7 @@ namespace ANAMED {
     vk::PipelineLayout layout = {};
     vk::Extent2D extent = {640u, 480u};
     uint32_t minImageCount = 2u;
-    cpp21::carg<QueueGetInfo> info = {};
+    std::optional<QueueGetInfo> info = {};
     cpp21::obj<AttachmentLayout> attachmentLayout = defaultAttachmentLayout;
   };
 
@@ -1215,7 +1198,7 @@ namespace ANAMED {
   struct SwapchainCreateInfo : BaseCreateInfo {
     vk::PipelineLayout layout = {};
     vk::SurfaceKHR surface = {};
-    cpp21::carg<QueueGetInfo> info = {};
+    std::optional<QueueGetInfo> info = {};
   };
 
   //
@@ -1225,7 +1208,7 @@ namespace ANAMED {
     uint32_t minImageCount = 1u;
     std::vector<uint32_t> split = {};
     std::vector<vk::Format> formats = {};
-    cpp21::carg<QueueGetInfo> info = {};
+    std::optional<QueueGetInfo> info = {};
   };
 
   //
@@ -1292,8 +1275,8 @@ namespace ANAMED {
     operator vk::PipelineShaderStageRequiredSubgroupSizeCreateInfoEXT const& () const { return sgmp; };
 
     //
-    decltype(auto) operator =(cpp21::carg<vk::PipelineShaderStageCreateInfo> spi) { (this->spi = spi); return *this; };
-    decltype(auto) operator =(cpp21::carg<vk::PipelineShaderStageRequiredSubgroupSizeCreateInfoEXT> sgmp) { (this->sgmp = sgmp); return *this; };
+    decltype(auto) operator =(cpp21::optional_ref<vk::PipelineShaderStageCreateInfo> spi) { (this->spi = spi); return *this; };
+    decltype(auto) operator =(cpp21::optional_ref<vk::PipelineShaderStageRequiredSubgroupSizeCreateInfoEXT> sgmp) { (this->sgmp = sgmp); return *this; };
   };
 
   // 
@@ -1311,30 +1294,30 @@ namespace ANAMED {
     operator vk::ShaderModuleValidationCacheCreateInfoEXT const& () const { return validInfo; };
 
     //
-    decltype(auto) operator =(cpp21::carg<vk::ShaderModuleCreateInfo> info) { (this->info = info); return *this; };
-    decltype(auto) operator =(cpp21::carg<vk::ShaderModuleValidationCacheCreateInfoEXT> validInfo) { (this->validInfo = validInfo); return *this; };
+    decltype(auto) operator =(cpp21::optional_ref<vk::ShaderModuleCreateInfo> info) { (this->info = info); return *this; };
+    decltype(auto) operator =(cpp21::optional_ref<vk::ShaderModuleValidationCacheCreateInfoEXT> validInfo) { (this->validInfo = validInfo); return *this; };
   };
 
   // 
   inline static std::vector<uint32_t> eTempCode = {};
 
   // 
-  static inline decltype(auto) makeShaderModuleInfo(cpp21::carg<std::vector<uint32_t>> code) {
+  static inline decltype(auto) makeShaderModuleInfo(cpp21::optional_ref<std::vector<uint32_t>> code) {
     return ShaderModuleCreateInfo{ .info = vk::ShaderModuleCreateInfo{.codeSize = code->size() * 4ull, .pCode = code->data() } };
   };
 
   // 
-  static inline decltype(auto) createShaderModule(cpp21::carg<vk::Device> device, cpp21::carg<ShaderModuleCreateInfo> info = {}) {
+  static inline decltype(auto) createShaderModule(cpp21::optional_ref<vk::Device> device, cpp21::optional_ref<ShaderModuleCreateInfo> info = {}) {
     return device->createShaderModule(info->info);
   };
 
   // 
-  static inline decltype(auto) createShaderModule(cpp21::carg<vk::Device> device, cpp21::carg<std::vector<uint32_t>> code = {}) {
+  static inline decltype(auto) createShaderModule(cpp21::optional_ref<vk::Device> device, cpp21::optional_ref<std::vector<uint32_t>> code = {}) {
     return createShaderModule(device, makeShaderModuleInfo(eTempCode = code));
   };
 
   // create shader module 
-  static inline decltype(auto) makePipelineStageInfo(cpp21::carg<vk::Device> device, cpp21::carg<std::vector<uint32_t>> code = {}, vk::ShaderStageFlagBits stage = vk::ShaderStageFlagBits::eCompute, cpp21::carg<char const*> entry = "main") {
+  static inline decltype(auto) makePipelineStageInfo(cpp21::optional_ref<vk::Device> device, cpp21::optional_ref<std::vector<uint32_t>> code = {}, vk::ShaderStageFlagBits stage = vk::ShaderStageFlagBits::eCompute, cpp21::optional_ref<char const*> entry = "main") {
     vk::PipelineShaderStageCreateInfo spi = {
       .stage = stage,
       .pName = entry.value(),
@@ -1345,7 +1328,7 @@ namespace ANAMED {
   };
 
   // create compute
-  static inline decltype(auto) makeComputePipelineStageInfo(cpp21::carg<vk::Device> device, cpp21::carg<std::vector<uint32_t>> code = {}, cpp21::carg<const char*> entry = "main", cpp21::carg<uint32_t> subgroupSize = 0u) {
+  static inline decltype(auto) makeComputePipelineStageInfo(cpp21::optional_ref<vk::Device> device, cpp21::optional_ref<std::vector<uint32_t>> code = {}, cpp21::optional_ref<const char*> entry = "main", cpp21::optional_ref<uint32_t> subgroupSize = 0u) {
     decltype(auto) f = ComputeStageCreateInfo{};
     f.spi = makePipelineStageInfo(device, code, vk::ShaderStageFlagBits::eCompute, entry);
     f.spi.flags = vk::PipelineShaderStageCreateFlags{ vk::PipelineShaderStageCreateFlagBits::eRequireFullSubgroups };
@@ -1415,16 +1398,16 @@ namespace ANAMED {
 
   public:
     Handle() {};
-    Handle(auto const& _handle, cpp21::carg<HandleType> type, cpp21::carg<uint32_t> family = 0u) : value(reinterpret_cast<uintptr_t const&>(_handle)), type(type), family(family) {};
-    Handle(auto const& _handle, cpp21::carg<uint32_t> family = 0u) : value(reinterpret_cast<uintptr_t const&>(_handle)), type(getHandleType(_handle)), family(family) {};
-    Handle(cpp21::carg<Handle> _handle) : value(_handle ? _handle->value : 0ull), type(_handle ? _handle->type : HandleType::eUnknown), family(_handle ? _handle->family : 0u) {};
+    Handle(auto const& _handle, cpp21::optional_ref<HandleType> type, cpp21::optional_ref<uint32_t> family = 0u) : value(reinterpret_cast<uintptr_t const&>(_handle)), type(type), family(family) {};
+    Handle(auto const& _handle, cpp21::optional_ref<uint32_t> family = 0u) : value(reinterpret_cast<uintptr_t const&>(_handle)), type(getHandleType(_handle)), family(family) {};
+    Handle(cpp21::optional_ref<Handle> _handle) : value(_handle ? _handle->value : 0ull), type(_handle ? _handle->type : HandleType::eUnknown), family(_handle ? _handle->family : 0u) {};
 
     // 
     template<class T = uintptr_t> inline decltype(auto) as() { return reinterpret_cast<T&>(this->value); };
     template<class T = uintptr_t> inline decltype(auto) as() const { return reinterpret_cast<T const&>(this->value); };
 
     // 
-    inline decltype(auto) with(cpp21::carg<uint32_t> family = 0u) const { return Handle(this->value, this->type, family); };
+    inline decltype(auto) with(cpp21::optional_ref<uint32_t> family = 0u) const { return Handle(this->value, this->type, family); };
 
     // 
     //template<class T = uintptr_t> inline operator T& () { return this->as<T>(); };
@@ -1441,7 +1424,7 @@ namespace ANAMED {
     };
 
     //
-    inline decltype(auto) operator =(cpp21::carg<Handle> handle) {
+    inline decltype(auto) operator =(cpp21::optional_ref<Handle> handle) {
       this->value = handle->value, this->type = handle->type, this->family = handle->family;
       return *this;
     };
@@ -1458,7 +1441,7 @@ namespace ANAMED {
     operator Handle const& () const { return this->ptr->getHandle(); };
 
     //
-    inline operator cpp21::carg<Handle>() const { return this->ptr->getHandle(); };
+    inline operator cpp21::optional_ref<Handle>() const { return this->ptr->getHandle(); };
     inline operator bool() const { return !!this->ptr && this->ptr->isAlive(); };
 
     // 
@@ -1494,7 +1477,7 @@ namespace ANAMED {
     inline operator std::shared_ptr<T> const& () const { return this->ptr; };
 
     // 
-    inline decltype(auto) with(cpp21::carg<uint32_t> family = 0u) const { return this->ptr->getHandle().with(family); };
+    inline decltype(auto) with(cpp21::optional_ref<uint32_t> family = 0u) const { return this->ptr->getHandle().with(family); };
 
     // we forbid to change handle directly
 
@@ -1632,7 +1615,7 @@ namespace ANAMED {
     };
 
     // 
-    BaseObj(cpp21::carg<Handle> base = {}, cpp21::carg<Handle> handle = {}) : base(base ? base.ref() : Handle{}), handle(handle ? handle.ref() : Handle{}), infoMap(std::make_shared<MSS>()), callstack(std::make_shared<CallStack>()), handleObjectMap(std::make_shared<HMAP_T>()) {
+    BaseObj(cpp21::optional_ref<Handle> base = {}, cpp21::optional_ref<Handle> handle = {}) : base(base ? base.value() : Handle{}), handle(handle ? handle.value() : Handle{}), infoMap(std::make_shared<MSS>()), callstack(std::make_shared<CallStack>()), handleObjectMap(std::make_shared<HMAP_T>()) {
 
     };
 
@@ -1643,7 +1626,7 @@ namespace ANAMED {
 
     //
     template<class T = BaseObj>
-    inline std::shared_ptr<T> emplace(cpp21::carg<Handle> handle) {
+    inline std::shared_ptr<T> emplace(cpp21::optional_ref<Handle> handle) {
       std::shared_ptr<T> sh_ptr = {};
       if (handleObjectMap->find(handle->type) != handleObjectMap->end()) {
         decltype(auto) objMap = handleObjectMap->at(handle->type);
@@ -1662,7 +1645,7 @@ namespace ANAMED {
 
     //
     template<class T = BaseObj>
-    inline void registerObj(cpp21::carg<Handle> handle, std::shared_ptr<T> obj = {}) {
+    inline void registerObj(cpp21::optional_ref<Handle> handle, std::shared_ptr<T> obj = {}) {
       if (handleObjectMap->find(handle->type) == handleObjectMap->end()) { (*handleObjectMap)[handle->type] = {}; };
       decltype(auto) map = handleObjectMap->at(handle->type);
       if (!map) { (*handleObjectMap)[handle->type] = (map = std::make_shared<HMAP_C>()); };
@@ -1673,7 +1656,7 @@ namespace ANAMED {
     //
     template<class T = BaseObj>
     inline void registerObj(auto const& handle, std::shared_ptr<T> obj = {}) {
-      return this->registerObj(cpp21::carg<Handle>(Handle(handle)), obj);
+      return this->registerObj(cpp21::optional_ref<Handle>(Handle(handle)), obj);
     };
 
     //
@@ -1687,7 +1670,7 @@ namespace ANAMED {
 
     //
     template<class T = BaseObj>
-    inline void registerExt(cpp21::carg<ExtensionName> extName, std::shared_ptr<T> obj = {}) {
+    inline void registerExt(cpp21::optional_ref<ExtensionName> extName, std::shared_ptr<T> obj = {}) {
       this->registerObj(Handle(uintptr_t(*extName), HandleType::eExtension), obj);
       //return shared_from_this();
     };
@@ -1701,7 +1684,7 @@ namespace ANAMED {
 
     //
     template<class T = BaseObj>
-    inline decltype(auto) get(cpp21::carg<Handle> handle) {
+    inline decltype(auto) get(cpp21::optional_ref<Handle> handle) {
       if (handleObjectMap->find(handle->type) == handleObjectMap->end()) {
         (*handleObjectMap)[handle->type] = std::make_shared<HMAP_C>();
       };
@@ -1720,26 +1703,26 @@ namespace ANAMED {
 
     //
     template<class T = BaseObj>
-    inline decltype(auto) get(cpp21::carg<Handle> handle) const {
+    inline decltype(auto) get(cpp21::optional_ref<Handle> handle) const {
       decltype(auto) objMap = handleObjectMap->at(handle->type);
       return WrapShared<T>(std::dynamic_pointer_cast<T>(objMap->at(handle->value).shared()));
     };
 
     //
     template<class T = BaseObj>
-    inline decltype(auto) getExt(cpp21::carg<ExtensionName> hValue) {
+    inline decltype(auto) getExt(cpp21::optional_ref<ExtensionName> hValue) {
       return this->get<T>(Handle(uintptr_t(*hValue), HandleType::eExtension));
     };
 
     //
     template<class T = BaseObj>
-    inline decltype(auto) getExt(cpp21::carg<ExtensionName> hValue) const {
+    inline decltype(auto) getExt(cpp21::optional_ref<ExtensionName> hValue) const {
       return this->get<T>(Handle(uintptr_t(*hValue), HandleType::eExtension));
     };
 
     //
-    template<class T = BaseObj> inline WrapShared<T> get(Handle const& handle) { return this->get<T>(cpp21::carg<Handle>(handle)); };
-    template<class T = BaseObj> inline WrapShared<T> get(Handle const& handle) const { return this->get<T>(cpp21::carg<Handle>(handle)); };
+    template<class T = BaseObj> inline WrapShared<T> get(Handle const& handle) { return this->get<T>(cpp21::optional_ref<Handle>(handle)); };
+    template<class T = BaseObj> inline WrapShared<T> get(Handle const& handle) const { return this->get<T>(cpp21::optional_ref<Handle>(handle)); };
   };
 
 

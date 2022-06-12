@@ -56,12 +56,12 @@ namespace ANAMED {
   public:
 
     // 
-    UploaderObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::carg<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
+    UploaderObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::optional_ref<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
       //this->construct(deviceObj, cInfo);
     };
 
     // 
-    UploaderObj(cpp21::carg<Handle> handle, cpp21::carg<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
+    UploaderObj(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
       //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
@@ -77,7 +77,7 @@ namespace ANAMED {
     };
 
     //
-    inline static tType make(cpp21::carg<Handle> handle, cpp21::carg<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) {
+    inline static tType make(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) {
       auto shared = std::make_shared<UploaderObj>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle).shared(), cInfo);
       auto wrap = shared->registerSelf();
@@ -97,8 +97,8 @@ namespace ANAMED {
     // you can copy from host to device Buffer and Image together!
     // TODO: per-type role based barriers...
     // TODO: image, imageType and imageLayout supports...
-    virtual tType writeDownloadToResourceCmd(cpp21::carg<DownloadCommandWriteInfo> info);
-    virtual tType writeUploadToResourceCmd(cpp21::carg<UploadCommandWriteInfo> copyRegionInfo);
+    virtual tType writeDownloadToResourceCmd(cpp21::optional_ref<DownloadCommandWriteInfo> info);
+    virtual tType writeUploadToResourceCmd(cpp21::optional_ref<UploadCommandWriteInfo> copyRegionInfo);
 
     //
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
@@ -122,7 +122,7 @@ namespace ANAMED {
     };
 
     //
-    virtual std::shared_ptr<AllocatedMemory> allocateMemory(cpp21::carg<MemoryRequirements> requirements) {
+    virtual std::shared_ptr<AllocatedMemory> allocateMemory(cpp21::optional_ref<MemoryRequirements> requirements) {
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) memoryAllocatorObj = deviceObj->getExt<MemoryAllocatorObj>(this->cInfo->extUsed && this->cInfo->extUsed->find(ExtensionInfoName::eMemoryAllocator) != this->cInfo->extUsed->end() ? this->cInfo->extUsed->at(ExtensionInfoName::eMemoryAllocator) : ExtensionName::eMemoryAllocator);
       decltype(auto) allocated = std::make_shared<AllocatedMemory>();
@@ -187,7 +187,7 @@ namespace ANAMED {
     };
 
     //
-    virtual FenceType bindMemoryPages(cpp21::carg<SubmissionInfo> submission = {}) {
+    virtual FenceType bindMemoryPages(cpp21::optional_ref<SubmissionInfo> submission = {}) {
       decltype(auto) bindSparseInfo = infoMap->get<vk::BindSparseInfo>(vk::StructureType::eBindSparseInfo);
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
@@ -265,7 +265,7 @@ namespace ANAMED {
     virtual size_t getImagePixelSize(vk::Image const& image);
 
     //
-    virtual FenceType executeUploadToResourceOnce(cpp21::carg<UploadExecutionOnce> exec) {
+    virtual FenceType executeUploadToResourceOnce(cpp21::optional_ref<UploadExecutionOnce> exec) {
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo {.info = this->cInfo->info } };
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
@@ -294,14 +294,14 @@ namespace ANAMED {
       };
 
       // 
-      submission.commandInits.push_back([exec, offset, memPage, this](cpp21::carg<vk::CommandBuffer> cmdBuf) {
+      submission.commandInits.push_back([exec, offset, memPage, this](cpp21::optional_ref<vk::CommandBuffer> cmdBuf) {
         this->writeUploadToResourceCmd(exec->writeInfo.with(cmdBuf, memPage->bunchBuffer).mapOffset(offset));
         return cmdBuf;
       });
 
       //
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
-      submission.submission.onDone.push_back([memPage, mappedBlock=this->mappedBlock, alloc](cpp21::carg<vk::Result> result) {
+      submission.submission.onDone.push_back([memPage, mappedBlock=this->mappedBlock, alloc](cpp21::optional_ref<vk::Result> result) {
         vmaVirtualFree(mappedBlock, alloc);
         memPage->destructor();
       });
@@ -313,7 +313,7 @@ namespace ANAMED {
     };
 
     //
-    virtual FenceType executeDownloadToResourceOnce(cpp21::carg<DownloadExecutionOnce> exec) {
+    virtual FenceType executeDownloadToResourceOnce(cpp21::optional_ref<DownloadExecutionOnce> exec) {
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = this->cInfo->info } };
       decltype(auto) mappedBuffer = this->mappedBuffer;
       decltype(auto) device = this->base.as<vk::Device>();
@@ -331,19 +331,19 @@ namespace ANAMED {
 #endif
 
       // 
-      submission.commandInits.push_back([exec, memPage, offset, this](cpp21::carg<vk::CommandBuffer> cmdBuf) {
+      submission.commandInits.push_back([exec, memPage, offset, this](cpp21::optional_ref<vk::CommandBuffer> cmdBuf) {
         this->writeDownloadToResourceCmd(exec->writeInfo.with(cmdBuf, memPage->bunchBuffer).mapOffset(offset));
         return cmdBuf;
       });
 
       //
       if (exec->host) {
-        submission.submission.onDone.push_back([offset, size, _host = exec->host, mapped = memPage->mapped](cpp21::carg<vk::Result> result) {
+        submission.submission.onDone.push_back([offset, size, _host = exec->host, mapped = memPage->mapped](cpp21::optional_ref<vk::Result> result) {
           memcpy(_host.data(), cpp21::shift(mapped, 0), size);
         });
 
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
-        submission.submission.onDone.push_back([mappedBlock = this->mappedBlock, alloc](cpp21::carg<vk::Result> result) {
+        submission.submission.onDone.push_back([mappedBlock = this->mappedBlock, alloc](cpp21::optional_ref<vk::Result> result) {
           vmaVirtualFree(mappedBlock, alloc);
         });
 #endif
@@ -358,7 +358,7 @@ namespace ANAMED {
   protected:
 
     // 
-    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::carg<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) {
+    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::optional_ref<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) {
       if (cInfo) { this->cInfo = cInfo; };
       //this->deviceObj = deviceObj;
 

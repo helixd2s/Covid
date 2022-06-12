@@ -44,12 +44,12 @@ namespace ANAMED {
 
   public:
     // 
-    PipelineObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::carg<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
+    PipelineObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::optional_ref<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
       //this->construct(deviceObj, cInfo);
     };
 
     // 
-    PipelineObj(cpp21::carg<Handle> handle, cpp21::carg<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
+    PipelineObj(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
       //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
@@ -65,7 +65,7 @@ namespace ANAMED {
     };
 
     //
-    inline static tType make(cpp21::carg<Handle> handle, cpp21::carg<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) {
+    inline static tType make(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) {
       auto shared = std::make_shared<PipelineObj>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle).shared(), cInfo);
       auto wrap = shared->registerSelf();
@@ -79,7 +79,7 @@ namespace ANAMED {
   protected:
     
     //
-    virtual void createCompute(cpp21::carg<ComputePipelineCreateInfo> compute = {}) {
+    virtual void createCompute(cpp21::optional_ref<ComputePipelineCreateInfo> compute = {}) {
       decltype(auto) descriptors = ANAMED::context->get<DeviceObj>(this->base)->get<PipelineLayoutObj>(this->cInfo->layout);
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) crInfo = makeComputePipelineStageInfo(device, *compute->code); this->pipelineStages.push_back(crInfo);
@@ -90,14 +90,14 @@ namespace ANAMED {
       });
 
       
-      this->handle = std::move<vk::Pipeline>(handleResult(device.createComputePipeline(descriptors->cache, cmInfo.ref())));
+      this->handle = std::move<vk::Pipeline>(handleResult(device.createComputePipeline(descriptors->cache, cmInfo.value())));
       //
       //ANAMED::context->get(this->base)->registerObj(this->handle, shared_from_this());
       //return this->SFT();
     };
 
     //
-    virtual void createGraphics(cpp21::carg<GraphicsPipelineCreateInfo> graphics = {}) {
+    virtual void createGraphics(cpp21::optional_ref<GraphicsPipelineCreateInfo> graphics = {}) {
       //this->pipeline = makeComputePipelineStageInfo(this->deviceObj->device, compute->code);
       //
       //ANAMED::context->get(this->base)->registerObj(this->handle, shared_from_this());
@@ -236,7 +236,7 @@ namespace ANAMED {
     };
 
     // 
-    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::carg<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) {
+    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::optional_ref<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) {
       this->base = deviceObj->getHandle();
       //this->deviceObj = deviceObj;
       if (cInfo) { this->cInfo = cInfo; };
@@ -249,7 +249,7 @@ namespace ANAMED {
   public:
 
     // TODO: using multiple-command
-    virtual tType writeComputeCommand(cpp21::carg<WriteComputeInfo> exec = WriteComputeInfo{}) {
+    virtual tType writeComputeCommand(cpp21::optional_ref<WriteComputeInfo> exec = WriteComputeInfo{}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<PipelineLayoutObj>(exec->layout ? exec->layout : this->cInfo->layout);
@@ -295,7 +295,7 @@ namespace ANAMED {
     };
 
     // TODO: using multiple-command
-    virtual tType writeGraphicsCommand(cpp21::carg<WriteGraphicsInfo> exec = WriteGraphicsInfo{}) {
+    virtual tType writeGraphicsCommand(cpp21::optional_ref<WriteGraphicsInfo> exec = WriteGraphicsInfo{}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) pipelineLayout = exec->layout ? exec->layout : this->cInfo->layout;
@@ -396,14 +396,14 @@ namespace ANAMED {
     };
 
     // TODO: using multiple-command
-    virtual FenceType executePipelineOnce(cpp21::carg<ExecutePipelineInfo> exec = ExecutePipelineInfo{}) {
+    virtual FenceType executePipelineOnce(cpp21::optional_ref<ExecutePipelineInfo> exec = ExecutePipelineInfo{}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) submission = CommandOnceSubmission{ .submission = exec->submission };
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
 
       // 
-      submission.commandInits.push_back([exec,this](cpp21::carg<vk::CommandBuffer> cmdBuf) {
+      submission.commandInits.push_back([exec,this](cpp21::optional_ref<vk::CommandBuffer> cmdBuf) {
         if (exec->graphics) { this->writeGraphicsCommand(exec->graphics->with(cmdBuf)); };
         if (exec->compute) { this->writeComputeCommand(exec->compute->with(cmdBuf)); };
         return cmdBuf;

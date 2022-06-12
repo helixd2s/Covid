@@ -35,12 +35,12 @@ namespace ANAMED {
   public:
 
     // 
-    SemaphoreObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::carg<SemaphoreCreateInfo> cInfo = SemaphoreCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
+    SemaphoreObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::optional_ref<SemaphoreCreateInfo> cInfo = SemaphoreCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
       this->construct(deviceObj.shared(), cInfo);
     };
 
     // 
-    SemaphoreObj(cpp21::carg<Handle> handle, cpp21::carg<SemaphoreCreateInfo> cInfo = SemaphoreCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
+    SemaphoreObj(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<SemaphoreCreateInfo> cInfo = SemaphoreCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
       this->construct(ANAMED::context->get<DeviceObj>(this->base = handle).shared(), cInfo);
     };
 
@@ -56,7 +56,7 @@ namespace ANAMED {
     };
 
     //
-    inline static tType make(cpp21::carg<Handle> handle, cpp21::carg<SemaphoreCreateInfo> cInfo = SemaphoreCreateInfo{}) {
+    inline static tType make(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<SemaphoreCreateInfo> cInfo = SemaphoreCreateInfo{}) {
       auto shared = std::make_shared<SemaphoreObj>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle).shared(), cInfo);
       auto wrap = shared->registerSelf();
@@ -66,7 +66,7 @@ namespace ANAMED {
   protected:
 
     // 
-    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::carg<SemaphoreCreateInfo> cInfo = SemaphoreCreateInfo{}) {
+    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::optional_ref<SemaphoreCreateInfo> cInfo = SemaphoreCreateInfo{}) {
       if (cInfo) { this->cInfo = cInfo; };
 
       //
@@ -77,10 +77,10 @@ namespace ANAMED {
       decltype(auto) semExport = infoMap->set(vk::StructureType::eExportSemaphoreCreateInfoKHR, vk::ExportSemaphoreCreateInfoKHR{ .handleTypes = extSemFlags });
       decltype(auto) semType = infoMap->set(vk::StructureType::eSemaphoreTypeCreateInfo, vk::SemaphoreTypeCreateInfo{ .pNext = cInfo->hasExport ? semExport.get() : nullptr, .semaphoreType = vk::SemaphoreType::eBinary, .initialValue = 0ull});
       decltype(auto) semInfo = infoMap->set(vk::StructureType::eSemaphoreCreateInfo, vk::SemaphoreCreateInfo{ .pNext = semType.get(), .flags = {} });
-      decltype(auto) semSubmit = infoMap->set(vk::StructureType::eSemaphoreSubmitInfo, vk::SemaphoreSubmitInfo{ .semaphore = (this->handle = this->base.as<vk::Device>().createSemaphore(semInfo.ref())).as<vk::Semaphore>(), .value = semType->initialValue, .stageMask = vk::PipelineStageFlagBits2::eAllCommands});
+      decltype(auto) semSubmit = infoMap->set(vk::StructureType::eSemaphoreSubmitInfo, vk::SemaphoreSubmitInfo{ .semaphore = (this->handle = this->base.as<vk::Device>().createSemaphore(semInfo.value())).as<vk::Semaphore>(), .value = semType->initialValue, .stageMask = vk::PipelineStageFlagBits2::eAllCommands});
 
       //
-      //this->handle = device.createSemaphore(semInfo.ref());
+      //this->handle = device.createSemaphore(semInfo.value());
 
       // 
       if (cInfo->hasExport) {

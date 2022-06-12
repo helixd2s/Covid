@@ -18,7 +18,7 @@ namespace ANAMED {
     std::vector<vk::SurfaceFormat2KHR> formats2 = {};
     std::vector<vk::PresentModeKHR> presentModes = {};
     //vk::PhysicalDeviceSurfaceInfo2KHR info2 = {};
-    cpp21::carg<vk::SurfaceCapabilitiesKHR> capabilities = {};
+    cpp21::optional_ref<vk::SurfaceCapabilitiesKHR> capabilities = {};
     //cpp21::optional_ref<vk::SurfaceFormatKHR> formats = {};
   };
 
@@ -52,8 +52,8 @@ namespace ANAMED {
     std::vector<vk::SemaphoreSubmitInfo> presentSemaphoreInfos = {};
 
     //
-    std::vector<std::function<void(cpp21::carg<vk::CommandBuffer>)>> switchToPresentFn = {};
-    std::vector<std::function<void(cpp21::carg<vk::CommandBuffer>)>> switchToReadyFn = {};
+    std::vector<std::function<void(cpp21::optional_ref<vk::CommandBuffer>)>> switchToPresentFn = {};
+    std::vector<std::function<void(cpp21::optional_ref<vk::CommandBuffer>)>> switchToReadyFn = {};
 
     //
     vk::Rect2D renderArea = {};
@@ -71,12 +71,12 @@ namespace ANAMED {
 
   public:
     // 
-    SwapchainObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::carg<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
+    SwapchainObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::optional_ref<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
       //this->construct(deviceObj, cInfo);
     };
 
     // 
-    SwapchainObj(cpp21::carg<Handle> handle, cpp21::carg<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
+    SwapchainObj(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
       //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
@@ -99,7 +99,7 @@ namespace ANAMED {
     };
 
     //
-    inline static tType make(cpp21::carg<Handle> handle, cpp21::carg<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) {
+    inline static tType make(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) {
       auto shared = std::make_shared<SwapchainObj>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle).shared(), cInfo);
       auto wrap = shared->registerSelf();
@@ -107,12 +107,12 @@ namespace ANAMED {
     };
 
     //
-    virtual FenceType switchToPresent(cpp21::carg<uint32_t> imageIndex, cpp21::carg<QueueGetInfo> info = QueueGetInfo{}) {
-      decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = info ? info.value() : this->cInfo->info.ref() }};
+    virtual FenceType switchToPresent(cpp21::optional_ref<uint32_t> imageIndex, cpp21::optional_ref<QueueGetInfo> info = QueueGetInfo{}) {
+      decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = info ? info.value() : this->cInfo->info.value() }};
 
       // 
       submission.submission.signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{ readySemaphoreInfos[*imageIndex] };
-      submission.commandInits.push_back([this, imageIndex](cpp21::carg<vk::CommandBuffer> cmdBuf) {
+      submission.commandInits.push_back([this, imageIndex](cpp21::optional_ref<vk::CommandBuffer> cmdBuf) {
         this->switchToPresentFn[*imageIndex](cmdBuf);
         return cmdBuf;
       });
@@ -122,12 +122,12 @@ namespace ANAMED {
     };
 
     //
-    virtual FenceType switchToReady(cpp21::carg<uint32_t> imageIndex, cpp21::carg<QueueGetInfo> info = QueueGetInfo{}) {
-      decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = info ? info.value() : this->cInfo->info.ref() } };
+    virtual FenceType switchToReady(cpp21::optional_ref<uint32_t> imageIndex, cpp21::optional_ref<QueueGetInfo> info = QueueGetInfo{}) {
+      decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = info ? info.value() : this->cInfo->info.value() } };
 
       // 
       submission.submission.waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{ presentSemaphoreInfos[*imageIndex] };
-      submission.commandInits.push_back([this, imageIndex](cpp21::carg<vk::CommandBuffer> cmdBuf) {
+      submission.commandInits.push_back([this, imageIndex](cpp21::optional_ref<vk::CommandBuffer> cmdBuf) {
         this->switchToReadyFn[*imageIndex](cmdBuf);
         return cmdBuf;
       });
@@ -137,7 +137,7 @@ namespace ANAMED {
     };
 
     //
-    virtual uint32_t& acquireImage(cpp21::carg<ANAMED::QueueGetInfo> qfAndQueue) {
+    virtual uint32_t& acquireImage(cpp21::optional_ref<ANAMED::QueueGetInfo> qfAndQueue) {
       //this->currentState.previous = this->currentState.index;
       decltype(auto) semIndex = (this->currentState.index + 1u) % this->imageViewIndices.size();
       decltype(auto) acquired = (this->currentState.index = handleResult(this->base.as<vk::Device>().acquireNextImage2KHR(vk::AcquireNextImageInfoKHR{ .swapchain = this->swapchain, .timeout = 0, .semaphore = this->presentSemaphoreInfos[semIndex].semaphore, .deviceMask = 0x1u })));
@@ -149,7 +149,7 @@ namespace ANAMED {
     };
 
     //
-    virtual std::tuple<FenceType, vk::Result> presentImage(cpp21::carg<ANAMED::QueueGetInfo> qfAndQueue) {
+    virtual std::tuple<FenceType, vk::Result> presentImage(cpp21::optional_ref<ANAMED::QueueGetInfo> qfAndQueue) {
       decltype(auto) fence = this->switchToPresent(this->currentState.index, qfAndQueue);
       decltype(auto) result = ANAMED::context->get<DeviceObj>(this->base)->getQueue(qfAndQueue).presentKHR(vk::PresentInfoKHR{
         .waitSemaphoreCount = 1u,
@@ -254,7 +254,7 @@ namespace ANAMED {
   protected:
 
     //
-    virtual void createImage(cpp21::carg<vk::Image> image, cpp21::carg<ImageType> imageType = ImageType::eSwapchain, cpp21::carg<vk::SurfaceFormat2KHR> surfaceFormat2 = {}, cpp21::carg<ImageSwapchainInfo> swapchainInfo = {}) {
+    virtual void createImage(cpp21::optional_ref<vk::Image> image, cpp21::optional_ref<ImageType> imageType = ImageType::eSwapchain, cpp21::optional_ref<vk::SurfaceFormat2KHR> surfaceFormat2 = {}, cpp21::optional_ref<ImageSwapchainInfo> swapchainInfo = {}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<PipelineLayoutObj>(this->cInfo->layout);
@@ -271,7 +271,7 @@ namespace ANAMED {
           .layout = imageLayout,
           // # first reason of internal error (if use implicit cast, mostly with std::optional)
           .swapchain = std::optional<ImageSwapchainInfo>(swapchainInfo),
-          .info = this->cInfo->info ? this->cInfo->info.ref() : QueueGetInfo{0u, 0u},
+          .info = this->cInfo->info ? this->cInfo->info.value() : QueueGetInfo{0u, 0u},
           .type = imageType
         }
       });
@@ -289,7 +289,7 @@ namespace ANAMED {
       this->imageViewIndices.push_back(pair.indice);
 
       // TODO: use pre-built command buffer
-      this->switchToReadyFn.push_back([device, imageLayout, subresourceRange, image=imageObj.as<vk::Image>()](cpp21::carg<vk::CommandBuffer> cmdBuf) {
+      this->switchToReadyFn.push_back([device, imageLayout, subresourceRange, image=imageObj.as<vk::Image>()](cpp21::optional_ref<vk::CommandBuffer> cmdBuf) {
         decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(device);
         decltype(auto) imageObj = deviceObj->get<ResourceObj>(image);
         imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
@@ -300,7 +300,7 @@ namespace ANAMED {
       });
 
       //
-      this->switchToPresentFn.push_back([device, imageLayout, subresourceRange, image=imageObj.as<vk::Image>()](cpp21::carg<vk::CommandBuffer> cmdBuf) {
+      this->switchToPresentFn.push_back([device, imageLayout, subresourceRange, image=imageObj.as<vk::Image>()](cpp21::optional_ref<vk::CommandBuffer> cmdBuf) {
         decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(device);
         decltype(auto) imageObj = deviceObj->get<ResourceObj>(image);
         imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
@@ -330,7 +330,7 @@ namespace ANAMED {
     };
 
     // 
-    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::carg<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) {
+    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::optional_ref<SwapchainCreateInfo> cInfo = SwapchainCreateInfo{}) {
       if (cInfo) { this->cInfo = cInfo; };
       //this->handle = Handle(uintptr_t(this), HandleType::eSwapchain);
       this->handle = uintptr_t(this);

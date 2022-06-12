@@ -37,12 +37,12 @@ namespace ANAMED {
 
   public:
     // 
-    SamplerObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::carg<SamplerCreateInfo> cInfo = SamplerCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
+    SamplerObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::optional_ref<SamplerCreateInfo> cInfo = SamplerCreateInfo{}) : BaseObj(std::move(deviceObj->getHandle())), cInfo(cInfo) {
       //this->construct(deviceObj, cInfo);
     };
 
     // 
-    SamplerObj(cpp21::carg<Handle> handle, cpp21::carg<SamplerCreateInfo> cInfo = SamplerCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
+    SamplerObj(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<SamplerCreateInfo> cInfo = SamplerCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
       //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
@@ -58,7 +58,7 @@ namespace ANAMED {
     };
 
     //
-    inline static tType make(cpp21::carg<Handle> handle, cpp21::carg<SamplerCreateInfo> cInfo = SamplerCreateInfo{}) {
+    inline static tType make(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<SamplerCreateInfo> cInfo = SamplerCreateInfo{}) {
       auto shared = std::make_shared<SamplerObj>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle).shared(), cInfo);
       auto wrap = shared->registerSelf();
@@ -68,13 +68,13 @@ namespace ANAMED {
   protected:
 
     // 
-    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::carg<SamplerCreateInfo> cInfo = SamplerCreateInfo{}) {
+    virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::optional_ref<SamplerCreateInfo> cInfo = SamplerCreateInfo{}) {
       if (cInfo) { this->cInfo = cInfo; };
 
       // 
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) samplerInfo = infoMap->set(vk::StructureType::eSamplerCreateInfo, this->cInfo->native);
-      this->handle = device.createSampler(samplerInfo.ref());
+      this->handle = device.createSampler(this->cInfo->native.value());
 
       //
       decltype(auto) descriptorsObj = this->cInfo->descriptors ? deviceObj->get<PipelineLayoutObj>(this->cInfo->descriptors) : WrapShared<PipelineLayoutObj>{};

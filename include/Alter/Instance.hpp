@@ -37,12 +37,12 @@ namespace ANAMED {
 
   public: 
     // 
-    InstanceObj(WrapShared<ContextObj> contextObj = {}, cpp21::carg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : BaseObj(std::move(contextObj->getHandle())), cInfo(cInfo) {
+    InstanceObj(WrapShared<ContextObj> contextObj = {}, cpp21::optional_ref<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : BaseObj(std::move(contextObj->getHandle())), cInfo(cInfo) {
       //this->construct(contextObj, cInfo);
     };
 
     // 
-    InstanceObj(cpp21::carg<Handle> handle, cpp21::carg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
+    InstanceObj(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
       //this->construct(ANAMED::context, cInfo);
     };
 
@@ -58,7 +58,7 @@ namespace ANAMED {
     };
 
     //
-    inline static tType make(cpp21::carg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
+    inline static tType make(cpp21::optional_ref<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
       auto shared = std::make_shared<InstanceObj>(ANAMED::context->getHandle(), cInfo);
       shared->construct(ANAMED::context.shared(), cInfo);
       auto wrap = shared->registerSelf();
@@ -66,7 +66,7 @@ namespace ANAMED {
     };
 
     //
-    inline static tType make(cpp21::carg<Handle> handle, cpp21::carg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
+    inline static tType make(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
       auto shared = std::make_shared<InstanceObj>(handle, cInfo);
       shared->construct(ANAMED::context.shared(), cInfo);
       auto wrap = shared->registerSelf();
@@ -127,7 +127,7 @@ namespace ANAMED {
     };
 
     //
-    virtual std::vector<char const*>& filterExtensions(cpp21::carg<std::vector<std::string>> names) {
+    virtual std::vector<char const*>& filterExtensions(cpp21::optional_ref<std::vector<std::string>> names) {
       //std::vector<vk::ExtensionProperties> props(1024u); uint32_t size = 0ull;
       //vk::enumerateInstanceExtensionProperties("", &size, props.data()); props.resize(size);
       decltype(auto) props = vk::enumerateInstanceExtensionProperties(std::string(""));
@@ -153,7 +153,7 @@ namespace ANAMED {
     };
 
     //
-    virtual std::vector<char const*>& filterLayers(cpp21::carg<std::vector<std::string>> names) {
+    virtual std::vector<char const*>& filterLayers(cpp21::optional_ref<std::vector<std::string>> names) {
       //std::vector<vk::LayerProperties> props(1024u); uint32_t size = 0ull;
       //vk::enumerateInstanceLayerProperties(&size, props.data()); props.resize(size);
       decltype(auto) props = vk::enumerateInstanceLayerProperties();
@@ -179,7 +179,7 @@ namespace ANAMED {
     };
 
     // 
-    virtual void construct(std::shared_ptr<ContextObj> contextObj, cpp21::carg<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
+    virtual void construct(std::shared_ptr<ContextObj> contextObj, cpp21::optional_ref<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
       //this->deviceObj = deviceObj;
       if (cInfo) { this->cInfo = cInfo; };
       this->extensionNames = {};
@@ -203,11 +203,11 @@ namespace ANAMED {
       });
 
       //
-      instanceInfo->setPEnabledExtensionNames(this->filterExtensions(this->cInfo->extensionList.ref()));
-      instanceInfo->setPEnabledLayerNames(this->filterLayers(this->cInfo->layerList.ref()));
+      instanceInfo->setPEnabledExtensionNames(this->filterExtensions(this->cInfo->extensionList.value()));
+      instanceInfo->setPEnabledLayerNames(this->filterLayers(this->cInfo->layerList.value()));
 
       //
-      this->handle = vk::createInstance(instanceInfo.ref());
+      this->handle = vk::createInstance(instanceInfo.value());
       this->dispatch = vk::DispatchLoaderDynamic(this->handle.as<vk::Instance>(), vkGetInstanceProcAddr);
       //VULKAN_HPP_DEFAULT_DISPATCHER.init(this->handle.as<vk::Instance>());
       

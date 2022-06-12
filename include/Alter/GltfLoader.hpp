@@ -326,7 +326,7 @@ namespace ANAMED
   public: 
 
     //
-    GltfLoaderObj(cpp21::carg<Handle> handle, cpp21::carg<GltfLoaderCreateInfo> cInfo = GltfLoaderCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
+    GltfLoaderObj(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<GltfLoaderCreateInfo> cInfo = GltfLoaderCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
     };
 
     // 
@@ -721,7 +721,7 @@ namespace ANAMED
     };
 
     //
-    inline static tType make(cpp21::carg<Handle> handle, cpp21::carg<GltfLoaderCreateInfo> cInfo = GltfLoaderCreateInfo{}) {
+    inline static tType make(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<GltfLoaderCreateInfo> cInfo = GltfLoaderCreateInfo{}) {
       auto shared = std::make_shared<GltfLoaderObj>(handle, cInfo);
       auto wrap = shared->registerSelf();
       return wrap;

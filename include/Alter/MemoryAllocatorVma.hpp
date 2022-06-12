@@ -45,7 +45,7 @@ namespace ANAMED {
     inline decltype(auto) SFT() const { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::const_pointer_cast<T>(std::dynamic_pointer_cast<T const>(shared_from_this()))); };
 
     // 
-    void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::carg<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) override {
+    void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::optional_ref<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) override {
       if (!this->cInfo->extInfoMap) {
         this->cInfo->extInfoMap = std::make_shared<EXIF>();
       };
@@ -108,12 +108,12 @@ namespace ANAMED {
     };
 
     // 
-    MemoryAllocatorVma(WrapShared<DeviceObj> deviceObj = {}, cpp21::carg<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) : MemoryAllocatorObj(deviceObj, cInfo)  {
+    MemoryAllocatorVma(WrapShared<DeviceObj> deviceObj = {}, cpp21::optional_ref<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) : MemoryAllocatorObj(deviceObj, cInfo)  {
       //this->construct(deviceObj, cInfo);
     };
 
     // 
-    MemoryAllocatorVma(cpp21::carg<Handle> handle, cpp21::carg<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) : MemoryAllocatorObj(handle, cInfo) {
+    MemoryAllocatorVma(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) : MemoryAllocatorObj(handle, cInfo) {
       //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
@@ -130,7 +130,7 @@ namespace ANAMED {
     };
 
     //
-    inline static WrapShared<MemoryAllocatorVma> make(cpp21::carg<Handle> handle, cpp21::carg<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) {
+    inline static WrapShared<MemoryAllocatorVma> make(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<MemoryAllocatorCreateInfo> cInfo = MemoryAllocatorCreateInfo{}) {
       auto shared = std::make_shared<MemoryAllocatorVma>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle).shared(), cInfo);
       return std::dynamic_pointer_cast<MemoryAllocatorVma>(shared->registerSelf().shared());
@@ -139,7 +139,7 @@ namespace ANAMED {
   public:
 
     //
-    std::shared_ptr<AllocatedMemory> allocateMemory(cpp21::carg<MemoryRequirements> requirements, std::shared_ptr<AllocatedMemory> allocated, ExtHandle& extHandle, std::shared_ptr<EXIF> extInfoMap, void*& mapped, std::vector<std::shared_ptr<std::function<DFun>>>& destructors) override {
+    std::shared_ptr<AllocatedMemory> allocateMemory(cpp21::optional_ref<MemoryRequirements> requirements, std::shared_ptr<AllocatedMemory> allocated, ExtHandle& extHandle, std::shared_ptr<EXIF> extInfoMap, void*& mapped, std::vector<std::shared_ptr<std::function<DFun>>>& destructors) override {
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       auto& device = this->base.as<vk::Device>();
       auto& physicalDevice = deviceObj->getPhysicalDevice();
