@@ -80,20 +80,7 @@ void reproject3D(in uint pixelId, in uint type)
       PixelHitInfoRef HIT_DST = getNewHit(dstId, type);  
 
       // fallback
-      vec4 
-        srcSamplePos = srcHitPersp/srcHitPersp.w,
-        dstSamplePos = dstHitPersp/dstHitPersp.w;
-
-      // 
-      { // 
-        RayData rayData;
-        rayData.launchId = u16vec2(srcInt);
-        rayData.origin = srcHitFoundIntersection.xyz;
-        rayData.direction = normalize(srcHitPos.xyz-srcHitFoundIntersection.xyz);
-        IntersectionInfo srcIntersection = rasterizeVector(instancedData, rayData, 10000.f, srcSamplePos, true);
-      };
-
-      //
+      vec4 dstSamplePos = dstHitPersp/dstHitPersp.w;
       bool dstValidNormal = false;
       { // 
         RayData rayData;
@@ -130,16 +117,16 @@ void reproject3D(in uint pixelId, in uint type)
 
       // sorry, we doesn't save previous raster data
       const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz-(dstHitPersp.xyz/dstHitPersp.w)), vec3(2.f/vec2(UR(deferredBuf.extent)), 0.008f))) && dstValidNormal;
-      const bool srcValidDist = all(lessThan(abs(srcSamplePos.xyz-(srcHitPersp.xyz/srcHitPersp.w)), vec3(2.f/vec2(UR(deferredBuf.extent)), 0.008f))) && any(greaterThan(abs(HIT_SRC.origin.xyz), 0.f.xxx)) && (HIT_SRC.origin.w > 0.f || type == 2);
 
       // copy to dest, and nullify source
       if ( original.w > 0.f && dstValidDist ) 
       {
-        accumulate(SURF_DST, type, original);   atomicOr(SURF_DST.flags[type], 1u); //SURF_SRC.accum[type] = TYPE(0u);
-        HIT_SRC.origin     = HIT_DST.origin     = vec4(dstHitFoundIntersection.xyz, distance(dstHitPos.xyz, dstHitFoundIntersection.xyz));
-        HIT_SRC.indices    = HIT_DST.indices    = HIT_SRC.indices;
-        HIT_SRC.direct.xyz = HIT_DST.direct.xyz = f16vec3(normalize(dstHitPos.xyz-dstHitFoundIntersection.xyz));
-        HIT_SRC.normal.xyz = HIT_DST.normal.xyz = f16vec3(dstNormal);
+        accumulate(SURF_DST, type, original); atomicOr(SURF_DST.flags[type], 1u); //SURF_SRC.accum[type] = TYPE(0u);
+        //accumulateDebug(SURF_DST, type, original);
+        HIT_DST.origin     = vec4(dstHitFoundIntersection.xyz, distance(dstHitPos.xyz, dstHitFoundIntersection.xyz));
+        HIT_DST.indices    = HIT_SRC.indices;
+        HIT_DST.direct.xyz = f16vec3(normalize(dstHitPos.xyz-dstHitFoundIntersection.xyz));
+        HIT_DST.normal.xyz = f16vec3(dstNormal);
       };
     };
   };

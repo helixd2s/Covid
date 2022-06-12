@@ -30,13 +30,16 @@ void main() {
     //const uvec2 ncoord = jit + shift_map[tmap];
 
     //
-    const vec2 tCoord = ((vec2(ncoord)+vec2(random(ncoord),random(ncoord)))/vec2(rayCount)*vec2(UR(deferredBuf.extent))+0.5f)/vec2(UR(deferredBuf.extent));
+    vec2 tCoord = (vec2(ncoord) + vec2(random(ncoord), random(ncoord))) / vec2(rayCount);
+    tCoord = (floor(tCoord * vec2(UR(deferredBuf.extent))) + 0.5f) / vec2(UR(deferredBuf.extent));
 
-    // normalized coordinate system
+    //
     const ivec2 gcoord = ivec2(tCoord * UR(deferredBuf.extent));
-    const uint tmap = ((gcoord.x&1|((gcoord.y&1)<<1))+frameCounter)&3;
     const uint pixelId = gcoord.x + UR(deferredBuf.extent).x * gcoord.y;
 
+    // normalized coordinate system
+    const uint tmap = ((gcoord.x&1|((gcoord.y&1)<<1))+frameCounter)&3;
+    
     //
     uint type = type_map[tmap];
 

@@ -37,6 +37,17 @@ TYPE accumulate(inout PixelSurfaceInfoRef surfaceInfo, in uint type, in TYPE dat
   );
 };
 
+/*
+//
+TYPE accumulateDebug(inout PixelSurfaceInfoRef surfaceInfo, in uint type, in TYPE data) {
+  return TYPE(
+    atomicAdd(surfaceInfo.debug[type].x, data.x),
+    atomicAdd(surfaceInfo.debug[type].y, data.y),
+    atomicAdd(surfaceInfo.debug[type].z, data.z),
+    atomicAdd(surfaceInfo.debug[type].w, data.w)
+  );
+};*/
+
 //
 TYPE exchange(inout PixelSurfaceInfoRef surfaceInfo, in uint type, in TYPE data) {
   return TYPE(

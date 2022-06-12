@@ -117,8 +117,9 @@ void main() {
         };
         if (!hasHit) { 
           surfaceInfo.flags[i] |= 1u;
-          surfaceInfo.color[i] += vec4(i == 2 ? cmd.diffuseColor.xyz : 0.f.xxx, 1.f); 
+          surfaceInfo.color[i] += vec4(i == 2 ? cmd.diffuseColor.xyz : 0.f.xxx, 1.f);
         };
+        //surfaceInfo.debug[i] = TYPE(0u);
       };
 
       
