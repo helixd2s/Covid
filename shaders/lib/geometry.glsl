@@ -30,7 +30,7 @@ struct CTexture { uint32_t textureId, samplerId; };
 struct TexOrDef { CTexture texture; vec4 defValue; };
 
 //
-struct MaterialInfo {
+layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer MaterialInfo {
   TexOrDef texCol[MAX_MATERIAL_BIND];
 };
 
@@ -44,9 +44,10 @@ layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer Geo
   BufferViewInfo bufferViews[4u];
   BufferViewInfo indices;
   BufferViewInfo transform;
-  MaterialInfo materialInfo;
-
+  
   //
+  MaterialInfo materialRef;
+  uint64_t previousRef;
   uint64_t extensionRef;
 
   //

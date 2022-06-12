@@ -456,9 +456,11 @@ namespace ANAMED {
     BufferViewInfo bufferViews[4u];
     BufferViewInfo indices;
     BufferViewInfo transform;
-    MaterialInfo materialInfo;
+    //MaterialInfo materialInfo;
 
     //
+    uint64_t materialRef;
+    uint64_t previousRef;
     uint64_t extensionRef;
 
     //

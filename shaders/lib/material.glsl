@@ -17,7 +17,7 @@ MaterialInfo getMaterialInfo(in GeometryInfo geometryInfo, in uint32_t materialI
 };*/
 
 MaterialInfo getMaterialInfo(in GeometryInfo geometryInfo) {
-  return geometryInfo.materialInfo;
+  return geometryInfo.materialRef;
 };
 
 //

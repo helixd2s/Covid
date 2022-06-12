@@ -337,7 +337,7 @@ RayData pathTrace(inout RayData rayData, inout PathTraceOutput outp, inout uint 
 
     } else 
     {
-      //const vec4 skyColor = vec4(texture(sampler2D(textures[background], samplers[0]), lcts(rayData.direction.xyz)).xyz, 0.f);
+      const vec4 skyColor = vec4(texture(sampler2D(textures[background], samplers[0]), lcts(rayData.direction.xyz)).xyz, 0.f);
 
       // suppose last possible hit-point
       rayData.emission += f16vec4(trueMultColor(rayData.energy.xyz, skyColor.xyz), 0.f);
