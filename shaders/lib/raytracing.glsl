@@ -463,6 +463,7 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, inout uint type) {
     // avoid critical error for skyboxed, also near have more priority... also, transparency may incorrect, so doing some exception
     PixelSurfaceInfoRef surfaceInfo = getPixelSurface(cmd.rayData.launchId.x + cmd.rayData.launchId.y * UR(deferredBuf.extent).x);
     accumulate(surfaceInfo, type, clampColW(additional));
+    atomicOr(surfaceInfo.flags[type], 1u);
   };
 
   // 
@@ -475,7 +476,8 @@ void prepareHit(in uint pixelId, inout uint type) {
 
   //
   surfaceInfo.accum[type] = cvtRgb16Float(clampCol(cvtRgb16Acc(surfaceInfo.color[type])));
-  surfaceInfo.color[type] = TYPE(0u);
+  surfaceInfo.color[type] = (surfaceInfo.flags[type]&1) > 0 ? TYPE(0u) : surfaceInfo.color[type];
+  surfaceInfo.flags[type] = 0;
 
   //
   PixelHitInfoRef hitInfo = getNewHit(pixelId, type);

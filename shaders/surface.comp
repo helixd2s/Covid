@@ -115,7 +115,10 @@ void main() {
           hitInfo.direct.xyz = f16vec3(cmd.rayData.direction.xyz);
           hitInfo.indices[0] = uvec4(cmd.intersection.instanceId, cmd.intersection.geometryId, cmd.intersection.primitiveId, i);
         };
-        if (!hasHit) { surfaceInfo.color[i] += vec4(i == 2 ? cmd.diffuseColor.xyz : 0.f.xxx, 1.f); };
+        if (!hasHit) { 
+          surfaceInfo.flags[i] |= 1u;
+          surfaceInfo.color[i] += vec4(i == 2 ? cmd.diffuseColor.xyz : 0.f.xxx, 1.f); 
+        };
       };
 
       

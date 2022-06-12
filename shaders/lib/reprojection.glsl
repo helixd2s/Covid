@@ -69,11 +69,12 @@ void reproject3D(in uint pixelId, in uint type)
     const bool dstValid = dstInt.x >= 0 && dstInt.y >= 0 && dstInt.x < UR(deferredBuf.extent).x && dstInt.y < UR(deferredBuf.extent).y;
 
     // 
-    if (srcValid && dstValid) {
-      //
-      PixelSurfaceInfoRef SURF_SRC = getPixelSurface(srcId);
-      PixelHitInfoRef HIT_SRC = getRpjHit(srcId, type);
+    PixelSurfaceInfoRef SURF_SRC = getPixelSurface(pixelId);//getPixelSurface(srcId);
+    PixelHitInfoRef HIT_SRC = getRpjHit(pixelId, type);//getRpjHit(srcId, type);
+    TYPE original = SURF_SRC.accum[type];
 
+    // 
+    if (dstValid) {
       //
       PixelSurfaceInfoRef SURF_DST = getPixelSurface(dstId);
       PixelHitInfoRef HIT_DST = getNewHit(dstId, type);  
@@ -132,14 +133,13 @@ void reproject3D(in uint pixelId, in uint type)
       const bool srcValidDist = all(lessThan(abs(srcSamplePos.xyz-(srcHitPersp.xyz/srcHitPersp.w)), vec3(2.f/vec2(UR(deferredBuf.extent)), 0.008f))) && any(greaterThan(abs(HIT_SRC.origin.xyz), 0.f.xxx)) && (HIT_SRC.origin.w > 0.f || type == 2);
 
       // copy to dest, and nullify source
-      TYPE original = SURF_SRC.accum[type];
-      if ( original.w > 0.f && dstValidDist && srcValidDist ) 
+      if ( original.w > 0.f && dstValidDist ) 
       {
-        accumulate(SURF_DST, type, original);
-        HIT_DST.origin = vec4(dstHitFoundIntersection.xyz, distance(dstHitPos.xyz, dstHitFoundIntersection.xyz));
-        HIT_DST.indices = HIT_SRC.indices;
-        HIT_DST.direct.xyz = f16vec3(normalize(dstHitPos.xyz-dstHitFoundIntersection.xyz));
-        HIT_DST.normal.xyz = f16vec3(dstNormal);
+        accumulate(SURF_DST, type, original);   atomicOr(SURF_DST.flags[type], 1u); //SURF_SRC.accum[type] = TYPE(0u);
+        HIT_SRC.origin     = HIT_DST.origin     = vec4(dstHitFoundIntersection.xyz, distance(dstHitPos.xyz, dstHitFoundIntersection.xyz));
+        HIT_SRC.indices    = HIT_DST.indices    = HIT_SRC.indices;
+        HIT_SRC.direct.xyz = HIT_DST.direct.xyz = f16vec3(normalize(dstHitPos.xyz-dstHitFoundIntersection.xyz));
+        HIT_SRC.normal.xyz = HIT_DST.normal.xyz = f16vec3(dstNormal);
       };
     };
   };
