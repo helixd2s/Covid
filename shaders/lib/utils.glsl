@@ -67,7 +67,7 @@ vec4 absmax(in vec4 val, in vec4 mn) {
 vec3 clampCol(in vec3 col) { return clamp(col, 0.f.xxx, 256.f.xxx); };
 vec4 clampCol(in vec4 col) {
   vec4 colw = clamp(col/max(col.w, 1.f), 0.f.xxxx, vec4(256.f.xxx, 1.f));
-  return colw * clamp(col.w, 1.f, 1024.f);
+  return colw * clamp(col.w, 1.f, 65536.f);
 };
 
 //
