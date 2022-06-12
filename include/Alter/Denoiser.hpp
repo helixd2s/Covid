@@ -151,8 +151,8 @@ namespace ANAMED {
         nri::TextureTransitionBarrierDesc& entryDesc = *userPool[i].subresourceStates;
         nri::TextureVulkanDesc textureDesc = {};
         textureDesc.vkImage = myResource.as<VkImage>();
-        textureDesc.vkFormat = uint32_t(imgCreateInfo->format);
-        textureDesc.vkImageAspectFlags = uint32_t(myResource->aspectMask());
+        textureDesc.vkFormat = std::to_underlying(imgCreateInfo->format);
+        textureDesc.vkImageAspectFlags = std::to_underlying(myResource->aspectMask());
         textureDesc.size = {imgCreateInfo->extent.width, imgCreateInfo->extent.height, imgCreateInfo->extent.depth};
         textureDesc.mipNum = imgCreateInfo->mipLevels;
         textureDesc.arraySize = imgCreateInfo->arrayLayers;

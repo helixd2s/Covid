@@ -516,10 +516,10 @@ namespace ANAMED
       for (decltype(auto) material : gltf->model.materials) {
         uintptr_t I = i++;
         decltype(auto) materialInf = ANAMED::MaterialInfo{};
-        materialInf.texCol[uint32_t(ANAMED::TextureBind::eAlbedo)] = ANAMED::TexOrDef{ .texture = material.pbrMetallicRoughness.baseColorTexture.index >= 0 ? gltf->textures[material.pbrMetallicRoughness.baseColorTexture.index] : CTexture{}, .defValue = handleFactor(material.pbrMetallicRoughness.baseColorFactor) };
-        materialInf.texCol[uint32_t(ANAMED::TextureBind::eNormal)] = ANAMED::TexOrDef{ .texture = material.normalTexture.index >= 0 ? gltf->textures[material.normalTexture.index] : CTexture{}, .defValue = glm::vec4(0.5f, 0.5f, 1.f, 1.f) };
-        materialInf.texCol[uint32_t(ANAMED::TextureBind::ePBR)] = ANAMED::TexOrDef{ .texture = material.pbrMetallicRoughness.metallicRoughnessTexture.index >= 0 ? gltf->textures[material.pbrMetallicRoughness.metallicRoughnessTexture.index] : CTexture{}, .defValue = glm::vec4(1.f, material.pbrMetallicRoughness.roughnessFactor, material.pbrMetallicRoughness.metallicFactor, 1.f) };
-        materialInf.texCol[uint32_t(ANAMED::TextureBind::eEmissive)] = ANAMED::TexOrDef{ .texture = material.emissiveTexture.index >= 0 ? gltf->textures[material.emissiveTexture.index] : CTexture{}, .defValue = handleFactor(material.emissiveFactor) };
+        materialInf.texCol[std::to_underlying(ANAMED::TextureBind::eAlbedo)] = ANAMED::TexOrDef{ .texture = material.pbrMetallicRoughness.baseColorTexture.index >= 0 ? gltf->textures[material.pbrMetallicRoughness.baseColorTexture.index] : CTexture{}, .defValue = handleFactor(material.pbrMetallicRoughness.baseColorFactor) };
+        materialInf.texCol[std::to_underlying(ANAMED::TextureBind::eNormal)] = ANAMED::TexOrDef{ .texture = material.normalTexture.index >= 0 ? gltf->textures[material.normalTexture.index] : CTexture{}, .defValue = glm::vec4(0.5f, 0.5f, 1.f, 1.f) };
+        materialInf.texCol[std::to_underlying(ANAMED::TextureBind::ePBR)] = ANAMED::TexOrDef{ .texture = material.pbrMetallicRoughness.metallicRoughnessTexture.index >= 0 ? gltf->textures[material.pbrMetallicRoughness.metallicRoughnessTexture.index] : CTexture{}, .defValue = glm::vec4(1.f, material.pbrMetallicRoughness.roughnessFactor, material.pbrMetallicRoughness.metallicFactor, 1.f) };
+        materialInf.texCol[std::to_underlying(ANAMED::TextureBind::eEmissive)] = ANAMED::TexOrDef{ .texture = material.emissiveTexture.index >= 0 ? gltf->textures[material.emissiveTexture.index] : CTexture{}, .defValue = handleFactor(material.emissiveFactor) };
         gltf->materials.push_back(materialInf);
         gltf->translucentMaterials[I] = material.pbrMetallicRoughness.baseColorTexture.index >= 0 ? gltf->translucentTextures.at(material.pbrMetallicRoughness.baseColorTexture.index) : (handleFactor(material.pbrMetallicRoughness.baseColorFactor).a < 1.f ? true : false);
       };
@@ -626,21 +626,21 @@ namespace ANAMED
 
           //
           auto& extension = meshObj->geometries->back();
-          extension.bufferViews[uint32_t(ANAMED::BufferBind::eVertices)] = handleAccessor(primitive.attributes.at("POSITION"));
-          extension.bufferViews[uint32_t(ANAMED::BufferBind::eTexcoord)] = nullView;
-          extension.bufferViews[uint32_t(ANAMED::BufferBind::eNormals)] = nullView;
-          extension.bufferViews[uint32_t(ANAMED::BufferBind::eTangent)] = nullView;
+          extension.bufferViews[std::to_underlying(ANAMED::BufferBind::eVertices)] = handleAccessor(primitive.attributes.at("POSITION"));
+          extension.bufferViews[std::to_underlying(ANAMED::BufferBind::eTexcoord)] = nullView;
+          extension.bufferViews[std::to_underlying(ANAMED::BufferBind::eNormals)] = nullView;
+          extension.bufferViews[std::to_underlying(ANAMED::BufferBind::eTangent)] = nullView;
 
           //
           for (decltype(auto) attrib : primitive.attributes) {
             if (attrib.first == "TEXCOORD_0") {
-              extension.bufferViews[uint32_t(ANAMED::BufferBind::eTexcoord)] = handleAccessor(attrib.second);
+              extension.bufferViews[std::to_underlying(ANAMED::BufferBind::eTexcoord)] = handleAccessor(attrib.second);
             };
             if (attrib.first == "NORMAL") {
-              extension.bufferViews[uint32_t(ANAMED::BufferBind::eNormals)] = handleAccessor(attrib.second);
+              extension.bufferViews[std::to_underlying(ANAMED::BufferBind::eNormals)] = handleAccessor(attrib.second);
             };
             if (attrib.first == "TANGENT") {
-              extension.bufferViews[uint32_t(ANAMED::BufferBind::eTangent)] = handleAccessor(attrib.second);
+              extension.bufferViews[std::to_underlying(ANAMED::BufferBind::eTangent)] = handleAccessor(attrib.second);
             };
           };
         };

@@ -428,7 +428,7 @@ namespace ANAMED {
 #pragma pack(push, 1)
   __declspec(align(1))
   struct MaterialInfo {
-    TexOrDef texCol[uint32_t(TextureBind::eMAX)];
+    TexOrDef texCol[std::to_underlying(TextureBind::eMAX)];
   };
 #pragma pack(pop)
 
@@ -650,7 +650,7 @@ namespace ANAMED {
   //
   struct InstanceLevelCreateInfo : BaseCreateInfo {
     cpp21::bucket<InstanceDataInfo> instances = std::vector<InstanceDataInfo>{};
-    uint32_t limit = uint32_t(0u);
+    uint32_t limit = 0u;
     //std::vector<uint32_t> limits = {};
     //size_t instanceCount = 1u;
     uintptr_t uploader = 0ull;
