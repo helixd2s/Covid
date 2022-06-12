@@ -164,7 +164,7 @@ protected:
   float scale = 1.f;
 
   //
-  glm::uvec2 rayCount = glm::uvec2(640, 360);
+  glm::uvec2 rayCount = glm::uvec2(1280, 720);
   float xscale = 1.f, yscale = 1.f;
 
   //
