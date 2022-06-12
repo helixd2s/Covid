@@ -1,6 +1,9 @@
 #pragma once
 
 //
+#include <half.hpp>
+
+//
 #ifdef __cplusplus
 #ifdef _WIN32
 #ifndef VK_USE_PLATFORM_WIN32_KHR
