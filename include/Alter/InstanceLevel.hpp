@@ -72,7 +72,7 @@ namespace ANAMED {
     };
 
     // 
-    InstanceLevelObj(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) : BaseObj(handle), cInfo(cInfo), instanceDraw(std::vector<InstanceDraw>{}), instanceDevInfo(std::vector<InstanceDevInfo>{}) {
+    InstanceLevelObj(Handle const& handle, cpp21::optional_ref<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) : BaseObj(handle), cInfo(cInfo), instanceDraw(std::vector<InstanceDraw>{}), instanceDevInfo(std::vector<InstanceDevInfo>{}) {
       //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
@@ -88,7 +88,7 @@ namespace ANAMED {
     };
 
     //
-    inline static tType make(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) {
+    inline static tType make(Handle const& handle, cpp21::optional_ref<InstanceLevelCreateInfo> cInfo = InstanceLevelCreateInfo{}) {
       auto shared = std::make_shared<InstanceLevelObj>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle).shared(), cInfo);
       auto wrap = shared->registerSelf();
@@ -277,7 +277,7 @@ namespace ANAMED {
     };
 
     //
-    virtual vk::CommandBuffer const& writeBuildStructureCmd(cpp21::optional_ref<vk::CommandBuffer> cmdBuf = {}, vk::Buffer const& instanceDevOffset = {}, vk::Buffer const& instanceOffset = {}) {
+    virtual vk::CommandBuffer const& writeBuildStructureCmd(vk::CommandBuffer const& cmdBuf = {}, vk::Buffer const& instanceDevOffset = {}, vk::Buffer const& instanceOffset = {}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(Handle(this->cInfo->uploader, HandleType::eUploader));
@@ -353,9 +353,9 @@ namespace ANAMED {
       };
 
       // 
-      cmdBuf->pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersBegin).setMemoryBarriers(memoryBarriersBegin));
-      cmdBuf->buildAccelerationStructuresKHR(1u, &accelInstInfo->setGeometries(this->instances).setMode(accelInstInfo->srcAccelerationStructure ? vk::BuildAccelerationStructureModeKHR::eUpdate : vk::BuildAccelerationStructureModeKHR::eBuild), cpp21::rvalue_to_ptr(instanceRanges.data()), deviceObj->getDispatch());
-      cmdBuf->pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersEnd).setMemoryBarriers(memoryBarriersEnd));
+      cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersBegin).setMemoryBarriers(memoryBarriersBegin));
+      cmdBuf.buildAccelerationStructuresKHR(1u, &accelInstInfo->setGeometries(this->instances).setMode(accelInstInfo->srcAccelerationStructure ? vk::BuildAccelerationStructureModeKHR::eUpdate : vk::BuildAccelerationStructureModeKHR::eBuild), cpp21::rvalue_to_ptr(instanceRanges.data()), deviceObj->getDispatch());
+      cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersEnd).setMemoryBarriers(memoryBarriersEnd));
 
       //
       accelInstInfo->srcAccelerationStructure = accelInstInfo->dstAccelerationStructure;
@@ -411,7 +411,7 @@ namespace ANAMED {
         memcpy(instancePage->mapped, this->instanceInfo->data(), this->instanceInfo->size() * sizeof(InstanceInfo));
 
         // TODO: Acceleration Structure Build Barriers per Buffers
-        submission.commandInits.push_back([instanceDevOffset, instanceOffset, instancePage, instanceDevPage, dispatch = deviceObj->getDispatch(), this](cpp21::optional_ref<vk::CommandBuffer> cmdBuf) {
+        submission.commandInits.push_back([instanceDevOffset, instanceOffset, instancePage, instanceDevPage, dispatch = deviceObj->getDispatch(), this](vk::CommandBuffer const& cmdBuf) {
           return this->writeBuildStructureCmd(cmdBuf, instanceDevPage->bunchBuffer, instancePage->bunchBuffer);
         });
 

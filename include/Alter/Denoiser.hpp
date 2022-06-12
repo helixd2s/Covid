@@ -50,7 +50,7 @@ namespace ANAMED {
     };
 
     // 
-    DenoiserObj(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<DenoiserCreateInfo> cInfo = DenoiserCreateInfo{}) : PipelineObj(handle), cInfo(cInfo) {
+    DenoiserObj(Handle const& handle, cpp21::optional_ref<DenoiserCreateInfo> cInfo = DenoiserCreateInfo{}) : PipelineObj(handle), cInfo(cInfo) {
       this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
@@ -60,7 +60,7 @@ namespace ANAMED {
     };
 
     //
-    inline static tType make(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<DenoiserCreateInfo> cInfo = DenoiserCreateInfo{}) {
+    inline static tType make(Handle const& handle, cpp21::optional_ref<DenoiserCreateInfo> cInfo = DenoiserCreateInfo{}) {
       auto shared = std::make_shared<DenoiserObj>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle), cInfo);
       auto wrap = shared->registerSelf();

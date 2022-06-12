@@ -25,7 +25,7 @@ namespace ANAMED {
   public: 
 
     // 
-    ContextObj(cpp21::optional_ref<Handle> handle = Handle(0ull, HandleType::eUnknown), cpp21::optional_ref<ContextCreateInfo> cInfo = ContextCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
+    ContextObj(Handle const& handle = Handle(0ull, HandleType::eUnknown), cpp21::optional_ref<ContextCreateInfo> cInfo = ContextCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
       //this->construct(cInfo);
     };
 
@@ -35,7 +35,7 @@ namespace ANAMED {
     };
 
     //
-    inline static tType make(cpp21::optional_ref<Handle> handle = Handle(0ull, HandleType::eUnknown), cpp21::optional_ref<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
+    inline static tType make(Handle const& handle = Handle(0ull, HandleType::eUnknown), cpp21::optional_ref<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
       auto shared = std::make_shared<ContextObj>(handle, cInfo);
       shared->construct(cInfo);
       auto wrap = shared->SFT();

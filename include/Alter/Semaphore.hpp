@@ -40,7 +40,7 @@ namespace ANAMED {
     };
 
     // 
-    SemaphoreObj(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<SemaphoreCreateInfo> cInfo = SemaphoreCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
+    SemaphoreObj(Handle const& handle, cpp21::optional_ref<SemaphoreCreateInfo> cInfo = SemaphoreCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
       this->construct(ANAMED::context->get<DeviceObj>(this->base = handle).shared(), cInfo);
     };
 
@@ -56,7 +56,7 @@ namespace ANAMED {
     };
 
     //
-    inline static tType make(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<SemaphoreCreateInfo> cInfo = SemaphoreCreateInfo{}) {
+    inline static tType make(Handle const& handle, cpp21::optional_ref<SemaphoreCreateInfo> cInfo = SemaphoreCreateInfo{}) {
       auto shared = std::make_shared<SemaphoreObj>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle).shared(), cInfo);
       auto wrap = shared->registerSelf();

@@ -42,7 +42,7 @@ namespace ANAMED {
     };
 
     // 
-    InstanceObj(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
+    InstanceObj(Handle const& handle, cpp21::optional_ref<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
       //this->construct(ANAMED::context, cInfo);
     };
 
@@ -66,7 +66,7 @@ namespace ANAMED {
     };
 
     //
-    inline static tType make(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
+    inline static tType make(Handle const& handle, cpp21::optional_ref<InstanceCreateInfo> cInfo = InstanceCreateInfo{}) {
       auto shared = std::make_shared<InstanceObj>(handle, cInfo);
       shared->construct(ANAMED::context.shared(), cInfo);
       auto wrap = shared->registerSelf();

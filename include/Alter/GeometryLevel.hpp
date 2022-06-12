@@ -57,7 +57,7 @@ namespace ANAMED {
     };
 
     // 
-    GeometryLevelObj(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<GeometryLevelCreateInfo> cInfo = GeometryLevelCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
+    GeometryLevelObj(Handle const& handle, cpp21::optional_ref<GeometryLevelCreateInfo> cInfo = GeometryLevelCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
       //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
@@ -73,7 +73,7 @@ namespace ANAMED {
     };
 
     //
-    inline static tType make(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<GeometryLevelCreateInfo> cInfo = GeometryLevelCreateInfo{}) {
+    inline static tType make(Handle const& handle, cpp21::optional_ref<GeometryLevelCreateInfo> cInfo = GeometryLevelCreateInfo{}) {
       auto shared = std::make_shared<GeometryLevelObj>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle).shared(), cInfo);
       auto wrap = shared->registerSelf();
@@ -157,7 +157,7 @@ namespace ANAMED {
     };
 
     //
-    virtual vk::CommandBuffer const& writeBuildStructureCmd(cpp21::optional_ref<vk::CommandBuffer> cmdBuf = {}, vk::Buffer const& geometryOffset = {}) {
+    virtual vk::CommandBuffer const& writeBuildStructureCmd(vk::CommandBuffer const& cmdBuf = {}, vk::Buffer const& geometryOffset = {}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(Handle(this->cInfo->uploader, HandleType::eUploader));
@@ -225,9 +225,9 @@ namespace ANAMED {
       });
 
       //
-      cmdBuf->pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersBegin).setMemoryBarriers(memoryBarriersBegin));
-      cmdBuf->buildAccelerationStructuresKHR(1u, &accelGeomInfo->setGeometries(this->geometryInfos).setMode(accelGeomInfo->srcAccelerationStructure ? vk::BuildAccelerationStructureModeKHR::eUpdate : vk::BuildAccelerationStructureModeKHR::eBuild), cpp21::rvalue_to_ptr(geometryRanges.data()), deviceObj->getDispatch());
-      cmdBuf->pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersEnd).setMemoryBarriers(memoryBarriersEnd));
+      cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersBegin).setMemoryBarriers(memoryBarriersBegin));
+      cmdBuf.buildAccelerationStructuresKHR(1u, &accelGeomInfo->setGeometries(this->geometryInfos).setMode(accelGeomInfo->srcAccelerationStructure ? vk::BuildAccelerationStructureModeKHR::eUpdate : vk::BuildAccelerationStructureModeKHR::eBuild), cpp21::rvalue_to_ptr(geometryRanges.data()), deviceObj->getDispatch());
+      cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersEnd).setMemoryBarriers(memoryBarriersEnd));
 
       //
       accelGeomInfo->srcAccelerationStructure = accelGeomInfo->dstAccelerationStructure;
@@ -270,7 +270,7 @@ namespace ANAMED {
         memcpy(memPage->mapped, this->cInfo->geometries->data(), geometrySize);
 
         // TODO: Acceleration Structure Build Barriers per Buffers
-        submission.commandInits.push_back([geometryOffset, dispatch = deviceObj->getDispatch(), memPage, this](cpp21::optional_ref<vk::CommandBuffer> cmdBuf) {
+        submission.commandInits.push_back([geometryOffset, dispatch = deviceObj->getDispatch(), memPage, this](vk::CommandBuffer const& cmdBuf) {
           return this->writeBuildStructureCmd(cmdBuf, memPage->bunchBuffer);
         });
 

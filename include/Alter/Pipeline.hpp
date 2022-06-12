@@ -49,7 +49,7 @@ namespace ANAMED {
     };
 
     // 
-    PipelineObj(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
+    PipelineObj(Handle const& handle, cpp21::optional_ref<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
       //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
@@ -65,7 +65,7 @@ namespace ANAMED {
     };
 
     //
-    inline static tType make(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) {
+    inline static tType make(Handle const& handle, cpp21::optional_ref<PipelineCreateInfo> cInfo = PipelineCreateInfo{}) {
       auto shared = std::make_shared<PipelineObj>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle).shared(), cInfo);
       auto wrap = shared->registerSelf();
@@ -249,10 +249,10 @@ namespace ANAMED {
   public:
 
     // TODO: using multiple-command
-    virtual tType writeComputeCommand(cpp21::optional_ref<WriteComputeInfo> exec = WriteComputeInfo{}) {
+    virtual tType writeComputeCommand(WriteComputeInfo const& exec = WriteComputeInfo{}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
-      decltype(auto) descriptorsObj = deviceObj->get<PipelineLayoutObj>(exec->layout ? exec->layout : this->cInfo->layout);
+      decltype(auto) descriptorsObj = deviceObj->get<PipelineLayoutObj>(exec.layout ? exec.layout : this->cInfo->layout);
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
 
       //
@@ -280,28 +280,28 @@ namespace ANAMED {
       decltype(auto) sets = descriptorsObj->sets;
 
       {
-        exec->cmdBuf.pipelineBarrier2(depInfo.setMemoryBarriers(memoryBarriersBegin));
-        if (sets.size() > 0) { exec->cmdBuf.bindDescriptorSets(vk::PipelineBindPoint::eCompute, descriptorsObj->handle.as<vk::PipelineLayout>(), 0u, sets, offsets); };
-        descriptorsObj->writePushDescriptor(vk::PipelineBindPoint::eCompute, exec->cmdBuf);
-        exec->cmdBuf.bindPipeline(vk::PipelineBindPoint::eCompute, exec->pipelineIndex == 0u ? this->handle.as<vk::Pipeline>() : this->secondaryPipelines[exec->pipelineIndex-1u]);
-        if (exec->instanceAddressBlock) {
-          exec->cmdBuf.pushConstants(descriptorsObj->handle.as<vk::PipelineLayout>(), vk::ShaderStageFlagBits::eAll, 0u, sizeof(InstanceAddressBlock), &exec->instanceAddressBlock.value());
+        exec.cmdBuf.pipelineBarrier2(depInfo.setMemoryBarriers(memoryBarriersBegin));
+        if (sets.size() > 0) { exec.cmdBuf.bindDescriptorSets(vk::PipelineBindPoint::eCompute, descriptorsObj->handle.as<vk::PipelineLayout>(), 0u, sets, offsets); };
+        descriptorsObj->writePushDescriptor(vk::PipelineBindPoint::eCompute, exec.cmdBuf);
+        exec.cmdBuf.bindPipeline(vk::PipelineBindPoint::eCompute, exec.pipelineIndex == 0u ? this->handle.as<vk::Pipeline>() : this->secondaryPipelines[exec.pipelineIndex-1u]);
+        if (exec.instanceAddressBlock) {
+          exec.cmdBuf.pushConstants(descriptorsObj->handle.as<vk::PipelineLayout>(), vk::ShaderStageFlagBits::eAll, 0u, sizeof(InstanceAddressBlock), &exec.instanceAddressBlock.value());
         };
-        exec->cmdBuf.dispatch(exec->dispatch.width, exec->dispatch.height, exec->dispatch.depth);
-        exec->cmdBuf.pipelineBarrier2(depInfo.setMemoryBarriers(memoryBarriersEnd));
+        exec.cmdBuf.dispatch(exec.dispatch.width, exec.dispatch.height, exec.dispatch.depth);
+        exec.cmdBuf.pipelineBarrier2(depInfo.setMemoryBarriers(memoryBarriersEnd));
       };
 
       return SFT();
     };
 
     // TODO: using multiple-command
-    virtual tType writeGraphicsCommand(cpp21::optional_ref<WriteGraphicsInfo> exec = WriteGraphicsInfo{}) {
+    virtual tType writeGraphicsCommand(WriteGraphicsInfo const& exec = WriteGraphicsInfo{}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
-      decltype(auto) pipelineLayout = exec->layout ? exec->layout : this->cInfo->layout;
+      decltype(auto) pipelineLayout = exec.layout ? exec.layout : this->cInfo->layout;
       decltype(auto) descriptorsObj = deviceObj->get<PipelineLayoutObj>(pipelineLayout);
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
-      decltype(auto) framebuffer = deviceObj->get<FramebufferObj>(exec->framebuffer).shared();
+      decltype(auto) framebuffer = deviceObj->get<FramebufferObj>(exec.framebuffer).shared();
       decltype(auto) dynamicState = this->cInfo->graphics->dynamicState;
 
       //
@@ -343,30 +343,30 @@ namespace ANAMED {
 
       // 
       auto _depInfo = depInfo;
-      if (framebuffer) { framebuffer->writeSwitchToAttachment(exec->cmdBuf); };
-      exec->cmdBuf.pipelineBarrier2(_depInfo.setMemoryBarriers(memoryBarriersBegin));
-      exec->cmdBuf.beginRendering(vk::RenderingInfoKHR{ .renderArea = renderArea, .layerCount = this->cInfo->graphics->attachmentLayout->type == FramebufferType::eCubemap ? 6u : 1u, .viewMask = 0x0u, .colorAttachmentCount = uint32_t(colorAttachments.size()), .pColorAttachments = colorAttachments.data(), .pDepthAttachment = &depthAttachment, .pStencilAttachment = &stencilAttachment });
-      exec->cmdBuf.bindPipeline(vk::PipelineBindPoint::eGraphics, exec->pipelineIndex == 0u ? this->handle.as<vk::Pipeline>() : this->secondaryPipelines[exec->pipelineIndex - 1u]);
-      if (sets.size() > 0) { exec->cmdBuf.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, descriptorsObj->handle.as<vk::PipelineLayout>(), 0u, sets, offsets); };
-      descriptorsObj->writePushDescriptor(vk::PipelineBindPoint::eGraphics, exec->cmdBuf);
-      exec->cmdBuf.setViewportWithCount(viewports);
-      exec->cmdBuf.setScissorWithCount(scissors);
-      exec->cmdBuf.setDepthTestEnable(dynamicState->hasDepthTest);
-      exec->cmdBuf.setDepthWriteEnable(dynamicState->hasDepthWrite);
-      exec->cmdBuf.setDepthCompareOp(dynamicState->reversalDepth ? vk::CompareOp::eGreaterOrEqual : vk::CompareOp::eLessOrEqual);
+      if (framebuffer) { framebuffer->writeSwitchToAttachment(exec.cmdBuf); };
+      exec.cmdBuf.pipelineBarrier2(_depInfo.setMemoryBarriers(memoryBarriersBegin));
+      exec.cmdBuf.beginRendering(vk::RenderingInfoKHR{ .renderArea = renderArea, .layerCount = this->cInfo->graphics->attachmentLayout->type == FramebufferType::eCubemap ? 6u : 1u, .viewMask = 0x0u, .colorAttachmentCount = uint32_t(colorAttachments.size()), .pColorAttachments = colorAttachments.data(), .pDepthAttachment = &depthAttachment, .pStencilAttachment = &stencilAttachment });
+      exec.cmdBuf.bindPipeline(vk::PipelineBindPoint::eGraphics, exec.pipelineIndex == 0u ? this->handle.as<vk::Pipeline>() : this->secondaryPipelines[exec.pipelineIndex - 1u]);
+      if (sets.size() > 0) { exec.cmdBuf.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, descriptorsObj->handle.as<vk::PipelineLayout>(), 0u, sets, offsets); };
+      descriptorsObj->writePushDescriptor(vk::PipelineBindPoint::eGraphics, exec.cmdBuf);
+      exec.cmdBuf.setViewportWithCount(viewports);
+      exec.cmdBuf.setScissorWithCount(scissors);
+      exec.cmdBuf.setDepthTestEnable(dynamicState->hasDepthTest);
+      exec.cmdBuf.setDepthWriteEnable(dynamicState->hasDepthWrite);
+      exec.cmdBuf.setDepthCompareOp(dynamicState->reversalDepth ? vk::CompareOp::eGreaterOrEqual : vk::CompareOp::eLessOrEqual);
 
       //
       using fnT = void(cpp21::shared_vector<vk::MultiDrawInfoEXT> const&, uint32_t const&);
       using fnTp = std::function<fnT>;
 
       //
-      if (exec->instanceDraws.size() > 0) {
-        for (decltype(auto) instInfo : exec->instanceDraws) {
+      if (exec.instanceDraws.size() > 0) {
+        for (decltype(auto) instInfo : exec.instanceDraws) {
           decltype(auto) multiDrawDirect = supportMultiDraw ?
-            fnTp([cmdBuf = exec->cmdBuf, dispatch = deviceObj->getDispatch()](cpp21::shared_vector<vk::MultiDrawInfoEXT> const& multiDraw, uint32_t const& instanceCount = 1u) {
+            fnTp([cmdBuf = exec.cmdBuf, dispatch = deviceObj->getDispatch()](cpp21::shared_vector<vk::MultiDrawInfoEXT> const& multiDraw, uint32_t const& instanceCount = 1u) {
               cmdBuf.drawMultiEXT(*multiDraw, instanceCount, 0u, sizeof(vk::MultiDrawInfoEXT), dispatch);
             }) :
-            fnTp([cmdBuf = exec->cmdBuf, pipelineLayout, instInfo](cpp21::shared_vector<vk::MultiDrawInfoEXT> const& multiDraw, uint32_t const& instanceCount = 1u) {
+            fnTp([cmdBuf = exec.cmdBuf, pipelineLayout, instInfo](cpp21::shared_vector<vk::MultiDrawInfoEXT> const& multiDraw, uint32_t const& instanceCount = 1u) {
               uint32_t index = 0u;
               for (decltype(auto) drawInfo : *multiDraw) {
                 decltype(auto) pushed = instInfo.drawConst->with(index++);
@@ -376,36 +376,36 @@ namespace ANAMED {
             });
 
             // 
-            if (exec->instanceAddressBlock) {
-              exec->cmdBuf.pushConstants(descriptorsObj->handle.as<vk::PipelineLayout>(), vk::ShaderStageFlagBits::eAll, 0u, sizeof(InstanceAddressBlock), &exec->instanceAddressBlock.value());
+            if (exec.instanceAddressBlock) {
+              exec.cmdBuf.pushConstants(descriptorsObj->handle.as<vk::PipelineLayout>(), vk::ShaderStageFlagBits::eAll, 0u, sizeof(InstanceAddressBlock), &exec.instanceAddressBlock.value());
             };
             if (instInfo.drawConst) {
-              exec->cmdBuf.pushConstants(descriptorsObj->handle.as<vk::PipelineLayout>(), vk::ShaderStageFlagBits::eAll, sizeof(InstanceAddressBlock), sizeof(InstanceDrawInfo), &instInfo.drawConst.value());
+              exec.cmdBuf.pushConstants(descriptorsObj->handle.as<vk::PipelineLayout>(), vk::ShaderStageFlagBits::eAll, sizeof(InstanceAddressBlock), sizeof(InstanceDrawInfo), &instInfo.drawConst.value());
             };
             multiDrawDirect(instInfo.drawInfos, instInfo.drawConst ? instInfo.drawConst->instanceCount : 1u);
         };
       };
 
       // 
-      exec->cmdBuf.endRendering();
-      exec->cmdBuf.pipelineBarrier2(_depInfo.setMemoryBarriers(memoryBarriersEnd));
-      if (framebuffer) { framebuffer->writeSwitchToShaderRead(exec->cmdBuf); };
+      exec.cmdBuf.endRendering();
+      exec.cmdBuf.pipelineBarrier2(_depInfo.setMemoryBarriers(memoryBarriersEnd));
+      if (framebuffer) { framebuffer->writeSwitchToShaderRead(exec.cmdBuf); };
 
       // 
       return SFT();
     };
 
     // TODO: using multiple-command
-    virtual FenceType executePipelineOnce(cpp21::optional_ref<ExecutePipelineInfo> exec = ExecutePipelineInfo{}) {
+    virtual FenceType executePipelineOnce(ExecutePipelineInfo const& exec = ExecutePipelineInfo{}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
-      decltype(auto) submission = CommandOnceSubmission{ .submission = exec->submission };
+      decltype(auto) submission = CommandOnceSubmission{ .submission = exec.submission };
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
 
       // 
-      submission.commandInits.push_back([exec,this](cpp21::optional_ref<vk::CommandBuffer> cmdBuf) {
-        if (exec->graphics) { this->writeGraphicsCommand(exec->graphics->with(cmdBuf)); };
-        if (exec->compute) { this->writeComputeCommand(exec->compute->with(cmdBuf)); };
+      submission.commandInits.push_back([exec,this](vk::CommandBuffer const& cmdBuf) {
+        if (exec.graphics) { this->writeGraphicsCommand(exec.graphics->with(cmdBuf)); };
+        if (exec.compute) { this->writeComputeCommand(exec.compute->with(cmdBuf)); };
         return cmdBuf;
       });
 

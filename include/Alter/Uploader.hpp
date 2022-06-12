@@ -61,7 +61,7 @@ namespace ANAMED {
     };
 
     // 
-    UploaderObj(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
+    UploaderObj(Handle const& handle, cpp21::optional_ref<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
       //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
@@ -77,7 +77,7 @@ namespace ANAMED {
     };
 
     //
-    inline static tType make(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) {
+    inline static tType make(Handle const& handle, cpp21::optional_ref<UploaderCreateInfo> cInfo = UploaderCreateInfo{}) {
       auto shared = std::make_shared<UploaderObj>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle).shared(), cInfo);
       auto wrap = shared->registerSelf();
@@ -187,11 +187,11 @@ namespace ANAMED {
     };
 
     //
-    virtual FenceType bindMemoryPages(cpp21::optional_ref<SubmissionInfo> submission = {}) {
+    virtual FenceType bindMemoryPages(SubmissionInfo const& submission = {}) {
       decltype(auto) bindSparseInfo = infoMap->get<vk::BindSparseInfo>(vk::StructureType::eBindSparseInfo);
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
-      decltype(auto) queue = deviceObj->getQueue(submission->info);
+      decltype(auto) queue = deviceObj->getQueue(submission.info.value());
 
       //
       std::vector<vk::Semaphore> waitSemaphores = {};
@@ -199,12 +199,12 @@ namespace ANAMED {
       std::vector<vk::SparseMemoryBind> sparseMemoryBinds = {};
 
       //
-      for (auto& semInfo : *(submission->waitSemaphores)) {
+      for (auto& semInfo : *(submission.waitSemaphores)) {
         waitSemaphores.push_back(semInfo.semaphore);
       };
 
       //
-      for (auto& semInfo : *(submission->signalSemaphores)) {
+      for (auto& semInfo : *(submission.signalSemaphores)) {
         signalSemaphores.push_back(semInfo.semaphore);
       };
 
@@ -235,7 +235,7 @@ namespace ANAMED {
       //
       auto onDone = [device, fence, callstack = std::weak_ptr<CallStack>(deviceObj->getCallstack()), submission, deAllocation]() {
         auto cl = callstack.lock();
-        for (auto& fn : submission->onDone) {
+        for (auto& fn : submission.onDone) {
           cl->add(std::bind(fn, device.getFenceStatus(*fence)));
         };
         cl->add(deAllocation);
@@ -265,21 +265,21 @@ namespace ANAMED {
     virtual size_t getImagePixelSize(vk::Image const& image);
 
     //
-    virtual FenceType executeUploadToResourceOnce(cpp21::optional_ref<UploadExecutionOnce> exec) {
+    virtual FenceType executeUploadToResourceOnce(UploadExecutionOnce const& exec) {
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo {.info = this->cInfo->info } };
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
-      decltype(auto) size = exec->host ? (exec->writeInfo.dstBuffer ? std::min(exec->host.size(), exec->writeInfo.dstBuffer->region.size) : exec->host.size()) : (exec->writeInfo.dstBuffer ? exec->writeInfo.dstBuffer->region.size : VK_WHOLE_SIZE);
+      decltype(auto) size = exec.host ? (exec.writeInfo.dstBuffer ? std::min(exec.host.size(), exec.writeInfo.dstBuffer->region.size) : exec.host.size()) : (exec.writeInfo.dstBuffer ? exec.writeInfo.dstBuffer->region.size : VK_WHOLE_SIZE);
       decltype(auto) mappedBuffer = this->mappedBuffer;
 
       //
-      if (exec->writeInfo.dstImage) {
-        decltype(auto) pixelCount = size_t(exec->writeInfo.dstImage->region.extent.width) * size_t(exec->writeInfo.dstImage->region.extent.height) * size_t(exec->writeInfo.dstImage->region.extent.depth) * size_t(exec->writeInfo.dstImage->region.layerCount);
-        size = std::min(size, pixelCount * getImagePixelSize(exec->writeInfo.dstImage->image));
+      if (exec.writeInfo.dstImage) {
+        decltype(auto) pixelCount = size_t(exec.writeInfo.dstImage->region.extent.width) * size_t(exec.writeInfo.dstImage->region.extent.height) * size_t(exec.writeInfo.dstImage->region.extent.depth) * size_t(exec.writeInfo.dstImage->region.layerCount);
+        size = std::min(size, pixelCount * getImagePixelSize(exec.writeInfo.dstImage->image));
       };
 
       // 
-      VkDeviceSize offset = exec->writeInfo.hostMapOffset;
+      VkDeviceSize offset = exec.writeInfo.hostMapOffset;
 
       // 
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
@@ -289,13 +289,13 @@ namespace ANAMED {
 #endif
 
       // 
-      if (exec->host) {
-        memcpy(memPage->mapped, exec->host.data(), size);
+      if (exec.host) {
+        memcpy(memPage->mapped, exec.host.data(), size);
       };
 
       // 
-      submission.commandInits.push_back([exec, offset, memPage, this](cpp21::optional_ref<vk::CommandBuffer> cmdBuf) {
-        this->writeUploadToResourceCmd(exec->writeInfo.with(cmdBuf, memPage->bunchBuffer).mapOffset(offset));
+      submission.commandInits.push_back([exec, offset, memPage, this](vk::CommandBuffer const& cmdBuf) {
+        this->writeUploadToResourceCmd(exec.writeInfo.with(cmdBuf, memPage->bunchBuffer).mapOffset(offset));
         return cmdBuf;
       });
 
@@ -313,15 +313,15 @@ namespace ANAMED {
     };
 
     //
-    virtual FenceType executeDownloadToResourceOnce(cpp21::optional_ref<DownloadExecutionOnce> exec) {
+    virtual FenceType executeDownloadToResourceOnce(DownloadExecutionOnce const& exec) {
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = this->cInfo->info } };
       decltype(auto) mappedBuffer = this->mappedBuffer;
       decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) size = exec->host ? (exec->writeInfo.srcBuffer ? std::min(exec->host.size(), exec->writeInfo.srcBuffer->region.size) : exec->host.size()) : (exec->writeInfo.srcBuffer ? exec->writeInfo.srcBuffer->region.size : VK_WHOLE_SIZE);
+      decltype(auto) size = exec.host ? (exec.writeInfo.srcBuffer ? std::min(exec.host.size(), exec.writeInfo.srcBuffer->region.size) : exec.host.size()) : (exec.writeInfo.srcBuffer ? exec.writeInfo.srcBuffer->region.size : VK_WHOLE_SIZE);
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
 
       // 
-      VkDeviceSize offset = exec->writeInfo.hostMapOffset;
+      VkDeviceSize offset = exec.writeInfo.hostMapOffset;
 
       // 
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
@@ -331,14 +331,14 @@ namespace ANAMED {
 #endif
 
       // 
-      submission.commandInits.push_back([exec, memPage, offset, this](cpp21::optional_ref<vk::CommandBuffer> cmdBuf) {
-        this->writeDownloadToResourceCmd(exec->writeInfo.with(cmdBuf, memPage->bunchBuffer).mapOffset(offset));
+      submission.commandInits.push_back([exec, memPage, offset, this](vk::CommandBuffer const& cmdBuf) {
+        this->writeDownloadToResourceCmd(exec.writeInfo.with(cmdBuf, memPage->bunchBuffer).mapOffset(offset));
         return cmdBuf;
       });
 
       //
-      if (exec->host) {
-        submission.submission.onDone.push_back([offset, size, _host = exec->host, mapped = memPage->mapped](cpp21::optional_ref<vk::Result> result) {
+      if (exec.host) {
+        submission.submission.onDone.push_back([offset, size, _host = exec.host, mapped = memPage->mapped](cpp21::optional_ref<vk::Result> result) {
           memcpy(_host.data(), cpp21::shift(mapped, 0), size);
         });
 

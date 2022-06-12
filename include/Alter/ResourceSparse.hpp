@@ -104,7 +104,7 @@ namespace ANAMED {
     };
 
     // 
-    ResourceSparseObj(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : ResourceObj(handle, cInfo) {
+    ResourceSparseObj(Handle const& handle, cpp21::optional_ref<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : ResourceObj(handle, cInfo) {
       //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
@@ -120,7 +120,7 @@ namespace ANAMED {
     };
 
     //
-    inline static tType make(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
+    inline static tType make(Handle const& handle, cpp21::optional_ref<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
       auto shared = std::make_shared<ResourceSparseObj>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle).shared(), cInfo);
       return std::dynamic_pointer_cast<ResourceSparseObj>(shared->registerSelf().shared());
@@ -176,10 +176,10 @@ namespace ANAMED {
     };
 
     // 
-    virtual FenceType bindSparseMemory(cpp21::optional_ref<SubmissionInfo> submission = {}){
+    virtual FenceType bindSparseMemory(SubmissionInfo const& submission = {}){
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) queue = deviceObj->getQueue(submission->info);
+      decltype(auto) queue = deviceObj->getQueue(submission.info.value());
       decltype(auto) bindSparseInfo = infoMap->get<vk::BindSparseInfo>(vk::StructureType::eBindSparseInfo);
 
       //
@@ -188,12 +188,12 @@ namespace ANAMED {
       std::vector<vk::SparseMemoryBind> sparseMemoryBinds = {};
 
       //
-      for (auto& semInfo : *(submission->waitSemaphores)) {
+      for (auto& semInfo : *(submission.waitSemaphores)) {
         waitSemaphores.push_back(semInfo.semaphore);
       };
 
       //
-      for (auto& semInfo : *(submission->signalSemaphores)) {
+      for (auto& semInfo : *(submission.signalSemaphores)) {
         signalSemaphores.push_back(semInfo.semaphore);
       };
 
@@ -224,8 +224,9 @@ namespace ANAMED {
       //
       auto onDone = [device, fence, callstack = std::weak_ptr<CallStack>(deviceObj->getCallstack()), submission, deAllocation]() {
         auto cl = callstack.lock();
-        for (auto& fn : submission->onDone) {
-          if (fn) { cl->add(std::bind(fn, device.getFenceStatus(*fence))); };
+        for (auto fn : submission.onDone) {
+          auto status = device.getFenceStatus(*fence);
+          if (fn) { cl->add(std::bind(fn, status)); };
         };
         cl->add(deAllocation);
       };

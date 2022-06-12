@@ -27,8 +27,8 @@ namespace ANAMED {
     std::vector<vk::Image> images = {};
     std::vector<vk::ImageView> imageViews = {};
     std::vector<uint32_t> imageViewIndices = {};
-    std::vector<std::function<void(cpp21::optional_ref<vk::CommandBuffer>)>> switchToPresentFns = {};
-    std::vector<std::function<void(cpp21::optional_ref<vk::CommandBuffer>)>> switchToReadyFns = {};
+    std::vector<std::function<void(vk::CommandBuffer const&)>> switchToPresentFns = {};
+    std::vector<std::function<void(vk::CommandBuffer const&)>> switchToReadyFns = {};
 
     // 
     cpp21::wrap_shared_ptr<vk::SemaphoreSubmitInfo> copySemaphoreInfo = {};
@@ -73,7 +73,7 @@ namespace ANAMED {
     };
 
     // 
-    PingPongObj(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<PingPongCreateInfo> cInfo = PingPongCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
+    PingPongObj(Handle const& handle, cpp21::optional_ref<PingPongCreateInfo> cInfo = PingPongCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
       //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
@@ -89,7 +89,7 @@ namespace ANAMED {
     };
 
     //
-    inline static tType make(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<PingPongCreateInfo> cInfo = PingPongCreateInfo{}) {
+    inline static tType make(Handle const& handle, cpp21::optional_ref<PingPongCreateInfo> cInfo = PingPongCreateInfo{}) {
       auto shared = std::make_shared<PingPongObj>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle).shared(), cInfo);
       auto wrap = shared->registerSelf();
@@ -129,9 +129,9 @@ namespace ANAMED {
     };
 
     //
-    virtual FenceType switchToPresent(cpp21::optional_ref<uint32_t> imageIndex, cpp21::optional_ref<QueueGetInfo> info = QueueGetInfo{}, bool const& glSemaphore = false) {
+    virtual FenceType switchToPresent(uint32_t const& imageIndex, cpp21::optional_ref<QueueGetInfo> info = QueueGetInfo{}, bool const& glSemaphore = false) {
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = info ? info.value() : this->cInfo->info.value() } };
-      decltype(auto) nextIndex = ((*imageIndex) + 1u) % this->sets.size();
+      decltype(auto) nextIndex = (imageIndex + 1u) % this->sets.size();
 
       // 
       submission.submission.signalSemaphores = std::vector<vk::SemaphoreSubmitInfo>{};
@@ -139,15 +139,15 @@ namespace ANAMED {
 
       //
       if (glSemaphore) {
-        submission.submission.signalSemaphores->push_back(*sets[*imageIndex].readySemaphoreInfo); // ready for OpenGL draw
+        submission.submission.signalSemaphores->push_back(*sets[imageIndex].readySemaphoreInfo); // ready for OpenGL draw
       };
 
       //
-      submission.submission.signalSemaphores->push_back(sets[nextIndex].copySemaphoreInfo);
+      submission.submission.signalSemaphores->push_back(*sets[nextIndex].copySemaphoreInfo);
 
       //
-      submission.commandInits.push_back([this, imageIndex](cpp21::optional_ref<vk::CommandBuffer> cmdBuf) {
-        for (auto& switchFn : this->sets[*imageIndex].switchToPresentFns) { switchFn(cmdBuf); };
+      submission.commandInits.push_back([this, imageIndex](vk::CommandBuffer const& cmdBuf) {
+        for (auto& switchFn : this->sets[imageIndex].switchToPresentFns) { switchFn(cmdBuf); };
         return cmdBuf;
       });
 
@@ -159,7 +159,7 @@ namespace ANAMED {
     };
 
     //
-    virtual FenceType switchToReady(cpp21::optional_ref<uint32_t> imageIndex, cpp21::optional_ref<QueueGetInfo> info = QueueGetInfo{}, bool const& glSemaphore = false) {
+    virtual FenceType switchToReady(uint32_t const& imageIndex, cpp21::optional_ref<QueueGetInfo> info = QueueGetInfo{}, bool const& glSemaphore = false) {
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo { .info = info ? info.value() : this->cInfo->info.value() } };
 
       // 
@@ -168,17 +168,17 @@ namespace ANAMED {
 
       //
       if (glSemaphore) {
-        submission.submission.waitSemaphores->push_back(*sets[*imageIndex].presentSemaphoreInfo); // waiting OpenGL present
+        submission.submission.waitSemaphores->push_back(*sets[imageIndex].presentSemaphoreInfo); // waiting OpenGL present
       };
 
       // 
       if (!firstWait) {
-        submission.submission.waitSemaphores->push_back(*sets[*imageIndex].copySemaphoreInfo);
+        submission.submission.waitSemaphores->push_back(*sets[imageIndex].copySemaphoreInfo);
       };
 
       // but currently there is no any commands...
-      submission.commandInits.push_back([this, imageIndex](cpp21::optional_ref<vk::CommandBuffer> cmdBuf) {
-        for (auto& switchFn : this->sets[*imageIndex].switchToReadyFns) { switchFn(cmdBuf); };
+      submission.commandInits.push_back([this, imageIndex](vk::CommandBuffer const& cmdBuf) {
+        for (auto& switchFn : this->sets[imageIndex].switchToReadyFns) { switchFn(cmdBuf); };
         return cmdBuf;
       });
 
@@ -207,7 +207,7 @@ namespace ANAMED {
 
       // 
       //submission.submission.waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{ sets[*imageIndex].presentSemaphoreInfo };
-      submission.commandInits.push_back([this, clearColors, queueFamilyIndex= info->queueFamilyIndex](cpp21::optional_ref<vk::CommandBuffer> cmdBuf) {
+      submission.commandInits.push_back([this, clearColors, queueFamilyIndex= info->queueFamilyIndex](vk::CommandBuffer const& cmdBuf) {
         this->writeClearImages(cmdBuf, queueFamilyIndex, clearColors);
         return cmdBuf;
       });
@@ -217,12 +217,12 @@ namespace ANAMED {
     };
 
     //
-    virtual FenceType clearImage(cpp21::optional_ref<QueueGetInfo> info = QueueGetInfo{}, uint32_t const& imageIndex = 0u, cpp21::optional_ref<glm::vec4> clearColors = {}) {
+    virtual FenceType clearImage(cpp21::optional_ref<QueueGetInfo> info = QueueGetInfo{}, uint32_t const& imageIndex = 0u, glm::vec4 const& clearColors = {}) {
       decltype(auto) submission = CommandOnceSubmission{ .submission = SubmissionInfo {.info = info ? info.value() : this->cInfo->info.value() } };
 
       // 
       //submission.submission.waitSemaphores = std::vector<vk::SemaphoreSubmitInfo>{ sets[*imageIndex].presentSemaphoreInfo };
-      submission.commandInits.push_back([this, clearColors, imageIndex, queueFamilyIndex = info->queueFamilyIndex](cpp21::optional_ref<vk::CommandBuffer> cmdBuf) {
+      submission.commandInits.push_back([this, clearColors, imageIndex, queueFamilyIndex = info->queueFamilyIndex](vk::CommandBuffer const& cmdBuf) {
         this->writeClearImage(cmdBuf, queueFamilyIndex, imageIndex, clearColors);
         return cmdBuf;
       });
@@ -232,7 +232,7 @@ namespace ANAMED {
     };
 
     //
-    virtual void writeClearImage(cpp21::optional_ref<vk::CommandBuffer> cmdBuf, uint32_t const& queueFamilyIndex = 0u, uint32_t const& imageIndex = 0u, cpp21::optional_ref<glm::vec4> clearColors = {}) {
+    virtual void writeClearImage(vk::CommandBuffer const& cmdBuf, uint32_t const& queueFamilyIndex = 0u, uint32_t const& imageIndex = 0u, glm::vec4 const& clearColors = {}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) image = this->sets[this->currentState.index].images[imageIndex];
@@ -245,7 +245,7 @@ namespace ANAMED {
     };
 
     //
-    virtual void writeClearImages(cpp21::optional_ref<vk::CommandBuffer> cmdBuf, uint32_t const& queueFamilyIndex = 0u, std::vector<glm::vec4> const& clearColors = {}) {
+    virtual void writeClearImages(vk::CommandBuffer const& cmdBuf, uint32_t const& queueFamilyIndex = 0u, std::vector<glm::vec4> const& clearColors = {}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
 
@@ -395,7 +395,7 @@ namespace ANAMED {
       set->imageViewIndices.push_back(pair.indice);
 
       // currently there is no any command
-      set->switchToReadyFns.push_back([](cpp21::optional_ref<vk::CommandBuffer> cmdBuf) {
+      set->switchToReadyFns.push_back([](vk::CommandBuffer const& cmdBuf) {
       });
 
       //
@@ -408,7 +408,7 @@ namespace ANAMED {
       }};
 
       // copy into next image in chain (i.e. use ping-pong alike Optifine)
-      set->switchToPresentFns.push_back([this,device,subresourceRange,copyRegions,index,nextSetIndex,image=imageObj.as<vk::Image>()](cpp21::optional_ref<vk::CommandBuffer> cmdBuf) {
+      set->switchToPresentFns.push_back([this,device,subresourceRange,copyRegions,index,nextSetIndex,image=imageObj.as<vk::Image>()](vk::CommandBuffer const& cmdBuf) {
         // use next index of
         decltype(auto) nextImage = this->sets[nextSetIndex].images[index];
         if (nextImage != image) {
@@ -483,9 +483,9 @@ namespace ANAMED {
           };
 
           // 
-          cmdBuf->pipelineBarrier2(depInfo.setImageMemoryBarriers(imageBarriersBegin));
-          cmdBuf->copyImage2(copyImageInfo.setRegions(copyRegions));
-          cmdBuf->pipelineBarrier2(depInfo.setImageMemoryBarriers(imageBarriersEnd));
+          cmdBuf.pipelineBarrier2(depInfo.setImageMemoryBarriers(imageBarriersBegin));
+          cmdBuf.copyImage2(copyImageInfo.setRegions(copyRegions));
+          cmdBuf.pipelineBarrier2(depInfo.setImageMemoryBarriers(imageBarriersEnd));
         };
       });
     };

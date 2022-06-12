@@ -70,7 +70,7 @@ namespace ANAMED {
     };
 
     // 
-    ResourceObj(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
+    ResourceObj(Handle const& handle, cpp21::optional_ref<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
       //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
@@ -212,7 +212,7 @@ namespace ANAMED {
     };
 
     //
-    inline static tType make(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
+    inline static tType make(Handle const& handle, cpp21::optional_ref<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
       auto shared = std::make_shared<ResourceObj>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle).shared(), cInfo);
       auto wrap = shared->registerSelf();
@@ -630,17 +630,17 @@ namespace ANAMED {
 
       // 
       if (this->cInfo->bufferInfo && this->handle.type == HandleType::eBuffer) {
-        info->commandInits.push_back([this, bufferInfo, depInfo, bufferBarriersBegin, bufferBarriersEnd](cpp21::optional_ref<vk::CommandBuffer> cmdBuf) {
+        info->commandInits.push_back([this, bufferInfo, depInfo, bufferBarriersBegin, bufferBarriersEnd](vk::CommandBuffer const& cmdBuf) {
           auto _depInfo = depInfo;
-          cmdBuf->pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersBegin));
-          cmdBuf->fillBuffer(this->handle.as<vk::Buffer>(), 0ull, bufferInfo->size, 0u);
-          cmdBuf->pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersEnd));
+          cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersBegin));
+          cmdBuf.fillBuffer(this->handle.as<vk::Buffer>(), 0ull, bufferInfo->size, 0u);
+          cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersEnd));
           return cmdBuf;
         });
 
         //
         //this->cInfo->imageInfo->layout = switchInfo.newImageLayout;
-        return deviceObj->executeCommandOnce(info);
+        return deviceObj->executeCommandOnce(info.value());
       };
 
       // 
@@ -659,7 +659,7 @@ namespace ANAMED {
       // cupola
       if (oldImageLayout != switchInfo.newImageLayout) {
         if (this->cInfo->imageInfo && this->handle.type == HandleType::eImage) {
-          submission.commandInits.push_back([this, switchInfo](cpp21::optional_ref<vk::CommandBuffer> cmdBuf) {
+          submission.commandInits.push_back([this, switchInfo](vk::CommandBuffer const& cmdBuf) {
             this->writeSwitchLayoutCommand(switchInfo.with(cmdBuf));
             return cmdBuf;
           });
@@ -733,18 +733,18 @@ namespace ANAMED {
   };
 
   // 
-  inline WrapShared<DeviceObj> DeviceObj::writeCopyBuffersCommand(cpp21::optional_ref<CopyBufferWriteInfo> copyInfoRaw) {
+  inline WrapShared<DeviceObj> DeviceObj::writeCopyBuffersCommand(CopyBufferWriteInfo const& copyInfoRaw) {
     //decltype(auto) submission = CommandOnceSubmission{ .info = QueueGetInfo {.queueFamilyIndex = copyInfoRaw.dst->queueFamilyIndex } };
     decltype(auto) device = this->base.as<vk::Device>();
     decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
-    decltype(auto) size = std::min(copyInfoRaw->src->region.size, copyInfoRaw->dst->region.size);
-    decltype(auto) copyInfo = vk::CopyBufferInfo2{ .srcBuffer = copyInfoRaw->src->buffer, .dstBuffer = copyInfoRaw->dst->buffer };
+    decltype(auto) size = std::min(copyInfoRaw.src->region.size, copyInfoRaw.dst->region.size);
+    decltype(auto) copyInfo = vk::CopyBufferInfo2{ .srcBuffer = copyInfoRaw.src->buffer, .dstBuffer = copyInfoRaw.dst->buffer };
     decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
-    decltype(auto) regions = std::vector<vk::BufferCopy2>{ vk::BufferCopy2{.srcOffset = copyInfoRaw->src->region.offset, .dstOffset = copyInfoRaw->dst->region.offset, .size = size} };
+    decltype(auto) regions = std::vector<vk::BufferCopy2>{ vk::BufferCopy2{.srcOffset = copyInfoRaw.src->region.offset, .dstOffset = copyInfoRaw.dst->region.offset, .size = size} };
 
     //
-    decltype(auto) srcAccessMask = vk::AccessFlagBits2(vku::getAccessMaskByImageUsage(deviceObj->get<ResourceObj>(copyInfoRaw->src->buffer)->getBufferUsage()));
-    decltype(auto) dstAccessMask = vk::AccessFlagBits2(vku::getAccessMaskByImageUsage(deviceObj->get<ResourceObj>(copyInfoRaw->dst->buffer)->getBufferUsage()));
+    decltype(auto) srcAccessMask = vk::AccessFlagBits2(vku::getAccessMaskByImageUsage(deviceObj->get<ResourceObj>(copyInfoRaw.src->buffer)->getBufferUsage()));
+    decltype(auto) dstAccessMask = vk::AccessFlagBits2(vku::getAccessMaskByImageUsage(deviceObj->get<ResourceObj>(copyInfoRaw.dst->buffer)->getBufferUsage()));
 
     //
     decltype(auto) bufferBarriersBegin = std::vector<vk::BufferMemoryBarrier2>{
@@ -753,10 +753,10 @@ namespace ANAMED {
         .srcAccessMask = srcAccessMask,
         .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferRead),
         .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferRead),
-        .srcQueueFamilyIndex = copyInfoRaw->src->queueFamilyIndex,
-        .dstQueueFamilyIndex = copyInfoRaw->dst->queueFamilyIndex,
-        .buffer = copyInfoRaw->src->buffer,
-        .offset = copyInfoRaw->src->region.offset,
+        .srcQueueFamilyIndex = copyInfoRaw.src->queueFamilyIndex,
+        .dstQueueFamilyIndex = copyInfoRaw.dst->queueFamilyIndex,
+        .buffer = copyInfoRaw.src->buffer,
+        .offset = copyInfoRaw.src->region.offset,
         .size = size
       },
       vk::BufferMemoryBarrier2{
@@ -764,10 +764,10 @@ namespace ANAMED {
         .srcAccessMask = dstAccessMask,
         .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferWrite),
         .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
-        .srcQueueFamilyIndex = copyInfoRaw->src->queueFamilyIndex,
-        .dstQueueFamilyIndex = copyInfoRaw->dst->queueFamilyIndex,
-        .buffer = copyInfoRaw->dst->buffer,
-        .offset = copyInfoRaw->dst->region.offset,
+        .srcQueueFamilyIndex = copyInfoRaw.src->queueFamilyIndex,
+        .dstQueueFamilyIndex = copyInfoRaw.dst->queueFamilyIndex,
+        .buffer = copyInfoRaw.dst->buffer,
+        .offset = copyInfoRaw.dst->region.offset,
         .size = size
       }
     };
@@ -779,10 +779,10 @@ namespace ANAMED {
         .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferRead),
         .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(srcAccessMask),
         .dstAccessMask = srcAccessMask,
-        .srcQueueFamilyIndex = copyInfoRaw->dst->queueFamilyIndex,
-        .dstQueueFamilyIndex = copyInfoRaw->src->queueFamilyIndex,
-        .buffer = copyInfoRaw->src->buffer,
-        .offset = copyInfoRaw->src->region.offset,
+        .srcQueueFamilyIndex = copyInfoRaw.dst->queueFamilyIndex,
+        .dstQueueFamilyIndex = copyInfoRaw.src->queueFamilyIndex,
+        .buffer = copyInfoRaw.src->buffer,
+        .offset = copyInfoRaw.src->region.offset,
         .size = size
       },
       vk::BufferMemoryBarrier2{
@@ -790,21 +790,21 @@ namespace ANAMED {
         .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
         .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(dstAccessMask),
         .dstAccessMask = dstAccessMask,
-        .srcQueueFamilyIndex = copyInfoRaw->dst->queueFamilyIndex,
-        .dstQueueFamilyIndex = copyInfoRaw->src->queueFamilyIndex,
-        .buffer = copyInfoRaw->dst->buffer,
-        .offset = copyInfoRaw->dst->region.offset,
+        .srcQueueFamilyIndex = copyInfoRaw.dst->queueFamilyIndex,
+        .dstQueueFamilyIndex = copyInfoRaw.src->queueFamilyIndex,
+        .buffer = copyInfoRaw.dst->buffer,
+        .offset = copyInfoRaw.dst->region.offset,
         .size = size
       }
     };
 
     // 
-    //submission.commandInits.push_back([=](cpp21::optional_ref<vk::CommandBuffer> cmdBuf) {
+    //submission.commandInits.push_back([=](vk::CommandBuffer const& cmdBuf) {
       auto _copyInfo = copyInfo;
       auto _depInfo = depInfo;
-      copyInfoRaw->cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersBegin));
-      copyInfoRaw->cmdBuf.copyBuffer2(_copyInfo.setRegions(regions));
-      copyInfoRaw->cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersEnd));
+      copyInfoRaw.cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersBegin));
+      copyInfoRaw.cmdBuf.copyBuffer2(_copyInfo.setRegions(regions));
+      copyInfoRaw.cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersEnd));
     //});
 
     //

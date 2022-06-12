@@ -42,7 +42,7 @@ namespace ANAMED {
     };
 
     // 
-    SamplerObj(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<SamplerCreateInfo> cInfo = SamplerCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
+    SamplerObj(Handle const& handle, cpp21::optional_ref<SamplerCreateInfo> cInfo = SamplerCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
       //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
@@ -58,7 +58,7 @@ namespace ANAMED {
     };
 
     //
-    inline static tType make(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<SamplerCreateInfo> cInfo = SamplerCreateInfo{}) {
+    inline static tType make(Handle const& handle, cpp21::optional_ref<SamplerCreateInfo> cInfo = SamplerCreateInfo{}) {
       auto shared = std::make_shared<SamplerObj>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle).shared(), cInfo);
       auto wrap = shared->registerSelf();

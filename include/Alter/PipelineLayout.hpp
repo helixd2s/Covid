@@ -97,7 +97,7 @@ namespace ANAMED {
     };
 
     // 
-    PipelineLayoutObj(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<PipelineLayoutCreateInfo> cInfo = PipelineLayoutCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
+    PipelineLayoutObj(Handle const& handle, cpp21::optional_ref<PipelineLayoutCreateInfo> cInfo = PipelineLayoutCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
       //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
@@ -137,7 +137,7 @@ namespace ANAMED {
     inline virtual cpp21::bucket<vk::DescriptorImageInfo> const& getImageDescriptors() const { return images; };
 
     //
-    inline static tType make(cpp21::optional_ref<Handle> handle, cpp21::optional_ref<PipelineLayoutCreateInfo> cInfo = PipelineLayoutCreateInfo{}) {
+    inline static tType make(Handle const& handle, cpp21::optional_ref<PipelineLayoutCreateInfo> cInfo = PipelineLayoutCreateInfo{}) {
       auto shared = std::make_shared<PipelineLayoutObj>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle).shared(), cInfo);
       auto wrap = shared->registerSelf();
@@ -147,7 +147,7 @@ namespace ANAMED {
 
   protected:
     //
-    virtual void createDescriptorLayout(cpp21::optional_ref<vk::DescriptorType> type, cpp21::optional_ref<uint32_t> count = 1u) {
+    virtual void createDescriptorLayout(cpp21::optional_ref<vk::DescriptorType> type, uint32_t const& count = 1u) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) last = this->layouts.size();
       this->layoutInfoMaps->push_back(std::make_shared<MSS>(MSS()));
@@ -167,7 +167,7 @@ namespace ANAMED {
     };
 
     // 
-    virtual void createDescriptorLayoutUniformStorage(cpp21::optional_ref<uint32_t> maxPageCount = 1u) {
+    virtual void createDescriptorLayoutUniformStorage(uint32_t const& maxPageCount = 1u) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) last = this->layouts.size();
       this->layoutInfoMaps->push_back(std::make_shared<MSS>(MSS()));
@@ -261,7 +261,7 @@ namespace ANAMED {
   public:
 
     //
-    virtual void writePushDescriptor(vk::PipelineBindPoint const& bindPoint, cpp21::optional_ref<vk::CommandBuffer> cmdBuf) {
+    virtual void writePushDescriptor(vk::PipelineBindPoint const& bindPoint, vk::CommandBuffer const& cmdBuf) {
       /*
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
@@ -321,8 +321,8 @@ namespace ANAMED {
     };
 
     //
-    virtual tType writeUniformUpdateCommand(cpp21::optional_ref<UniformDataWriteSet> cInfo) {
-      size_t size = std::min(cInfo->data.size(), cInfo->region->size);
+    virtual tType writeUniformUpdateCommand(UniformDataWriteSet const& cInfo) {
+      size_t size = std::min(cInfo.data.size(), cInfo.region->size);
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
 
@@ -333,10 +333,10 @@ namespace ANAMED {
           .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralRead) | vk::AccessFlagBits2::eUniformRead,
           .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferWrite),
           .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
-          .srcQueueFamilyIndex = cInfo->info->queueFamilyIndex,
-          .dstQueueFamilyIndex = cInfo->info->queueFamilyIndex,
+          .srcQueueFamilyIndex = cInfo.info->queueFamilyIndex,
+          .dstQueueFamilyIndex = cInfo.info->queueFamilyIndex,
           .buffer = this->uniformBuffer,
-          .offset = cInfo->region->offset,
+          .offset = cInfo.region->offset,
           .size = size
         }
       };
@@ -348,25 +348,25 @@ namespace ANAMED {
           .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
           .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralRead),
           .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralRead) | vk::AccessFlagBits2::eUniformRead,
-          .srcQueueFamilyIndex = cInfo->info->queueFamilyIndex,
-          .dstQueueFamilyIndex = cInfo->info->queueFamilyIndex,
+          .srcQueueFamilyIndex = cInfo.info->queueFamilyIndex,
+          .dstQueueFamilyIndex = cInfo.info->queueFamilyIndex,
           .buffer = this->uniformBuffer,
-          .offset = cInfo->region->offset,
+          .offset = cInfo.region->offset,
           .size = size
         }
       };
 
       // 
-      cInfo->cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersBegin));
-      cInfo->cmdBuf.updateBuffer(this->uniformBuffer, cInfo->region->offset, size, cInfo->data.data());
-      cInfo->cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersEnd));
+      cInfo.cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersBegin));
+      cInfo.cmdBuf.updateBuffer(this->uniformBuffer, cInfo.region->offset, size, cInfo.data.data());
+      cInfo.cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersEnd));
 
       // 
       return SFT();
     };
 
-    virtual tType writeCacheUpdateCommand(cpp21::optional_ref<CacheDataWriteSet> cInfo) {
-      size_t size = std::min(cInfo->data.size(), cInfo->region->size);
+    virtual tType writeCacheUpdateCommand(CacheDataWriteSet const& cInfo) {
+      size_t size = std::min(cInfo.data.size(), cInfo.region->size);
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
 
@@ -377,10 +377,10 @@ namespace ANAMED {
           .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite) | vk::AccessFlagBits2::eShaderStorageWrite | vk::AccessFlagBits2::eShaderStorageRead | vk::AccessFlagBits2::eTransformFeedbackCounterReadEXT | vk::AccessFlagBits2::eTransformFeedbackCounterWriteEXT,
           .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferWrite),
           .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
-          .srcQueueFamilyIndex = cInfo->info->queueFamilyIndex,
-          .dstQueueFamilyIndex = cInfo->info->queueFamilyIndex,
+          .srcQueueFamilyIndex = cInfo.info->queueFamilyIndex,
+          .dstQueueFamilyIndex = cInfo.info->queueFamilyIndex,
           .buffer = this->cacheBuffer,
-          .offset = this->cachePageSize * cInfo->page + cInfo->region->offset,
+          .offset = this->cachePageSize * cInfo.page + cInfo.region->offset,
           .size = size
         }
       };
@@ -392,30 +392,30 @@ namespace ANAMED {
           .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite) | vk::AccessFlagBits2::eShaderStorageWrite | vk::AccessFlagBits2::eShaderStorageRead | vk::AccessFlagBits2::eTransformFeedbackCounterReadEXT | vk::AccessFlagBits2::eTransformFeedbackCounterWriteEXT,
           .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
           .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite),
-          .srcQueueFamilyIndex = cInfo->info->queueFamilyIndex,
-          .dstQueueFamilyIndex = cInfo->info->queueFamilyIndex,
+          .srcQueueFamilyIndex = cInfo.info->queueFamilyIndex,
+          .dstQueueFamilyIndex = cInfo.info->queueFamilyIndex,
           .buffer = this->cacheBuffer,
-          .offset = this->cachePageSize * cInfo->page + cInfo->region->offset,
+          .offset = this->cachePageSize * cInfo.page + cInfo.region->offset,
           .size = size
         }
       };
 
       // 
-      cInfo->cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersBegin));
-      cInfo->cmdBuf.updateBuffer(this->cacheBuffer, this->cachePageSize * cInfo->page + cInfo->region->offset, size, cInfo->data.data());
-      cInfo->cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersEnd));
+      cInfo.cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersBegin));
+      cInfo.cmdBuf.updateBuffer(this->cacheBuffer, this->cachePageSize * cInfo.page + cInfo.region->offset, size, cInfo.data.data());
+      cInfo.cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersEnd));
 
       // 
       return SFT();
     };
 
     //
-    virtual FenceType executeUniformUpdateOnce(cpp21::optional_ref<UniformDataSet> cInfo) {
-      decltype(auto) submission = CommandOnceSubmission{ .submission = cInfo->submission };
+    virtual FenceType executeUniformUpdateOnce(UniformDataSet const& cInfo) {
+      decltype(auto) submission = CommandOnceSubmission{ .submission = cInfo.submission };
 
       // 
-      submission.commandInits.push_back([this, cInfo](cpp21::optional_ref<vk::CommandBuffer> cmdBuf) {
-        this->writeUniformUpdateCommand(cInfo->writeInfo->with(cmdBuf));
+      submission.commandInits.push_back([this, cInfo](vk::CommandBuffer const& cmdBuf) {
+        this->writeUniformUpdateCommand(cInfo.writeInfo->with(cmdBuf));
         return cmdBuf;
       });
 
@@ -424,12 +424,12 @@ namespace ANAMED {
     };
 
     //
-    virtual FenceType executeCacheUpdateOnce(cpp21::optional_ref<CacheDataSet> cInfo) {
-      decltype(auto) submission = CommandOnceSubmission{ .submission = cInfo->submission };
+    virtual FenceType executeCacheUpdateOnce(CacheDataSet const& cInfo) {
+      decltype(auto) submission = CommandOnceSubmission{ .submission = cInfo.submission };
 
       // 
-      submission.commandInits.push_back([this, cInfo](cpp21::optional_ref<vk::CommandBuffer> cmdBuf) {
-        this->writeCacheUpdateCommand(cInfo->writeInfo->with(cmdBuf));
+      submission.commandInits.push_back([this, cInfo](vk::CommandBuffer const& cmdBuf) {
+        this->writeCacheUpdateCommand(cInfo.writeInfo->with(cmdBuf));
         return cmdBuf;
       });
 
