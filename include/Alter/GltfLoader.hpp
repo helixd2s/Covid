@@ -120,9 +120,6 @@ namespace ANAMED
     std::unordered_map<uintptr_t, bool> translucentImages = {};
 
     //
-    WrapShared<ResourceVma> materialBuffer = {};
-
-    //
     uintptr_t defaultScene = 0ull;
 
     //
@@ -500,18 +497,6 @@ namespace ANAMED
       };
 
       //
-      gltf->materialBuffer = ANAMED::ResourceVma::make(handle, ANAMED::ResourceCreateInfo{
-        .descriptors = cInfo->descriptors,
-        .bufferInfo = ANAMED::BufferCreateInfo{
-          .size = gltf->model.materials.size() * sizeof(ANAMED::MaterialInfo),
-          .type = ANAMED::BufferType::eUniversal,
-        }
-        });
-
-      //
-      uint64_t materialAddress = gltf->materialBuffer->getDeviceAddress();
-
-      //
       i = 0;
       for (decltype(auto) material : gltf->model.materials) {
         uintptr_t I = i++;
@@ -522,19 +507,6 @@ namespace ANAMED
         materialInf.texCol[uint32_t(ANAMED::TextureBind::eEmissive)] = ANAMED::TexOrDef{ .texture = material.emissiveTexture.index >= 0 ? gltf->textures[material.emissiveTexture.index] : CTexture{}, .defValue = handleFactor(material.emissiveFactor) };
         gltf->materials.push_back(materialInf);
         gltf->translucentMaterials[I] = material.pbrMetallicRoughness.baseColorTexture.index >= 0 ? gltf->translucentTextures.at(material.pbrMetallicRoughness.baseColorTexture.index) : (handleFactor(material.pbrMetallicRoughness.baseColorFactor).a < 1.f ? true : false);
-      };
-
-      {
-        //
-        decltype(auto) status = uploaderObj->executeUploadToResourceOnce(ANAMED::UploadExecutionOnce{
-          .host = cpp21::data_view<char8_t>((char8_t*)gltf->materials.data(), 0ull, cpp21::bytesize(gltf->materials)),
-          .writeInfo = ANAMED::UploadCommandWriteInfo{
-            .dstBuffer = ANAMED::BufferRegion{gltf->materialBuffer.as<vk::Buffer>(), ANAMED::DataRegion{0ull, sizeof(ANAMED::MaterialInfo), cpp21::bytesize(gltf->materials)}},
-          }
-          });
-
-        //
-        deviceObj->tickProcessing();
       };
 
       // 
@@ -618,7 +590,7 @@ namespace ANAMED
           //
           meshObj->geometries->push_back(ANAMED::GeometryInfo{
             .indices = primitive.indices >= 0 ? indices : nullView,
-            .materialRef = materialAddress + materialId * sizeof(ANAMED::MaterialInfo),
+            .materialInfo = gltf->materials[materialId],
             .primitiveCount = uint32_t(gltf->model.accessors[primitive.indices >= 0 ? primitive.indices : primitive.attributes.at("POSITION")].count) / 3u,
             .flags = isTranslucent ? vk::GeometryFlagBitsKHR{} : vk::GeometryFlagBitsKHR::eOpaque
           });

@@ -286,6 +286,7 @@ namespace ANAMED {
         uploaderObj->bindMemoryPages(submission.submission);
         return ANAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
       };
+      return FenceType();
     };
 
     //

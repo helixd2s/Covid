@@ -24,17 +24,30 @@ struct BufferViewInfo {
   uint32_t flags;
 };
 
+
+// starts from 1u, count as Id-1u, alter  are Null
+struct CTexture { uint32_t textureId, samplerId; };
+struct TexOrDef { CTexture texture; vec4 defValue; };
+
+//
+struct MaterialInfo {
+  TexOrDef texCol[MAX_MATERIAL_BIND];
+};
+
+//
+struct MaterialPixelInfo {
+  vec4 color[MAX_MATERIAL_BIND];
+};
+
 //
 layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer GeometryInfo {
   BufferViewInfo bufferViews[4u];
-
   BufferViewInfo indices;
   BufferViewInfo transform;
+  MaterialInfo materialInfo;
 
   //
-  uint64_t previousRef;
-  //uint64_t extensionRef;
-  uint64_t materialRef;
+  uint64_t extensionRef;
 
   //
   uint32_t primitiveCount;

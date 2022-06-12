@@ -470,15 +470,13 @@ namespace ANAMED {
 #pragma pack(push, 1)
   __declspec(align(1))
   struct GeometryInfo {
-    BufferViewInfo bufferViews[4] = {};
+    BufferViewInfo bufferViews[4u];
+    BufferViewInfo indices;
+    BufferViewInfo transform;
+    MaterialInfo materialInfo;
 
     //
-    BufferViewInfo indices = {};
-    BufferViewInfo transform = {};
-
-    //
-    uint64_t previousRef = 0ull;
-    uint64_t materialRef = 0ull;
+    uint64_t extensionRef;
 
     //
     uint32_t primitiveCount = 0u;

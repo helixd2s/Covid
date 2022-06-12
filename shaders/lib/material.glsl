@@ -1,25 +1,7 @@
 #ifndef MATERIAL_DEF
 #define MATERIAL_DEF
 
-// starts from 1u, count as Id-1u, alter  are Null
-struct CTexture { uint32_t textureId, samplerId; };
-struct TexOrDef { CTexture texture; vec4 defValue; };
-
-//
-struct MaterialInfo {
-  TexOrDef texCol[MAX_MATERIAL_BIND];
-};
-
-//
-struct MaterialPixelInfo {
-  vec4 color[MAX_MATERIAL_BIND];
-};
-
-// but may not to be...
-layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer MaterialData {
-  MaterialInfo infos[];
-};
-
+/*
 //
 MaterialInfo getMaterialInfo(in GeometryInfo geometryInfo, in uint32_t materialId) {
   MaterialInfo materialInfo;
@@ -27,11 +9,15 @@ MaterialInfo getMaterialInfo(in GeometryInfo geometryInfo, in uint32_t materialI
     materialInfo = MaterialData(geometryInfo.materialRef).infos[materialId];
   };
   return materialInfo;
-};
+};*/
 
 //
-MaterialInfo getMaterialInfo(in GeometryInfo geometryInfo) {
+/*MaterialInfo getMaterialInfo(in GeometryInfo geometryInfo) {
   return getMaterialInfo(geometryInfo, 0u);
+};*/
+
+MaterialInfo getMaterialInfo(in GeometryInfo geometryInfo) {
+  return geometryInfo.materialInfo;
 };
 
 //

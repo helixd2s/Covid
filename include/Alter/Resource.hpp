@@ -139,15 +139,15 @@ namespace ANAMED {
       } else 
       if (cpp21::orEqual(this->cInfo->imageInfo->format, std::vector<vk::Format>{vk::Format::eR8G8Unorm, vk::Format::eR16G16Unorm, vk::Format::eR16G16Sfloat, vk::Format::eR32G32Sfloat})) {
         mapping.r = vk::ComponentSwizzle::eR, 
-        mapping.g = vk::ComponentSwizzle::eR, 
-        mapping.b = vk::ComponentSwizzle::eR, 
-        mapping.a = vk::ComponentSwizzle::eG;
+        mapping.g = vk::ComponentSwizzle::eG,
+        mapping.b = vk::ComponentSwizzle::eB,
+        mapping.a = vk::ComponentSwizzle::eOne;
       } else 
       if (cpp21::orEqual(this->cInfo->imageInfo->format, std::vector<vk::Format>{vk::Format::eR8Unorm, vk::Format::eR16Unorm, vk::Format::eR16Sfloat, vk::Format::eR32Sfloat})) {
-        mapping.r = vk::ComponentSwizzle::eR, 
-        mapping.g = vk::ComponentSwizzle::eR, 
-        mapping.b = vk::ComponentSwizzle::eR, 
-        mapping.a = vk::ComponentSwizzle::eOne;
+        mapping.r = vk::ComponentSwizzle::eR,
+        mapping.g = vk::ComponentSwizzle::eG,
+        mapping.b = vk::ComponentSwizzle::eB,
+        mapping.a = vk::ComponentSwizzle::eA;
       };
 
       // 
@@ -417,7 +417,7 @@ namespace ANAMED {
 
       //
       device.getImageMemoryRequirements2(infoMap->set(vk::StructureType::eImageMemoryRequirementsInfo2, vk::ImageMemoryRequirementsInfo2{
-        .image = (this->handle = this->cInfo->image ? this->cInfo->image.value() : device.createImage(imageInfo->setQueueFamilyIndices(deviceObj->getQueueFamilies().indices))).as<vk::Image>()
+        .image = (this->handle = this->cInfo->image ? this->cInfo->image.value() : (device.createImage(imageInfo->setQueueFamilyIndices(deviceObj->getQueueFamilies().indices)))).as<vk::Image>()
       }).get(), memReqInfo2.get());
 
       //
@@ -486,7 +486,7 @@ namespace ANAMED {
 
       //
       device.getBufferMemoryRequirements2(infoMap->set(vk::StructureType::eBufferMemoryRequirementsInfo2, vk::BufferMemoryRequirementsInfo2{
-        .buffer = (this->handle = this->cInfo->buffer ? this->cInfo->buffer.value() : device.createBuffer(bufferInfo->setQueueFamilyIndices(deviceObj->getQueueFamilies().indices))).as<vk::Buffer>()
+        .buffer = (this->handle = this->cInfo->buffer ? this->cInfo->buffer.value() : (device.createBuffer(bufferInfo->setQueueFamilyIndices(deviceObj->getQueueFamilies().indices)))).as<vk::Buffer>()
       }).get(), memReqInfo2.get());
 
       //
