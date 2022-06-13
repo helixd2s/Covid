@@ -30,10 +30,10 @@ void main() {
     //const uvec2 ncoord = jit + shift_map[tmap];
 
     //
-    const vec2 tShift = (vec2(random(ncoord), random(ncoord)) - 0.5f) * 0.5f;
-    const vec2 tCoord = (vec2(ncoord) + 0.5f + tShift) / vec2(rayCount);
-    //tCoord = (floor(tCoord * vec2(UR(deferredBuf.extent))) + 0.5f) / vec2(UR(deferredBuf.extent));
-    //tCoord += (vec2(random(ncoord), random(ncoord)) - 0.5f) / vec2(UR(deferredBuf.extent));
+    vec2 tShift = (vec2(random(ncoord), random(ncoord)) - 0.5f) * 0.5f;
+    vec2 tCoord = (vec2(ncoord) + vec2(random(ncoord), random(ncoord))) / vec2(rayCount);
+    tCoord = (floor(tCoord * vec2(UR(deferredBuf.extent))) + 0.5f) / vec2(UR(deferredBuf.extent));
+    tCoord += tShift / vec2(UR(deferredBuf.extent));
 
     //
     const ivec2 gcoord = ivec2(tCoord * UR(deferredBuf.extent));
