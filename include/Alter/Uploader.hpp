@@ -126,7 +126,7 @@ namespace ANAMED {
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) memoryAllocatorObj = deviceObj->getExt<MemoryAllocatorObj>(this->cInfo->extUsed && this->cInfo->extUsed->find(ExtensionInfoName::eMemoryAllocator) != this->cInfo->extUsed->end() ? this->cInfo->extUsed->at(ExtensionInfoName::eMemoryAllocator) : ExtensionName::eMemoryAllocator);
       decltype(auto) allocated = std::make_shared<AllocatedMemory>();
-      return memoryAllocatorObj->allocateMemory(requirements, allocated, this->extHandle, this->cInfo->extInfoMap, allocated->mapped, this->destructors);
+      return memoryAllocatorObj->allocateMemory(requirements, allocated);
     };
 
     //

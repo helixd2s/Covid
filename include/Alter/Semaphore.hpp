@@ -30,6 +30,7 @@ namespace ANAMED {
     inline decltype(auto) SFT() const { using T = std::decay_t<decltype(*this)>; return WrapShared<T>(std::const_pointer_cast<T>(std::dynamic_pointer_cast<T const>(shared_from_this()))); };
 
     //
+    ExtHandle extHandle = {};
     std::optional<SemaphoreCreateInfo> cInfo = SemaphoreCreateInfo{};
 
   public:
@@ -62,6 +63,9 @@ namespace ANAMED {
       auto wrap = shared->registerSelf();
       return wrap;
     };
+
+    virtual ExtHandle& getExtHandle() { return extHandle; };
+    virtual ExtHandle const& getExtHandle() const { return extHandle; };
 
   protected:
 

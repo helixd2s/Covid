@@ -28,7 +28,7 @@ namespace ANAMED {
     virtual std::shared_ptr<AllocatedMemory> allocateMemory(cpp21::optional_ref<MemoryRequirements> requirements) {
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) memoryAllocatorObj = deviceObj->getExt<MemoryAllocatorVma>(this->cInfo->extUsed && this->cInfo->extUsed->find(ExtensionInfoName::eMemoryAllocator) != this->cInfo->extUsed->end() ? this->cInfo->extUsed->at(ExtensionInfoName::eMemoryAllocator) : ExtensionName::eMemoryAllocatorVma);
-      return memoryAllocatorObj->allocateMemory(requirements, this->allocated = std::make_shared<AllocatedMemory>(), this->extHandle, this->cInfo->extInfoMap, this->mappedMemory, this->destructors);
+      return memoryAllocatorObj->allocateMemory(requirements, this->allocated = std::make_shared<AllocatedMemory>());
     };
 
     // 
@@ -120,34 +120,16 @@ namespace ANAMED {
       this->handle.type = HandleType::eImage;
 
       //
-      this->allocated = std::make_shared<AllocatedMemory>();
-      *allocated = AllocatedMemory{ allocationInfo.deviceMemory, allocationInfo.offset, allocationInfo.size };
-      allocated->allocation = uintptr_t(allocation);
+      decltype(auto) memReqInfo2 = vk::MemoryRequirements2{};
+      vk::DeviceImageMemoryRequirements memReqIn = vk::DeviceImageMemoryRequirements{ .pCreateInfo = imageInfo.get() };
+      device.getImageMemoryRequirements(&memReqIn, &memReqInfo2);
 
       //
-      if (memoryUsage == MemoryUsage::eGpuOnly) {
-#ifdef _WIN32
-        extHandle = device.getMemoryWin32HandleKHR(vk::MemoryGetWin32HandleInfoKHR{ .memory = allocated->memory, .handleType = extMemFlagBits }, deviceObj->getDispatch());
-#else
-#ifdef __linux__ 
-        extHandle = device.getMemoryFdKHR(vk::MemoryGetFdInfoKHR{ .memory = allocated->memory, .handleType = extMemFlagBits }, deviceObj->getDispatch());
-#endif
-#endif
-      };
-
-      //
-      device.setMemoryPriorityEXT(allocated->memory, 1.f, deviceObj->getDispatch());
-
-      //
-      destructors.push_back(allocated->destructor = std::make_shared<std::function<DFun>>([device, allocator = this->handle.as<VmaAllocator>(), &allocation = allocated->allocation](BaseObj const*) {
-        //device.waitIdle();
-        if (allocation) {
-          vmaFreeMemory(allocator, reinterpret_cast<VmaAllocation&>(allocation)); allocation = {};
-        };
-      }));
-
-      // 
-      allocated->mapped = allocationInfo.pMappedData;
+      this->allocated = memoryAllocatorObj->handleVmaAllocation(this->mReqs = MemoryRequirements{
+        .memoryUsage = memoryUsage,
+        .requirements = memReqInfo2.memoryRequirements,
+        .dedicated = DedicatedMemory{.image = cInfo->type != ImageType::eSwapchain ? this->handle.as<vk::Image>() : vk::Image{} },
+      }, this->allocated = std::make_shared<AllocatedMemory>(), allocator, allocation, allocationInfo);
 
       // 
       if (cInfo->info) {
@@ -191,7 +173,7 @@ namespace ANAMED {
         .size = cInfo->size,
         .usage = bufferUsage,
         .sharingMode = vk::SharingMode::eExclusive
-        });
+      });
 
       //
       bufferInfo->setQueueFamilyIndices(deviceObj->getQueueFamilies().indices);
@@ -216,41 +198,22 @@ namespace ANAMED {
       //
       VmaAllocation allocation = {};
       VmaAllocationInfo allocationInfo = {};
-      vmaCreateBuffer(memoryAllocatorObj->getHandle().as<VmaAllocator>(), (VkBufferCreateInfo*)bufferInfo.get(), &vmaCreateInfo, &this->handle.as<VkBuffer>(), &allocation, &allocationInfo);
+      vmaCreateBuffer(allocator, (VkBufferCreateInfo*)bufferInfo.get(), &vmaCreateInfo, &this->handle.as<VkBuffer>(), &allocation, &allocationInfo);
       this->handle.type = HandleType::eBuffer;
 
       //
-      this->allocated = std::make_shared<AllocatedMemory>();
-      *allocated = AllocatedMemory{ allocationInfo.deviceMemory, allocationInfo.offset, allocationInfo.size };
-      allocated->allocation = uintptr_t(allocation);
+      decltype(auto) memReqInfo2 = vk::MemoryRequirements2{};
+      vk::DeviceBufferMemoryRequirements memReqIn = vk::DeviceBufferMemoryRequirements{ .pCreateInfo = bufferInfo.get() };
+      device.getBufferMemoryRequirements(&memReqIn, &memReqInfo2);
 
       //
-      if (memoryUsage == MemoryUsage::eGpuOnly) {
-#ifdef _WIN32
-        extHandle = device.getMemoryWin32HandleKHR(vk::MemoryGetWin32HandleInfoKHR{ .memory = allocated->memory, .handleType = extMemFlagBits }, deviceObj->getDispatch());
-#else
-#ifdef __linux__ 
-        extHandle = device.getMemoryFdKHR(vk::MemoryGetFdInfoKHR{ .memory = allocated->memory, .handleType = extMemFlagBits }, deviceObj->getDispatch());
-#endif
-#endif
-      };
+      this->allocated = memoryAllocatorObj->handleVmaAllocation(this->mReqs = MemoryRequirements{
+        .memoryUsage = memoryUsage,
+        .requirements = memReqInfo2.memoryRequirements,
+        .dedicated = DedicatedMemory{ .buffer = this->handle.as<vk::Buffer>() },
+      }, this->allocated = std::make_shared<AllocatedMemory>(), allocator, allocation, allocationInfo);
 
       //
-      device.setMemoryPriorityEXT(allocated->memory, 1.f, deviceObj->getDispatch());
-
-      //
-      destructors.push_back(allocated->destructor = std::make_shared<std::function<DFun>>([device, allocator = this->handle.as<VmaAllocator>(), &allocation = allocated->allocation](BaseObj const*) {
-        //device.waitIdle();
-        if (allocation) {
-          vmaFreeMemory(allocator, reinterpret_cast<VmaAllocation&>(allocation)); allocation = {};
-        };
-      }));
-
-      // 
-      allocated->mapped = allocationInfo.pMappedData;
-
-
-      // 
       if (bufferUsage & vk::BufferUsageFlagBits::eShaderDeviceAddress) {
         this->deviceAddress = device.getBufferAddress(vk::BufferDeviceAddressInfo{
           .buffer = this->handle.as<vk::Buffer>()

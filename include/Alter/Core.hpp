@@ -812,6 +812,37 @@ namespace ANAMED {
     ImageViewPreference preference = ImageViewPreference::eSampled;
   };
 
+
+  //
+  struct GLObject {
+    uint32_t handle = 0u;
+    uint32_t dependency = 0u;
+  };
+
+  //
+  struct ExtHandle {
+#ifdef _WIN32
+    HANDLE handle = 0ull;
+
+    // 
+    ExtHandle(HANDLE const& handle = 0ull) : handle(handle) {};
+    operator HANDLE& () { return handle; };
+    operator HANDLE const& () const { return handle; };
+    decltype(auto) operator=(HANDLE const& hnd) { handle = hnd; return *this; };
+#else
+#ifdef __linux__ 
+    uint32_t handle = 0u;
+    uint32_t gap = 0u;
+
+    // 
+    ExtHandle(uint32_t const& handle = 0ull) : handle(handle) {};
+    operator uint32_t& () { return handle; };
+    operator uint32_t const& () const { return handle; };
+    decltype(auto) operator=(uint32_t const& hnd) { handle = hnd; return *this; };
+#endif
+#endif
+  };
+
   //
 #pragma pack(4)
   __declspec(align(4))
@@ -821,6 +852,7 @@ namespace ANAMED {
     size_t size = 0ull;
     void* mapped = nullptr;
     uintptr_t allocation = 0ull;
+    ExtHandle extHandle = {};
 
     //
     cpp21::obj<std::function<DFun>> destructor = {};
@@ -907,36 +939,6 @@ namespace ANAMED {
 
     // 
     SubmissionInfo submission = {};
-  };
-
-  //
-  struct GLObject {
-    uint32_t handle = 0u;
-    uint32_t dependency = 0u;
-  };
-
-  //
-  struct ExtHandle {
-#ifdef _WIN32
-    HANDLE handle = 0ull;
-
-    // 
-    ExtHandle(HANDLE const& handle = 0ull) : handle(handle) {};
-    operator HANDLE& () { return handle; };
-    operator HANDLE const& () const { return handle; };
-    decltype(auto) operator=(HANDLE const& hnd) { handle = hnd; return *this; };
-#else
-#ifdef __linux__ 
-    uint32_t handle = 0u;
-    uint32_t gap = 0u;
-
-    // 
-    ExtHandle(uint32_t const& handle = 0ull) : handle(handle) {};
-    operator uint32_t& () { return handle; };
-    operator uint32_t const& () const { return handle; };
-    decltype(auto) operator=(uint32_t const& hnd) { handle = hnd; return *this; };
-#endif
-#endif
   };
 
   //
@@ -1561,7 +1563,7 @@ namespace ANAMED {
 
     // 
     Handle handle = {}, base = {};
-    ExtHandle extHandle = {};
+    //ExtHandle extHandle = {};
     GLObject glObject = {};
     HMAP_S handleObjectMap = {};
 
@@ -1625,8 +1627,8 @@ namespace ANAMED {
 
 
     //
-    virtual ExtHandle& getExtHandle() { return extHandle; };
-    virtual ExtHandle const& getExtHandle() const { return extHandle; };
+    //virtual ExtHandle& getExtHandle() { return extHandle; };
+    //virtual ExtHandle const& getExtHandle() const { return extHandle; };
 
     //
     template<class T = BaseObj>

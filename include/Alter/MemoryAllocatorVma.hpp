@@ -139,7 +139,45 @@ namespace ANAMED {
   public:
 
     //
-    std::shared_ptr<AllocatedMemory> allocateMemory(cpp21::optional_ref<MemoryRequirements> requirements, std::shared_ptr<AllocatedMemory> allocated, ExtHandle& extHandle, std::shared_ptr<EXIF> extInfoMap, void*& mapped, std::vector<std::shared_ptr<std::function<DFun>>>& destructors) override {
+    std::shared_ptr<AllocatedMemory> handleVmaAllocation(cpp21::optional_ref<MemoryRequirements> requirements, std::shared_ptr<AllocatedMemory> allocated, VmaAllocator const& allocator, VmaAllocation const& allocation, VmaAllocationInfo const& allocationInfo = {}) {
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
+      auto& device = this->base.as<vk::Device>();
+      
+      //
+      *allocated = AllocatedMemory{ allocationInfo.deviceMemory, allocationInfo.offset, allocationInfo.size };
+      allocated->allocation = uintptr_t(allocation);
+
+      //
+      if (requirements->memoryUsage == MemoryUsage::eGpuOnly) {
+#ifdef _WIN32
+        allocated->extHandle = device.getMemoryWin32HandleKHR(vk::MemoryGetWin32HandleInfoKHR{ .memory = allocated->memory, .handleType = extMemFlagBits }, deviceObj->getDispatch());
+#else
+#ifdef __linux__ 
+        allocated->extHandle = device.getMemoryFdKHR(vk::MemoryGetFdInfoKHR{ .memory = allocated->memory, .handleType = extMemFlagBits }, deviceObj->getDispatch());
+#endif
+#endif
+      };
+
+      //
+      device.setMemoryPriorityEXT(allocated->memory, 1.f, deviceObj->getDispatch());
+
+      //
+      if (requirements->needsDestructor) {
+        allocated->destructor = std::make_shared<std::function<DFun>>([device, allocator = this->handle.as<VmaAllocator>(), &allocation = allocated->allocation](BaseObj const*) {
+          //device.waitIdle();
+          if (allocation) {
+            vmaFreeMemory(allocator, reinterpret_cast<VmaAllocation&>(allocation)); allocation = {};
+          };
+        });
+      };
+
+      // 
+      allocated->mapped = allocationInfo.pMappedData;
+      return allocated;
+    };
+
+    //
+    std::shared_ptr<AllocatedMemory> allocateMemory(cpp21::optional_ref<MemoryRequirements> requirements, std::shared_ptr<AllocatedMemory> allocated) override {
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       auto& device = this->base.as<vk::Device>();
       auto& physicalDevice = deviceObj->getPhysicalDevice();
@@ -161,7 +199,6 @@ namespace ANAMED {
       };
 
       //
-      //decltype(auto) vmaAllocExt = this->cInfo->extInfoMap->get<VmaAllocationExtension>(ExtensionInfoName::eMemoryAllocationVma);
       VmaAllocation allocation = {};
       VmaAllocationInfo allocationInfo = {};
 
@@ -172,40 +209,9 @@ namespace ANAMED {
       } else {
         vmaAllocateMemory(this->handle.as<VmaAllocator>(), (VkMemoryRequirements*)&requirements->requirements, &vmaCreateInfo, &allocation, &allocationInfo);
       };
-
-      //
-      *allocated = AllocatedMemory{ allocationInfo.deviceMemory, allocationInfo.offset, allocationInfo.size };
-      allocated->allocation = uintptr_t(allocation);
-
-      //
-      if (requirements->memoryUsage == MemoryUsage::eGpuOnly) {
-#ifdef _WIN32
-        extHandle = device.getMemoryWin32HandleKHR(vk::MemoryGetWin32HandleInfoKHR{ .memory = allocated->memory, .handleType = extMemFlagBits }, deviceObj->getDispatch());
-#else
-#ifdef __linux__ 
-        extHandle = device.getMemoryFdKHR(vk::MemoryGetFdInfoKHR{ .memory = allocated->memory, .handleType = extMemFlagBits }, deviceObj->getDispatch());
-#endif
-#endif
-      };
-
-      //
-      device.setMemoryPriorityEXT(allocated->memory, 1.f, deviceObj->getDispatch());
-
-      //
-      if (requirements->needsDestructor) {
-        destructors.push_back(allocated->destructor = std::make_shared<std::function<DFun>>([device, allocator = this->handle.as<VmaAllocator>(), &allocation = allocated->allocation](BaseObj const*) {
-          //device.waitIdle();
-          if (allocation) {
-            vmaFreeMemory(allocator, reinterpret_cast<VmaAllocation&>(allocation)); allocation = {};
-          };
-        }));
-      };
-
+      
       // 
-      allocated->mapped = mapped = allocationInfo.pMappedData;
-
-      // 
-      return allocated;
+      return this->handleVmaAllocation(requirements, allocated, this->handle.as<VmaAllocator>(), allocation, allocationInfo);
     };
 
   };

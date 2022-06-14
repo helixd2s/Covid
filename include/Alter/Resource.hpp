@@ -240,13 +240,18 @@ namespace ANAMED {
       return this->allocated ? this->allocated->offset : 0;
     };
 
+
+    virtual ExtHandle& getExtHandle() { return allocated->extHandle; };
+    virtual ExtHandle const& getExtHandle() const { return allocated->extHandle; };
+
+
   protected:
 
     //
     virtual std::shared_ptr<AllocatedMemory> allocateMemory(cpp21::optional_ref<MemoryRequirements> requirements) {
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) memoryAllocatorObj = deviceObj->getExt<MemoryAllocatorObj>(this->cInfo->extUsed && this->cInfo->extUsed->find(ExtensionInfoName::eMemoryAllocator) != this->cInfo->extUsed->end() ? this->cInfo->extUsed->at(ExtensionInfoName::eMemoryAllocator) : ExtensionName::eMemoryAllocator);
-      return memoryAllocatorObj->allocateMemory(requirements, this->allocated = std::make_shared<AllocatedMemory>(), this->extHandle, this->cInfo->extInfoMap, this->mappedMemory, this->destructors);
+      return memoryAllocatorObj->allocateMemory(requirements, this->allocated = std::make_shared<AllocatedMemory>());
     };
 
     // 
@@ -435,16 +440,6 @@ namespace ANAMED {
         .dedicated = DedicatedMemory{.image = cInfo->type != ImageType::eSwapchain ? this->handle.as<vk::Image>() : vk::Image{} },
       });
 
-      //
-      std::vector<vk::BindImageMemoryInfo> bindInfos = { *infoMap->set(vk::StructureType::eBindImageMemoryInfo, vk::BindImageMemoryInfo{
-        .pNext = cInfo->swapchain ? infoMap->set(vk::StructureType::eBindImageMemorySwapchainInfoKHR, vk::BindImageMemorySwapchainInfoKHR{
-          .swapchain = cInfo->swapchain->swapchain, // planned to fix by secondary handle term
-          .imageIndex = cInfo->swapchain->index
-         }).get() : nullptr,
-        .image = this->handle.as<vk::Image>(), .memory = cInfo->swapchain ? vk::DeviceMemory{} : this->allocated->memory, .memoryOffset = cInfo->swapchain ? 0ull : this->allocated->offset
-      }) };
-      device.bindImageMemory2(bindInfos);
-
       // 
       if (cInfo->info) {
         // # another reason of internal error (mostly with std::optional)
@@ -502,12 +497,6 @@ namespace ANAMED {
         .hasDeviceAddress = !!(bufferUsage & vk::BufferUsageFlagBits::eShaderDeviceAddress),
         .dedicated = DedicatedMemory{.buffer = this->handle.as<vk::Buffer>() }
       });
-
-      //
-      std::vector<vk::BindBufferMemoryInfo> bindInfos = { *infoMap->set(vk::StructureType::eBindBufferMemoryInfo, vk::BindBufferMemoryInfo{
-        .buffer = this->handle.as<vk::Buffer>(), .memory = this->allocated->memory, .memoryOffset = this->allocated->offset
-      }) };
-      device.bindBufferMemory2(bindInfos);
 
       // 
       if (bufferUsage & vk::BufferUsageFlagBits::eShaderDeviceAddress) {
