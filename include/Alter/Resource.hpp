@@ -382,6 +382,36 @@ namespace ANAMED {
       return bufferUsage;
     };
 
+    //
+    virtual cpp21::wrap_shared_ptr<vk::ImageCreateInfo> makeImageCreateInfo(ImageCreateInfo const& cInfo) {
+      //
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) externalInfo = infoMap->set(vk::StructureType::eExternalMemoryImageCreateInfo, vk::ExternalMemoryImageCreateInfo{
+        .handleTypes = memoryUsage == MemoryUsage::eGpuOnly ? extMemFlags : vk::ExternalMemoryHandleTypeFlags{},
+      });
+
+      // 
+      decltype(auto) imageUsage = this->handleImageUsage(cInfo.type);
+      decltype(auto) imageInfo = infoMap->set(vk::StructureType::eImageCreateInfo, vk::ImageCreateInfo{
+        .pNext = memoryUsage == MemoryUsage::eGpuOnly ? externalInfo.get() : nullptr,
+        .flags = cInfo.flags,
+        .imageType = cInfo.imageType,
+        .format = cInfo.format,
+        .extent = cInfo.extent,
+        .mipLevels = cInfo.mipLevelCount,
+        .arrayLayers = cInfo.layerCount, // TODO: correct array layers
+        .samples = vk::SampleCountFlagBits::e1,
+        .tiling = vk::ImageTiling::eOptimal,
+        .usage = imageUsage,
+        .sharingMode = vk::SharingMode::eExclusive,
+        .initialLayout = vk::ImageLayout::eUndefined
+      });
+
+      //
+      imageInfo->setQueueFamilyIndices(deviceObj->getQueueFamilies().indices);
+      return imageInfo;
+    };
+
     // 
     virtual FenceType createImage(cpp21::optional_ref<ImageCreateInfo> cInfo = {}) {
       // default layout
@@ -390,30 +420,7 @@ namespace ANAMED {
       // 
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
-
-      //
-      decltype(auto) externalInfo = infoMap->set(vk::StructureType::eExternalMemoryImageCreateInfo, vk::ExternalMemoryImageCreateInfo{
-        .handleTypes = memoryUsage == MemoryUsage::eGpuOnly ? extMemFlags : vk::ExternalMemoryHandleTypeFlags{},
-      });
-
-      // 
-      decltype(auto) imageUsage = this->handleImageUsage(cInfo->type);
-      decltype(auto) imageInfo = infoMap->set(vk::StructureType::eImageCreateInfo, vk::ImageCreateInfo{
-        .pNext = memoryUsage == MemoryUsage::eGpuOnly ? externalInfo.get() : nullptr,
-        .flags = cInfo->flags,
-        .imageType = cInfo->imageType,
-        .format = cInfo->format,
-        .extent = cInfo->extent,
-        .mipLevels = cInfo->mipLevelCount,
-        .arrayLayers = cInfo->layerCount, // TODO: correct array layers
-        .samples = vk::SampleCountFlagBits::e1,
-        .tiling = vk::ImageTiling::eOptimal,
-        .usage = imageUsage,
-        .sharingMode = vk::SharingMode::eExclusive,
-        .initialLayout = vk::ImageLayout::eUndefined
-      });
-
-      // 
+      decltype(auto) imageInfo = this->makeImageCreateInfo(cInfo);
       decltype(auto) memReqInfo2 = infoMap->set(vk::StructureType::eMemoryRequirements2, vk::MemoryRequirements2{
         .pNext = infoMap->set(vk::StructureType::eMemoryDedicatedRequirements, vk::MemoryDedicatedRequirements{
           
@@ -422,7 +429,7 @@ namespace ANAMED {
 
       //
       device.getImageMemoryRequirements2(infoMap->set(vk::StructureType::eImageMemoryRequirementsInfo2, vk::ImageMemoryRequirementsInfo2{
-        .image = (this->handle = this->cInfo->image ? this->cInfo->image.value() : (device.createImage(imageInfo->setQueueFamilyIndices(deviceObj->getQueueFamilies().indices)))).as<vk::Image>()
+        .image = (this->handle = this->cInfo->image ? this->cInfo->image.value() : (device.createImage(imageInfo))).as<vk::Image>()
       }).get(), memReqInfo2.get());
 
       //
@@ -455,24 +462,34 @@ namespace ANAMED {
       return FenceType{};
     };
 
-    // 
-    virtual FenceType createBuffer(cpp21::optional_ref<BufferCreateInfo> cInfo = {}) {
-      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
-      decltype(auto) device = this->base.as<vk::Device>();
-
+    //
+    virtual cpp21::wrap_shared_ptr<vk::BufferCreateInfo> makeBufferCreateInfo(BufferCreateInfo const& cInfo) {
       //
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) externalInfo = infoMap->set(vk::StructureType::eExternalMemoryBufferCreateInfo, vk::ExternalMemoryBufferCreateInfo{
         .handleTypes = memoryUsage == MemoryUsage::eGpuOnly ? extMemFlags : vk::ExternalMemoryHandleTypeFlags{},
       });
 
       // 
-      decltype(auto) bufferUsage = this->handleBufferUsage(cInfo->type);
+      decltype(auto) bufferUsage = this->handleBufferUsage(cInfo.type);
       decltype(auto) bufferInfo = infoMap->set(vk::StructureType::eBufferCreateInfo, vk::BufferCreateInfo{
         .pNext = memoryUsage == MemoryUsage::eGpuOnly ? externalInfo.get() : nullptr,
-        .size = cInfo->size,
+        .size = cInfo.size,
         .usage = bufferUsage,
         .sharingMode = vk::SharingMode::eExclusive
       });
+
+      //
+      bufferInfo->setQueueFamilyIndices(deviceObj->getQueueFamilies().indices);
+      return bufferInfo;
+    };
+
+    // 
+    virtual FenceType createBuffer(cpp21::optional_ref<BufferCreateInfo> cInfo = {}) {
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) device = this->base.as<vk::Device>();
+      decltype(auto) bufferInfo = makeBufferCreateInfo(cInfo);
+      auto hasDBA = !!(bufferInfo->usage & vk::BufferUsageFlagBits::eShaderDeviceAddress);
 
       // 
       decltype(auto) memReqInfo2 = infoMap->set(vk::StructureType::eMemoryRequirements2, vk::MemoryRequirements2{
@@ -481,7 +498,7 @@ namespace ANAMED {
 
       //
       device.getBufferMemoryRequirements2(infoMap->set(vk::StructureType::eBufferMemoryRequirementsInfo2, vk::BufferMemoryRequirementsInfo2{
-        .buffer = (this->handle = this->cInfo->buffer ? this->cInfo->buffer.value() : (device.createBuffer(bufferInfo->setQueueFamilyIndices(deviceObj->getQueueFamilies().indices)))).as<vk::Buffer>()
+        .buffer = (this->handle = this->cInfo->buffer ? this->cInfo->buffer.value() : device.createBuffer(bufferInfo)).as<vk::Buffer>()
       }).get(), memReqInfo2.get());
 
       //
@@ -494,15 +511,15 @@ namespace ANAMED {
       this->allocated = this->allocateMemory(this->mReqs = MemoryRequirements{
         .memoryUsage = memoryUsage,
         .requirements = memReqInfo2->memoryRequirements,
-        .hasDeviceAddress = !!(bufferUsage & vk::BufferUsageFlagBits::eShaderDeviceAddress),
+        .hasDeviceAddress = hasDBA,
         .dedicated = DedicatedMemory{.buffer = this->handle.as<vk::Buffer>() }
       });
 
       // 
-      if (bufferUsage & vk::BufferUsageFlagBits::eShaderDeviceAddress) {
+      if (hasDBA) {
         this->deviceAddress = device.getBufferAddress(vk::BufferDeviceAddressInfo{
           .buffer = this->handle.as<vk::Buffer>()
-          });
+        });
         deviceObj->getAddressSpace().insert({this->deviceAddress, this->deviceAddress + cInfo->size}, this->handle.as<vk::Buffer>());
       };
 

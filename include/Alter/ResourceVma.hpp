@@ -76,25 +76,9 @@ namespace ANAMED {
         .handleTypes = memoryUsage == MemoryUsage::eGpuOnly ? extMemFlags : vk::ExternalMemoryHandleTypeFlags{},
       });
 
-      // 
-      decltype(auto) imageUsage = this->handleImageUsage(cInfo->type);
-      decltype(auto) imageInfo = infoMap->set(vk::StructureType::eImageCreateInfo, vk::ImageCreateInfo{
-        .pNext = memoryUsage == MemoryUsage::eGpuOnly ? externalInfo.get() : nullptr,
-        .flags = cInfo->flags,
-        .imageType = cInfo->imageType,
-        .format = cInfo->format,
-        .extent = cInfo->extent,
-        .mipLevels = cInfo->mipLevelCount,
-        .arrayLayers = cInfo->layerCount, // TODO: correct array layers
-        .samples = vk::SampleCountFlagBits::e1,
-        .tiling = vk::ImageTiling::eOptimal,
-        .usage = imageUsage,
-        .sharingMode = vk::SharingMode::eExclusive,
-        .initialLayout = vk::ImageLayout::eUndefined
-      });
-
       //
-      imageInfo->setQueueFamilyIndices(deviceObj->getQueueFamilies().indices);
+      decltype(auto) imageInfo = this->makeImageCreateInfo(cInfo);
+      decltype(auto) imageUsage = imageInfo->usage;
 
       //
       VmaMemoryUsage memUsage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
@@ -167,16 +151,8 @@ namespace ANAMED {
       });
 
       //
-      decltype(auto) bufferUsage = this->handleBufferUsage(cInfo->type);
-      decltype(auto) bufferInfo = infoMap->set(vk::StructureType::eBufferCreateInfo, vk::BufferCreateInfo{
-        .pNext = memoryUsage == MemoryUsage::eGpuOnly ? externalInfo.get() : nullptr,
-        .size = cInfo->size,
-        .usage = bufferUsage,
-        .sharingMode = vk::SharingMode::eExclusive
-      });
-
-      //
-      bufferInfo->setQueueFamilyIndices(deviceObj->getQueueFamilies().indices);
+      decltype(auto) bufferInfo = this->makeBufferCreateInfo(cInfo);
+      decltype(auto) bufferUsage = bufferInfo->usage;
 
       //
       VmaMemoryUsage memUsage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
