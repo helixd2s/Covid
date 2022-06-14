@@ -54,21 +54,17 @@ namespace ANAMED {
         .handleTypes = memoryUsage == MemoryUsage::eGpuOnly ? extMemFlags : vk::ExternalMemoryHandleTypeFlags{},
         });
 
-      // 
-      decltype(auto) bufferUsage = this->handleBufferUsage(cInfo->type);
-      decltype(auto) bufferInfo = infoMap->set(vk::StructureType::eBufferCreateInfo, vk::BufferCreateInfo{
-        .pNext = memoryUsage == MemoryUsage::eGpuOnly ? externalInfo.get() : nullptr,
-        .flags = vk::BufferCreateFlagBits::eSparseBinding | vk::BufferCreateFlagBits::eSparseResidency | vk::BufferCreateFlagBits::eSparseAliased,
-        .size = cpp21::tiled(cInfo->size, pageSize) * pageSize,
-        .usage = bufferUsage,
-        .sharingMode = vk::SharingMode::eExclusive
-        });
-
       //
+      decltype(auto) bufferInfo = this->makeBufferCreateInfo(cInfo);
+      decltype(auto) bufferUsage = bufferInfo->usage;
       decltype(auto) bindSparseInfo = infoMap->set(vk::StructureType::eBindSparseInfo, vk::BindSparseInfo{});
 
-      // not-mask (i.e. incompatible)
+      //
+      bufferInfo->flags |= vk::BufferCreateFlagBits::eSparseBinding | vk::BufferCreateFlagBits::eSparseResidency | vk::BufferCreateFlagBits::eSparseAliased;
+      bufferInfo->size = cpp21::tiled(cInfo->size, pageSize) * pageSize;
       bufferInfo->usage &= ~vk::BufferUsageFlagBits::eShaderDeviceAddress;
+
+      //
       memoryUsage = MemoryUsage::eGpuOnly;
 
       // 

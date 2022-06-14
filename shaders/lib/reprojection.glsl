@@ -46,20 +46,10 @@ void reproject3D(in uint pixelId, in uint type)
       // still have problems in curved surfaces...
       // incorrect curve when moving camera...
       // also, note about there is not enough data for check reflection correctness
-      dstHitFoundIntersection = vec4(find_reflection_incident_point(
-          vec4(0.f.xxx, 1.f).xyz,
-          vec4(dstHitPos.xyz, 1.f) * constants.lookAt[0],
-          vec4(dstPos.xyz, 1.f) * constants.lookAt[0],
-          normalize(dstNormal.xyz) * toNormalMat(constants.lookAt[0])
-        ), 1.f) * constants.lookAtInverse[0];
+      dstHitFoundIntersection = find_reflection_incident_point(
+        vec4(0.f.xxx, 1.f) * constants.lookAtInverse[0],
+        dstHitPos, dstPos.xyz, normalize(dstNormal.xyz));
     };
-
-    // 
-    const vec4 srcHitPersp = vec4(vec4(srcHitFoundIntersection, 1.f) * constants.lookAt[1], 1.f) * constants.perspective;
-    const vec2 srcScreen = (srcHitPersp.xy/srcHitPersp.w * 0.5f + 0.5f);
-    const ivec2 srcInt = ivec2(srcScreen * vec2(UR(deferredBuf.extent)));
-    const uint srcId = uint(srcInt.x + srcInt.y * UR(deferredBuf.extent).x);
-    const bool srcValid = srcInt.x >= 0 && srcInt.y >= 0 && srcInt.x < UR(deferredBuf.extent).x && srcInt.y < UR(deferredBuf.extent).y;
 
     // 
     const vec4 dstHitPersp = vec4(vec4(dstHitFoundIntersection, 1.f) * constants.lookAt[0], 1.f) * constants.perspective;
