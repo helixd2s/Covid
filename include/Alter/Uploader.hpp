@@ -15,33 +15,6 @@
 // TODO: Remove dependency from `SparseMemoryPage` obj
 namespace ANAMED {
 
-    //
-    struct SparseMemoryPage {
-        vk::Buffer bunchBuffer = {};
-        vk::SparseMemoryBind bind = {};
-        void* mapped = nullptr;
-        std::function<void()> destructor = {};
-        cpp21::obj<AllocatedMemory> allocated = {};
-
-        //
-        SparseMemoryPage(vk::SparseMemoryBind const& bind = {}, std::function<void()> const& destructor = {}) : bind(bind), destructor(destructor) {
-
-        };
-
-        //
-        SparseMemoryPage(vk::SparseMemoryBind const& bind, void* mapped = nullptr, std::function<void()> const& destructor = {}) : bind(bind), mapped(mapped), destructor(destructor) {
-
-        };
-
-        //
-        ~SparseMemoryPage() {
-            if (this->destructor) {
-                this->destructor();
-            };
-            this->destructor = {};
-        };
-    };
-
     // 
     class UploaderObj : public BaseObj {
     public:
@@ -74,7 +47,6 @@ namespace ANAMED {
         //
         vk::MemoryRequirements memoryRequirements = {};
         std::vector<vk::SparseBufferMemoryBindInfo> sparseBufferBindInfo = { vk::SparseBufferMemoryBindInfo{} };
-        cpp21::vector_of_shared<SparseMemoryPage> sparseMemoryPages = std::vector<std::shared_ptr<SparseMemoryPage>>{};
         void* mappedMemory = nullptr;
 
         // 
@@ -150,7 +122,7 @@ namespace ANAMED {
         };
 
         //
-        virtual std::shared_ptr<SparseMemoryPage> allocatePage(uintptr_t bufferOffset, uintptr_t memorySize) {
+        virtual std::shared_ptr<AllocatedMemory> allocatePage(uintptr_t bufferOffset, uintptr_t memorySize) {
             //
             decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
             decltype(auto) device = this->base.as<vk::Device>();
@@ -160,118 +132,17 @@ namespace ANAMED {
 
             //
             vk::DeviceBufferMemoryRequirements memReqIn = vk::DeviceBufferMemoryRequirements{ .pCreateInfo = bufferInfo.get() };
-            //vkGetDeviceBufferMemoryRequirements(VkDevice(device), reinterpret_cast<VkDeviceBufferMemoryRequirements*>(&memReqIn), reinterpret_cast<VkMemoryRequirements2*>(memReqInfo2.get()));
             device.getBufferMemoryRequirements(&memReqIn, memReqInfo2.get());
 
             // 
             decltype(auto) memoryAllocatorObj = deviceObj->getExt<MemoryAllocatorVma>(this->cInfo->extUsed && this->cInfo->extUsed->find(ExtensionInfoName::eMemoryAllocator) != this->cInfo->extUsed->end() ? this->cInfo->extUsed->at(ExtensionInfoName::eMemoryAllocator) : ExtensionName::eMemoryAllocatorVma);
             decltype(auto) memReq = memReqInfo2->memoryRequirements; memReq.size = memorySize;
-            std::shared_ptr<AllocatedMemory> allocated = {};
-            allocated = memoryAllocatorObj->allocateMemory(allocated = std::make_shared<AllocatedMemory>(), MemoryRequirements{
+            decltype(auto) sparsePage = std::make_shared<AllocatedMemory>();
+            sparsePage->bunchBuffer = memoryAllocatorObj->createBufferAndAllocateMemory(sparsePage, MemoryRequirements{
               .memoryUsage = MemoryUsage::eCpuToGpu,
               .requirements = memReq
-                }, infoMap);
-
-            //
-            decltype(auto) sparsePage = std::make_shared<SparseMemoryPage>();
-            sparsePage->bind = vk::SparseMemoryBind{
-              .resourceOffset = bufferOffset,
-              .size = memReq.size,
-              .memory = allocated->memory,
-              .memoryOffset = allocated->offset
-            };
-            sparsePage->mapped = allocated->mapped;
-            sparsePage->bunchBuffer = device.createBuffer(bufferInfo->setQueueFamilyIndices(deviceObj->getQueueFamilies().indices));
-            sparsePage->destructor = [device, allocated, &buffer = sparsePage->bunchBuffer]() {
-                //device.waitIdle();
-                if (allocated && allocated->destructor) {
-                    (*allocated->destructor)(nullptr);
-                };
-                if (buffer) {
-                    device.destroyBuffer(buffer); buffer = vk::Buffer{};
-                };
-            };
-            sparsePage->allocated = allocated;
-
-            // 
-            std::vector<vk::BindBufferMemoryInfo> bindInfos = { *infoMap->set(vk::StructureType::eBindBufferMemoryInfo, vk::BindBufferMemoryInfo{
-              .buffer = sparsePage->bunchBuffer, .memory = allocated->memory, .memoryOffset = allocated->offset
-            }) };
-            device.bindBufferMemory2(bindInfos);
-
-            // 
-            this->sparseMemoryPages->push_back(sparsePage);
-
-            //
-            return this->sparseMemoryPages->back();
-        };
-
-        //
-        virtual FenceType bindMemoryPages(SubmissionInfo const& submission = {}) {
-            decltype(auto) bindSparseInfo = infoMap->get<vk::BindSparseInfo>(vk::StructureType::eBindSparseInfo);
-            decltype(auto) device = this->base.as<vk::Device>();
-            decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
-            decltype(auto) queue = deviceObj->getQueue(submission.info.value());
-
-            //
-            std::vector<vk::Semaphore> waitSemaphores = {};
-            std::vector<vk::Semaphore> signalSemaphores = {};
-            std::vector<vk::SparseMemoryBind> sparseMemoryBinds = {};
-
-            //
-            for (auto& semInfo : *(submission.waitSemaphores)) {
-                waitSemaphores.push_back(semInfo.semaphore);
-            };
-
-            //
-            for (auto& semInfo : *(submission.signalSemaphores)) {
-                signalSemaphores.push_back(semInfo.semaphore);
-            };
-
-            // 
-            for (auto& pageInfo : (*sparseMemoryPages)) {
-                sparseMemoryBinds.push_back(pageInfo->bind);
-            };
-
-            // 
-            sparseBufferBindInfo[0].setBinds(sparseMemoryBinds);
-            if (bindSparseInfo) {
-                bindSparseInfo->setBufferBinds(sparseBufferBindInfo);
-            };
-            sparseMemoryPages = std::vector<std::shared_ptr<SparseMemoryPage>>{};
-
-            // 
-            decltype(auto) fences = deviceObj->getFences();
-            decltype(auto) fence = std::make_shared<vk::Fence>(device.createFence(vk::FenceCreateInfo{ .flags = {} }));
-
-            // 
-            auto deAllocation = [device, fence]() {
-                if (fence && *fence) {
-                    device.destroyFence(*fence);
-                    *fence = vk::Fence{};
-                };
-            };
-
-            //
-            auto onDone = [device, fence, callstack = std::weak_ptr<CallStack>(deviceObj->getCallstack()), submission, deAllocation]() {
-                auto cl = callstack.lock();
-                for (auto& fn : submission.onDone) {
-                    cl->add(std::bind(fn, device.getFenceStatus(*fence)));
-                };
-                cl->add(deAllocation);
-            };
-
-            //
-            fences.push_back(std::make_shared<FenceStatus>([device, fence]() {
-                if (fence && *fence) { return device.getFenceStatus(*fence) != vk::Result::eNotReady; };
-                return true;
-                }, onDone));
-            decltype(auto) status = fences.back();
-            if (bindSparseInfo && mappedBuffer) {
-                //queue.bindSparse(std::vector<vk::BindSparseInfo>{bindSparseInfo}, * fence);
-            };
-            deviceObj->tickProcessing();
-            return status;
+            }, infoMap);
+            return sparsePage;
         };
 
         //
@@ -321,14 +192,13 @@ namespace ANAMED {
 
             //
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
-            submission.submission.onDone.push_back([memPage, mappedBlock = this->mappedBlock, alloc](cpp21::optional_ref<vk::Result> result) {
+            submission.submission.onDone.push_back([memPage, mappedBlock = this->mappedBlock, alloc, devicePtr = deviceObj.get()](cpp21::optional_ref<vk::Result> result) {
                 vmaVirtualFree(mappedBlock, alloc);
-                memPage->destructor();
+                (*memPage->destructor)(devicePtr);
             });
 #endif
 
             //
-            this->bindMemoryPages(submission.submission);
             return ANAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
         };
 
@@ -350,7 +220,7 @@ namespace ANAMED {
             decltype(auto) memPage = allocatePage(offset, allocSize);//allocatePage
 #endif
 
-      // 
+            // 
             submission.commandInits.push_back([exec, memPage, offset, this](vk::CommandBuffer const& cmdBuf) {
                 this->writeDownloadToResourceCmd(exec.writeInfo.with(cmdBuf, memPage->bunchBuffer).mapOffset(offset));
                 return cmdBuf;
@@ -370,7 +240,6 @@ namespace ANAMED {
             };
 
             //
-            this->bindMemoryPages(submission.submission);
             return ANAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
         };
 

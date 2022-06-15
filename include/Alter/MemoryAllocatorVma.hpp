@@ -200,7 +200,7 @@ namespace ANAMED {
 
             // 
             VmaAllocationCreateInfo vmaCreateInfo = {
-              .flags = (memoryUsage != MemoryUsage::eGpuOnly ? VMA_ALLOCATION_CREATE_MAPPED_BIT : VmaAllocationCreateFlags{}) | VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
+              .flags = (memoryUsage != MemoryUsage::eGpuOnly ? (VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT) : VmaAllocationCreateFlags{}) | VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
               .usage = memUsage,
               .pool = memoryUsage == MemoryUsage::eGpuOnly ? this->getExportPool() : VmaPool{}
             };
@@ -213,7 +213,6 @@ namespace ANAMED {
             VmaAllocation allocation = {};
             VmaAllocationInfo allocationInfo = {};
             vmaCreateBuffer(allocator, (VkBufferCreateInfo*)bufferInfo.get(), &vmaCreateInfo, (VkBuffer*)&buffer, &allocation, &allocationInfo);
-            this->handle.type = HandleType::eBuffer;
 
             //
             auto& device = this->base.as<vk::Device>();
@@ -226,13 +225,16 @@ namespace ANAMED {
               .memoryUsage = memoryUsage,
               .requirements = memReqInfo2.memoryRequirements,
               .dedicated = DedicatedMemory{.buffer = buffer },
-                }, allocated, allocator, allocation, allocationInfo, destructors);
+            }, allocated, allocator, allocation, allocationInfo, destructors);
+
+            //
+            allocated->destructor = std::make_shared<std::function<DFun>>([device, buffer, allocator, allocation](BaseObj const*) {
+                vmaDestroyBuffer(allocator, (VkBuffer&)buffer, allocation);
+            });
 
             //
             if (destructors) {
-                destructors->push_back(std::make_shared<std::function<DFun>>([device, buffer, allocator, allocation](BaseObj const*) {
-                    vmaDestroyBuffer(allocator, (VkBuffer&)buffer, allocation);
-                    }));
+                destructors->push_back(allocated->destructor);
             };
 
             //
@@ -273,7 +275,6 @@ namespace ANAMED {
             VmaAllocation allocation = {};
             VmaAllocationInfo allocationInfo = {};
             vmaCreateImage(allocator, (VkImageCreateInfo*)imageInfo.get(), &vmaCreateInfo, (VkImage*)&image, &allocation, &allocationInfo);
-            this->handle.type = HandleType::eImage;
 
             //
             auto& device = this->base.as<vk::Device>();
@@ -286,13 +287,16 @@ namespace ANAMED {
               .memoryUsage = memoryUsage,
               .requirements = memReqInfo2.memoryRequirements,
               .dedicated = DedicatedMemory{.image = image },
-                }, allocated, allocator, allocation, allocationInfo, destructors);
+            }, allocated, allocator, allocation, allocationInfo, destructors);
+
+            //
+            allocated->destructor = std::make_shared<std::function<DFun>>([device, image, allocator, allocation](BaseObj const*) {
+                vmaDestroyImage(allocator, (VkImage&)image, allocation);
+            });
 
             //
             if (destructors) {
-                destructors->push_back(std::make_shared<std::function<DFun>>([device, image, allocator, allocation](BaseObj const*) {
-                    vmaDestroyImage(allocator, (VkImage&)image, allocation);
-                    }));
+                destructors->push_back(allocated->destructor);
             };
 
             //

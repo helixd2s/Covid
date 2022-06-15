@@ -850,6 +850,7 @@ namespace ANAMED {
         void* mapped = nullptr;
         uintptr_t allocation = 0ull;
         ExtHandle extHandle = {};
+        vk::Buffer bunchBuffer = {};
 
         //
         cpp21::obj<std::function<DFun>> destructor = {};

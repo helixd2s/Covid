@@ -426,7 +426,7 @@ namespace ANAMED {
 #endif
 
                 //
-                uploaderObj->bindMemoryPages(submission.submission);
+                //uploaderObj->bindMemoryPages(submission.submission);
                 return ANAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
             };
             return FenceType{};

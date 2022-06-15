@@ -278,14 +278,14 @@ namespace ANAMED {
 
                 //
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
-                submission.submission.onDone.push_back([memPage, mappedBlock = uploaderObj->getMappedBlock(), geometryAlloc](cpp21::optional_ref<vk::Result> result) {
+                submission.submission.onDone.push_back([memPage, mappedBlock = uploaderObj->getMappedBlock(), geometryAlloc, devicePtr = deviceObj.get()](cpp21::optional_ref<vk::Result> result) {
                     vmaVirtualFree(mappedBlock, geometryAlloc);
-                    memPage->destructor();
+                    (*memPage->destructor)(devicePtr);
                 });
 #endif
 
                 //
-                uploaderObj->bindMemoryPages(submission.submission);
+                //uploaderObj->bindMemoryPages(submission.submission);
                 return ANAMED::context->get<DeviceObj>(this->base)->executeCommandOnce(submission);
             };
             return FenceType();
