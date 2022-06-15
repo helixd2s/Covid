@@ -42,6 +42,7 @@ namespace ANAMED {
     std::vector<vk::Image> images = {};
     std::vector<vk::ImageView> imageViews = {};
     std::vector<uint32_t> imageViewIndices = {};
+    std::vector<WrapShared<ResourceObj>> imagesObj = {};
 
     //
     std::vector<vk::Semaphore> readySemaphores = {};
@@ -254,7 +255,7 @@ namespace ANAMED {
   protected:
 
     //
-    virtual void createImage(cpp21::optional_ref<vk::Image> image, cpp21::optional_ref<ImageType> imageType = ImageType::eSwapchain, cpp21::optional_ref<vk::SurfaceFormat2KHR> surfaceFormat2 = {}, cpp21::optional_ref<ImageSwapchainInfo> swapchainInfo = {}) {
+    virtual void createImage(vk::Image const& image, cpp21::optional_ref<ImageType> imageType = ImageType::eSwapchain, cpp21::optional_ref<vk::SurfaceFormat2KHR> surfaceFormat2 = {}, cpp21::optional_ref<ImageSwapchainInfo> swapchainInfo = {}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<PipelineLayoutObj>(this->cInfo->layout);
@@ -292,22 +293,26 @@ namespace ANAMED {
       this->switchToReadyFn.push_back([device, imageLayout, subresourceRange, image=imageObj.as<vk::Image>()](vk::CommandBuffer const& cmdBuf) {
         decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(device);
         decltype(auto) imageObj = deviceObj->get<ResourceObj>(image);
-        imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
-          .cmdBuf = cmdBuf,
-          .newImageLayout = imageLayout,
-          .subresourceRange = subresourceRange,
-        });
+        //if (imageObj) {
+          imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
+            .cmdBuf = cmdBuf,
+            .newImageLayout = imageLayout,
+            .subresourceRange = subresourceRange,
+            });
+        //};
       });
 
       //
       this->switchToPresentFn.push_back([device, imageLayout, subresourceRange, image=imageObj.as<vk::Image>()](vk::CommandBuffer const& cmdBuf) {
         decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(device);
         decltype(auto) imageObj = deviceObj->get<ResourceObj>(image);
-        imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
-          .cmdBuf = cmdBuf,
-          .newImageLayout = vk::ImageLayout::ePresentSrcKHR,
-          .subresourceRange = subresourceRange,
-        });
+        //if (imageObj) {
+          imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
+            .cmdBuf = cmdBuf,
+            .newImageLayout = vk::ImageLayout::ePresentSrcKHR,
+            .subresourceRange = subresourceRange,
+            });
+        //};
       });
 
       //
@@ -318,6 +323,9 @@ namespace ANAMED {
       // incompatible with export
       decltype(auto) readySemaphore = SemaphoreObj::make(this->base, SemaphoreCreateInfo{ .hasExport = false });
       decltype(auto) presentSemaphore = SemaphoreObj::make(this->base, SemaphoreCreateInfo{ .hasExport = false });
+
+      //
+      this->imagesObj.push_back(imageObj);
 
       //
       this->readySemaphores.push_back(readySemaphore.as<vk::Semaphore>());

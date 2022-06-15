@@ -267,7 +267,7 @@ namespace ANAMED {
 
   // 
   class GltfLoaderObj;
-  class ResourceVma;
+  class ResourceObj;
   class MemoryAllocatorVma;
 
 
@@ -299,9 +299,6 @@ namespace ANAMED {
   struct MemoryRequirements : BaseCreateInfo {
     //uint32_t physicalDeviceIndex = 0u;
     MemoryUsage memoryUsage = MemoryUsage::eGpuOnly;
-    bool hasDeviceAddress = false;
-    bool needsDestructor = true;
-
     std::optional<vk::MemoryRequirements> requirements = {};
     std::optional<DedicatedMemory> dedicated = {};
   };
@@ -1698,7 +1695,15 @@ namespace ANAMED {
       };
 
       //
-      return WrapShared<T>(std::dynamic_pointer_cast<T>(objMap->at(handle.value).shared()));
+      if ((*objMap)->find(handle.value) != (*objMap)->end()) {
+        decltype(auto) obj = objMap->at(handle.value);
+        if (obj && obj->alive && obj->handle.type == handle.type) {
+          return WrapShared<T>(std::dynamic_pointer_cast<T>(obj.shared()));
+        };
+      };
+
+      //
+      return WrapShared<T>();
     };
 
     //

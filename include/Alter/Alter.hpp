@@ -31,7 +31,6 @@
 // 
 #ifdef ALT_ENABLE_VMA
 #include "./MemoryAllocatorVma.hpp"
-#include "./ResourceVma.hpp"
 #endif
 
 //

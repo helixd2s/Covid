@@ -77,11 +77,54 @@ namespace ANAMED {
   public:
 
     //
-    virtual std::shared_ptr<AllocatedMemory> allocateMemory(cpp21::optional_ref<MemoryRequirements> requirements, std::shared_ptr<AllocatedMemory> allocated, std::shared_ptr<MSS> infoMap) {
+    virtual vk::Buffer createBuffer(std::shared_ptr<MSS> infoMap, std::vector<std::shared_ptr<std::function<DFun>>>& destructors) {
+      auto& device = this->base.as<vk::Device>();
+      decltype(auto) handle = device.createBuffer(infoMap->get<vk::BufferCreateInfo>(vk::StructureType::eBufferCreateInfo));
+      destructors.push_back(std::make_shared<std::function<DFun>>([device, buffer = handle](BaseObj const*) {
+        device.destroyBuffer(buffer);
+      }));
+      return handle;
+    };
+
+    //
+    virtual vk::Image createImage(std::shared_ptr<MSS> infoMap, std::vector<std::shared_ptr<std::function<DFun>>>& destructors) {
+      auto& device = this->base.as<vk::Device>();
+      decltype(auto) handle = device.createImage(infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo));
+      destructors.push_back(std::make_shared<std::function<DFun>>([device, image = handle](BaseObj const*) {
+        device.destroyImage(image);
+      }));
+      return handle;
+    };
+
+
+    //
+    virtual vk::Buffer createBufferAndAllocateMemory(std::shared_ptr<AllocatedMemory>& allocated, MemoryUsage const& memoryUsage, std::shared_ptr<MSS> infoMap, std::vector<std::shared_ptr<std::function<DFun>>>& destructors) {
+      decltype(auto) handle = this->createBuffer(infoMap, destructors);
+      allocated = this->allocateMemory(allocated, MemoryRequirements{
+        .memoryUsage = memoryUsage,
+        .dedicated = DedicatedMemory{.buffer = handle }
+      }, infoMap);
+      return handle;
+    };
+
+    //
+    virtual vk::Image createImageAndAllocateMemory(std::shared_ptr<AllocatedMemory>& allocated, MemoryUsage const& memoryUsage, std::shared_ptr<MSS> infoMap, std::vector<std::shared_ptr<std::function<DFun>>>& destructors) {
+      decltype(auto) handle = this->createImage(infoMap, destructors);
+      allocated = this->allocateMemory(allocated, MemoryRequirements{
+        .memoryUsage = memoryUsage,
+        .dedicated = DedicatedMemory{.image = handle }
+      }, infoMap);
+      return handle;
+    };
+
+    //
+    virtual std::shared_ptr<AllocatedMemory> allocateMemory(std::shared_ptr<AllocatedMemory>& allocated, cpp21::optional_ref<MemoryRequirements> requirements, std::shared_ptr<MSS> infoMap) {
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       auto& device = this->base.as<vk::Device>();
       auto& physicalDevice = deviceObj->getPhysicalDevice();
       auto PDInfoMap = deviceObj->getPhysicalDeviceInfoMap();
+      auto bufferInfo = infoMap->get<vk::BufferCreateInfo>(vk::StructureType::eBufferCreateInfo);
+      auto imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
 
       //
       decltype(auto) exportMemory = infoMap->set(vk::StructureType::eExportMemoryAllocateInfo, vk::ExportMemoryAllocateInfo{
@@ -108,6 +151,8 @@ namespace ANAMED {
       };
 
       //
+      bool hasDBA = false;
+      if (bufferInfo) { hasDBA = !!(bufferInfo->usage & vk::BufferUsageFlagBits::eShaderDeviceAddress); };
       if (!requirements->requirements) { requirements->requirements = memReqInfo2->memoryRequirements; };
 
       // 
@@ -122,7 +167,7 @@ namespace ANAMED {
                 .image = requirements->dedicated ? requirements->dedicated->image : vk::Image{},
                 .buffer = requirements->dedicated ? requirements->dedicated->buffer : vk::Buffer{}
               }).get(),
-              .flags = requirements->hasDeviceAddress ? vk::MemoryAllocateFlagBits::eDeviceAddress : vk::MemoryAllocateFlagBits{},
+              .flags = hasDBA ? vk::MemoryAllocateFlagBits::eDeviceAddress : vk::MemoryAllocateFlagBits{},
             }).get(),
             .allocationSize = requirements->requirements->size,
             .memoryTypeIndex = std::get<0>(memTypeHeap)
@@ -167,7 +212,7 @@ namespace ANAMED {
         };
 
         //
-        if (requirements->needsDestructor) {
+        //if (requirements->needsDestructor) {
           allocated->destructor = std::make_shared<std::function<DFun>>([device, &memory = allocated->memory, &mapped = allocated->mapped](BaseObj const*) {
             //device.waitIdle();
             if (memory) {
@@ -179,7 +224,7 @@ namespace ANAMED {
             };
             memory = vk::DeviceMemory{};
           });
-        };
+        //};
       };
 
       // 

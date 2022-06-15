@@ -162,14 +162,12 @@ namespace ANAMED {
       device.setMemoryPriorityEXT(allocated->memory, 1.f, deviceObj->getDispatch());
 
       //
-      if (requirements->needsDestructor) {
-        allocated->destructor = std::make_shared<std::function<DFun>>([device, allocator = this->handle.as<VmaAllocator>(), &allocation = allocated->allocation](BaseObj const*) {
-          //device.waitIdle();
-          if (allocation) {
-            vmaFreeMemory(allocator, reinterpret_cast<VmaAllocation&>(allocation)); allocation = {};
-          };
-        });
-      };
+      allocated->destructor = std::make_shared<std::function<DFun>>([device, allocator = this->handle.as<VmaAllocator>(), &allocation = allocated->allocation](BaseObj const*) {
+        //device.waitIdle();
+        if (allocation) {
+          vmaFreeMemory(allocator, reinterpret_cast<VmaAllocation&>(allocation)); allocation = {};
+        };
+      });
 
       // 
       allocated->mapped = allocationInfo.pMappedData;
@@ -177,7 +175,114 @@ namespace ANAMED {
     };
 
     //
-    std::shared_ptr<AllocatedMemory> allocateMemory(cpp21::optional_ref<MemoryRequirements> requirements, std::shared_ptr<AllocatedMemory> allocated, std::shared_ptr<MSS> infoMap) override {
+    virtual vk::Buffer createBufferAndAllocateMemory(std::shared_ptr<AllocatedMemory>& allocated, MemoryUsage const& memoryUsage, std::shared_ptr<MSS> infoMap, std::vector<std::shared_ptr<std::function<DFun>>>& destructors) override {
+      
+      //
+      decltype(auto) externalInfo = infoMap->set(vk::StructureType::eExternalMemoryBufferCreateInfo, vk::ExternalMemoryBufferCreateInfo{
+        .handleTypes = memoryUsage == MemoryUsage::eGpuOnly ? extMemFlags : vk::ExternalMemoryHandleTypeFlags{},
+      });
+
+      //
+      decltype(auto) bufferInfo = infoMap->get<vk::BufferCreateInfo>(vk::StructureType::eBufferCreateInfo);
+      decltype(auto) bufferUsage = bufferInfo->usage;
+
+      //
+      VmaMemoryUsage memUsage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+      if (memoryUsage == MemoryUsage::eGpuOnly) { memUsage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE; };
+      if (memoryUsage == MemoryUsage::eCpuOnly) { memUsage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST; };
+      if (memoryUsage == MemoryUsage::eCpuToGpu) { memUsage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST; };
+      if (memoryUsage == MemoryUsage::eGpuToCpu) { memUsage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST; };
+
+      // 
+      VmaAllocationCreateInfo vmaCreateInfo = {
+        .flags = (memoryUsage != MemoryUsage::eGpuOnly ? VMA_ALLOCATION_CREATE_MAPPED_BIT : VmaAllocationCreateFlags{}) | VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
+        .usage = memUsage,
+        .pool = memoryUsage == MemoryUsage::eGpuOnly ? this->getExportPool() : VmaPool{}
+      };
+
+      //
+      decltype(auto) allocator = this->getHandle().as<VmaAllocator>();
+
+      //
+      vk::Buffer buffer = {};
+      VmaAllocation allocation = {};
+      VmaAllocationInfo allocationInfo = {};
+      vmaCreateBuffer(allocator, (VkBufferCreateInfo*)bufferInfo.get(), &vmaCreateInfo, (VkBuffer*)&buffer, &allocation, &allocationInfo);
+      this->handle.type = HandleType::eBuffer;
+
+      //
+      auto& device = this->base.as<vk::Device>();
+      decltype(auto) memReqInfo2 = vk::MemoryRequirements2{};
+      vk::DeviceBufferMemoryRequirements memReqIn = vk::DeviceBufferMemoryRequirements{ .pCreateInfo = bufferInfo.get() };
+      device.getBufferMemoryRequirements(&memReqIn, &memReqInfo2);
+
+      //
+      allocated = this->handleVmaAllocation(MemoryRequirements{
+        .memoryUsage = memoryUsage,
+        .requirements = memReqInfo2.memoryRequirements,
+        .dedicated = DedicatedMemory{ .buffer = buffer },
+      }, allocated, allocator, allocation, allocationInfo);
+
+      //
+      return buffer;
+    };
+
+    //
+    virtual vk::Image createImageAndAllocateMemory(std::shared_ptr<AllocatedMemory>& allocated, MemoryUsage const& memoryUsage, std::shared_ptr<MSS> infoMap, std::vector<std::shared_ptr<std::function<DFun>>>& destructors) override {
+      
+      //
+      decltype(auto) externalInfo = infoMap->set(vk::StructureType::eExternalMemoryImageCreateInfo, vk::ExternalMemoryImageCreateInfo{
+        .handleTypes = memoryUsage == MemoryUsage::eGpuOnly ? extMemFlags : vk::ExternalMemoryHandleTypeFlags{},
+      });
+
+      //
+      decltype(auto) imageInfo = infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo);
+      decltype(auto) imageUsage = imageInfo->usage;
+
+      //
+      VmaMemoryUsage memUsage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+      if (memoryUsage == MemoryUsage::eGpuOnly) { memUsage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE; };
+      if (memoryUsage == MemoryUsage::eCpuOnly) { memUsage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST; };
+      if (memoryUsage == MemoryUsage::eCpuToGpu) { memUsage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE; };
+      if (memoryUsage == MemoryUsage::eGpuToCpu) { memUsage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE; };
+
+      // 
+      VmaAllocationCreateInfo vmaCreateInfo = {
+        .flags = (memoryUsage != MemoryUsage::eGpuOnly ? VMA_ALLOCATION_CREATE_MAPPED_BIT : VmaAllocationCreateFlags{}) | VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
+        .usage = memUsage,
+        .pool = memoryUsage == MemoryUsage::eGpuOnly ? this->getExportPool() : VmaPool{}
+      };
+
+      //
+      decltype(auto) allocator = this->getHandle().as<VmaAllocator>();
+
+      //
+      vk::Image image = {};
+      VmaAllocation allocation = {};
+      VmaAllocationInfo allocationInfo = {};
+      vmaCreateImage(allocator, (VkImageCreateInfo*)imageInfo.get(), &vmaCreateInfo, (VkImage*)&image, &allocation, &allocationInfo);
+      this->handle.type = HandleType::eImage;
+
+      //
+      auto& device = this->base.as<vk::Device>();
+      decltype(auto) memReqInfo2 = vk::MemoryRequirements2{};
+      vk::DeviceImageMemoryRequirements memReqIn = vk::DeviceImageMemoryRequirements{ .pCreateInfo = imageInfo.get() };
+      device.getImageMemoryRequirements(&memReqIn, &memReqInfo2);
+
+      //
+      allocated = this->handleVmaAllocation(MemoryRequirements{
+        .memoryUsage = memoryUsage,
+        .requirements = memReqInfo2.memoryRequirements,
+        .dedicated = DedicatedMemory{.image = image },
+      }, allocated, allocator, allocation, allocationInfo);
+
+      //
+      return image;
+    };
+
+
+    //
+    std::shared_ptr<AllocatedMemory> allocateMemory(std::shared_ptr<AllocatedMemory>& allocated, cpp21::optional_ref<MemoryRequirements> requirements, std::shared_ptr<MSS> infoMap) override {
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       auto& device = this->base.as<vk::Device>();
       auto& physicalDevice = deviceObj->getPhysicalDevice();
@@ -202,16 +307,19 @@ namespace ANAMED {
       VmaAllocation allocation = {};
       VmaAllocationInfo allocationInfo = {};
 
+      //
+      decltype(auto) allocator = this->getHandle().as<VmaAllocator>();
+
       // 
       if (requirements->dedicated) {
-        if (requirements->dedicated->buffer) { vmaAllocateMemoryForBuffer(this->handle.as<VmaAllocator>(), requirements->dedicated->buffer, &vmaCreateInfo, &allocation, &allocationInfo); };
-        if (requirements->dedicated->image) { vmaAllocateMemoryForImage(this->handle.as<VmaAllocator>(), requirements->dedicated->image, &vmaCreateInfo, &allocation, &allocationInfo); };
+        if (requirements->dedicated->buffer) { vmaAllocateMemoryForBuffer(allocator, requirements->dedicated->buffer, &vmaCreateInfo, &allocation, &allocationInfo); };
+        if (requirements->dedicated->image) { vmaAllocateMemoryForImage(allocator, requirements->dedicated->image, &vmaCreateInfo, &allocation, &allocationInfo); };
       } else {
-        vmaAllocateMemory(this->handle.as<VmaAllocator>(), (VkMemoryRequirements*)&requirements->requirements, &vmaCreateInfo, &allocation, &allocationInfo);
+        vmaAllocateMemory(allocator, (VkMemoryRequirements*)&requirements->requirements, &vmaCreateInfo, &allocation, &allocationInfo);
       };
       
       // 
-      return this->handleVmaAllocation(requirements, allocated, this->handle.as<VmaAllocator>(), allocation, allocationInfo);
+      return this->handleVmaAllocation(requirements, allocated, allocator, allocation, allocationInfo);
     };
 
   };

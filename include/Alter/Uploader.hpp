@@ -122,14 +122,6 @@ namespace ANAMED {
     };
 
     //
-    virtual std::shared_ptr<AllocatedMemory> allocateMemory(cpp21::optional_ref<MemoryRequirements> requirements) {
-      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
-      decltype(auto) memoryAllocatorObj = deviceObj->getExt<MemoryAllocatorObj>(this->cInfo->extUsed && this->cInfo->extUsed->find(ExtensionInfoName::eMemoryAllocator) != this->cInfo->extUsed->end() ? this->cInfo->extUsed->at(ExtensionInfoName::eMemoryAllocator) : ExtensionName::eMemoryAllocator);
-      decltype(auto) allocated = std::make_shared<AllocatedMemory>();
-      return memoryAllocatorObj->allocateMemory(requirements, allocated, infoMap);
-    };
-
-    //
     virtual std::shared_ptr<SparseMemoryPage> allocatePage(uintptr_t bufferOffset, uintptr_t memorySize) {
       //
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
@@ -144,13 +136,13 @@ namespace ANAMED {
       device.getBufferMemoryRequirements(&memReqIn, memReqInfo2.get());
 
       // 
+      decltype(auto) memoryAllocatorObj = deviceObj->getExt<MemoryAllocatorVma>(this->cInfo->extUsed && this->cInfo->extUsed->find(ExtensionInfoName::eMemoryAllocator) != this->cInfo->extUsed->end() ? this->cInfo->extUsed->at(ExtensionInfoName::eMemoryAllocator) : ExtensionName::eMemoryAllocatorVma);
       decltype(auto) memReq = memReqInfo2->memoryRequirements; memReq.size = memorySize;
-      decltype(auto) allocated = this->allocateMemory(MemoryRequirements{
+      std::shared_ptr<AllocatedMemory> allocated = {};
+      allocated = memoryAllocatorObj->allocateMemory(allocated = std::make_shared<AllocatedMemory>(), MemoryRequirements{
         .memoryUsage = MemoryUsage::eCpuToGpu,
-        .hasDeviceAddress = false,
-        .needsDestructor = true,
         .requirements = memReq
-        });
+      }, infoMap);
 
       //
       decltype(auto) sparsePage = std::make_shared<SparseMemoryPage>();
