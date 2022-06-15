@@ -139,7 +139,7 @@ namespace ANAMED {
     public:
 
         //
-        std::shared_ptr<AllocatedMemory> handleVmaAllocation(cpp21::optional_ref<MemoryRequirements> requirements, std::shared_ptr<AllocatedMemory> allocated, VmaAllocator const& allocator, VmaAllocation const& allocation, VmaAllocationInfo const& allocationInfo = {}) {
+        std::shared_ptr<AllocatedMemory> handleVmaAllocation(cpp21::optional_ref<MemoryRequirements> requirements, std::shared_ptr<AllocatedMemory> allocated, VmaAllocator const& allocator, VmaAllocation const& allocation, VmaAllocationInfo const& allocationInfo = {}, cpp21::optional_ref<std::vector<std::shared_ptr<std::function<DFun>>>> destructors = {}) {
             decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
             auto& device = this->base.as<vk::Device>();
 
@@ -169,13 +169,18 @@ namespace ANAMED {
                 };
             });
 
+            //
+            if (destructors) {
+                destructors->push_back(allocated->destructor);
+            };
+
             // 
             allocated->mapped = allocationInfo.pMappedData;
             return allocated;
         };
 
         //
-        virtual vk::Buffer createBufferAndAllocateMemory(std::shared_ptr<AllocatedMemory>& allocated, cpp21::optional_ref<MemoryRequirements> requirements, std::shared_ptr<MSS> infoMap, std::vector<std::shared_ptr<std::function<DFun>>>& destructors) override {
+        virtual vk::Buffer createBufferAndAllocateMemory(std::shared_ptr<AllocatedMemory>& allocated, cpp21::optional_ref<MemoryRequirements> requirements, std::shared_ptr<MSS> infoMap, cpp21::optional_ref<std::vector<std::shared_ptr<std::function<DFun>>>> destructors = {}) override {
             //
             decltype(auto) memoryUsage = requirements->memoryUsage;
             decltype(auto) externalInfo = infoMap->set(vk::StructureType::eExternalMemoryBufferCreateInfo, vk::ExternalMemoryBufferCreateInfo{
@@ -221,19 +226,21 @@ namespace ANAMED {
               .memoryUsage = memoryUsage,
               .requirements = memReqInfo2.memoryRequirements,
               .dedicated = DedicatedMemory{.buffer = buffer },
-                }, allocated, allocator, allocation, allocationInfo);
+                }, allocated, allocator, allocation, allocationInfo, destructors);
 
             //
-            destructors.push_back(std::make_shared<std::function<DFun>>([device, buffer, allocator, allocation](BaseObj const*) {
-                vmaDestroyBuffer(allocator, (VkBuffer&)buffer, allocation);
-                }));
+            if (destructors) {
+                destructors->push_back(std::make_shared<std::function<DFun>>([device, buffer, allocator, allocation](BaseObj const*) {
+                    vmaDestroyBuffer(allocator, (VkBuffer&)buffer, allocation);
+                    }));
+            };
 
             //
             return buffer;
         };
 
         //
-        virtual vk::Image createImageAndAllocateMemory(std::shared_ptr<AllocatedMemory>& allocated, cpp21::optional_ref<MemoryRequirements> requirements, std::shared_ptr<MSS> infoMap, std::vector<std::shared_ptr<std::function<DFun>>>& destructors) override {
+        virtual vk::Image createImageAndAllocateMemory(std::shared_ptr<AllocatedMemory>& allocated, cpp21::optional_ref<MemoryRequirements> requirements, std::shared_ptr<MSS> infoMap, cpp21::optional_ref<std::vector<std::shared_ptr<std::function<DFun>>>> destructors = {}) override {
             //
             decltype(auto) memoryUsage = requirements->memoryUsage;
             decltype(auto) externalInfo = infoMap->set(vk::StructureType::eExternalMemoryImageCreateInfo, vk::ExternalMemoryImageCreateInfo{
@@ -279,20 +286,21 @@ namespace ANAMED {
               .memoryUsage = memoryUsage,
               .requirements = memReqInfo2.memoryRequirements,
               .dedicated = DedicatedMemory{.image = image },
-                }, allocated, allocator, allocation, allocationInfo);
+                }, allocated, allocator, allocation, allocationInfo, destructors);
 
             //
-            destructors.push_back(std::make_shared<std::function<DFun>>([device, image, allocator, allocation](BaseObj const*) {
-                vmaDestroyImage(allocator, (VkImage&)image, allocation);
-                }));
+            if (destructors) {
+                destructors->push_back(std::make_shared<std::function<DFun>>([device, image, allocator, allocation](BaseObj const*) {
+                    vmaDestroyImage(allocator, (VkImage&)image, allocation);
+                    }));
+            };
 
             //
             return image;
         };
 
-
         //
-        std::shared_ptr<AllocatedMemory> allocateMemory(std::shared_ptr<AllocatedMemory>& allocated, cpp21::optional_ref<MemoryRequirements> requirements, std::shared_ptr<MSS> infoMap) override {
+        std::shared_ptr<AllocatedMemory> allocateMemory(std::shared_ptr<AllocatedMemory>& allocated, cpp21::optional_ref<MemoryRequirements> requirements, std::shared_ptr<MSS> infoMap, cpp21::optional_ref<std::vector<std::shared_ptr<std::function<DFun>>>> destructors = {}) override {
             decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
             auto& device = this->base.as<vk::Device>();
             auto& physicalDevice = deviceObj->getPhysicalDevice();
@@ -330,7 +338,7 @@ namespace ANAMED {
             };
 
             // 
-            return this->handleVmaAllocation(requirements, allocated, allocator, allocation, allocationInfo);
+            return this->handleVmaAllocation(requirements, allocated, allocator, allocation, allocationInfo, destructors);
         };
 
     };

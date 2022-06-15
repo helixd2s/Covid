@@ -98,23 +98,23 @@ namespace ANAMED {
 
 
         //
-        virtual vk::Buffer createBufferAndAllocateMemory(std::shared_ptr<AllocatedMemory>& allocated, cpp21::optional_ref<MemoryRequirements> requirements, std::shared_ptr<MSS> infoMap, std::vector<std::shared_ptr<std::function<DFun>>>& destructors) {
+        virtual vk::Buffer createBufferAndAllocateMemory(std::shared_ptr<AllocatedMemory>& allocated, cpp21::optional_ref<MemoryRequirements> requirements, std::shared_ptr<MSS> infoMap, cpp21::optional_ref<std::vector<std::shared_ptr<std::function<DFun>>>> destructors = {}) {
             decltype(auto) handle = this->createBuffer(infoMap, destructors);
             requirements->dedicated = DedicatedMemory{ .buffer = handle };
-            allocated = this->allocateMemory(allocated, requirements, infoMap);
+            allocated = this->allocateMemory(allocated, requirements, infoMap, destructors);
             return handle;
         };
 
         //
-        virtual vk::Image createImageAndAllocateMemory(std::shared_ptr<AllocatedMemory>& allocated, cpp21::optional_ref<MemoryRequirements> requirements, std::shared_ptr<MSS> infoMap, std::vector<std::shared_ptr<std::function<DFun>>>& destructors) {
+        virtual vk::Image createImageAndAllocateMemory(std::shared_ptr<AllocatedMemory>& allocated, cpp21::optional_ref<MemoryRequirements> requirements, std::shared_ptr<MSS> infoMap, cpp21::optional_ref<std::vector<std::shared_ptr<std::function<DFun>>>> destructors = {}) {
             decltype(auto) handle = this->createImage(infoMap, destructors);
             requirements->dedicated = DedicatedMemory{ .image = handle };
-            allocated = this->allocateMemory(allocated, requirements, infoMap);
+            allocated = this->allocateMemory(allocated, requirements, infoMap, destructors);
             return handle;
         };
 
         //
-        virtual std::shared_ptr<AllocatedMemory> allocateMemory(std::shared_ptr<AllocatedMemory>& allocated, cpp21::optional_ref<MemoryRequirements> requirements, std::shared_ptr<MSS> infoMap) {
+        virtual std::shared_ptr<AllocatedMemory> allocateMemory(std::shared_ptr<AllocatedMemory>& allocated, cpp21::optional_ref<MemoryRequirements> requirements, std::shared_ptr<MSS> infoMap, cpp21::optional_ref<std::vector<std::shared_ptr<std::function<DFun>>>> destructors = {}) {
             decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
             auto& device = this->base.as<vk::Device>();
             auto& physicalDevice = deviceObj->getPhysicalDevice();
@@ -208,9 +208,7 @@ namespace ANAMED {
                 };
 
                 //
-                //if (requirements->needsDestructor) {
                 allocated->destructor = std::make_shared<std::function<DFun>>([device, &memory = allocated->memory, &mapped = allocated->mapped](BaseObj const*) {
-                    //device.waitIdle();
                     if (memory) {
                         if (mapped) {
                             device.unmapMemory(memory);
@@ -220,6 +218,9 @@ namespace ANAMED {
                     };
                     memory = vk::DeviceMemory{};
                 });
+                if (destructors) {
+                    destructors->push_back(allocated->destructor);
+                };
                 //};
             };
 
