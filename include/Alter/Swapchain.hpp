@@ -194,13 +194,13 @@ namespace ANAMED {
       this->presentSemaphoreInfos = {};
       this->renderArea = vk::Rect2D{ vk::Offset2D{0u, 0u}, capInfo.capabilities->currentExtent };
 
-      //{ //
-        //decltype(auto) it = images.begin();
-        //for (it = images.begin(); it != images.end();) {
-          //deviceObj->get<ResourceObj>(*it)->destroy(deviceObj.get());
-          //it = images.erase(it);
-        //};
-      //};
+      { //
+        decltype(auto) it = images.begin();
+        for (it = images.begin(); it != images.end();) {
+          deviceObj->get<ResourceObj>(*it)->destroy(deviceObj.get());
+          it = images.erase(it);
+        };
+      };
 
       { //
         decltype(auto) it = readySemaphores.begin();
@@ -290,9 +290,9 @@ namespace ANAMED {
       this->imageViewIndices.push_back(pair.indice);
 
       // TODO: use pre-built command buffer
-      this->switchToReadyFn.push_back([device, imageLayout, subresourceRange, image=imageObj.as<vk::Image>(), imageObj](vk::CommandBuffer const& cmdBuf) {
+      this->switchToReadyFn.push_back([device, imageLayout, subresourceRange, image=imageObj.as<vk::Image>()](vk::CommandBuffer const& cmdBuf) {
         decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(device);
-        //decltype(auto) imageObj = deviceObj->get<ResourceObj>(image);
+        decltype(auto) imageObj = deviceObj->get<ResourceObj>(image);
         //if (imageObj) {
           imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
             .cmdBuf = cmdBuf,
@@ -303,9 +303,9 @@ namespace ANAMED {
       });
 
       //
-      this->switchToPresentFn.push_back([device, imageLayout, subresourceRange, image=imageObj.as<vk::Image>(), imageObj](vk::CommandBuffer const& cmdBuf) {
+      this->switchToPresentFn.push_back([device, imageLayout, subresourceRange, image=imageObj.as<vk::Image>()](vk::CommandBuffer const& cmdBuf) {
         decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(device);
-        //decltype(auto) imageObj = deviceObj->get<ResourceObj>(image);
+        decltype(auto) imageObj = deviceObj->get<ResourceObj>(image);
         //if (imageObj) {
           imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
             .cmdBuf = cmdBuf,

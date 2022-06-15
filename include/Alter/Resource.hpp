@@ -443,7 +443,7 @@ namespace ANAMED {
       //
       this->allocated = std::make_shared<AllocatedMemory>();
       if (this->cInfo->image && *this->cInfo->image) {
-        this->handle = this->cInfo->image;
+        this->handle = this->cInfo->image.value();
       } else {
         this->handle = memoryAllocatorObj->createImageAndAllocateMemory(allocated, memoryUsage, infoMap, destructors);
       };
@@ -473,7 +473,7 @@ namespace ANAMED {
       //
       this->allocated = std::make_shared<AllocatedMemory>();
       if (this->cInfo->buffer && *this->cInfo->buffer) {
-        this->handle = this->cInfo->buffer;
+        this->handle = this->cInfo->buffer.value();
       } else {
         this->handle = memoryAllocatorObj->createBufferAndAllocateMemory(allocated, memoryUsage, infoMap, destructors);
       };
