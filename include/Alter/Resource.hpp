@@ -445,7 +445,7 @@ namespace ANAMED {
       if (this->cInfo->image && *this->cInfo->image) {
         this->handle = this->cInfo->image.value();
       } else {
-        this->handle = memoryAllocatorObj->createImageAndAllocateMemory(allocated, memoryUsage, infoMap, destructors);
+        this->handle = memoryAllocatorObj->createImageAndAllocateMemory(allocated, MemoryRequirements{.memoryUsage = memoryUsage}, infoMap, destructors);
       };
 
       // 
@@ -475,7 +475,7 @@ namespace ANAMED {
       if (this->cInfo->buffer && *this->cInfo->buffer) {
         this->handle = this->cInfo->buffer.value();
       } else {
-        this->handle = memoryAllocatorObj->createBufferAndAllocateMemory(allocated, memoryUsage, infoMap, destructors);
+        this->handle = memoryAllocatorObj->createBufferAndAllocateMemory(allocated, MemoryRequirements{.memoryUsage = memoryUsage}, infoMap, destructors);
       };
 
       // 
