@@ -132,12 +132,11 @@ namespace ANAMED {
 
       // 
       decltype(auto) memReq = memoryRequirements; memReq.size = pageSize;
-      decltype(auto) allocated = this->allocateMemory(MemoryRequirements{
-        .memoryUsage = memoryUsage,
-        .hasDeviceAddress = false,
-        .needsDestructor = false,
-        .requirements = std::optional<vk::MemoryRequirements>(memReq)
-      });
+      decltype(auto) memoryAllocatorObj = deviceObj->getExt<MemoryAllocatorObj>(this->cInfo->extUsed && this->cInfo->extUsed->find(ExtensionInfoName::eMemoryAllocator) != this->cInfo->extUsed->end() ? this->cInfo->extUsed->at(ExtensionInfoName::eMemoryAllocator) : ExtensionName::eMemoryAllocator);
+
+      //
+      std::shared_ptr<AllocatedMemory> allocated = std::make_shared<AllocatedMemory>();
+      this->handle = memoryAllocatorObj->allocateMemory(allocated, MemoryRequirements{ .requirements = memReq },infoMap);
 
       // 
       this->sparseMemoryPages->push_back(std::make_shared<SparseMemoryPage>(vk::SparseMemoryBind{

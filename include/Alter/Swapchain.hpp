@@ -42,6 +42,7 @@ namespace ANAMED {
     std::vector<vk::Image> images = {};
     std::vector<vk::ImageView> imageViews = {};
     std::vector<uint32_t> imageViewIndices = {};
+    std::vector<WrapShared<ResourceObj>> imagesObj = {};
 
     //
     std::vector<vk::Semaphore> readySemaphores = {};
@@ -193,13 +194,13 @@ namespace ANAMED {
       this->presentSemaphoreInfos = {};
       this->renderArea = vk::Rect2D{ vk::Offset2D{0u, 0u}, capInfo.capabilities->currentExtent };
 
-      { //
-        decltype(auto) it = images.begin();
-        for (it = images.begin(); it != images.end();) {
-          deviceObj->get<ResourceObj>(*it)->destroy(deviceObj.get());
-          it = images.erase(it);
-        };
-      };
+      //{ //
+        //decltype(auto) it = images.begin();
+        //for (it = images.begin(); it != images.end();) {
+          //deviceObj->get<ResourceObj>(*it)->destroy(deviceObj.get());
+          //it = images.erase(it);
+        //};
+      //};
 
       { //
         decltype(auto) it = readySemaphores.begin();
@@ -254,7 +255,7 @@ namespace ANAMED {
   protected:
 
     //
-    virtual void createImage(cpp21::optional_ref<vk::Image> image, cpp21::optional_ref<ImageType> imageType = ImageType::eSwapchain, cpp21::optional_ref<vk::SurfaceFormat2KHR> surfaceFormat2 = {}, cpp21::optional_ref<ImageSwapchainInfo> swapchainInfo = {}) {
+    virtual void createImage(vk::Image const& image, cpp21::optional_ref<ImageType> imageType = ImageType::eSwapchain, cpp21::optional_ref<vk::SurfaceFormat2KHR> surfaceFormat2 = {}, cpp21::optional_ref<ImageSwapchainInfo> swapchainInfo = {}) {
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) descriptorsObj = deviceObj->get<PipelineLayoutObj>(this->cInfo->layout);
@@ -318,6 +319,9 @@ namespace ANAMED {
       // incompatible with export
       decltype(auto) readySemaphore = SemaphoreObj::make(this->base, SemaphoreCreateInfo{ .hasExport = false });
       decltype(auto) presentSemaphore = SemaphoreObj::make(this->base, SemaphoreCreateInfo{ .hasExport = false });
+
+      //
+      this->imagesObj.push_back(imageObj);
 
       //
       this->readySemaphores.push_back(readySemaphore.as<vk::Semaphore>());

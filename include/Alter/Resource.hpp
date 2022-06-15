@@ -247,13 +247,6 @@ namespace ANAMED {
 
   protected:
 
-    //
-    virtual std::shared_ptr<AllocatedMemory> allocateMemory(cpp21::optional_ref<MemoryRequirements> requirements) {
-      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
-      decltype(auto) memoryAllocatorObj = deviceObj->getExt<MemoryAllocatorObj>(this->cInfo->extUsed && this->cInfo->extUsed->find(ExtensionInfoName::eMemoryAllocator) != this->cInfo->extUsed->end() ? this->cInfo->extUsed->at(ExtensionInfoName::eMemoryAllocator) : ExtensionName::eMemoryAllocator);
-      return memoryAllocatorObj->allocateMemory(requirements, this->allocated = std::make_shared<AllocatedMemory>(), infoMap);
-    };
-
     // 
     virtual void construct(std::shared_ptr<DeviceObj> deviceObj = {}, cpp21::optional_ref<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
       if (cInfo) { this->cInfo = cInfo; };
@@ -436,8 +429,6 @@ namespace ANAMED {
 
 
 
-
-
     // 
     virtual FenceType createImage(cpp21::optional_ref<ImageCreateInfo> cInfo = {}) {
       // default layout
@@ -447,23 +438,14 @@ namespace ANAMED {
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) imageInfo = this->makeImageCreateInfo(cInfo);
+      decltype(auto) memoryAllocatorObj = deviceObj->getExt<MemoryAllocatorObj>(this->cInfo->extUsed && this->cInfo->extUsed->find(ExtensionInfoName::eMemoryAllocator) != this->cInfo->extUsed->end() ? this->cInfo->extUsed->at(ExtensionInfoName::eMemoryAllocator) : ExtensionName::eMemoryAllocator);
 
       //
-      (this->handle = this->cInfo->image ? this->cInfo->image.value() : (device.createImage(imageInfo))).as<vk::Image>();
-
-      //
-      destructors.push_back(std::make_shared<std::function<DFun>>([device, image = this->handle.as<vk::Image>(), type=cInfo->type](BaseObj const*) {
-        if (type!=ImageType::eSwapchain) {
-          //device.waitIdle();
-          device.destroyImage(image);
-        };
-      }));
-
-      // 
-      this->allocated = this->allocateMemory(this->mReqs = MemoryRequirements{
-        .memoryUsage = memoryUsage,
-        .dedicated = DedicatedMemory{.image = cInfo->type != ImageType::eSwapchain ? this->handle.as<vk::Image>() : vk::Image{} },
-      });
+      if (this->cInfo->image && *this->cInfo->image) {
+        this->handle = this->cInfo->image;
+      } else {
+        this->handle = memoryAllocatorObj->createImageAndAllocateMemory(this->allocated = std::make_shared<AllocatedMemory>(), memoryUsage, infoMap, destructors);
+      };
 
       // 
       if (cInfo->info) {
@@ -485,26 +467,17 @@ namespace ANAMED {
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) device = this->base.as<vk::Device>();
       decltype(auto) bufferInfo = makeBufferCreateInfo(cInfo);
-      auto hasDBA = !!(bufferInfo->usage & vk::BufferUsageFlagBits::eShaderDeviceAddress);
+      decltype(auto) memoryAllocatorObj = deviceObj->getExt<MemoryAllocatorObj>(this->cInfo->extUsed && this->cInfo->extUsed->find(ExtensionInfoName::eMemoryAllocator) != this->cInfo->extUsed->end() ? this->cInfo->extUsed->at(ExtensionInfoName::eMemoryAllocator) : ExtensionName::eMemoryAllocator);
 
       //
-      (this->handle = this->cInfo->buffer ? this->cInfo->buffer.value() : device.createBuffer(bufferInfo)).as<vk::Buffer>();
-
-      //
-      destructors.push_back(std::make_shared<std::function<DFun>>([device, buffer = this->handle.as<vk::Buffer>()](BaseObj const*) {
-        //device.waitIdle();
-        device.destroyBuffer(buffer);
-      }));
-
-      //
-      this->allocated = this->allocateMemory(this->mReqs = MemoryRequirements{
-        .memoryUsage = memoryUsage,
-        .hasDeviceAddress = hasDBA,
-        .dedicated = DedicatedMemory{.buffer = this->handle.as<vk::Buffer>() }
-      });
+      if (this->cInfo->buffer && *this->cInfo->buffer) {
+        this->handle = this->cInfo->buffer;
+      } else {
+        this->handle = memoryAllocatorObj->createBufferAndAllocateMemory(this->allocated = std::make_shared<AllocatedMemory>(), memoryUsage, infoMap, destructors);
+      };
 
       // 
-      if (hasDBA) {
+      if (bufferInfo->usage & vk::BufferUsageFlagBits::eShaderDeviceAddress) {
         this->deviceAddress = device.getBufferAddress(vk::BufferDeviceAddressInfo{
           .buffer = this->handle.as<vk::Buffer>()
         });
