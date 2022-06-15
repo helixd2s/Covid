@@ -441,10 +441,11 @@ namespace ANAMED {
       decltype(auto) memoryAllocatorObj = deviceObj->getExt<MemoryAllocatorObj>(this->cInfo->extUsed && this->cInfo->extUsed->find(ExtensionInfoName::eMemoryAllocator) != this->cInfo->extUsed->end() ? this->cInfo->extUsed->at(ExtensionInfoName::eMemoryAllocator) : ExtensionName::eMemoryAllocator);
 
       //
+      this->allocated = std::make_shared<AllocatedMemory>();
       if (this->cInfo->image && *this->cInfo->image) {
         this->handle = this->cInfo->image;
       } else {
-        this->handle = memoryAllocatorObj->createImageAndAllocateMemory(this->allocated = std::make_shared<AllocatedMemory>(), memoryUsage, infoMap, destructors);
+        this->handle = memoryAllocatorObj->createImageAndAllocateMemory(allocated, memoryUsage, infoMap, destructors);
       };
 
       // 
@@ -470,10 +471,11 @@ namespace ANAMED {
       decltype(auto) memoryAllocatorObj = deviceObj->getExt<MemoryAllocatorObj>(this->cInfo->extUsed && this->cInfo->extUsed->find(ExtensionInfoName::eMemoryAllocator) != this->cInfo->extUsed->end() ? this->cInfo->extUsed->at(ExtensionInfoName::eMemoryAllocator) : ExtensionName::eMemoryAllocator);
 
       //
+      this->allocated = std::make_shared<AllocatedMemory>();
       if (this->cInfo->buffer && *this->cInfo->buffer) {
         this->handle = this->cInfo->buffer;
       } else {
-        this->handle = memoryAllocatorObj->createBufferAndAllocateMemory(this->allocated = std::make_shared<AllocatedMemory>(), memoryUsage, infoMap, destructors);
+        this->handle = memoryAllocatorObj->createBufferAndAllocateMemory(allocated, memoryUsage, infoMap, destructors);
       };
 
       // 

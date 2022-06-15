@@ -1695,9 +1695,12 @@ namespace ANAMED {
       };
 
       //
-      //if (objMap.find(handle.value) != objMap.end()) {
-        return WrapShared<T>(std::dynamic_pointer_cast<T>(objMap->at(handle.value).shared()));
-      //};
+      if ((*objMap)->find(handle.value) != (*objMap)->end()) {
+        decltype(auto) obj = objMap->at(handle.value);
+        if (obj && obj->alive && obj->handle.type == handle.type) {
+          return WrapShared<T>(std::dynamic_pointer_cast<T>(obj.shared()));
+        };
+      };
 
       //
       return WrapShared<T>();

@@ -290,25 +290,29 @@ namespace ANAMED {
       this->imageViewIndices.push_back(pair.indice);
 
       // TODO: use pre-built command buffer
-      this->switchToReadyFn.push_back([device, imageLayout, subresourceRange, image=imageObj.as<vk::Image>()](vk::CommandBuffer const& cmdBuf) {
+      this->switchToReadyFn.push_back([device, imageLayout, subresourceRange, image=imageObj.as<vk::Image>(), imageObj](vk::CommandBuffer const& cmdBuf) {
         decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(device);
-        decltype(auto) imageObj = deviceObj->get<ResourceObj>(image);
-        imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
-          .cmdBuf = cmdBuf,
-          .newImageLayout = imageLayout,
-          .subresourceRange = subresourceRange,
-        });
+        //decltype(auto) imageObj = deviceObj->get<ResourceObj>(image);
+        //if (imageObj) {
+          imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
+            .cmdBuf = cmdBuf,
+            .newImageLayout = imageLayout,
+            .subresourceRange = subresourceRange,
+            });
+        //};
       });
 
       //
-      this->switchToPresentFn.push_back([device, imageLayout, subresourceRange, image=imageObj.as<vk::Image>()](vk::CommandBuffer const& cmdBuf) {
+      this->switchToPresentFn.push_back([device, imageLayout, subresourceRange, image=imageObj.as<vk::Image>(), imageObj](vk::CommandBuffer const& cmdBuf) {
         decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(device);
-        decltype(auto) imageObj = deviceObj->get<ResourceObj>(image);
-        imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
-          .cmdBuf = cmdBuf,
-          .newImageLayout = vk::ImageLayout::ePresentSrcKHR,
-          .subresourceRange = subresourceRange,
-        });
+        //decltype(auto) imageObj = deviceObj->get<ResourceObj>(image);
+        //if (imageObj) {
+          imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
+            .cmdBuf = cmdBuf,
+            .newImageLayout = vk::ImageLayout::ePresentSrcKHR,
+            .subresourceRange = subresourceRange,
+            });
+        //};
       });
 
       //
