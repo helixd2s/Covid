@@ -67,7 +67,7 @@ namespace ANAMED {
 
         //
         WrapShared<ResourceObj> uniformBufferObj = {};
-        WrapShared<ResourceObj> cacheBufferObj = {};
+        WrapShared<ResourceSparseObj> cacheBufferObj = {};
 
         //
         std::vector<char8_t> initialData = {};

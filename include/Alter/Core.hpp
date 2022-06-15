@@ -1215,32 +1215,7 @@ namespace ANAMED {
         std::optional<QueueGetInfo> info = {};
     };
 
-    //
-    struct SparseMemoryPage {
-        vk::Buffer bunchBuffer = {};
-        vk::SparseMemoryBind bind = {};
-        void* mapped = nullptr;
-        std::function<void()> destructor = {};
-        cpp21::obj<AllocatedMemory> allocated = {};
 
-        //
-        SparseMemoryPage(vk::SparseMemoryBind const& bind = {}, std::function<void()> const& destructor = {}) : bind(bind), destructor(destructor) {
-
-        };
-
-        //
-        SparseMemoryPage(vk::SparseMemoryBind const& bind, void* mapped = nullptr, std::function<void()> const& destructor = {}) : bind(bind), mapped(mapped), destructor(destructor) {
-
-        };
-
-        //
-        ~SparseMemoryPage() {
-            if (this->destructor) {
-                this->destructor();
-            };
-            this->destructor = {};
-        };
-    };
 
     //
     class FenceStatus {

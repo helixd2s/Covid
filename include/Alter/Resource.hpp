@@ -475,7 +475,7 @@ namespace ANAMED {
         virtual FenceType createBuffer(cpp21::optional_ref<BufferCreateInfo> cInfo = {}) {
             decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
             decltype(auto) device = this->base.as<vk::Device>();
-            decltype(auto) bufferInfo = makeBufferCreateInfo(cInfo);
+            decltype(auto) bufferInfo = this->makeBufferCreateInfo(cInfo);
             decltype(auto) memoryAllocatorObj = deviceObj->getExt<MemoryAllocatorObj>(this->cInfo->extUsed && this->cInfo->extUsed->find(ExtensionInfoName::eMemoryAllocator) != this->cInfo->extUsed->end() ? this->cInfo->extUsed->at(ExtensionInfoName::eMemoryAllocator) : ExtensionName::eMemoryAllocator);
 
             //
@@ -1053,6 +1053,7 @@ namespace ANAMED {
         return SFT();
     };
 
+    /*
     //
     inline vk::Buffer& PipelineLayoutObj::createCacheBuffer() {
         this->cacheBuffer = (this->cacheBufferObj = ResourceObj::make(this->base, ResourceCreateInfo{
@@ -1064,18 +1065,12 @@ namespace ANAMED {
 
         //
         for (uint32_t i = 0; i < this->cachePages; i++) {
-            //this->cacheBufferObj->allocatePage(i);
             this->cacheBufferDescs.push_back(vk::DescriptorBufferInfo{ this->cacheBuffer, i * this->cachePageSize, this->cachePageSize });
         };
 
-        // currently, sparse doesn't supported
-        /*auto status = this->cacheBufferObj->bindSparseMemory(SubmissionInfo{
-          .info = this->cInfo->info ? this->cInfo->info.value() : QueueGetInfo{this->base.family, 0u}
-        });*/
-
         //
         return this->cacheBuffer;
-    };
+    };*/
 
 };
 #endif

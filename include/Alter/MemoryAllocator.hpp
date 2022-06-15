@@ -79,7 +79,11 @@ namespace ANAMED {
         //
         virtual vk::Buffer createBuffer(std::shared_ptr<MSS> infoMap, std::vector<std::shared_ptr<std::function<DFun>>>& destructors) {
             auto& device = this->base.as<vk::Device>();
-            decltype(auto) handle = device.createBuffer(infoMap->get<vk::BufferCreateInfo>(vk::StructureType::eBufferCreateInfo));
+            decltype(auto) bufferInfo = infoMap->get<vk::BufferCreateInfo>(vk::StructureType::eBufferCreateInfo);
+            decltype(auto) externalInfo = infoMap->get<vk::ExternalMemoryBufferCreateInfo>(vk::StructureType::eExternalMemoryBufferCreateInfo);
+            if (externalInfo) { bufferInfo->pNext = externalInfo.get(); } else { bufferInfo->pNext = nullptr;};
+
+            decltype(auto) handle = device.createBuffer(bufferInfo.value());
             destructors.push_back(std::make_shared<std::function<DFun>>([device, buffer = handle](BaseObj const*) {
                 device.destroyBuffer(buffer);
                 }));
