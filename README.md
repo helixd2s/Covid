@@ -66,17 +66,10 @@ The most ambitious rendering project, and at the same time a future mod for Mine
 
 ## Reprojection problems
 
-  ### Reflection (type 0)
+  ### In general
 
-  Has curved surface problems. Also, there is no enough data for check reflection correctness.
-
-  ### Transparency (type 1)
-
-  Currently, needs backstage data, problem is same as with reflection, but there is used a stub.
-
-  ### Diffuse (type 2)
-
-  Smelting effect when camera move, don't know why.
+  - Smelting problem when zoom-out
+  - Random jitter is not clean from noise 
 
 ## Integrations
 
