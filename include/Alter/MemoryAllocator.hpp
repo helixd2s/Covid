@@ -62,7 +62,7 @@ namespace ANAMED {
     };
 
     // 
-     std::type_info const& type_info() const override {
+    std::type_info const& type_info() const override {
       return typeid(std::decay_t<decltype(this)>);
     };
 
@@ -77,85 +77,109 @@ namespace ANAMED {
   public:
 
     //
-    virtual std::shared_ptr<AllocatedMemory> allocateMemory(cpp21::optional_ref<MemoryRequirements> requirements, std::shared_ptr<AllocatedMemory> allocated) {
+    virtual std::shared_ptr<AllocatedMemory> allocateMemory(cpp21::optional_ref<MemoryRequirements> requirements, std::shared_ptr<AllocatedMemory> allocated, std::shared_ptr<MSS> infoMap) {
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       auto& device = this->base.as<vk::Device>();
       auto& physicalDevice = deviceObj->getPhysicalDevice();
       auto PDInfoMap = deviceObj->getPhysicalDeviceInfoMap();
-      auto memTypeHeap = deviceObj->findMemoryTypeAndHeapIndex(*requirements);
 
       //
       decltype(auto) exportMemory = infoMap->set(vk::StructureType::eExportMemoryAllocateInfo, vk::ExportMemoryAllocateInfo{
-         .handleTypes = requirements->memoryUsage == MemoryUsage::eGpuOnly ? extMemFlags : vk::ExternalMemoryHandleTypeFlags{}
-        });
+        .handleTypes = requirements->memoryUsage == MemoryUsage::eGpuOnly ? extMemFlags : vk::ExternalMemoryHandleTypeFlags{}
+      });
 
       // 
-      //auto& allocated = (this->allocated = AllocatedMemory{}).value();
-      *allocated = AllocatedMemory{
-        .memory = device.allocateMemory(infoMap->set(vk::StructureType::eMemoryAllocateInfo, vk::MemoryAllocateInfo{
-          .pNext = infoMap->set(vk::StructureType::eMemoryAllocateFlagsInfo, vk::MemoryAllocateFlagsInfo{
-            .pNext = infoMap->set(vk::StructureType::eMemoryDedicatedAllocateInfo, vk::MemoryDedicatedAllocateInfo{
-              .pNext = requirements->memoryUsage == MemoryUsage::eGpuOnly ? exportMemory.get() : nullptr,
-              .image = requirements->dedicated ? requirements->dedicated->image : vk::Image{},
-              .buffer = requirements->dedicated ? requirements->dedicated->buffer : vk::Buffer{}
-            }).get(),
-            .flags = requirements->hasDeviceAddress ? vk::MemoryAllocateFlagBits::eDeviceAddress : vk::MemoryAllocateFlagBits{},
-          }).get(),
-          .allocationSize = requirements->requirements.size,
-          .memoryTypeIndex = std::get<0>(memTypeHeap)
-        }).value()),
-        .offset = 0ull,
-        .size = requirements->requirements.size
-      };
-
-      //
-      device.setMemoryPriorityEXT(allocated->memory, 1.f, deviceObj->getDispatch());
+      decltype(auto) memReqInfo2 = infoMap->set(vk::StructureType::eMemoryRequirements2, vk::MemoryRequirements2{
+        .pNext = infoMap->set(vk::StructureType::eMemoryDedicatedRequirements, vk::MemoryDedicatedRequirements{}).get()
+      });
 
       //
       if (requirements->dedicated) {
-        if (requirements->dedicated->image) {
-          std::vector<vk::BindImageMemoryInfo> bindInfos = { vk::BindImageMemoryInfo{
-            .image = requirements->dedicated->image, .memory = allocated->memory, .memoryOffset = allocated->offset
-          } };
-          device.bindImageMemory2(bindInfos);
+        if (requirements->dedicated->image) { //
+          device.getImageMemoryRequirements2(infoMap->set(vk::StructureType::eImageMemoryRequirementsInfo2, vk::ImageMemoryRequirementsInfo2{
+            .image = requirements->dedicated->image
+          }).get(), memReqInfo2.get());
         };
-        if (requirements->dedicated->buffer) {
-          std::vector<vk::BindBufferMemoryInfo> bindInfos = { vk::BindBufferMemoryInfo{
-            .buffer = requirements->dedicated->buffer, .memory = allocated->memory, .memoryOffset = allocated->offset
-          } };
-          device.bindBufferMemory2(bindInfos);
+        if (requirements->dedicated->buffer) { //
+          device.getBufferMemoryRequirements2(infoMap->set(vk::StructureType::eBufferMemoryRequirementsInfo2, vk::BufferMemoryRequirementsInfo2{
+            .buffer = requirements->dedicated->buffer
+          }).get(), memReqInfo2.get());
         };
       };
 
       //
-      if (requirements->memoryUsage == MemoryUsage::eGpuOnly) {
+      if (!requirements->requirements) { requirements->requirements = memReqInfo2->memoryRequirements; };
+
+      // 
+      if (requirements->requirements && requirements->requirements->size > 0) {
+        auto memTypeHeap = deviceObj->findMemoryTypeAndHeapIndex(*requirements);
+        //auto& allocated = (this->allocated = AllocatedMemory{}).value();
+        *allocated = AllocatedMemory{
+          .memory = device.allocateMemory(infoMap->set(vk::StructureType::eMemoryAllocateInfo, vk::MemoryAllocateInfo{
+            .pNext = infoMap->set(vk::StructureType::eMemoryAllocateFlagsInfo, vk::MemoryAllocateFlagsInfo{
+              .pNext = infoMap->set(vk::StructureType::eMemoryDedicatedAllocateInfo, vk::MemoryDedicatedAllocateInfo{
+                .pNext = requirements->memoryUsage == MemoryUsage::eGpuOnly ? exportMemory.get() : nullptr,
+                .image = requirements->dedicated ? requirements->dedicated->image : vk::Image{},
+                .buffer = requirements->dedicated ? requirements->dedicated->buffer : vk::Buffer{}
+              }).get(),
+              .flags = requirements->hasDeviceAddress ? vk::MemoryAllocateFlagBits::eDeviceAddress : vk::MemoryAllocateFlagBits{},
+            }).get(),
+            .allocationSize = requirements->requirements->size,
+            .memoryTypeIndex = std::get<0>(memTypeHeap)
+          }).value()),
+          .offset = 0ull,
+          .size = requirements->requirements->size
+        };
+
+        //
+        device.setMemoryPriorityEXT(allocated->memory, 1.f, deviceObj->getDispatch());
+
+        //
+        if (requirements->dedicated) {
+          if (requirements->dedicated->image) {
+            std::vector<vk::BindImageMemoryInfo> bindInfos = { vk::BindImageMemoryInfo{
+              .image = requirements->dedicated->image, .memory = allocated->memory, .memoryOffset = allocated->offset
+            } };
+            device.bindImageMemory2(bindInfos);
+          };
+          if (requirements->dedicated->buffer) {
+            std::vector<vk::BindBufferMemoryInfo> bindInfos = { vk::BindBufferMemoryInfo{
+              .buffer = requirements->dedicated->buffer, .memory = allocated->memory, .memoryOffset = allocated->offset
+            } };
+            device.bindBufferMemory2(bindInfos);
+          };
+        };
+
+        //
+        if (requirements->memoryUsage == MemoryUsage::eGpuOnly) {
 #ifdef _WIN32
-        allocated->extHandle = device.getMemoryWin32HandleKHR(vk::MemoryGetWin32HandleInfoKHR{ .memory = allocated->memory, .handleType = extMemFlagBits }, deviceObj->getDispatch());
+          allocated->extHandle = device.getMemoryWin32HandleKHR(vk::MemoryGetWin32HandleInfoKHR{ .memory = allocated->memory, .handleType = extMemFlagBits }, deviceObj->getDispatch());
 #else
 #ifdef __linux__ 
-        allocated->extHandle = device.getMemoryFdKHR(vk::MemoryGetFdInfoKHR{ .memory = allocated->memory, .handleType = extMemFlagBits }, deviceObj->getDispatch());
+          allocated->extHandle = device.getMemoryFdKHR(vk::MemoryGetFdInfoKHR{ .memory = allocated->memory, .handleType = extMemFlagBits }, deviceObj->getDispatch());
 #endif
 #endif
-      };
+        };
 
-      //
-      if (requirements->memoryUsage != MemoryUsage::eGpuOnly) {
-        allocated->mapped = device.mapMemory(allocated->memory, allocated->offset, requirements->requirements.size);
-      };
+        //
+        if (requirements->memoryUsage != MemoryUsage::eGpuOnly) {
+          allocated->mapped = device.mapMemory(allocated->memory, allocated->offset, requirements->requirements->size);
+        };
 
-      //
-      if (requirements->needsDestructor) {
-        allocated->destructor = std::make_shared<std::function<DFun>>([device, &memory = allocated->memory, &mapped = allocated->mapped](BaseObj const*) {
-          //device.waitIdle();
-          if (memory) {
-            if (mapped) {
-              device.unmapMemory(memory);
-              mapped = nullptr;
+        //
+        if (requirements->needsDestructor) {
+          allocated->destructor = std::make_shared<std::function<DFun>>([device, &memory = allocated->memory, &mapped = allocated->mapped](BaseObj const*) {
+            //device.waitIdle();
+            if (memory) {
+              if (mapped) {
+                device.unmapMemory(memory);
+                mapped = nullptr;
+              };
+              device.freeMemory(memory);
             };
-            device.freeMemory(memory);
-          };
-          memory = vk::DeviceMemory{};
-        });
+            memory = vk::DeviceMemory{};
+          });
+        };
       };
 
       // 

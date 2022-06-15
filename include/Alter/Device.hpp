@@ -69,7 +69,7 @@ namespace ANAMED {
       uint32_t bitIndex = 0u;
       std::vector<uint32_t> requiredMemoryTypeIndices = {};
       for (uint32_t bitMask = 1u; (bitMask < 0xFFFFFFFF && bitMask > 0); bitMask <<= 1u) {
-        if (req->requirements.memoryTypeBits & bitMask) { requiredMemoryTypeIndices.push_back(bitIndex); };
+        if (req->requirements->memoryTypeBits & bitMask) { requiredMemoryTypeIndices.push_back(bitIndex); };
         //requiredMemoryTypeIndices.push_back(bitIndex); // sparse memory requires eDeviceLocal?!
         bitIndex++;
       };

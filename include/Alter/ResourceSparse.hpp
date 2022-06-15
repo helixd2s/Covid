@@ -134,9 +134,9 @@ namespace ANAMED {
       decltype(auto) memReq = memoryRequirements; memReq.size = pageSize;
       decltype(auto) allocated = this->allocateMemory(MemoryRequirements{
         .memoryUsage = memoryUsage,
-        .requirements = memReq,
         .hasDeviceAddress = false,
-        .needsDestructor = false
+        .needsDestructor = false,
+        .requirements = std::optional<vk::MemoryRequirements>(memReq)
       });
 
       // 

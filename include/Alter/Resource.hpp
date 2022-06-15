@@ -251,7 +251,7 @@ namespace ANAMED {
     virtual std::shared_ptr<AllocatedMemory> allocateMemory(cpp21::optional_ref<MemoryRequirements> requirements) {
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
       decltype(auto) memoryAllocatorObj = deviceObj->getExt<MemoryAllocatorObj>(this->cInfo->extUsed && this->cInfo->extUsed->find(ExtensionInfoName::eMemoryAllocator) != this->cInfo->extUsed->end() ? this->cInfo->extUsed->at(ExtensionInfoName::eMemoryAllocator) : ExtensionName::eMemoryAllocator);
-      return memoryAllocatorObj->allocateMemory(requirements, this->allocated = std::make_shared<AllocatedMemory>());
+      return memoryAllocatorObj->allocateMemory(requirements, this->allocated = std::make_shared<AllocatedMemory>(), infoMap);
     };
 
     // 
@@ -412,56 +412,6 @@ namespace ANAMED {
       return imageInfo;
     };
 
-    // 
-    virtual FenceType createImage(cpp21::optional_ref<ImageCreateInfo> cInfo = {}) {
-      // default layout
-      this->getImageLayout() = cInfo->layout;
-
-      // 
-      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
-      decltype(auto) device = this->base.as<vk::Device>();
-      decltype(auto) imageInfo = this->makeImageCreateInfo(cInfo);
-      decltype(auto) memReqInfo2 = infoMap->set(vk::StructureType::eMemoryRequirements2, vk::MemoryRequirements2{
-        .pNext = infoMap->set(vk::StructureType::eMemoryDedicatedRequirements, vk::MemoryDedicatedRequirements{
-          
-        }).get()
-      });
-
-      //
-      device.getImageMemoryRequirements2(infoMap->set(vk::StructureType::eImageMemoryRequirementsInfo2, vk::ImageMemoryRequirementsInfo2{
-        .image = (this->handle = this->cInfo->image ? this->cInfo->image.value() : (device.createImage(imageInfo))).as<vk::Image>()
-      }).get(), memReqInfo2.get());
-
-      //
-      destructors.push_back(std::make_shared<std::function<DFun>>([device, image = this->handle.as<vk::Image>(), type=cInfo->type](BaseObj const*) {
-        if (type!=ImageType::eSwapchain) {
-          //device.waitIdle();
-          device.destroyImage(image);
-        };
-      }));
-
-      // 
-      this->allocated = this->allocateMemory(this->mReqs = MemoryRequirements{
-        .memoryUsage = memoryUsage,
-        .requirements = memReqInfo2->memoryRequirements,
-        .dedicated = DedicatedMemory{.image = cInfo->type != ImageType::eSwapchain ? this->handle.as<vk::Image>() : vk::Image{} },
-      });
-
-      // 
-      if (cInfo->info) {
-        // # another reason of internal error (mostly with std::optional)
-        return this->executeSwitchLayoutOnce(ImageLayoutSwitchInfo{
-          .info = cInfo->info,
-          .switchInfo = ImageLayoutSwitchWriteInfo{
-            .newImageLayout = this->getImageLayout(),
-            .oldImageLayout = std::optional<vk::ImageLayout>(imageInfo->initialLayout),
-          },
-        });
-      };
-
-      return FenceType{};
-    };
-
     //
     virtual cpp21::wrap_shared_ptr<vk::BufferCreateInfo> makeBufferCreateInfo(BufferCreateInfo const& cInfo) {
       //
@@ -484,6 +434,52 @@ namespace ANAMED {
       return bufferInfo;
     };
 
+
+
+
+
+    // 
+    virtual FenceType createImage(cpp21::optional_ref<ImageCreateInfo> cInfo = {}) {
+      // default layout
+      this->getImageLayout() = cInfo->layout;
+
+      // 
+      decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
+      decltype(auto) device = this->base.as<vk::Device>();
+      decltype(auto) imageInfo = this->makeImageCreateInfo(cInfo);
+
+      //
+      (this->handle = this->cInfo->image ? this->cInfo->image.value() : (device.createImage(imageInfo))).as<vk::Image>();
+
+      //
+      destructors.push_back(std::make_shared<std::function<DFun>>([device, image = this->handle.as<vk::Image>(), type=cInfo->type](BaseObj const*) {
+        if (type!=ImageType::eSwapchain) {
+          //device.waitIdle();
+          device.destroyImage(image);
+        };
+      }));
+
+      // 
+      this->allocated = this->allocateMemory(this->mReqs = MemoryRequirements{
+        .memoryUsage = memoryUsage,
+        .dedicated = DedicatedMemory{.image = cInfo->type != ImageType::eSwapchain ? this->handle.as<vk::Image>() : vk::Image{} },
+      });
+
+      // 
+      if (cInfo->info) {
+        // # another reason of internal error (mostly with std::optional)
+        return this->executeSwitchLayoutOnce(ImageLayoutSwitchInfo{
+          .info = cInfo->info,
+          .switchInfo = ImageLayoutSwitchWriteInfo{
+            .newImageLayout = this->getImageLayout(),
+            .oldImageLayout = std::optional<vk::ImageLayout>(imageInfo->initialLayout),
+          },
+        });
+      };
+
+      return FenceType{};
+    };
+
     // 
     virtual FenceType createBuffer(cpp21::optional_ref<BufferCreateInfo> cInfo = {}) {
       decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
@@ -491,15 +487,8 @@ namespace ANAMED {
       decltype(auto) bufferInfo = makeBufferCreateInfo(cInfo);
       auto hasDBA = !!(bufferInfo->usage & vk::BufferUsageFlagBits::eShaderDeviceAddress);
 
-      // 
-      decltype(auto) memReqInfo2 = infoMap->set(vk::StructureType::eMemoryRequirements2, vk::MemoryRequirements2{
-        .pNext = infoMap->set(vk::StructureType::eMemoryDedicatedRequirements, vk::MemoryDedicatedRequirements{}).get()
-      });
-
       //
-      device.getBufferMemoryRequirements2(infoMap->set(vk::StructureType::eBufferMemoryRequirementsInfo2, vk::BufferMemoryRequirementsInfo2{
-        .buffer = (this->handle = this->cInfo->buffer ? this->cInfo->buffer.value() : device.createBuffer(bufferInfo)).as<vk::Buffer>()
-      }).get(), memReqInfo2.get());
+      (this->handle = this->cInfo->buffer ? this->cInfo->buffer.value() : device.createBuffer(bufferInfo)).as<vk::Buffer>();
 
       //
       destructors.push_back(std::make_shared<std::function<DFun>>([device, buffer = this->handle.as<vk::Buffer>()](BaseObj const*) {
@@ -510,7 +499,6 @@ namespace ANAMED {
       //
       this->allocated = this->allocateMemory(this->mReqs = MemoryRequirements{
         .memoryUsage = memoryUsage,
-        .requirements = memReqInfo2->memoryRequirements,
         .hasDeviceAddress = hasDBA,
         .dedicated = DedicatedMemory{.buffer = this->handle.as<vk::Buffer>() }
       });

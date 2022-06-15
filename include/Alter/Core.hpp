@@ -299,10 +299,10 @@ namespace ANAMED {
   struct MemoryRequirements : BaseCreateInfo {
     //uint32_t physicalDeviceIndex = 0u;
     MemoryUsage memoryUsage = MemoryUsage::eGpuOnly;
-    vk::MemoryRequirements requirements = {};
-
     bool hasDeviceAddress = false;
     bool needsDestructor = true;
+
+    std::optional<vk::MemoryRequirements> requirements = {};
     std::optional<DedicatedMemory> dedicated = {};
   };
 
