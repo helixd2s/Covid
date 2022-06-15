@@ -17,7 +17,6 @@
 #include "./PipelineLayout.hpp"
 #include "./Uploader.hpp"
 #include "./Resource.hpp"
-#include "./ResourceSparse.hpp"
 #include "./Sampler.hpp"
 #include "./Framebuffer.hpp"
 #include "./Pipeline.hpp"

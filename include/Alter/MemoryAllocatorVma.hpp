@@ -224,6 +224,11 @@ namespace ANAMED {
       }, allocated, allocator, allocation, allocationInfo);
 
       //
+      destructors.push_back(std::make_shared<std::function<DFun>>([device, buffer, allocator, allocation](BaseObj const*) {
+        vmaDestroyBuffer(allocator, (VkBuffer&)buffer, allocation);
+      }));
+
+      //
       return buffer;
     };
 
@@ -275,6 +280,11 @@ namespace ANAMED {
         .requirements = memReqInfo2.memoryRequirements,
         .dedicated = DedicatedMemory{.image = image },
       }, allocated, allocator, allocation, allocationInfo);
+
+      //
+      destructors.push_back(std::make_shared<std::function<DFun>>([device, image, allocator, allocation](BaseObj const*) {
+        vmaDestroyImage(allocator, (VkImage&)image, allocation);
+      }));
 
       //
       return image;

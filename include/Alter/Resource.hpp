@@ -1044,5 +1044,29 @@ namespace ANAMED {
     return SFT();
   };
 
+  //
+  inline vk::Buffer& PipelineLayoutObj::createCacheBuffer() {
+    this->cacheBuffer = (this->cacheBufferObj = ResourceObj::make(this->base, ResourceCreateInfo{
+      .bufferInfo = BufferCreateInfo{
+        .size = this->cachePages * this->cachePageSize,
+        .type = BufferType::eStorage
+      }
+    })).as<vk::Buffer>();
+
+    //
+    for (uint32_t i = 0; i < this->cachePages; i++) {
+      //this->cacheBufferObj->allocatePage(i);
+      this->cacheBufferDescs.push_back(vk::DescriptorBufferInfo{ this->cacheBuffer, i * this->cachePageSize, this->cachePageSize });
+    };
+
+    // currently, sparse doesn't supported
+    /*auto status = this->cacheBufferObj->bindSparseMemory(SubmissionInfo{
+      .info = this->cInfo->info ? this->cInfo->info.value() : QueueGetInfo{this->base.family, 0u}
+    });*/
+
+    //
+    return this->cacheBuffer;
+  };
+
 };
 #endif
