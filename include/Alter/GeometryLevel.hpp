@@ -5,7 +5,7 @@
 #include "./Core.hpp"
 #include "./Instance.hpp"
 #include "./Device.hpp"
-#include "./Resource.hpp"
+#include "./ResourceBuffer.hpp"
 
 // 
 namespace ANAMED {
@@ -27,9 +27,9 @@ namespace ANAMED {
 
         //
         //vk::AccelerationStructureKHR accelStruct = {};
-        WrapShared<ResourceObj> bindGeometryBuffer = {};
-        WrapShared<ResourceObj> bindGeometryScratch = {};
-        WrapShared<ResourceObj> bindGeometryBuild = {};
+        WrapShared<ResourceBufferObj> bindGeometryBuffer = {};
+        WrapShared<ResourceBufferObj> bindGeometryScratch = {};
+        WrapShared<ResourceBufferObj> bindGeometryBuild = {};
 
         //
         std::vector<vk::AccelerationStructureGeometryKHR> geometryInfos = {};
@@ -81,8 +81,8 @@ namespace ANAMED {
         };
 
         //
-        virtual WrapShared<ResourceObj> getGeometryResource() const {
-            return ANAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->geometryBuffer);
+        virtual WrapShared<ResourceBufferObj> getGeometryResource() const {
+            return ANAMED::context->get<DeviceObj>(this->base)->get<ResourceBufferObj>(this->geometryBuffer);
         };
 
         //
@@ -165,7 +165,7 @@ namespace ANAMED {
             decltype(auto) accelInfo = infoMap->get<vk::AccelerationStructureCreateInfoKHR>(vk::StructureType::eAccelerationStructureCreateInfoKHR);
             decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelGeomInfo->setGeometries(this->geometryInfos), this->cInfo->limits, deviceObj->getDispatch()));
             decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
-            decltype(auto) accessMask = vk::AccessFlagBits2(vku::getAccessMaskByImageUsage(deviceObj->get<ResourceObj>(this->geometryBuild)->getBufferUsage()));
+            decltype(auto) accessMask = vk::AccessFlagBits2(vku::getAccessMaskByImageUsage(deviceObj->get<ResourceBufferObj>(this->geometryBuild)->getBufferUsage()));
 
             //
             decltype(auto) bufferBarriersBegin = std::vector<vk::BufferMemoryBarrier2>{
@@ -303,27 +303,21 @@ namespace ANAMED {
             decltype(auto) accelInfo = infoMap->get<vk::AccelerationStructureCreateInfoKHR>(vk::StructureType::eAccelerationStructureCreateInfoKHR);
 
             // 
-            this->geometryBuffer = (this->bindGeometryBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
-                .bufferInfo = BufferCreateInfo{
+            this->geometryBuffer = (this->bindGeometryBuffer = ResourceBufferObj::make(this->base, BufferCreateInfo{
                   .size = cpp21::bytesize(*this->cInfo->geometries),
                   .type = BufferType::eStorage
-                }
             })).as<vk::Buffer>();
 
             //
-            this->geometryScratch = (this->bindGeometryScratch = ResourceObj::make(this->base, ResourceCreateInfo{
-                .bufferInfo = BufferCreateInfo{
+            this->geometryScratch = (this->bindGeometryScratch = ResourceBufferObj::make(this->base, BufferCreateInfo{
                   .size = std::max(accelSizes->buildScratchSize, accelSizes->updateScratchSize),
                   .type = BufferType::eStorage
-                }
             })).as<vk::Buffer>();
 
             //
-            this->geometryBuild = (this->bindGeometryBuild = ResourceObj::make(this->base, ResourceCreateInfo{
-                .bufferInfo = BufferCreateInfo{
+            this->geometryBuild = (this->bindGeometryBuild = ResourceBufferObj::make(this->base, BufferCreateInfo{
                   .size = accelSizes->accelerationStructureSize,
                   .type = BufferType::eStorage
-                }
             })).as<vk::Buffer>();
 
             //
@@ -334,7 +328,7 @@ namespace ANAMED {
 
             //
             accelGeomInfo->type = accelInfo->type;
-            accelGeomInfo->scratchData = reinterpret_cast<vk::DeviceOrHostAddressKHR&>(ANAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->geometryScratch)->getDeviceAddress());
+            accelGeomInfo->scratchData = reinterpret_cast<vk::DeviceOrHostAddressKHR&>(ANAMED::context->get<DeviceObj>(this->base)->get<ResourceBufferObj>(this->geometryScratch)->getDeviceAddress());
             accelGeomInfo->srcAccelerationStructure = vk::AccelerationStructureKHR{};
             accelGeomInfo->dstAccelerationStructure = (this->accelStruct = device.createAccelerationStructureKHR(accelInfo.value(), nullptr, deviceObj->getDispatch()));
 

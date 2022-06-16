@@ -134,13 +134,13 @@ protected:
     ANAMED::WrapShared<ANAMED::FramebufferObj> framebufferObj[2] = {};
     ANAMED::WrapShared<ANAMED::PingPongObj> rasterBufObj = {};
     ANAMED::WrapShared<ANAMED::PingPongObj> deferredBufObj = {};
-    ANAMED::WrapShared<ANAMED::ResourceObj> backgroundObj = {};
-    ANAMED::WrapShared<ANAMED::ResourceObj> blueNoiseObj = {};
-    ANAMED::WrapShared<ANAMED::ResourceObj> hitDataObj = {};
-    ANAMED::WrapShared<ANAMED::ResourceObj> pixelDataObj = {};
-    ANAMED::WrapShared<ANAMED::ResourceObj> writeDataObj = {};
-    ANAMED::WrapShared<ANAMED::ResourceObj> rasterDataObj = {};
-    ANAMED::WrapShared<ANAMED::ResourceObj> surfaceDataObj = {};
+    ANAMED::WrapShared<ANAMED::ResourceImageObj> backgroundObj = {};
+    ANAMED::WrapShared<ANAMED::ResourceImageObj> blueNoiseObj = {};
+    ANAMED::WrapShared<ANAMED::ResourceBufferObj> hitDataObj = {};
+    ANAMED::WrapShared<ANAMED::ResourceBufferObj> pixelDataObj = {};
+    ANAMED::WrapShared<ANAMED::ResourceBufferObj> writeDataObj = {};
+    ANAMED::WrapShared<ANAMED::ResourceBufferObj> rasterDataObj = {};
+    ANAMED::WrapShared<ANAMED::ResourceBufferObj> surfaceDataObj = {};
 
     //
     UniformData uniformData = {};
@@ -486,40 +486,25 @@ public:
         renderArea.extent.height *= 2.f / yscale;
 
         // 
-        surfaceDataObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
-          .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
-          .bufferInfo = ANAMED::BufferCreateInfo{
+        surfaceDataObj = ANAMED::ResourceBufferObj::make(deviceObj, ANAMED::BufferCreateInfo{
+            .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
             .size = sizeof(PixelSurfaceInfo) * renderArea.extent.width * renderArea.extent.height,
             .type = ANAMED::BufferType::eStorage,
-          }
-            });
+        });
 
         // 
-        pixelDataObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
-          .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
-          .bufferInfo = ANAMED::BufferCreateInfo{
+        pixelDataObj = ANAMED::ResourceBufferObj::make(deviceObj, ANAMED::BufferCreateInfo{
+            .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
             .size = sizeof(PixelHitInfo) * renderArea.extent.width * renderArea.extent.height * 3u,
-            .type = ANAMED::BufferType::eStorage,
-          }
-            });
+            .type = ANAMED::BufferType::eStorage
+        });
 
         // 
-        writeDataObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
-          .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
-          .bufferInfo = ANAMED::BufferCreateInfo{
+        writeDataObj = ANAMED::ResourceBufferObj::make(deviceObj, ANAMED::BufferCreateInfo{
+            .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
             .size = sizeof(PixelHitInfo) * renderArea.extent.width * renderArea.extent.height * 3u,
-            .type = ANAMED::BufferType::eStorage,
-          }
-            });
-
-        // 
-        /*hitDataObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
-          .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
-          .bufferInfo = ANAMED::BufferCreateInfo{
-            .size = sizeof(RayHitInfo) * rayCount.x * rayCount.y,
-            .type = ANAMED::BufferType::eStorage,
-          }
-          });*/
+            .type = ANAMED::BufferType::eStorage
+         });
 
           //
         uniformData.surfaceData = surfaceDataObj->getDeviceAddress();
@@ -538,14 +523,13 @@ public:
         };
 
         // 
-        rasterDataObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
-          .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
-          .bufferInfo = ANAMED::BufferCreateInfo{
+        rasterDataObj = ANAMED::ResourceBufferObj::make(deviceObj, ANAMED::BufferCreateInfo{
+            .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
             .size = sizeof(RasterInfo) * uniformData.framebuffers[0].extent.x * uniformData.framebuffers[0].extent.y * 16u,
-            .type = ANAMED::BufferType::eStorage,
-          }
-            });
+            .type = ANAMED::BufferType::eStorage
+        });
 
+        //
         uniformData.rasterData[0] = rasterDataObj->getDeviceAddress();
         uniformData.rasterData[1] = uniformData.rasterData[0] + sizeof(RasterInfo) * uniformData.framebuffers[0].extent.x * uniformData.framebuffers[0].extent.y * 8u;
 
@@ -784,14 +768,12 @@ protected:
             float* data = (float*)stbi_loadf("./background.hdr", &w, &h, &c, STBI_rgb_alpha);
 
             //
-            backgroundObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
-              .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
-              .imageInfo = ANAMED::ImageCreateInfo{
+            backgroundObj = ANAMED::ResourceImageObj::make(deviceObj, ANAMED::ImageCreateInfo{
+                .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
                 .format = vk::Format::eR32G32B32A32Sfloat,
                 .extent = vk::Extent3D{uint32_t(w), uint32_t(h), 1u},
                 .type = ANAMED::ImageType::eTexture
-              }
-                });
+            });
 
             //
             decltype(auto) pair = backgroundObj->createImageView(ANAMED::ImageViewCreateInfo{
@@ -823,14 +805,12 @@ protected:
             float* data = (float*)stbi_loadf("./BlueNoise470.png", &w, &h, &c, STBI_rgb_alpha);
 
             //
-            blueNoiseObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
-              .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
-              .imageInfo = ANAMED::ImageCreateInfo{
+            blueNoiseObj = ANAMED::ResourceImageObj::make(deviceObj, ANAMED::ImageCreateInfo{
+                .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
                 .format = vk::Format::eR8G8B8A8Uint,
                 .extent = vk::Extent3D{uint32_t(w), uint32_t(h), 1u},
                 .type = ANAMED::ImageType::eTexture
-              }
-                });
+            });
 
             //
             decltype(auto) pair = blueNoiseObj->createImageView(ANAMED::ImageViewCreateInfo{

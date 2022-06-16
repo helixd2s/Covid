@@ -5,7 +5,7 @@
 #include "./Core.hpp"
 #include "./Instance.hpp"
 #include "./Device.hpp"
-#include "./Resource.hpp"
+#include "./ResourceBuffer.hpp"
 #include "./GeometryLevel.hpp"
 
 //
@@ -34,10 +34,10 @@ namespace ANAMED {
         vk::Buffer instanceExtBuffer = {};
 
         // 
-        WrapShared<ResourceObj> bindInstanceBuffer = {};
-        WrapShared<ResourceObj> bindInstanceScratch = {};
-        WrapShared<ResourceObj> bindInstanceBuild = {};
-        WrapShared<ResourceObj> bindInstanceExtBuffer = {};
+        WrapShared<ResourceBufferObj> bindInstanceBuffer = {};
+        WrapShared<ResourceBufferObj> bindInstanceScratch = {};
+        WrapShared<ResourceBufferObj> bindInstanceBuild = {};
+        WrapShared<ResourceBufferObj> bindInstanceExtBuffer = {};
 
         //
         std::array<vk::AccelerationStructureGeometryKHR, 1> instances = {};
@@ -96,13 +96,13 @@ namespace ANAMED {
         };
 
         //
-        virtual WrapShared<ResourceObj> getInstancedResource() const {
-            return ANAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->instanceBuffer);
+        virtual WrapShared<ResourceBufferObj> getInstancedResource() const {
+            return ANAMED::context->get<DeviceObj>(this->base)->get<ResourceBufferObj>(this->instanceBuffer);
         };
 
         //
-        virtual WrapShared<ResourceObj> getInstanceInfoResource() const {
-            return ANAMED::context->get<DeviceObj>(this->base)->get<ResourceObj>(this->instanceExtBuffer);
+        virtual WrapShared<ResourceBufferObj> getInstanceInfoResource() const {
+            return ANAMED::context->get<DeviceObj>(this->base)->get<ResourceBufferObj>(this->instanceExtBuffer);
         };
 
         //
@@ -286,7 +286,7 @@ namespace ANAMED {
             decltype(auto) accelGeomInfo = infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR);
             decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelGeomInfo->setGeometries(this->instances), this->cInfo->limit, deviceObj->getDispatch()));
             decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
-            decltype(auto) accessMask = vk::AccessFlagBits2(vku::getAccessMaskByImageUsage(deviceObj->get<ResourceObj>(this->instanceBuild)->getBufferUsage()));
+            decltype(auto) accessMask = vk::AccessFlagBits2(vku::getAccessMaskByImageUsage(deviceObj->get<ResourceBufferObj>(this->instanceBuild)->getBufferUsage()));
 
             // 
             uploaderObj->writeUploadToResourceCmd(UploadCommandWriteInfo{
@@ -444,35 +444,27 @@ namespace ANAMED {
             decltype(auto) accelInfo = infoMap->get<vk::AccelerationStructureCreateInfoKHR>(vk::StructureType::eAccelerationStructureCreateInfoKHR);
 
             // 
-            this->instanceBuffer = (this->bindInstanceBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
-                .bufferInfo = BufferCreateInfo{
+            this->instanceBuffer = (this->bindInstanceBuffer = ResourceBufferObj::make(this->base, BufferCreateInfo{
                   .size = cpp21::bytesize(*this->instanceDevInfo),
                   .type = BufferType::eStorage
-                }
             })).as<vk::Buffer>();
 
             //
-            this->instanceScratch = (this->bindInstanceScratch = ResourceObj::make(this->base, ResourceCreateInfo{
-                .bufferInfo = BufferCreateInfo{
+            this->instanceScratch = (this->bindInstanceScratch = ResourceBufferObj::make(this->base, BufferCreateInfo{
                   .size = std::max(accelSizes->buildScratchSize, accelSizes->updateScratchSize),
                   .type = BufferType::eStorage
-                }
             })).as<vk::Buffer>();
 
             //
-            this->instanceBuild = (this->bindInstanceBuild = ResourceObj::make(this->base, ResourceCreateInfo{
-                .bufferInfo = BufferCreateInfo{
+            this->instanceBuild = (this->bindInstanceBuild = ResourceBufferObj::make(this->base, BufferCreateInfo{
                   .size = accelSizes->accelerationStructureSize,
                   .type = BufferType::eStorage
-                }
             })).as<vk::Buffer>();
 
             // 
-            this->instanceExtBuffer = (this->bindInstanceExtBuffer = ResourceObj::make(this->base, ResourceCreateInfo{
-                .bufferInfo = BufferCreateInfo{
+            this->instanceExtBuffer = (this->bindInstanceExtBuffer = ResourceBufferObj::make(this->base, BufferCreateInfo{
                   .size = cpp21::bytesize(*this->instanceInfo),
                   .type = BufferType::eStorage
-                }
             })).as<vk::Buffer>();
 
             //

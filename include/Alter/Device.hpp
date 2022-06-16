@@ -416,7 +416,9 @@ namespace ANAMED {
               .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceMemoryPriorityFeaturesEXT, vk::PhysicalDeviceMemoryPriorityFeaturesEXT{
               .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceRayTracingMaintenance1FeaturesKHR, vk::PhysicalDeviceRayTracingMaintenance1FeaturesKHR{
               .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceFragmentShaderInterlockFeaturesEXT, vk::PhysicalDeviceFragmentShaderInterlockFeaturesEXT{
+              .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceTransformFeedbackFeaturesEXT, vk::PhysicalDeviceTransformFeedbackFeaturesEXT{
               .pNext = nullptr
+              })
               })
               })
               })
@@ -451,7 +453,9 @@ namespace ANAMED {
               .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceMultiDrawPropertiesEXT, vk::PhysicalDeviceMultiDrawPropertiesEXT{
               .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceFragmentShaderBarycentricPropertiesKHR, vk::PhysicalDeviceFragmentShaderBarycentricPropertiesKHR{
               .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDevicePushDescriptorPropertiesKHR, vk::PhysicalDevicePushDescriptorPropertiesKHR{
+              .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceTransformFeedbackPropertiesEXT, vk::PhysicalDeviceTransformFeedbackPropertiesEXT{
               .pNext = nullptr
+              })
               })
               })
               })

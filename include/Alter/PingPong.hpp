@@ -5,7 +5,7 @@
 #include "./Core.hpp"
 #include "./Instance.hpp"
 #include "./Device.hpp"
-#include "./Resource.hpp"
+#include "./ResourceImage.hpp"
 #include "./PipelineLayout.hpp"
 #include "./Semaphore.hpp"
 
@@ -47,7 +47,7 @@ namespace ANAMED {
         // 
         friend DeviceObj;
         friend PipelineObj;
-        friend ResourceObj;
+        friend ResourceImageObj;
         bool firstWait = true;
 
         //
@@ -236,7 +236,7 @@ namespace ANAMED {
             decltype(auto) device = this->base.as<vk::Device>();
             decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
             decltype(auto) image = this->sets[this->currentState.index].images[imageIndex];
-            decltype(auto) imageObj = deviceObj->get<ResourceObj>(image);
+            decltype(auto) imageObj = deviceObj->get<ResourceImageObj>(image);
             imageObj->writeClearCommand(ImageClearWriteInfo{
               .cmdBuf = cmdBuf,
               .clearColor = clearColors,
@@ -252,7 +252,7 @@ namespace ANAMED {
             uint32_t setIndex = this->currentState.index;
             uint32_t J = 0u; for (auto& image : this->sets[setIndex].images) {
                 uint32_t j = J++;
-                decltype(auto) imageObj = deviceObj->get<ResourceObj>(image);
+                decltype(auto) imageObj = deviceObj->get<ResourceImageObj>(image);
                 imageObj->writeClearCommand(ImageClearWriteInfo{
                   .cmdBuf = cmdBuf,
                   .clearColor = clearColors[j],
@@ -282,7 +282,7 @@ namespace ANAMED {
                     // 
                     decltype(auto) it2 = it->images.begin();
                     for (it2 = it->images.begin(); it2 != it->images.end();) {
-                        deviceObj->get<ResourceObj>(*it2)->destroy(deviceObj.get());
+                        deviceObj->get<ResourceImageObj>(*it2)->destroy(deviceObj.get());
                         it2 = it->images.erase(it2);
                     };
 
@@ -355,15 +355,13 @@ namespace ANAMED {
 
             //
             decltype(auto) extent3D = vk::Extent3D{ this->cInfo->extent.width * this->cInfo->split[index], this->cInfo->extent.height, 1u };
-            decltype(auto) imageObj = ResourceObj::make(this->base, ResourceCreateInfo{
+            decltype(auto) imageObj = ResourceImageObj::make(this->base, ImageCreateInfo{
                 .descriptors = this->cInfo->layout,
-                    .imageInfo = ImageCreateInfo{
-                      .format = this->cInfo->formats[index],
-                      .extent = extent3D,
-                      .layout = imageLayout,
-                      .info = this->cInfo->info ? this->cInfo->info.value() : QueueGetInfo{0u, 0u},
-                      .type = imageType
-                }
+                .format = this->cInfo->formats[index],
+                .extent = extent3D,
+                .layout = imageLayout,
+                .info = this->cInfo->info ? this->cInfo->info.value() : QueueGetInfo{0u, 0u},
+                .type = imageType
             });
 
             //
@@ -414,8 +412,8 @@ namespace ANAMED {
                 decltype(auto) nextImage = this->sets[nextSetIndex].images[index];
                 if (nextImage != image) {
                     decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(device);
-                    decltype(auto) imageObj = deviceObj->get<ResourceObj>(image);
-                    decltype(auto) nextImageObj = deviceObj->get<ResourceObj>(nextImage);
+                    decltype(auto) imageObj = deviceObj->get<ResourceImageObj>(image);
+                    decltype(auto) nextImageObj = deviceObj->get<ResourceImageObj>(nextImage);
                     decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
                     decltype(auto) accessMask = vk::AccessFlagBits2(vku::getAccessMaskByImageUsage(imageObj->getImageUsage()));
 
@@ -429,7 +427,7 @@ namespace ANAMED {
                       .srcAccessMask = vk::AccessFlagBits2(accessMask),
                       .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferRead),
                       .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferRead),
-                      .oldLayout = imageObj->cInfo->imageInfo->layout,
+                      .oldLayout = imageObj->cInfo->layout,
                       .newLayout = vk::ImageLayout::eTransferSrcOptimal,
                       .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
                       .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
@@ -441,7 +439,7 @@ namespace ANAMED {
                       .srcAccessMask = vk::AccessFlagBits2(accessMask),
                       .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eTransferWrite),
                       .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eTransferWrite),
-                      .oldLayout = nextImageObj->cInfo->imageInfo->layout,
+                      .oldLayout = nextImageObj->cInfo->layout,
                       .newLayout = vk::ImageLayout::eTransferDstOptimal,
                       .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
                       .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
@@ -456,7 +454,7 @@ namespace ANAMED {
                       .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(accessMask) | (accessMask & vk::AccessFlagBits2(AccessFlagBitsSet::eShaderReadWrite) ? vk::PipelineStageFlagBits2::eAllCommands : vk::PipelineStageFlagBits2{}),
                       .dstAccessMask = vk::AccessFlagBits2(accessMask),
                       .oldLayout = vk::ImageLayout::eTransferSrcOptimal,
-                      .newLayout = imageObj->cInfo->imageInfo->layout,
+                      .newLayout = imageObj->cInfo->layout,
                       .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
                       .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
                       .image = image,
@@ -468,7 +466,7 @@ namespace ANAMED {
                       .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(accessMask) | (accessMask & vk::AccessFlagBits2(AccessFlagBitsSet::eShaderReadWrite) ? vk::PipelineStageFlagBits2::eAllCommands : vk::PipelineStageFlagBits2{}),
                       .dstAccessMask = vk::AccessFlagBits2(accessMask),
                       .oldLayout = vk::ImageLayout::eTransferDstOptimal,
-                      .newLayout = nextImageObj->cInfo->imageInfo->layout,
+                      .newLayout = nextImageObj->cInfo->layout,
                       .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
                       .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
                       .image = nextImage,

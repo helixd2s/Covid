@@ -4,7 +4,7 @@
 #ifdef __cplusplus
 #include "./Core.hpp"
 #include "./Device.hpp"
-#include "./Resource.hpp"
+#include "./ResourceBuffer.hpp"
 
 // 
 namespace ANAMED {
@@ -12,10 +12,10 @@ namespace ANAMED {
   
 
   // 
-  class ResourceSparseObj : public ResourceObj {
+  class ResourceSparseObj : public ResourceBufferObj {
   public: 
     using tType = WrapShared<ResourceSparseObj>;
-    using ResourceObj::ResourceObj;
+    using ResourceBufferObj::ResourceBufferObj;
 
   protected:
     //using BaseObj;
@@ -93,12 +93,12 @@ namespace ANAMED {
 
   public:
     // 
-    ResourceSparseObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::optional_ref<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : ResourceObj(deviceObj, cInfo) {
+    ResourceSparseObj(WrapShared<DeviceObj> deviceObj = {}, cpp21::optional_ref<BufferCreateInfo> cInfo = BufferCreateInfo{}) : ResourceBufferObj(deviceObj, cInfo) {
       //this->construct(deviceObj, cInfo);
     };
 
     // 
-    ResourceSparseObj(Handle const& handle, cpp21::optional_ref<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) : ResourceObj(handle, cInfo) {
+    ResourceSparseObj(Handle const& handle, cpp21::optional_ref<BufferCreateInfo> cInfo = BufferCreateInfo{}) : ResourceBufferObj(handle, cInfo) {
       //this->construct(ANAMED::context->get<DeviceObj>(this->base), cInfo);
     };
 
@@ -108,13 +108,13 @@ namespace ANAMED {
     };
 
     //
-    WrapShared<ResourceObj> registerSelf() override {
+    WrapShared<ResourceBufferObj> registerSelf() override {
       ANAMED::context->get<DeviceObj>(this->base)->registerObj(this->handle, shared_from_this());
-      return std::dynamic_pointer_cast<ResourceObj>(shared_from_this());
+      return std::dynamic_pointer_cast<ResourceBufferObj>(shared_from_this());
     };
 
     //
-    inline static tType make(Handle const& handle, cpp21::optional_ref<ResourceCreateInfo> cInfo = ResourceCreateInfo{}) {
+    inline static tType make(Handle const& handle, cpp21::optional_ref<BufferCreateInfo> cInfo = BufferCreateInfo{}) {
       auto shared = std::make_shared<ResourceSparseObj>(handle, cInfo);
       shared->construct(ANAMED::context->get<DeviceObj>(handle).shared(), cInfo);
       return std::dynamic_pointer_cast<ResourceSparseObj>(shared->registerSelf().shared());
@@ -214,11 +214,9 @@ namespace ANAMED {
 
   //
   inline vk::Buffer& PipelineLayoutObj::createCacheBuffer() {
-      this->cacheBuffer = (this->cacheBufferObj = ResourceSparseObj::make(this->base, ResourceCreateInfo{
-          .bufferInfo = BufferCreateInfo{
-            .size = this->cachePages * this->cachePageSize,
-            .type = BufferType::eStorage
-          }
+      this->cacheBuffer = (this->cacheBufferObj = ResourceSparseObj::make(this->base, BufferCreateInfo{
+        .size = this->cachePages * this->cachePageSize,
+        .type = BufferType::eStorage
       })).as<vk::Buffer>();
 
       //

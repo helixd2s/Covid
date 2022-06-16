@@ -5,7 +5,7 @@
 #include "./Core.hpp"
 #include "./Instance.hpp"
 #include "./Device.hpp"
-#include "./Resource.hpp"
+#include "./ResourceImage.hpp"
 #include "./PipelineLayout.hpp"
 
 // 
@@ -44,7 +44,7 @@ namespace ANAMED {
         // 
         friend DeviceObj;
         friend PipelineObj;
-        friend ResourceObj;
+        friend ResourceImageObj;
         friend PipelineObj;
         friend PipelineLayoutObj;
 
@@ -300,20 +300,18 @@ namespace ANAMED {
             decltype(auto) imageLayout =
                 (*imageType) == ImageType::eDepthStencilAttachment ? vk::ImageLayout::eDepthStencilAttachmentOptimal :
                 ((*imageType) == ImageType::eDepthAttachment ? vk::ImageLayout::eDepthAttachmentOptimal :
-                    ((*imageType) == ImageType::eStencilAttachment ? vk::ImageLayout::eStencilAttachmentOptimal : ((*imageType) == ImageType::eColorAttachment ? vk::ImageLayout::eColorAttachmentOptimal : vk::ImageLayout::eGeneral)));
+                ((*imageType) == ImageType::eStencilAttachment ? vk::ImageLayout::eStencilAttachmentOptimal : ((*imageType) == ImageType::eColorAttachment ? vk::ImageLayout::eColorAttachmentOptimal : vk::ImageLayout::eGeneral)));
 
             //
-            auto imageObj = ResourceObj::make(this->base, ResourceCreateInfo{
+            auto imageObj = ResourceImageObj::make(this->base, ImageCreateInfo{
                 .descriptors = this->cInfo->layout,
-                    .imageInfo = ImageCreateInfo{
-                      .flags = this->cInfo->attachmentLayout->type == FramebufferType::eCubemap ? vk::ImageCreateFlagBits::eCubeCompatible : vk::ImageCreateFlagBits{},
-                      .imageType = vk::ImageType::e2D,//this->cInfo->type == FramebufferType::eCubemap ? vk::ImageType::e3D : vk::ImageType::e2D,
-                      .format = format,
-                      .extent = vk::Extent3D{ cInfo->extent.width, cInfo->extent.height, /*this->cInfo->type == FramebufferType::eCubemap ? 6u : 1u*/ 1u},
-                      .layerCount = this->cInfo->attachmentLayout->type == FramebufferType::eCubemap ? 6u : 1u,
-                      .layout = vk::ImageLayout::eShaderReadOnlyOptimal,
-                      .type = imageType,
-                }
+                .flags = this->cInfo->attachmentLayout->type == FramebufferType::eCubemap ? vk::ImageCreateFlagBits::eCubeCompatible : vk::ImageCreateFlagBits{},
+                .imageType = vk::ImageType::e2D,//this->cInfo->type == FramebufferType::eCubemap ? vk::ImageType::e3D : vk::ImageType::e2D,
+                .format = format,
+                .extent = vk::Extent3D{ cInfo->extent.width, cInfo->extent.height, /*this->cInfo->type == FramebufferType::eCubemap ? 6u : 1u*/ 1u},
+                .layerCount = this->cInfo->attachmentLayout->type == FramebufferType::eCubemap ? 6u : 1u,
+                .layout = vk::ImageLayout::eShaderReadOnlyOptimal,
+                .type = imageType,
             });
 
             //
@@ -335,7 +333,7 @@ namespace ANAMED {
             // TODO: use pre-built command buffer
             history.switchToAttachmentFn.push_back([this, device, imageLayout, subresourceRange, image = imageObj.as<vk::Image>(), &history](vk::CommandBuffer const& cmdBuf, cpp21::optional_ref<FramebufferState> previousState = {}) {
                 decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(device);
-                decltype(auto) imageObj = deviceObj->get<ResourceObj>(image);
+                decltype(auto) imageObj = deviceObj->get<ResourceImageObj>(image);
                 imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
                   .cmdBuf = cmdBuf,
                   .newImageLayout = imageLayout,
@@ -346,7 +344,7 @@ namespace ANAMED {
             //
             history.switchToShaderReadFn.push_back([this, device, subresourceRange, image = imageObj.as<vk::Image>(), &history](vk::CommandBuffer const& cmdBuf, cpp21::optional_ref<FramebufferState> previousState = {}) {
                 decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(device);
-                decltype(auto) imageObj = deviceObj->get<ResourceObj>(image);
+                decltype(auto) imageObj = deviceObj->get<ResourceImageObj>(image);
                 imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
                   .cmdBuf = cmdBuf,
                   .newImageLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
@@ -381,7 +379,7 @@ namespace ANAMED {
             for (auto& history : this->fbHistory) { //
                 decltype(auto) it = history.images.begin();
                 for (it = history.images.begin(); it != history.images.end();) {
-                    deviceObj->get<ResourceObj>(*it)->destroy(deviceObj.get());
+                    deviceObj->get<ResourceImageObj>(*it)->destroy(deviceObj.get());
                     it = history.images.erase(it);
                 };
             };

@@ -8,7 +8,8 @@
 #include "./Device.hpp"
 #include "./MemoryAllocator.hpp"
 #include "./QueueFamily.hpp"
-#include "./Resource.hpp"
+#include "./ResourceImage.hpp"
+#include "./ResourceBuffer.hpp"
 #include "./Sampler.hpp"
 #include "./PipelineLayout.hpp"
 #include "./Framebuffer.hpp"
@@ -82,7 +83,7 @@ namespace ANAMED
 
         //
         WrapShared<GeometryLevelObj> structure = {};
-        //WrapShared<ResourceObj> extensionBuffer = {};
+        //WrapShared<ResourceBufferObj> extensionBuffer = {};
     };
 
     //
@@ -97,7 +98,7 @@ namespace ANAMED
         std::vector<BufferRegion> regions = {};
 
         //
-        std::vector<WrapShared<ResourceObj>> images = {};
+        std::vector<WrapShared<ResourceImageObj>> images = {};
         std::vector<WrapShared<SamplerObj>> samplers = {};
 
         // indices cache
@@ -106,7 +107,7 @@ namespace ANAMED
         std::vector<CTexture> textures = {};
 
         // objects
-        std::vector<WrapShared<ResourceObj>> buffers = {};
+        std::vector<WrapShared<ResourceBufferObj>> buffers = {};
 
         // 
         std::vector<std::shared_ptr<GltfMesh>> opaqueMeshes = {};
@@ -119,7 +120,7 @@ namespace ANAMED
         std::unordered_map<uintptr_t, bool> translucentImages = {};
 
         //
-        WrapShared<ResourceObj> materialBuffer = {};
+        WrapShared<ResourceBufferObj> materialBuffer = {};
 
         //
         uintptr_t defaultScene = 0ull;
@@ -376,14 +377,12 @@ namespace ANAMED
                 uintptr_t I = i++;
                 //
                 bool isTranslucent = false;
-                decltype(auto) imageObj = ANAMED::ResourceObj::make(deviceObj, ANAMED::ResourceCreateInfo{
-                  .descriptors = cInfo->descriptors,
-                  .imageInfo = ANAMED::ImageCreateInfo{
+                decltype(auto) imageObj = ANAMED::ResourceImageObj::make(deviceObj, ANAMED::ImageCreateInfo{
+                    .descriptors = cInfo->descriptors,
                     .format = convertFormat(isTranslucent, image.component, image.bits, image.pixel_type),
                     .extent = vk::Extent3D{uint32_t(image.width), uint32_t(image.height), 1u},
                     .type = ANAMED::ImageType::eTexture
-                  }
-                    });
+                });
 
                 // can't determine directly
                 if (Check_ext(image.uri)) {
@@ -469,7 +468,7 @@ namespace ANAMED
                     auto accessor = gltf->model.accessors[accessorIndex];
                     auto bv = gltf->regions[accessor.bufferView];
                     auto bufferView = gltf->model.bufferViews[accessor.bufferView];
-                    auto bufferObj = deviceObj->get<ResourceObj>(bv.buffer);
+                    auto bufferObj = deviceObj->get<ResourceBufferObj>(bv.buffer);
                     auto address = bufferObj->getDeviceAddress();
 
                     //
@@ -510,13 +509,11 @@ namespace ANAMED
             };
 
             //
-            gltf->materialBuffer = ANAMED::ResourceObj::make(handle, ANAMED::ResourceCreateInfo{
-              .descriptors = cInfo->descriptors,
-              .bufferInfo = ANAMED::BufferCreateInfo{
+            gltf->materialBuffer = ANAMED::ResourceBufferObj::make(handle, ANAMED::BufferCreateInfo{
+                .descriptors = cInfo->descriptors,
                 .size = gltf->model.materials.size() * sizeof(ANAMED::MaterialInfo),
                 .type = ANAMED::BufferType::eUniversal,
-              }
-                });
+            });
 
             //
             uint64_t materialAddress = gltf->materialBuffer->getDeviceAddress();
@@ -551,13 +548,11 @@ namespace ANAMED
             // 
             for (decltype(auto) buffer : gltf->model.buffers) {
                 //
-                decltype(auto) bufferObj = ANAMED::ResourceObj::make(handle, ANAMED::ResourceCreateInfo{
-                  .descriptors = cInfo->descriptors,
-                  .bufferInfo = ANAMED::BufferCreateInfo{
+                decltype(auto) bufferObj = ANAMED::ResourceBufferObj::make(handle, ANAMED::BufferCreateInfo{
+                    .descriptors = cInfo->descriptors,
                     .size = cpp21::bytesize(buffer.data),
                     .type = ANAMED::BufferType::eUniversal,
-                  }
-                    });
+                });
 
                 // complete loader
                 decltype(auto) status = uploaderObj->executeUploadToResourceOnce(ANAMED::UploadExecutionOnce{
@@ -593,23 +588,19 @@ namespace ANAMED
 
                 /*
                 opaqueMesh->extensions = cpp21::shared_vector<GeometryExtension>();
-                opaqueMesh->extensionBuffer = ANAMED::ResourceObj::make(handle, ANAMED::ResourceCreateInfo{
-                  .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
-                  .bufferInfo = ANAMED::BufferCreateInfo{
+                opaqueMesh->extensionBuffer = ANAMED::ResourceBufferObj::make(handle, ANAMED::BufferCreateInfo{
+                    .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
                     .size = mesh.primitives.size() * sizeof(GeometryExtension),
                     .type = ANAMED::BufferType::eUniversal,
-                  }
                 });
 
                 //
 
                 translucentMesh->extensions = cpp21::shared_vector<GeometryExtension>();
-                translucentMesh->extensionBuffer = ANAMED::ResourceObj::make(handle, ANAMED::ResourceCreateInfo{
-                  .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
-                  .bufferInfo = ANAMED::BufferCreateInfo{
+                translucentMesh->extensionBuffer = ANAMED::ResourceBufferObj::make(handle, ANAMED::BufferCreateInfo{
+                    .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
                     .size = mesh.primitives.size() * sizeof(GeometryExtension),
                     .type = ANAMED::BufferType::eUniversal,
-                  }
                 });*/
 
                 //

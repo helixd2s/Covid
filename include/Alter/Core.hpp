@@ -250,7 +250,8 @@ namespace ANAMED {
     class ContextObj;
     class InstanceObj;
     class DeviceObj;
-    class ResourceObj;
+    class ResourceBufferObj;
+    class ResourceImageObj;
     class QueueFamilyObj;
     class PipelineLayoutObj;
     class DescriptorsObj;
@@ -376,7 +377,8 @@ namespace ANAMED {
           "VK_KHR_fragment_shader_barycentric",
           "VK_KHR_ray_tracing_maintenance1",
           "VK_EXT_fragment_shader_interlock",
-          "VK_KHR_push_descriptor"
+          "VK_KHR_push_descriptor",
+          "VK_EXT_transform_feedback"
         };
         cpp21::shared_vector<std::string> layerList = std::vector<std::string>{
         };
@@ -758,6 +760,9 @@ namespace ANAMED {
 
     //
     struct ImageCreateInfo : BaseCreateInfo {
+        vk::PipelineLayout descriptors = {};
+        std::optional<vk::Image> image = {};
+
         vk::ImageCreateFlags flags = {};
         vk::ImageType imageType = vk::ImageType::e2D;
         vk::Format format = vk::Format::eUndefined;
@@ -769,7 +774,30 @@ namespace ANAMED {
         std::optional<ImageSwapchainInfo> swapchain = {};
         std::optional<QueueGetInfo> info = QueueGetInfo{};
         ImageType type = ImageType::eStorage;
+
+        // 
+        ImageCreateInfo use(cpp21::optional_ref<ExtensionName> extName = ExtensionName::eMemoryAllocator) {
+
+            decltype(auto) copy = *this; if (!copy.extUsed) { copy.extUsed = std::make_shared<EXIP>(); }; if (copy.extUsed) { (*copy.extUsed)[ExtensionInfoName::eMemoryAllocator] = extName; }; return copy;
+        };
     };
+
+    //
+    struct BufferCreateInfo : BaseCreateInfo {
+        vk::PipelineLayout descriptors = {};
+        std::optional<vk::Buffer> buffer = {};
+
+        size_t size = 0ull;
+        BufferType type = BufferType::eStorage;
+        std::optional<QueueGetInfo> info = QueueGetInfo{};
+
+        // 
+        BufferCreateInfo use(cpp21::optional_ref<ExtensionName> extName = ExtensionName::eMemoryAllocator) {
+
+            decltype(auto) copy = *this; if (!copy.extUsed) { copy.extUsed = std::make_shared<EXIP>(); }; if (copy.extUsed) { (*copy.extUsed)[ExtensionInfoName::eMemoryAllocator] = extName; }; return copy;
+        };
+    };
+
 
     //
     struct SamplerCreateInfo : BaseCreateInfo {
@@ -777,29 +805,7 @@ namespace ANAMED {
         std::optional<vk::SamplerCreateInfo> native = {};
     };
 
-    //
-    struct BufferCreateInfo : BaseCreateInfo {
-        size_t size = 0ull;
-        BufferType type = BufferType::eStorage;
-        std::optional<QueueGetInfo> info = QueueGetInfo{};
-    };
-
-
-
-    //
-    struct ResourceCreateInfo : BaseCreateInfo {
-        vk::PipelineLayout descriptors = {};
-        std::optional<vk::Buffer> buffer = {};
-        std::optional<vk::Image> image = {};
-        std::optional<BufferCreateInfo> bufferInfo = {};
-        std::optional<ImageCreateInfo> imageInfo = {};
-
-        // 
-        ResourceCreateInfo use(cpp21::optional_ref<ExtensionName> extName = ExtensionName::eMemoryAllocator) {
-
-            decltype(auto) copy = *this; if (!copy.extUsed) { copy.extUsed = std::make_shared<EXIP>(); }; if (copy.extUsed) { (*copy.extUsed)[ExtensionInfoName::eMemoryAllocator] = extName; }; return copy;
-        };
-    };
+   
 
     // TODO: optional componentMapping
     struct ImageViewCreateInfo : BaseCreateInfo {

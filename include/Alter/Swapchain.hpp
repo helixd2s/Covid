@@ -5,7 +5,7 @@
 #include "./Core.hpp"
 #include "./Instance.hpp"
 #include "./Device.hpp"
-#include "./Resource.hpp"
+#include "./ResourceImage.hpp"
 #include "./PipelineLayout.hpp"
 #include "./Semaphore.hpp"
 
@@ -42,7 +42,7 @@ namespace ANAMED {
         std::vector<vk::Image> images = {};
         std::vector<vk::ImageView> imageViews = {};
         std::vector<uint32_t> imageViewIndices = {};
-        std::vector<WrapShared<ResourceObj>> imagesObj = {};
+        std::vector<WrapShared<ResourceImageObj>> imagesObj = {};
 
         //
         std::vector<vk::Semaphore> readySemaphores = {};
@@ -197,7 +197,7 @@ namespace ANAMED {
             { //
                 decltype(auto) it = images.begin();
                 for (it = images.begin(); it != images.end();) {
-                    deviceObj->get<ResourceObj>(*it)->destroy(deviceObj.get());
+                    deviceObj->get<ResourceImageObj>(*it)->destroy(deviceObj.get());
                     it = images.erase(it);
                 };
             };
@@ -263,18 +263,16 @@ namespace ANAMED {
             decltype(auto) format = surfaceFormat2->surfaceFormat.format;
 
             //
-            decltype(auto) imageObj = ResourceObj::make(this->base, ResourceCreateInfo{
+            decltype(auto) imageObj = ResourceImageObj::make(this->base, ImageCreateInfo{
                 .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
-                    .image = image,
-                    .imageInfo = ImageCreateInfo{
-                      .format = format,
-                      .extent = vk::Extent3D{ capInfo.capabilities->currentExtent.width, capInfo.capabilities->currentExtent.height, 1u },
-                      .layout = imageLayout,
-                      // # first reason of internal error (if use implicit cast, mostly with std::optional)
-                      .swapchain = std::optional<ImageSwapchainInfo>(swapchainInfo),
-                      .info = this->cInfo->info ? this->cInfo->info.value() : QueueGetInfo{0u, 0u},
-                      .type = imageType
-                }
+                .image = image,
+                .format = format,
+                .extent = vk::Extent3D{ capInfo.capabilities->currentExtent.width, capInfo.capabilities->currentExtent.height, 1u },
+                .layout = imageLayout,
+                // # first reason of internal error (if use implicit cast, mostly with std::optional)
+                .swapchain = std::optional<ImageSwapchainInfo>(swapchainInfo),
+                .info = this->cInfo->info ? this->cInfo->info.value() : QueueGetInfo{0u, 0u},
+                .type = imageType
             });
 
             // 
@@ -285,14 +283,14 @@ namespace ANAMED {
               .viewType = vk::ImageViewType::e2D,
               .subresourceRange = subresourceRange,
               .preference = ImageViewPreference::eStorage
-                });
+            });
             this->imageViews.push_back(pair.imageView);
             this->imageViewIndices.push_back(pair.indice);
 
             // TODO: use pre-built command buffer
             this->switchToReadyFn.push_back([device, imageLayout, subresourceRange, image = imageObj.as<vk::Image>()](vk::CommandBuffer const& cmdBuf) {
                 decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(device);
-                decltype(auto) imageObj = deviceObj->get<ResourceObj>(image);
+                decltype(auto) imageObj = deviceObj->get<ResourceImageObj>(image);
                 //if (imageObj) {
                 imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
                   .cmdBuf = cmdBuf,
@@ -305,7 +303,7 @@ namespace ANAMED {
             //
             this->switchToPresentFn.push_back([device, imageLayout, subresourceRange, image = imageObj.as<vk::Image>()](vk::CommandBuffer const& cmdBuf) {
                 decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(device);
-                decltype(auto) imageObj = deviceObj->get<ResourceObj>(image);
+                decltype(auto) imageObj = deviceObj->get<ResourceImageObj>(image);
                 //if (imageObj) {
                 imageObj->writeSwitchLayoutCommand(ImageLayoutSwitchWriteInfo{
                   .cmdBuf = cmdBuf,

@@ -28,7 +28,8 @@ namespace ANAMED {
         // 
         friend DeviceObj;
         friend PipelineObj;
-        friend ResourceObj;
+        friend ResourceImageObj;
+        friend ResourceBufferObj;
         friend FramebufferObj;
         friend SwapchainObj;
 
@@ -66,7 +67,7 @@ namespace ANAMED {
         vk::Buffer cacheBuffer = {};
 
         //
-        WrapShared<ResourceObj> uniformBufferObj = {};
+        WrapShared<ResourceBufferObj> uniformBufferObj = {};
         WrapShared<ResourceSparseObj> cacheBufferObj = {};
 
         //
