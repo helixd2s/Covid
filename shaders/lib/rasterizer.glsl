@@ -138,31 +138,6 @@ IntersectionInfo rasterize(in InstanceAddressBlock addressInfo, in RayData rayDa
   return intersection;
 };
 
-//
-RayData reuseLight(inout RayData rayData) {
-  // screen space reuse already lighted pixels
-  vec4 ssPos = divW(vec4(vec4(rayData.origin.xyz, 1.f) * constants.lookAt[0], 1.f) * constants.perspective);
-  ivec2 pxId = ivec2((ssPos.xy * 0.5f + 0.5f) * UR(rasterBuf.extent));
-
-  //
-  if (pxId.x >= 0 && pxId.y >= 0 && pxId.x < UR(rasterBuf.extent).x && pxId.y < UR(rasterBuf.extent).y) {
-    vec4 ssSurf = ssPos; ssSurf.z = 1.f;
-
-    // 
-    { // I don't know, works it or not
-      rasterize(instancedData, rayData, 10000.f, ssSurf, false);
-    };
-
-    // testing now working correctly, sorry
-    if (all(lessThan(abs(ssPos.xyz-ssSurf.xyz), vec3(2.f/UR(rasterBuf.extent), 0.002f)))) {
-      PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pxId.x + pxId.y * UR(rasterBuf.extent).x);
-      const vec4 color = cvtRgb16Acc(surfaceInfo.accum[2]);
-      rayData.emission += f16vec4(trueMultColor(color/color.w, rayData.energy));
-    };
-  };
-  return rayData;
-};
-
 
 
 #endif

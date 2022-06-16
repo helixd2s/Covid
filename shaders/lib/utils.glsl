@@ -2,8 +2,16 @@
 #define UTILS_DEF
 
 //
-vec2 lcts(in vec3 direct) { return vec2(fma(atan(direct.z,direct.x),INV_TWO_PI,0.5f), acos(direct.y)*INV_PI); };
-vec3 dcts(in vec2 hr) { hr = fma(hr,vec2(TWO_PI,PI),vec2(-PI,0.f)); const float up=-cos(hr.y),over=sqrt(fma(up,-up,1.f)); return vec3(cos(hr.x)*over,up,sin(hr.x)*over); };
+vec2 lcts(in vec3 direct) { 
+  return vec2(fma(atan(direct.z,direct.x),INV_TWO_PI,0.5f), acos(direct.y)*INV_PI); 
+};
+
+//
+vec3 dcts(in vec2 hr) { 
+  hr = fma(hr,vec2(TWO_PI,PI), vec2(-PI,0.f));
+  const float up=-cos(hr.y), over=sqrt(fma(up,-up,1.f)); 
+  return vec3(cos(hr.x)*over ,up , sin(hr.x)*over); 
+};
 
 //
 vec3 fromLinear(in vec3 linearRGB) { return mix(vec3(1.055)*pow(linearRGB, vec3(1.0/2.4)) - vec3(0.055), linearRGB * vec3(12.92), lessThan(linearRGB, vec3(0.0031308))); }
@@ -100,7 +108,7 @@ vec3 inRayNormal(in vec3 dir, in vec3 normal) {
 };
 
 vec3 outRayNormal(in vec3 dir, in vec3 normal) {
-  return normalize(faceforward(normal, dir, normal));
+  return normalize(faceforward(normal, -dir, normal));
 };
 
 //
@@ -242,6 +250,29 @@ vec3 computeBary(in vec4 vo, in mat3x4 vt) {
 mat3x4 cvt3x4(in vec4 m[3]) { return mat3x4(m[0],m[1],m[2]); };
 mat3x3 cvt3x3(in vec3 m[3]) { return mat3x3(m[0],m[1],m[2]); };
 mat3x2 cvt3x2(in vec2 m[3]) { return mat3x2(m[0],m[1],m[2]); };
+
+
+//
+vec3 cosineWeightedPoint(in vec2 uv) {
+  const float radial = sqrt(uv.x);
+  const float theta = TWO_PI * uv.y;
+
+  const float x = radial * cos(theta);
+  const float y = radial * sin(theta);
+
+  return vec3(x, y, sqrt(1 - uv.x));
+};
+
+//
+vec3 cosineWeightedPoint(in vec2 uv, in mat3x3 tbn) {
+  return tbn * cosineWeightedPoint(uv);
+};
+
+//
+vec3 reflective(in vec2 seed, in vec3 dir, in mat3x3 tbn, in float roughness) {
+  return normalize(mix(reflect(dir, tbn[2]), cosineWeightedPoint(seed, tbn), roughness));
+};
+
 
 
 #endif

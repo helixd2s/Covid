@@ -10,7 +10,6 @@
 #include "lib/native.glsl"
 #include "lib/fresnel.glsl"
 #include "lib/random.glsl"
-#include "lib/sphere.glsl"
 #include "lib/rasterizer.glsl"
 #include "lib/reprojection.glsl"
 
