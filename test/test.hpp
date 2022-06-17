@@ -52,6 +52,7 @@ struct UniformData {
     ANAMED::FramebufferStateInfo framebuffers[2];
     ANAMED::FramebufferStateInfo dynamicRaster;
     Constants constants = {};
+    glm::uvec2 rayCount = glm::uvec2(640, 360);
 
     //glm::uvec2 extent = {}; 
     uint32_t r0 = 0u;
@@ -483,8 +484,12 @@ public:
 
         //
         renderArea = swapchainObj->getRenderArea();
-        renderArea.extent.width *= 2.f / xscale;
-        renderArea.extent.height *= 2.f / yscale;
+
+        // 
+        nativeRasterSize = glm::uvec2(float(renderArea.extent.width) / xscale * 1.f, float(renderArea.extent.height) / yscale * 1.f);
+        preRasterSize = glm::uvec2(float(renderArea.extent.width) / xscale * 1.f, float(renderArea.extent.height) / yscale * 1.f);
+        reprojectSize = glm::uvec2(float(renderArea.extent.width) / xscale * 2.f, float(renderArea.extent.height) / yscale * 2.f);
+        rayCount = glm::uvec2(float(renderArea.extent.width) / xscale * 1.f, float(renderArea.extent.height) / yscale * 1.f);
 
         // 
         surfaceDataObj = ANAMED::ResourceBufferObj::make(deviceObj, ANAMED::BufferCreateInfo{
@@ -507,7 +512,8 @@ public:
             .type = ANAMED::BufferType::eStorage
          });
 
-          //
+        //
+        uniformData.rayCount = rayCount;
         uniformData.surfaceData = surfaceDataObj->getDeviceAddress();
         uniformData.pixelData = pixelDataObj->getDeviceAddress();
         uniformData.writeData = writeDataObj->getDeviceAddress();

@@ -31,6 +31,7 @@ layout(set = 0, binding = 0, scalar) uniform MatrixBlock
   FramebufferStateInfo framebuffers[2];
   FramebufferStateInfo dynamicRaster;
   Constants constants;
+  uvec2 rayCount;
 
   uint32_t r0;
   uint32_t frameCounter;
@@ -109,7 +110,7 @@ layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer Tra
 };
 
 //
-const uvec2 rayCount = uvec2(1280, 720);
+//const uvec2 rayCount = uvec2(1280, 720);
 
 //
 uint subgroupAtomicAdd(in uint counterId) {
