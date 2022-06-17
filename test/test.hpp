@@ -407,6 +407,20 @@ public:
             });
 
         //
+        decltype(auto) denoiseFence = distrubCmdObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
+            // # yet another std::optional problem (implicit)
+            .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
+              .dispatch = vk::Extent3D{cpp21::tiled(reprojectSize.x, 32u), cpp21::tiled(reprojectSize.y * 3u, 4u), 1u},
+              .layout = descriptorsObj.as<vk::PipelineLayout>(),
+              // # yet another std::optional problem (implicit)
+              .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
+            }),
+            .submission = ANAMED::SubmissionInfo{
+              .info = qfAndQueue
+            }
+            });
+
+        //
         decltype(auto) recopyFence = recopyObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
             // # yet another std::optional problem (implicit)
             .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
@@ -419,6 +433,8 @@ public:
               .info = qfAndQueue
             }
             });
+
+        
 
 
         //
