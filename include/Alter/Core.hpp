@@ -740,6 +740,13 @@ namespace ANAMED {
 
     //
     inline static cpp21::obj<AttachmentLayout> defaultAttachmentLayout = std::make_shared<AttachmentLayout>();
+    inline static cpp21::obj<AttachmentLayout> nullAttachmentLayout = std::make_shared<AttachmentLayout>(AttachmentLayout{
+        .colorClearValues = {},
+        .depthAttachmentFormat = vk::Format::eUndefined,
+        .stencilAttachmentFormat = vk::Format::eUndefined,
+        .colorAttachmentFormats = {},
+        .blendStates = {},
+    });
 
     //
     struct PipelineLayoutCreateInfo : BaseCreateInfo {

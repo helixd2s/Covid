@@ -200,8 +200,12 @@ namespace ANAMED {
             };
 
             //
-            clearAttachments.push_back(vk::ClearAttachment{ .aspectMask = vk::ImageAspectFlagBits::eDepth, .clearValue = attachment->depthClearValue });
-            clearAttachments.push_back(vk::ClearAttachment{ .aspectMask = vk::ImageAspectFlagBits::eStencil, .clearValue = attachment->stencilClearValue });
+            if (this->cInfo->attachmentLayout->depthAttachmentFormat != vk::Format::eUndefined) { 
+                clearAttachments.push_back(vk::ClearAttachment{ .aspectMask = vk::ImageAspectFlagBits::eDepth, .clearValue = attachment->depthClearValue });
+            };
+            if (this->cInfo->attachmentLayout->stencilAttachmentFormat != vk::Format::eUndefined) { 
+                clearAttachments.push_back(vk::ClearAttachment{ .aspectMask = vk::ImageAspectFlagBits::eStencil, .clearValue = attachment->stencilClearValue });
+            };
 
             // 
             cmdBuf.beginRendering(vk::RenderingInfoKHR{
@@ -403,11 +407,10 @@ namespace ANAMED {
 
                 // 
                 if (this->cInfo->attachmentLayout->depthAttachmentFormat == this->cInfo->attachmentLayout->stencilAttachmentFormat) {
-                    this->createImage(history, ImageType::eDepthStencilAttachment);
-                }
-                else {
-                    this->createImage(history, ImageType::eDepthAttachment);
-                    this->createImage(history, ImageType::eStencilAttachment);
+                    if (this->cInfo->attachmentLayout->depthAttachmentFormat != vk::Format::eUndefined) { this->createImage(history, ImageType::eDepthStencilAttachment); };
+                } else {
+                    if (this->cInfo->attachmentLayout->depthAttachmentFormat != vk::Format::eUndefined) { this->createImage(history, ImageType::eDepthAttachment); };
+                    if (this->cInfo->attachmentLayout->stencilAttachmentFormat != vk::Format::eUndefined) { this->createImage(history, ImageType::eStencilAttachment); };
                 };
             };
 

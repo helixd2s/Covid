@@ -75,7 +75,7 @@ void main() {
 #endif
 
   //
-  if ((gl_FragCoord.z + mnD) < mxD_) {
+  if ((gl_FragCoord.z + mnD) <= (mxD_ + 0.0001f)) {
     // 
     const uint rasterId = atomicAdd(counters[RASTER_COUNTER], 1);//subgroupAtomicAdd(RASTER_COUNTER);
     if (rasterId < UR(rasterBuf.extent).x * UR(rasterBuf.extent).y * 16) {

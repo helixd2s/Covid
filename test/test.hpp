@@ -131,6 +131,7 @@ protected:
     ANAMED::WrapShared<ANAMED::PipelineObj> controlObj = {};
 
     ANAMED::WrapShared<ANAMED::SwapchainObj> swapchainObj = {};
+    ANAMED::WrapShared<ANAMED::FramebufferObj> nullFBO = {};
     ANAMED::WrapShared<ANAMED::FramebufferObj> framebufferObj[2] = {};
     ANAMED::WrapShared<ANAMED::PingPongObj> rasterBufObj = {};
     ANAMED::WrapShared<ANAMED::PingPongObj> deferredBufObj = {};
@@ -311,14 +312,13 @@ public:
             }
             });
         
-                 
-        /*
+
         //
         decltype(auto) preOpaqueFence = preOpaqueObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
             // # yet another std::optional problem (implicit)
             .graphics = std::optional<ANAMED::WriteGraphicsInfo>(ANAMED::WriteGraphicsInfo{
               .layout = descriptorsObj.as<vk::PipelineLayout>(),
-              .framebuffer = framebufferObj[0].as<uintptr_t>(),
+              .framebuffer = nullFBO.as<uintptr_t>(),
               .instanceDraws = modelObj->getDefaultScene()->opaque->instanced->getDrawInfo(),
               .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
             }),
@@ -332,7 +332,7 @@ public:
             // # yet another std::optional problem (implicit)
             .graphics = std::optional<ANAMED::WriteGraphicsInfo>(ANAMED::WriteGraphicsInfo{
               .layout = descriptorsObj.as<vk::PipelineLayout>(),
-              .framebuffer = framebufferObj[1].as<uintptr_t>(),
+              .framebuffer = nullFBO.as<uintptr_t>(),
               .instanceDraws = modelObj->getDefaultScene()->translucent->instanced->getDrawInfo(),
               .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
             }),
@@ -340,7 +340,7 @@ public:
               .info = qfAndQueue,
             }
             });
-        */
+
 
         //
         decltype(auto) resortFence = resortObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
@@ -513,11 +513,19 @@ public:
         for (uint32_t i = 0; i < 2; i++) {
             framebufferObj[i] = ANAMED::FramebufferObj::make(deviceObj.with(0u), ANAMED::FramebufferCreateInfo{
               .layout = descriptorsObj.as<vk::PipelineLayout>(),
-              .extent = vk::Extent2D{uint32_t(nativeRasterSize.x * 1.f), uint32_t(nativeRasterSize.y * 1.f)},
+              .extent = vk::Extent2D{nativeRasterSize.x, nativeRasterSize.y},
               .info = qfAndQueue
                 });
             uniformData.framebuffers[i] = framebufferObj[i]->getStateInfo();
         };
+
+        //
+        nullFBO = ANAMED::FramebufferObj::make(deviceObj.with(0u), ANAMED::FramebufferCreateInfo{
+            .layout = descriptorsObj.as<vk::PipelineLayout>(),
+            .extent = vk::Extent2D{preRasterSize.x, preRasterSize.y},
+            .info = qfAndQueue,
+            .attachmentLayout = ANAMED::nullAttachmentLayout
+        });
 
         // 
         rasterDataObj = ANAMED::ResourceBufferObj::make(deviceObj, ANAMED::BufferCreateInfo{
@@ -680,6 +688,7 @@ protected:
           .layout = descriptorsObj.as<vk::PipelineLayout>(),
           .graphics = ANAMED::GraphicsPipelineCreateInfo{
             .stageCodes = preOpaqueStageMaps,
+            .attachmentLayout = ANAMED::nullAttachmentLayout,
             .hasConservativeRaster = true,
             .dynamicState = std::make_shared<ANAMED::GraphicsDynamicState>(ANAMED::GraphicsDynamicState{
               .hasDepthTest = false,
@@ -698,6 +707,7 @@ protected:
           .layout = descriptorsObj.as<vk::PipelineLayout>(),
           .graphics = ANAMED::GraphicsPipelineCreateInfo{
             .stageCodes = preTranslucentStageMaps,
+            .attachmentLayout = ANAMED::nullAttachmentLayout,
             .hasConservativeRaster = true,
             .dynamicState = std::make_shared<ANAMED::GraphicsDynamicState>(ANAMED::GraphicsDynamicState{
               .hasDepthTest = false,
@@ -717,6 +727,7 @@ protected:
           .layout = descriptorsObj.as<vk::PipelineLayout>(),
           .graphics = ANAMED::GraphicsPipelineCreateInfo{
             .stageCodes = nativeOpaqueStageMaps,
+            // BROKEN!
             //.hasConservativeRaster = true,
             //.underestimated = true,
             .dynamicState = std::make_shared<ANAMED::GraphicsDynamicState>(ANAMED::GraphicsDynamicState{
@@ -736,6 +747,7 @@ protected:
           .layout = descriptorsObj.as<vk::PipelineLayout>(),
           .graphics = ANAMED::GraphicsPipelineCreateInfo{
             .stageCodes = nativeTranslucentStageMaps,
+            // BROKEN!
             //.hasConservativeRaster = true,
             //.underestimated = true,
             .dynamicState = std::make_shared<ANAMED::GraphicsDynamicState>(ANAMED::GraphicsDynamicState{
