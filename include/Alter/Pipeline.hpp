@@ -36,6 +36,7 @@ namespace ANAMED {
         // 
         std::vector<vk::Viewport> viewports = {};
         std::vector<vk::Rect2D> scissors = {};
+        vk::Pipeline recreatedPipeline = {};
         //std::shared_ptr<DeviceObj> deviceObj = {};
 
         // 
@@ -90,7 +91,7 @@ namespace ANAMED {
                 });
 
 
-            this->handle = std::move<vk::Pipeline>(handleResult(device.createComputePipeline(descriptors->cache, cmInfo.value())));
+            this->handle = (this->recreatedPipeline = std::move<vk::Pipeline>(handleResult(device.createComputePipeline(descriptors->cache, cmInfo.value()))));
             //
             //ANAMED::context->get(this->base)->registerObj(this->handle, shared_from_this());
             //return this->SFT();
@@ -102,7 +103,6 @@ namespace ANAMED {
             //
             //ANAMED::context->get(this->base)->registerObj(this->handle, shared_from_this());
             //return this->SFT();
-            decltype(auto) descriptors = ANAMED::context->get<DeviceObj>(this->base)->get<PipelineLayoutObj>(this->cInfo->layout);
             decltype(auto) device = this->base.as<vk::Device>();
 
             //
@@ -232,7 +232,8 @@ namespace ANAMED {
                 })->setStages(pipelineStages);
 
             //
-            this->handle = std::move<vk::Pipeline>(handleResult(device.createGraphicsPipeline(descriptors->cache, pInfo)));
+            decltype(auto) descriptors = ANAMED::context->get<DeviceObj>(this->base)->get<PipelineLayoutObj>(this->cInfo->layout);
+            this->handle = (this->recreatedPipeline = std::move<vk::Pipeline>(handleResult(device.createGraphicsPipeline(descriptors->cache, infoMap->get<vk::GraphicsPipelineCreateInfo>(vk::StructureType::eGraphicsPipelineCreateInfo)))));
         };
 
         // 
@@ -254,6 +255,9 @@ namespace ANAMED {
             decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
             decltype(auto) descriptorsObj = deviceObj->get<PipelineLayoutObj>(exec.layout ? exec.layout : this->cInfo->layout);
             decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
+
+            //
+            this->recreatedPipeline = std::move<vk::Pipeline>(handleResult(device.createComputePipeline(descriptorsObj->cache, infoMap->get<vk::ComputePipelineCreateInfo>(vk::StructureType::eComputePipelineCreateInfo))));
 
             //
             decltype(auto) memoryBarriersBegin = std::vector<vk::MemoryBarrier2>{
@@ -283,7 +287,7 @@ namespace ANAMED {
                 exec.cmdBuf.pipelineBarrier2(depInfo.setMemoryBarriers(memoryBarriersBegin));
                 if (sets.size() > 0) { exec.cmdBuf.bindDescriptorSets(vk::PipelineBindPoint::eCompute, descriptorsObj->handle.as<vk::PipelineLayout>(), 0u, sets, offsets); };
                 descriptorsObj->writePushDescriptor(vk::PipelineBindPoint::eCompute, exec.cmdBuf);
-                exec.cmdBuf.bindPipeline(vk::PipelineBindPoint::eCompute, exec.pipelineIndex == 0u ? this->handle.as<vk::Pipeline>() : this->secondaryPipelines[exec.pipelineIndex - 1u]);
+                exec.cmdBuf.bindPipeline(vk::PipelineBindPoint::eCompute, exec.pipelineIndex == 0u ? this->recreatedPipeline : this->secondaryPipelines[exec.pipelineIndex - 1u]);
                 if (exec.instanceAddressBlock) {
                     exec.cmdBuf.pushConstants(descriptorsObj->handle.as<vk::PipelineLayout>(), vk::ShaderStageFlagBits::eAll, 0u, sizeof(InstanceAddressBlock), &exec.instanceAddressBlock.value());
                 };
@@ -303,6 +307,12 @@ namespace ANAMED {
             decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
             decltype(auto) framebuffer = deviceObj->get<FramebufferObj>(exec.framebuffer).shared();
             decltype(auto) dynamicState = this->cInfo->graphics->dynamicState;
+
+            // TODO: pipeline destruction system
+            //device.destroyPipeline(this->recreatedPipeline);
+            //if (!this->recreatedPipeline) {
+                this->recreatedPipeline = std::move<vk::Pipeline>(handleResult(device.createGraphicsPipeline(descriptorsObj->cache, infoMap->get<vk::GraphicsPipelineCreateInfo>(vk::StructureType::eGraphicsPipelineCreateInfo))));
+            //};
 
             //
             decltype(auto) memoryBarriersBegin = std::vector<vk::MemoryBarrier2>{
@@ -346,7 +356,7 @@ namespace ANAMED {
             if (framebuffer) { framebuffer->writeSwitchToAttachment(exec.cmdBuf); };
             exec.cmdBuf.pipelineBarrier2(_depInfo.setMemoryBarriers(memoryBarriersBegin));
             exec.cmdBuf.beginRendering(vk::RenderingInfoKHR{ .renderArea = renderArea, .layerCount = this->cInfo->graphics->attachmentLayout->type == FramebufferType::eCubemap ? 6u : 1u, .viewMask = 0x0u, .colorAttachmentCount = uint32_t(colorAttachments.size()), .pColorAttachments = colorAttachments.data(), .pDepthAttachment = &depthAttachment, .pStencilAttachment = &stencilAttachment });
-            exec.cmdBuf.bindPipeline(vk::PipelineBindPoint::eGraphics, exec.pipelineIndex == 0u ? this->handle.as<vk::Pipeline>() : this->secondaryPipelines[exec.pipelineIndex - 1u]);
+            exec.cmdBuf.bindPipeline(vk::PipelineBindPoint::eGraphics, exec.pipelineIndex == 0u ? this->recreatedPipeline : this->secondaryPipelines[exec.pipelineIndex - 1u]);
             if (sets.size() > 0) { exec.cmdBuf.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, descriptorsObj->handle.as<vk::PipelineLayout>(), 0u, sets, offsets); };
             descriptorsObj->writePushDescriptor(vk::PipelineBindPoint::eGraphics, exec.cmdBuf);
             exec.cmdBuf.setViewportWithCount(viewports);
@@ -407,7 +417,12 @@ namespace ANAMED {
                 if (exec.graphics) { this->writeGraphicsCommand(exec.graphics->with(cmdBuf)); };
                 if (exec.compute) { this->writeComputeCommand(exec.compute->with(cmdBuf)); };
                 return cmdBuf;
-                });
+            });
+
+            //
+            submission.submission.onDone.push_back([device, pipeline = this->recreatedPipeline, graphics=exec.graphics, compute = exec.compute](vk::Result result) {
+                if (graphics || compute) { device.destroyPipeline(pipeline); };
+            });
 
             //
             return deviceObj->executeCommandOnce(submission);

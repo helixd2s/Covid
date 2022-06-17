@@ -78,7 +78,7 @@ void main() {
 #endif
 
   //
-beginInvocationInterlockARB();
+//beginInvocationInterlockARB();
   if ((gl_FragCoord.z + mnD) <= (mxD_ + 0.0001f)) 
   {
     // 
@@ -93,7 +93,7 @@ beginInvocationInterlockARB();
       rasterInfo.derivatives = derrivative;
     };
   };
-endInvocationInterlockARB();
+//endInvocationInterlockARB();
   
   //
   discard;
