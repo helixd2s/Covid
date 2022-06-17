@@ -379,7 +379,7 @@ public:
         decltype(auto) resampleFence = resampleObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
             // # yet another std::optional problem (implicit)
             .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
-              .dispatch = vk::Extent3D{cpp21::tiled(reprojectSize.x, 32u), cpp21::tiled(reprojectSize.y, 4u), 1u},
+              .dispatch = vk::Extent3D{cpp21::tiled(reprojectSize.x, 32u), cpp21::tiled(reprojectSize.y * 3u, 4u), 1u},
               .layout = descriptorsObj.as<vk::PipelineLayout>(),
               // # yet another std::optional problem (implicit)
               .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
@@ -485,9 +485,9 @@ public:
         //
         renderArea = swapchainObj->getRenderArea();
 
-        // 
-        nativeRasterSize = glm::uvec2(float(renderArea.extent.width) / xscale * 1.f, float(renderArea.extent.height) / yscale * 1.f);
-        preRasterSize = glm::uvec2(float(renderArea.extent.width) / xscale * 1.f, float(renderArea.extent.height) / yscale * 1.f);
+        // two important spells
+        //nativeRasterSize = glm::uvec2(float(renderArea.extent.width) / xscale * 1.f, float(renderArea.extent.height) / yscale * 1.f);
+        //preRasterSize = glm::uvec2(float(renderArea.extent.width) / xscale * 1.f, float(renderArea.extent.height) / yscale * 1.f);
         reprojectSize = glm::uvec2(float(renderArea.extent.width) / xscale * 2.f, float(renderArea.extent.height) / yscale * 2.f);
         rayCount = glm::uvec2(float(renderArea.extent.width) / xscale * 1.f, float(renderArea.extent.height) / yscale * 1.f);
 

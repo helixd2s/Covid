@@ -93,7 +93,7 @@ int main(int argc, char** argv) {
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
     //
-    uint32_t WIDTH = 640u, HEIGHT = 360u;
+    uint32_t WIDTH = 960u, HEIGHT = 540u;
     float xscale = 1.f, yscale = 1.f;
     GLFWmonitor* primary = glfwGetPrimaryMonitor();
     glfwGetMonitorContentScale(primary, &xscale, &yscale);
