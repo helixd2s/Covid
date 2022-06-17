@@ -273,6 +273,68 @@ vec3 reflective(in vec2 seed, in vec3 dir, in mat3x3 tbn, in float roughness) {
   return normalize(mix(reflect(dir, tbn[2]), cosineWeightedPoint(seed, tbn), roughness));
 };
 
+const vec2 offset[25] = {
+  vec2(-2,-2),
+  vec2(-1,-2),
+  vec2(0,-2),
+  vec2(1,-2),
+  vec2(2,-2),
 
+  vec2(-2,-1), 
+  vec2(-1,-1), 
+  vec2(0,-1), 
+  vec2(1,-1),
+  vec2(2,-1),
+
+  vec2(-2,0),
+  vec2(-1,0),
+  vec2(0,0),
+  vec2(1,0),
+  vec2(2,0),
+
+  vec2(-2,1),
+  vec2(-1,1),
+  vec2(0,1),
+  vec2(1,1),
+  vec2(2,1),
+
+  vec2(-2,2),
+  vec2(-1,2),
+  vec2(0,2),
+  vec2(1,2),
+  vec2(2,2)
+};
+
+const float kernel[25] = {
+  1.0f/256.0f,
+  1.0f/64.0f,
+  3.0f/128.0f,
+  1.0f/64.0f,
+  1.0f/256.0f,
+
+  1.0f/64.0f,
+  1.0f/16.0f,
+  3.0f/32.0f,
+  1.0f/16.0f,
+  1.0f/64.0f,
+
+  3.0f/128.0f,
+  3.0f/32.0f,
+  9.0f/64.0f,
+  3.0f/32.0f,
+  3.0f/128.0f,
+
+  1.0f/64.0f,
+  1.0f/16.0f,
+  3.0f/32.0f,
+  1.0f/16.0f,
+  1.0f/64.0f,
+
+  1.0f/256.0f,
+  1.0f/64.0f,
+  3.0f/128.0f,
+  1.0f/64.0f,
+  1.0f/256.0f
+};
 
 #endif
