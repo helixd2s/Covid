@@ -29,6 +29,7 @@ layout(set = 0, binding = 0, scalar) uniform MatrixBlock
   PingPongStateInfo deferredBuf;
   PingPongStateInfo rasterBuf;
   FramebufferStateInfo framebuffers[2];
+  FramebufferStateInfo dynamicRaster;
   Constants constants;
 
   uint32_t r0;

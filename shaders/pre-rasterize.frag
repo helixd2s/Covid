@@ -65,13 +65,16 @@ void main() {
 #endif
 
   //
+  const ivec2 fcoord = ivec2(gl_FragCoord.xy/vec2(UR(rasterBuf.extent).xy)*vec2(UR(framebuffers[0].extent).xy));
+
+  //
 #ifdef TRANSLUCENT
   const float mxD_ = min(
-    texelFetch(textures[framebuffers[0].attachments[0][5]], ivec2(gl_FragCoord.xy), 0).r,
-    texelFetch(textures[framebuffers[1].attachments[0][5]], ivec2(gl_FragCoord.xy), 0).r
+    texelFetch(textures[framebuffers[0].attachments[0][5]], fcoord, 0).r,
+    texelFetch(textures[framebuffers[1].attachments[0][5]], fcoord, 0).r
   );
 #else
-  const float mxD_ = texelFetch(textures[framebuffers[0].attachments[0][5]], ivec2(gl_FragCoord.xy), 0).r;
+  const float mxD_ = texelFetch(textures[framebuffers[0].attachments[0][5]], fcoord, 0).r;
 #endif
 
   //

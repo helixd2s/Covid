@@ -50,6 +50,7 @@ struct UniformData {
     ANAMED::PingPongStateInfo deferredBuf;
     ANAMED::PingPongStateInfo rasterBuf;
     ANAMED::FramebufferStateInfo framebuffers[2];
+    ANAMED::FramebufferStateInfo dynamicRaster;
     Constants constants = {};
 
     //glm::uvec2 extent = {}; 
@@ -228,6 +229,9 @@ public:
         for (uint32_t i = 0; i < 2; i++) {
             uniformData.framebuffers[i] = framebufferObj[i]->getStateInfo();
         };
+
+        // still needs extent
+        uniformData.dynamicRaster = nullFBO->getStateInfo();
 
         //
         uniformData.swapchain = swapchainObj->getStateInfo();
