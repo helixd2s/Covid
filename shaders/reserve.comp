@@ -53,14 +53,20 @@ vec4 readPosition(in ivec2 pixelId, in uint type) {
 
 //
 vec4 readNormal(in ivec2 pixelId, in uint type) {
-  vec4 center = vec4(0.f);
   if (pixelId.x < UR(deferredBuf.extent).x && pixelId.y < UR(deferredBuf.extent).y && pixelId.x >= 0 && pixelId.y >= 0) {
     uint linearId = pixelId.x + pixelId.y * UR(deferredBuf.extent).x;
     PixelSurfaceInfoRef info = getPixelSurface(linearId);
-    PixelHitInfoRef hit = getRpjHit(linearId, type);
-    center = vec4(hit.normal.xyz, 0.f);
+    return info.normalDepth;
   };
-  return cvtRgb16Acc(center);
+  return vec4(0.f.xxx, 1.f);
+  //vec4 center = vec4(0.f);
+  //if (pixelId.x < UR(deferredBuf.extent).x && pixelId.y < UR(deferredBuf.extent).y && pixelId.x >= 0 && pixelId.y >= 0) {
+    //uint linearId = pixelId.x + pixelId.y * UR(deferredBuf.extent).x;
+    //PixelSurfaceInfoRef info = getPixelSurface(linearId);
+    //PixelHitInfoRef hit = getRpjHit(linearId, type);
+    //center = vec4(hit.normal.xyz, 0.f);
+  //};
+  //return cvtRgb16Acc(center);
 };
 
 //
@@ -112,10 +118,9 @@ vec4 readColorComp(in ivec2 pixelId) {
   const vec4 resultTransp = clampColW(readColorNeighbor(pixelId, 1));
   const vec4 resultColor = clampColW(readColorNeighbor(pixelId, 2));
   const vec4 resultDiffuse = clampColW(readAndNeighborTex(pixelId, DIFFUSE_TEX));
-  return (resultTransp * (1.f - resultDiffuse.a) + resultColor * resultDiffuse.a + resultRefl);
+  return (resultTransp * (1.f - resultDiffuse.a) + trueMultColor(resultColor, resultDiffuse) * resultDiffuse.a + resultRefl);
   //return clampColW(readDebugColor(pixelId, 2));
 };
-
 
 // TODO: use library or AI for fill such holes of rendering
 // such as part of DLSS 2.x or FSR 2.0

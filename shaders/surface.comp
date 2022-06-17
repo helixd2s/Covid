@@ -20,7 +20,7 @@ void main() {
 
   {
     const vec2 tShift = (vec2(random(ncoord), random(ncoord)) - 0.5f) * 0.5f;
-    const vec2 tCoord = (vec2(ncoord)+0.5f+tShift)/vec2(deferredBuf.extent);
+    const vec2 tCoord = (vec2(ncoord)+0.5f)/vec2(deferredBuf.extent);
 
     // normalized coordinate system
     const ivec2 gcoord = ivec2(tCoord * UR(deferredBuf.extent));
@@ -101,11 +101,13 @@ void main() {
     };
 
     // 
-    if (pixelId < UR(deferredBuf.extent).x * UR(deferredBuf.extent).y && uint(cmd.rayData.launchId.x) < UR(deferredBuf.extent).x && uint(cmd.rayData.launchId.y) < UR(deferredBuf.extent).y) { // TODO: merge to image or pixel buffers
+    if (pixelId < UR(deferredBuf.extent).x * UR(deferredBuf.extent).y && uint(cmd.rayData.launchId.x) < UR(deferredBuf.extent).x && uint(cmd.rayData.launchId.y) < UR(deferredBuf.extent).y) 
+    { // TODO: merge to image or pixel buffers
       // most impotant thing
       PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
       surfaceInfo.tex[EMISSION_TEX] = vec4(cmd.emissiveColor, 1.f);
       surfaceInfo.tex[DIFFUSE_TEX] = cmd.diffuseColor;
+      surfaceInfo.normalDepth.xyz = cmd.normals*toNormalMat(constants.lookAt[0]);
 
       //
       for (uint i=0;i<3;i++) {
