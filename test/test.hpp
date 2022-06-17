@@ -152,6 +152,16 @@ protected:
     vk::Rect2D renderArea = {};
 
     //
+    glm::uvec2 rasterSize = glm::uvec2(1280, 720);
+    glm::uvec2 rayCount = glm::uvec2(1280, 720);
+
+    // CRITICAL!!!
+    // GENERAL QUALITY OF FINAL IMAGE!!!
+    // NOT RESPONSE FOR RAY-TRACE ITSELF!
+    // RESPONSE FOR REPROJECTION!
+    glm::uvec2 reprojectSize = glm::uvec2(1280, 720);
+
+    //
     std::shared_ptr<std::array<ANAMED::FenceType, 8>> fences = {};
     std::shared_ptr<Controller> controller = {};
     std::shared_ptr<ANAMED::GltfModel> modelObj = {};
@@ -166,7 +176,7 @@ protected:
     float scale = 1.f;
 
     //
-    glm::uvec2 rayCount = glm::uvec2(1280, 720);
+    
     float xscale = 1.f, yscale = 1.f;
 
     //
@@ -347,7 +357,7 @@ public:
         decltype(auto) surfaceFence = surfaceCmdObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
             // # yet another std::optional problem (implicit)
             .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
-              .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 32u), cpp21::tiled(renderArea.extent.height, 4u), 1u},
+              .dispatch = vk::Extent3D{cpp21::tiled(reprojectSize.x, 32u), cpp21::tiled(reprojectSize.y, 4u), 1u},
               .layout = descriptorsObj.as<vk::PipelineLayout>(),
               // # yet another std::optional problem (implicit)
               .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
@@ -361,7 +371,7 @@ public:
         decltype(auto) resampleFence = resampleObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
             // # yet another std::optional problem (implicit)
             .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
-              .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 32u), cpp21::tiled(renderArea.extent.height, 4u), 1u},
+              .dispatch = vk::Extent3D{cpp21::tiled(reprojectSize.x, 32u), cpp21::tiled(reprojectSize.y, 4u), 1u},
               .layout = descriptorsObj.as<vk::PipelineLayout>(),
               // # yet another std::optional problem (implicit)
               .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
@@ -387,27 +397,11 @@ public:
             }
             });
 
-
-
-        //
-        decltype(auto) distrubFence = distrubCmdObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
-            // # yet another std::optional problem (implicit)
-            .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
-                //.dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 32u), cpp21::tiled(renderArea.extent.height, 4u), 1u},
-                .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width * renderArea.extent.height, 128u), 1u, 1u},
-                .layout = descriptorsObj.as<vk::PipelineLayout>(),
-                // # yet another std::optional problem (implicit)
-                .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
-              }),
-              .submission = ANAMED::SubmissionInfo{
-                .info = qfAndQueue
-              }
-            });
         //
         decltype(auto) recopyFence = recopyObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
             // # yet another std::optional problem (implicit)
             .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
-              .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 32u), cpp21::tiled(renderArea.extent.height, 4u), 1u},
+              .dispatch = vk::Extent3D{cpp21::tiled(reprojectSize.x, 32u), cpp21::tiled(reprojectSize.y, 4u), 1u},
               .layout = descriptorsObj.as<vk::PipelineLayout>(),
               // # yet another std::optional problem (implicit)
               .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
@@ -422,7 +416,7 @@ public:
         decltype(auto) reserveFence = reserveObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
             // # yet another std::optional problem (implicit)
             .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
-              .dispatch = vk::Extent3D{cpp21::tiled(renderArea.extent.width, 32u), cpp21::tiled(renderArea.extent.height, 4u), 1u},
+              .dispatch = vk::Extent3D{cpp21::tiled(reprojectSize.x, 32u), cpp21::tiled(reprojectSize.y, 4u), 1u},
               .layout = descriptorsObj.as<vk::PipelineLayout>(),
               // # yet another std::optional problem (implicit)
               .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
@@ -488,21 +482,21 @@ public:
         // 
         surfaceDataObj = ANAMED::ResourceBufferObj::make(deviceObj, ANAMED::BufferCreateInfo{
             .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
-            .size = sizeof(PixelSurfaceInfo) * renderArea.extent.width * renderArea.extent.height,
+            .size = sizeof(PixelSurfaceInfo) * reprojectSize.x * reprojectSize.y,
             .type = ANAMED::BufferType::eStorage,
         });
 
         // 
         pixelDataObj = ANAMED::ResourceBufferObj::make(deviceObj, ANAMED::BufferCreateInfo{
             .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
-            .size = sizeof(PixelHitInfo) * renderArea.extent.width * renderArea.extent.height * 3u,
+            .size = sizeof(PixelHitInfo) * reprojectSize.x * reprojectSize.y * 3u,
             .type = ANAMED::BufferType::eStorage
         });
 
         // 
         writeDataObj = ANAMED::ResourceBufferObj::make(deviceObj, ANAMED::BufferCreateInfo{
             .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
-            .size = sizeof(PixelHitInfo) * renderArea.extent.width * renderArea.extent.height * 3u,
+            .size = sizeof(PixelHitInfo) * reprojectSize.x * reprojectSize.y * 3u,
             .type = ANAMED::BufferType::eStorage
          });
 
@@ -516,7 +510,7 @@ public:
         for (uint32_t i = 0; i < 2; i++) {
             framebufferObj[i] = ANAMED::FramebufferObj::make(deviceObj.with(0u), ANAMED::FramebufferCreateInfo{
               .layout = descriptorsObj.as<vk::PipelineLayout>(),
-              .extent = vk::Extent2D{uint32_t(uniformData.swapchain.extent.x * 1.f), uint32_t(uniformData.swapchain.extent.y * 1.f)},
+              .extent = vk::Extent2D{uint32_t(rasterSize.x * 1.f), uint32_t(rasterSize.y * 1.f)},
               .info = qfAndQueue
                 });
             uniformData.framebuffers[i] = framebufferObj[i]->getStateInfo();
@@ -533,7 +527,6 @@ public:
         uniformData.rasterData[0] = rasterDataObj->getDeviceAddress();
         uniformData.rasterData[1] = uniformData.rasterData[0] + sizeof(RasterInfo) * uniformData.framebuffers[0].extent.x * uniformData.framebuffers[0].extent.y * 8u;
 
-
         // now, you understand why?
         rasterBufObj = ANAMED::PingPongObj::make(deviceObj.with(0u), ANAMED::PingPongCreateInfo{
           .layout = descriptorsObj.as<vk::PipelineLayout>(),
@@ -547,7 +540,7 @@ public:
         //
         deferredBufObj = ANAMED::PingPongObj::make(deviceObj.with(0u), ANAMED::PingPongCreateInfo{
           .layout = descriptorsObj.as<vk::PipelineLayout>(),
-          .extent = vk::Extent2D{renderArea.extent.width, renderArea.extent.height},
+          .extent = vk::Extent2D{reprojectSize.x, reprojectSize.y},
           .minImageCount = 2u,
           .split = std::vector<uint32_t>{ 1, 1 },
           .formats = std::vector<vk::Format>{ vk::Format::eR32G32B32A32Sfloat, vk::Format::eR32G32B32A32Sfloat },
