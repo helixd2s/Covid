@@ -2,6 +2,10 @@
 
 The most ambitious rendering project, and at the same time a future mod for Minecraft. 
 
+## Screenshots
+
+<img width="320" src="images/sponza.png" alt="sponza"/><img width="320" src="images/boombox.png" alt="boombox"/><img width="320" src="images/helmet.png" alt="helmet"/>
+
 ## Важное примечание…
 
   - 👑 [GitHub, документация](https://github.com/helixd2s/about)
