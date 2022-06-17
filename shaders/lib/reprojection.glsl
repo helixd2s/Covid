@@ -79,7 +79,7 @@ void reproject3D(in uint pixelId, in uint type)
         rayData.direction = normalize(dstHitPos.xyz-dstHitFoundIntersection.xyz);
 
         //
-        IntersectionInfo dstIntersection = rasterize(instancedData, rayData, 10000.f, dstSamplePos, false);
+        IntersectionInfo dstIntersection = rasterizeVector(instancedData, rayData, 10000.f, dstSamplePos, false);
         const bool hasHit = !all(lessThanEqual(dstIntersection.barycentric, 0.f.xxx));
 
         //

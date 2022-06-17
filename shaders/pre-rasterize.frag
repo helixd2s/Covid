@@ -18,7 +18,7 @@ layout (location = 4) in mat3x3 pTbn;
 //
 //layout (early_fragment_tests) in;
 layout (depth_any) out float gl_FragDepth;
-layout (pixel_interlock_ordered) in;
+layout (sample_interlock_ordered) in;
 
 //
 // We prefer to use refraction and ray-tracing for transparent effects...
@@ -78,7 +78,9 @@ void main() {
 #endif
 
   //
-  if ((gl_FragCoord.z + mnD) <= (mxD_ + 0.0001f)) {
+beginInvocationInterlockARB();
+  if ((gl_FragCoord.z + mnD) <= (mxD_ + 0.0001f)) 
+  {
     // 
     const uint rasterId = atomicAdd(counters[RASTER_COUNTER], 1);//subgroupAtomicAdd(RASTER_COUNTER);
     if (rasterId < UR(rasterBuf.extent).x * UR(rasterBuf.extent).y * 16) {
@@ -91,6 +93,7 @@ void main() {
       rasterInfo.derivatives = derrivative;
     };
   };
+endInvocationInterlockARB();
   
   //
   discard;
