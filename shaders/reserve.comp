@@ -120,7 +120,7 @@ vec4 getDenoised(in ivec2 pixelId, in uint type) {
   float c_phi = 1.0;
   float n_phi = 0.5;
 
-  vec4 uval = readColorNeighbor(pixelId, type);
+  vec4 uval = readColor(pixelId, type);//readColorNeighbor(pixelId, type);
   vec4 cval = clampColW(uval);
   vec4 nval = readNormal(pixelId, type);
 
@@ -130,7 +130,7 @@ vec4 getDenoised(in ivec2 pixelId, in uint type) {
       ivec2 uv = pixelId+ivec2(offset[i]);
 
       vec4 ctmp = clampColW(readColor(uv, type));
-      vec3 t = cval.xyz - ctmp.xyz; t /= max(t.x, max(t.y, t.z));
+      vec3 t = cval.xyz - ctmp.xyz; //t /= max(t.x, max(t.y, t.z));
       float dist2 = dot(t,t);
       float c_w = min(exp(-(dist2)/c_phi), 1.0);
 
