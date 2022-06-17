@@ -64,29 +64,21 @@ void main() {
   MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), pTexcoord.xy, tbn);
 #endif
 
-  // alpha and depth depth (manually)
-beginInvocationInterlockARB();
-  const float dc = gl_FragCoord.z + mnD;
-  const float dp = max(
-    imageLoad(imagesR32F[rasterBuf.images[0][1]], ivec2(gl_FragCoord.xy)).r, 
-    texelFetch(textures[framebuffers[0].attachments[0][5]], ivec2(gl_FragCoord.xy), 0).r
-  );
-  const bool cm = ((dc - 0.0001f) <= dp);
+  //
 #ifdef TRANSLUCENT
-  const bool invalidHit = materialPix.color[MATERIAL_ALBEDO].a < 0.01f || !cm;
+  const float mxD_ = min(
+    texelFetch(textures[framebuffers[0].attachments[0][5]], ivec2(gl_FragCoord.xy), 0).r,
+    texelFetch(textures[framebuffers[1].attachments[0][5]], ivec2(gl_FragCoord.xy), 0).r
+  );
 #else
-  const bool invalidHit = !cm;
-  if (!invalidHit) {
-    imageStore(imagesR32F[rasterBuf.images[0][1]], ivec2(gl_FragCoord.xy), vec4(dc, 0.f.xxx)); 
-  };
+  const float mxD_ = texelFetch(textures[framebuffers[0].attachments[0][5]], ivec2(gl_FragCoord.xy), 0).r;
 #endif
-endInvocationInterlockARB();
 
   //
-  if (!invalidHit) {
+  if ((gl_FragCoord.z + mnD) < mxD_) {
     // 
     const uint rasterId = atomicAdd(counters[RASTER_COUNTER], 1);//subgroupAtomicAdd(RASTER_COUNTER);
-    if (rasterId < UR(rasterBuf.extent).x * UR(rasterBuf.extent).y * 8) {
+    if (rasterId < UR(rasterBuf.extent).x * UR(rasterBuf.extent).y * 16) {
       const uint oldId = imageAtomicExchange(imagesR32UI[rasterBuf.images[0][0]], ivec2(gl_FragCoord.xy), rasterId+1);
 
       //

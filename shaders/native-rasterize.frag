@@ -83,12 +83,9 @@ void main() {
 #ifdef TRANSLUCENT
     materialPix.color[MATERIAL_ALBEDO].a < 0.01f || 
 #endif
-    (dp) <= (gl_FragCoord.z + mxD - 0.0001f)
-  ) {
-    discard;
-  } else 
-  {
-    //
+    (dp + 0.0001f) <= (gl_FragCoord.z + mxD)
+  ) { discard; } else 
+  { //
     oIndices = pIndices;
     oBaryData = vec4(pBary, depth);
     oPosition = vec4(pScreen.xyz/pScreen.w, 1.f);

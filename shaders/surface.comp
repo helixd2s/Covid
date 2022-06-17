@@ -49,7 +49,7 @@ void main() {
 
     //
     vec4 ssLastPos = ssEye;
-    cmd.intersection = rasterizeVector(instancedData, cmd.rayData, 10000.f, ssLastPos, false);
+    cmd.intersection = rasterize(instancedData, cmd.rayData, 10000.f, ssLastPos, false);
 
     //
     const bool hasHit = !all(lessThanEqual(cmd.intersection.barycentric, 0.f.xxx));

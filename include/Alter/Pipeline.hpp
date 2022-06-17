@@ -153,7 +153,7 @@ namespace ANAMED {
 
             //
             decltype(auto) pRasterizationConservative = infoMap->set(vk::StructureType::ePipelineRasterizationConservativeStateCreateInfoEXT, vk::PipelineRasterizationConservativeStateCreateInfoEXT{
-              .conservativeRasterizationMode = graphics->hasConservativeRaster ? vk::ConservativeRasterizationModeEXT::eOverestimate : vk::ConservativeRasterizationModeEXT::eDisabled
+              .conservativeRasterizationMode = graphics->hasConservativeRaster ? (graphics->underestimated ? vk::ConservativeRasterizationModeEXT::eUnderestimate : vk::ConservativeRasterizationModeEXT::eOverestimate) : vk::ConservativeRasterizationModeEXT::eDisabled
                 });
 
             //

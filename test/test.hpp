@@ -152,7 +152,8 @@ protected:
     vk::Rect2D renderArea = {};
 
     //
-    glm::uvec2 rasterSize = glm::uvec2(1280, 720);
+    glm::uvec2 nativeRasterSize = glm::uvec2(1280, 720);
+    glm::uvec2 preRasterSize = glm::uvec2(1280, 720);
     glm::uvec2 rayCount = glm::uvec2(1280, 720);
 
     // CRITICAL!!!
@@ -281,6 +282,7 @@ public:
             }
             });
 
+         // doesn't working currently
         //
         decltype(auto) nativeOpaqueFence = nativeOpaqueObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
             // # yet another std::optional problem (implicit)
@@ -308,8 +310,9 @@ public:
               .info = qfAndQueue,
             }
             });
-
-
+        
+                 
+        /*
         //
         decltype(auto) preOpaqueFence = preOpaqueObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
             // # yet another std::optional problem (implicit)
@@ -337,13 +340,13 @@ public:
               .info = qfAndQueue,
             }
             });
-
+        */
 
         //
         decltype(auto) resortFence = resortObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{
             // # yet another std::optional problem (implicit)
             .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{
-              .dispatch = vk::Extent3D{cpp21::tiled(uniformData.framebuffers[0].extent.x, 32u), cpp21::tiled(uniformData.framebuffers[0].extent.y, 8u), 1u},
+              .dispatch = vk::Extent3D{cpp21::tiled(preRasterSize.x, 32u), cpp21::tiled(preRasterSize.y, 8u), 1u},
               .layout = descriptorsObj.as<vk::PipelineLayout>(),
               // # yet another std::optional problem (implicit)
               .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock)
@@ -510,7 +513,7 @@ public:
         for (uint32_t i = 0; i < 2; i++) {
             framebufferObj[i] = ANAMED::FramebufferObj::make(deviceObj.with(0u), ANAMED::FramebufferCreateInfo{
               .layout = descriptorsObj.as<vk::PipelineLayout>(),
-              .extent = vk::Extent2D{uint32_t(rasterSize.x * 1.f), uint32_t(rasterSize.y * 1.f)},
+              .extent = vk::Extent2D{uint32_t(nativeRasterSize.x * 1.f), uint32_t(nativeRasterSize.y * 1.f)},
               .info = qfAndQueue
                 });
             uniformData.framebuffers[i] = framebufferObj[i]->getStateInfo();
@@ -519,18 +522,18 @@ public:
         // 
         rasterDataObj = ANAMED::ResourceBufferObj::make(deviceObj, ANAMED::BufferCreateInfo{
             .descriptors = descriptorsObj.as<vk::PipelineLayout>(),
-            .size = sizeof(RasterInfo) * uniformData.framebuffers[0].extent.x * uniformData.framebuffers[0].extent.y * 16u,
+            .size = sizeof(RasterInfo) * preRasterSize.x * preRasterSize.y * 32u,
             .type = ANAMED::BufferType::eStorage
         });
 
         //
         uniformData.rasterData[0] = rasterDataObj->getDeviceAddress();
-        uniformData.rasterData[1] = uniformData.rasterData[0] + sizeof(RasterInfo) * uniformData.framebuffers[0].extent.x * uniformData.framebuffers[0].extent.y * 8u;
+        uniformData.rasterData[1] = uniformData.rasterData[0] + sizeof(RasterInfo) * preRasterSize.x * preRasterSize.y * 16u;
 
         // now, you understand why?
         rasterBufObj = ANAMED::PingPongObj::make(deviceObj.with(0u), ANAMED::PingPongCreateInfo{
           .layout = descriptorsObj.as<vk::PipelineLayout>(),
-          .extent = vk::Extent2D{uniformData.framebuffers[0].extent.x, uniformData.framebuffers[0].extent.y},
+          .extent = vk::Extent2D{preRasterSize.x, preRasterSize.y},
           .minImageCount = 2u,
           .split = std::vector<uint32_t>{ 1, 1 },
           .formats = std::vector<vk::Format>{ vk::Format::eR32Uint, vk::Format::eR32Sfloat },
@@ -714,7 +717,8 @@ protected:
           .layout = descriptorsObj.as<vk::PipelineLayout>(),
           .graphics = ANAMED::GraphicsPipelineCreateInfo{
             .stageCodes = nativeOpaqueStageMaps,
-            .hasConservativeRaster = false,
+            //.hasConservativeRaster = true,
+            //.underestimated = true,
             .dynamicState = std::make_shared<ANAMED::GraphicsDynamicState>(ANAMED::GraphicsDynamicState{
               .hasDepthTest = true,
               .hasDepthWrite = true,
@@ -732,7 +736,8 @@ protected:
           .layout = descriptorsObj.as<vk::PipelineLayout>(),
           .graphics = ANAMED::GraphicsPipelineCreateInfo{
             .stageCodes = nativeTranslucentStageMaps,
-            .hasConservativeRaster = false,
+            //.hasConservativeRaster = true,
+            //.underestimated = true,
             .dynamicState = std::make_shared<ANAMED::GraphicsDynamicState>(ANAMED::GraphicsDynamicState{
               .hasDepthTest = true,
               .hasDepthWrite = true,

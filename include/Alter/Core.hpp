@@ -1171,8 +1171,8 @@ namespace ANAMED {
         std::unordered_map<vk::ShaderStageFlagBits, cpp21::shared_vector<uint32_t>> stageCodes = {};
         cpp21::obj<AttachmentLayout> attachmentLayout = defaultAttachmentLayout;
 
-
         bool hasConservativeRaster = false;
+        bool underestimated = false;
         cpp21::obj<GraphicsDynamicState> dynamicState = {};
     };
 
