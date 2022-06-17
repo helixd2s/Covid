@@ -93,8 +93,8 @@ void main() {
       // DEBUG
       //imageStore(images[swapchain.image], ivec2(cmd.rayData.launchId), vec4(attrib.data[MATERIAL_NORMAL].xyz * 0.5f + 0.5f, 1.f));
     } else {
-      const vec4 skyColor = vec4(texture(sampler2D(textures[background], samplers[0]), lcts(cmd.rayData.direction.xyz)).xyz, 0.f);
-      cmd.diffuseColor = f16vec4(vec4(skyColor.xyz, 1.f));
+      //const vec4 skyColor = vec4(texture(sampler2D(textures[background], samplers[0]), lcts(cmd.rayData.direction.xyz)).xyz, 0.f);
+      cmd.diffuseColor = f16vec4(vec4(/*skyColor.xyz*/1.f.xxx, 1.f));
       cmd.emissiveColor = f16vec3(0.f.xxx.xyz);
       cmd.rayData.origin = vec4(0.f.xxx, 1.f) * constants.lookAtInverse[0];
       cmd.normals = f16vec3(vec3(0.f.xx, 1.f) * toNormalMat(constants.lookAtInverse[0]));
@@ -119,8 +119,9 @@ void main() {
           hitInfo.indices[0] = uvec4(cmd.intersection.instanceId, cmd.intersection.geometryId, cmd.intersection.primitiveId, i);
         };
         if (!hasHit) { 
+          const vec4 skyColor = vec4(texture(sampler2D(textures[background], samplers[0]), lcts(cmd.rayData.direction.xyz)).xyz, 0.f);
           surfaceInfo.flags[i] |= 1u;
-          surfaceInfo.color[i] += vec4(i == 2 ? 1.f.xxx : 0.f.xxx, 1.f);
+          surfaceInfo.color[i] += vec4(i == 2 ? skyColor.xyz : 0.f.xxx, 1.f);
         };
         //surfaceInfo.debug[i] = TYPE(0u);
       };

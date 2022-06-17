@@ -46,6 +46,44 @@ vec4 readNormal(in ivec2 pixelId, in uint type) {
   //return cvtRgb16Acc(center);
 };
 
+//
+void getDenoised(in ivec2 pixelId, in uint type) {
+  vec4 sum = vec4(0.0);
+  float c_phi = 1.0;
+  float n_phi = 0.5;
+
+  vec4 uval = readColor(pixelId, type);//readColorNeighbor(pixelId, type);
+  vec4 cval = clampColW(uval);
+  vec4 nval = readNormal(pixelId, type);
+
+  float cum_w = 0.0;
+  for(int i=0; i<25; i++)
+  {
+      ivec2 uv = pixelId+ivec2(offset[i]);
+
+      vec4 ctmp = clampColW(readColor(uv, type));
+      vec3 t = cval.xyz - ctmp.xyz; //t /= max(t.x, max(t.y, t.z));
+      float dist2 = dot(t,t);
+      float c_w = min(exp(-(dist2)/c_phi), 1.0);
+
+      vec3 ntmp = readNormal(uv, type).xyz;
+      t = nval.xyz - ntmp.xyz;
+      dist2 = max(dot(t,t), 0.0);
+      float n_w = min(exp(-(dist2)/n_phi), 1.0);
+
+      float weight = c_w*n_w*ctmp.w*kernel[i];
+      sum += ctmp*weight;
+      cum_w += weight;
+  };
+
+  //
+  if (pixelId.x < UR(deferredBuf.extent).x && pixelId.y < UR(deferredBuf.extent).y && pixelId.x >= 0 && pixelId.y >= 0) {
+    uint linearId = pixelId.x + pixelId.y * UR(deferredBuf.extent).x;
+    PixelSurfaceInfoRef info = getPixelSurface(linearId); 
+    info.denoised[type] = sum/max(cum_w, 0.0001f) * uval.w;
+  };
+};
+
 // 
 void main() {
   const uvec2 gcoord = gl_GlobalInvocationID.xy;
@@ -53,8 +91,8 @@ void main() {
   const uint pixelId = linearId % (UR(deferredBuf.extent).x * UR(deferredBuf.extent).y);
 
   //
-  //uint type = linearId / (UR(deferredBuf.extent).x * UR(deferredBuf.extent).y);
-  //if (type < 3) {
-    //getDenoised(ivec2(gcoord) % ivec2(UR(deferredBuf.extent)), type);
-  //};
+  uint type = linearId / (UR(deferredBuf.extent).x * UR(deferredBuf.extent).y);
+  if (type < 3) {
+    getDenoised(ivec2(gcoord) % ivec2(UR(deferredBuf.extent)), type);
+  };
 };

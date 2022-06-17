@@ -95,6 +95,7 @@ struct PixelSurfaceInfo {
     glm::vec4 tex[2];
     glm::uvec4 accum[3];
     glm::uvec4 color[3];
+    glm::uvec4 denoised[3];
     glm::vec4 normalDepth;
     //glm::uvec4 debug[3];
     glm::uvec4 flags = glm::uvec4(0u);
