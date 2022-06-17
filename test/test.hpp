@@ -732,8 +732,8 @@ protected:
           .graphics = ANAMED::GraphicsPipelineCreateInfo{
             .stageCodes = nativeOpaqueStageMaps,
             // BROKEN!
-            //.hasConservativeRaster = true,
-            //.underestimated = true,
+            .hasConservativeRaster = true,
+            .underestimated = true,
             .dynamicState = std::make_shared<ANAMED::GraphicsDynamicState>(ANAMED::GraphicsDynamicState{
               .hasDepthTest = true,
               .hasDepthWrite = true,
@@ -752,8 +752,8 @@ protected:
           .graphics = ANAMED::GraphicsPipelineCreateInfo{
             .stageCodes = nativeTranslucentStageMaps,
             // BROKEN!
-            //.hasConservativeRaster = true,
-            //.underestimated = true,
+            .hasConservativeRaster = true,
+            .underestimated = true,
             .dynamicState = std::make_shared<ANAMED::GraphicsDynamicState>(ANAMED::GraphicsDynamicState{
               .hasDepthTest = true,
               .hasDepthWrite = true,
