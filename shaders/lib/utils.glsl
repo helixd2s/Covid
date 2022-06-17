@@ -337,4 +337,10 @@ const float kernel[25] = {
   1.0f/256.0f
 };
 
+//
+const ivec2 CH_MAP[4] = { ivec2(1,0),ivec2(-1,0),ivec2(0,1),ivec2(0,-1) };
+const ivec2 DG_MAP[4] = { ivec2(1,1),ivec2(-1,-1),ivec2(-1,1),ivec2(1,-1) };
+const ivec2 FL_MAP[8] = { ivec2(1,0),ivec2(-1,0),ivec2(0,1),ivec2(0,-1),ivec2(1,1),ivec2(-1,-1),ivec2(-1,1),ivec2(1,-1) };
+
+
 #endif

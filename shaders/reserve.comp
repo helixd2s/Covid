@@ -95,32 +95,51 @@ vec4 readAndNeighborTex(in ivec2 pixelId, in uint tex) {
 };
 
 //
-const ivec2 CH_MAP[4] = { ivec2(1,0),ivec2(-1,0),ivec2(0,1),ivec2(0,-1) };
-const ivec2 DG_MAP[4] = { ivec2(1,1),ivec2(-1,-1),ivec2(-1,1),ivec2(1,-1) };
-const ivec2 FL_MAP[8] = { ivec2(1,0),ivec2(-1,0),ivec2(0,1),ivec2(0,-1),ivec2(1,1),ivec2(-1,-1),ivec2(-1,1),ivec2(1,-1) };
+vec4 getDenoised(in ivec2 pixelId, in uint type) {
+  vec4 sum = vec4(0.0);
+  float c_phi = 1.0;
+  float n_phi = 0.5;
 
-//
-vec4 readColorNeighbor(in ivec2 uv, in uint type) {
-  vec4 center = readColor(uv, type);
-  if (center.w < 1.f) {
-    center = vec4(0.f.xxxx);
-    for (uint i=0;i<8;i++) {
-      const ivec2 offset = FL_MAP[i];
-      center += readColor(uv + offset, type);
-    };
+  vec4 uval = readColor(pixelId, type);//readColorNeighbor(pixelId, type);
+  vec4 cval = clampColW(uval);
+  vec4 nval = readNormal(pixelId, type);
+
+  float cum_w = 0.0;
+  for(int i=0; i<25; i++)
+  {
+      ivec2 uv = pixelId+ivec2(offset[i]);
+
+      vec4 ctmp = clampColW(readColor(uv, type));
+      vec3 t = cval.xyz - ctmp.xyz; //t /= max(t.x, max(t.y, t.z));
+      float dist2 = dot(t,t);
+      float c_w = min(exp(-(dist2)/c_phi), 1.0);
+
+      vec3 ntmp = readNormal(uv, type).xyz;
+      t = nval.xyz - ntmp.xyz;
+      dist2 = max(dot(t,t), 0.0);
+      float n_w = min(exp(-(dist2)/n_phi), 1.0);
+
+      float weight = c_w*n_w*ctmp.w*kernel[i];
+      sum += ctmp*weight;
+      cum_w += weight;
   };
-  return center;
+
+  //
+  return sum/max(cum_w, 0.0001f) * uval.w;
 };
 
 //
 vec4 readColorComp(in ivec2 pixelId) {
-  const vec4 resultRefl = clampColW(readColorNeighbor(pixelId, 0));
-  const vec4 resultTransp = clampColW(readColorNeighbor(pixelId, 1));
-  const vec4 resultColor = clampColW(readColorNeighbor(pixelId, 2));
+  const vec4 resultRefl = clampColW(getDenoised(pixelId, 0));
+  const vec4 resultTransp = clampColW(getDenoised(pixelId, 1));
+  const vec4 resultColor = clampColW(getDenoised(pixelId, 2));
   const vec4 resultDiffuse = clampColW(readAndNeighborTex(pixelId, DIFFUSE_TEX));
   return (resultTransp * (1.f - resultDiffuse.a) + resultColor * resultDiffuse.a + resultRefl);
   //return clampColW(readDebugColor(pixelId, 2));
 };
+
+
+
 
 // TODO: use library or AI for fill such holes of rendering
 // such as part of DLSS 2.x or FSR 2.0
