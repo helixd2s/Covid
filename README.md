@@ -137,7 +137,6 @@ The most ambitious rendering project, and at the same time a future mod for Mine
   ```
 
 ### Compile instruction?
-### Currently, outdated!
 
   0. Please, enable symbolic links support in your (GIT) system
   1. Do `git clone https://github.com/helixd2s/Alter.git --recursive` with submodules
