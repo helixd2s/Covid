@@ -103,12 +103,17 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   ${PROJECT_SOURCE_DIR}/../Vulkan-Headers/include
   ${PROJECT_SOURCE_DIR}/../glm/glm
   ${PROJECT_SOURCE_DIR}/../glm
+  #${PROJECT_SOURCE_DIR}/../NRI/_NRI_SDK/Include
+  #${PROJECT_SOURCE_DIR}/../RayTracingDenoiser/_NRD_SDK/Integration
+  #${PROJECT_SOURCE_DIR}/../RayTracingDenoiser/_NRD_SDK/Include
   ${Vulkan_INCLUDE_DIRS}
 )
 
 #
 target_link_directories(${PROJECT_NAME} PUBLIC 
   ${PROJECT_SOURCE_DIR}/lib
+  #${PROJECT_SOURCE_DIR}/../NRI/_NRI_SDK/Lib/Debug
+  #${PROJECT_SOURCE_DIR}/../RayTracingDenoiser/_NRD_SDK/Lib/Debug
 )
 
 #
@@ -121,7 +126,7 @@ ADD_MSVC_PRECOMPILED_HEADER(
   HSOURCES)
 
 #
-target_link_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS} ${Vulkan_LIBRARIES} glfw )
+target_link_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS} ${Vulkan_LIBRARIES} glfw)
 
 # 
 if (MSVC)

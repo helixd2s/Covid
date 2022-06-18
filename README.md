@@ -141,12 +141,13 @@ The most ambitious rendering project, and at the same time a future mod for Mine
 
   0. Please, enable symbolic links support in your (GIT) system
   1. Do `git clone https://github.com/helixd2s/Alter.git --recursive` with submodules
-  2. Install `vcpkg` into disk `C:/vcpkg`.
-  3. Make sure that you installed **not** as `C:/vcpkg/vcpkg` or etc.
-  4. Do `vcpkg install glfw3` in command-line, install other deps.
-  5. Install latest version of Vulkan SDK (`1.3.211.0`)
-  6. Configure project with CMake, into `<Alter>/build` local directory
-  7. Compile SPIR-V modules in `<Alter>/project/test`...
-  8. Copy or sym-link containement of `<Alter>/project/prebuild` into `<Alter>/build`
-  9. Open `*.sln`, and compile project through `Visual Studio 2022`
-  10. Run with `-m <SomeModel>.gltf -s 1.0` flags (where `-m` is modelname, `-s` is scale)
+  2. Do `git clone https://github.com/helixd2s/vk-utils.git --recursive` with submodules as neighbor
+  3. Install `vcpkg` into disk `C:/vcpkg`.
+  4. Make sure that you installed **not** as `C:/vcpkg/vcpkg` or etc.
+  5. Do `vcpkg install glfw3` in command-line, install other deps.
+  6. Install latest version of Vulkan SDK (`1.3.211.0`)
+  7. Configure project with CMake, into `<Alter>/build` local directory
+  8. Compile SPIR-V modules in `<Alter>/project/test`...
+  9. Copy or sym-link containement of `<Alter>/project/prebuild` into `<Alter>/build`
+  10. Open `*.sln`, and compile project through `Visual Studio 2022`
+  11. Run with `-m <SomeModel>.gltf -s 1.0` flags (where `-m` is modelname, `-s` is scale)

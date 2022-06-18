@@ -29,7 +29,6 @@
 #include "./GeometryLevel.hpp"
 #include "./InstanceLevel.hpp"
 
-
 // 
 #ifdef ALT_ENABLE_VMA
 #include "./MemoryAllocatorVma.hpp"
