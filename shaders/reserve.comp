@@ -44,6 +44,7 @@ vec4 readAndNeighborTex(in ivec2 pixelId, in uint tex) {
 };
 
 //
+/*
 vec4 getDenoised(in ivec2 pixelId, in uint type) {
   vec4 sum = vec4(0.0);
   float c_phi = 1.0;
@@ -76,17 +77,18 @@ vec4 getDenoised(in ivec2 pixelId, in uint type) {
   //
   return sum/max(cum_w, 0.0001f) * uval.w;
 };
+*/
 
 //
 vec4 readColorComp(in ivec2 pixelId) {
-  const vec4 resultRefl = clampColW(getDenoised(pixelId, 0));
-  const vec4 resultTransp = clampColW(getDenoised(pixelId, 1));
-  const vec4 resultColor = clampColW(getDenoised(pixelId, 2));
+  const vec4 resultRefl = clampColW(readColor(pixelId, 0));
+  const vec4 resultTransp = clampColW(readColor(pixelId, 1));
+  const vec4 resultColor = clampColW(readColor(pixelId, 2));
   const vec4 resultDiffuse = clampColW(readAndNeighborTex(pixelId, DIFFUSE_TEX));
-  return (resultTransp * (1.f - resultDiffuse.a) + resultColor * resultDiffuse.a + resultRefl);
-  //return clampColW(readDebugColor(pixelId, 2));
+  const vec4 resultPBR = clampColW(readAndNeighborTex(pixelId, PBR_TEX));
+  const vec4 resultMult = vec4(trueMultColor(resultColor.xyz, resultDiffuse.xyz), resultColor.a);
+  return ((resultTransp * (1.f - resultDiffuse.a) + resultMult * resultDiffuse.a) * (1.f - resultPBR.w) + resultRefl * resultPBR.w);
 };
-
 
 
 

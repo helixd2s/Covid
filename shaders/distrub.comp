@@ -33,10 +33,10 @@ void readColorNeighbor(in ivec2 uv, in uint type) {
   vec4 center = readColor(uv, type);
   if (center.w < 1.f) {
     center = vec4(0.f.xxxx);
-    for (int x=-1;x<=1;x++) {
-      for (int y=-1;y<=1;y++) {
-        center += readColor(uv + ivec2(x,y), type);
-      };
+    for (int i=0;i<25;i++) {
+      const vec4 col = readColor(uv + ivec2(offset[i]), type);
+      const vec4 clw = col / max(col.w, 1.f);
+      center += clw * col.w * kernel[i];
     };
   };
   imageStore(imagesRgba16F[deferredBuf.images[0][1+type]], uv, center);

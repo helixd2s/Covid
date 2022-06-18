@@ -93,7 +93,7 @@ struct RayHitInfo {
 //
 // TODO: replace by image buffers
 struct PixelSurfaceInfo {
-    glm::vec4 tex[2];
+    glm::u16vec4 tex[4];
     glm::uvec4 accum[3];
     glm::uvec4 color[3];
     glm::uvec4 flags = glm::uvec4(0u);

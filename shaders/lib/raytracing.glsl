@@ -393,7 +393,7 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, inout uint type) {
   } else {
     cmd.rayData.direction.xyz = normalize(cosineWeightedPoint(seed2, mat3x3(cmd.tbn[0],cmd.tbn[1],cmd.normals.xyz)));
     cmd.rayData.energy = f16vec4(1.f.xxx, 1.f);
-    cmd.rayData.energy.xyz = f16vec3(trueMultColor(cmd.rayData.energy.xyz, cmd.diffuseColor.xyz * (1.f - cmd.emissiveColor.xyz)));
+    //cmd.rayData.energy.xyz = f16vec3(trueMultColor(cmd.rayData.energy.xyz, cmd.diffuseColor.xyz * (1.f - cmd.emissiveColor.xyz)));
     cmd.rayData.emission = f16vec4(trueMultColor(cmd.rayData.energy.xyz, directLighting(cmd.rayData.origin.xyz, cmd.normals.xyz, cmd.tbn[2], vec3(random(blueNoiseFn(cmd.rayData.launchId.xy)), random(blueNoiseFn(cmd.rayData.launchId.xy)), random(blueNoiseFn(cmd.rayData.launchId.xy))), 10000.f).xyz), 1.f);
   };
 
@@ -407,43 +407,17 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, inout uint type) {
   float transpCoef = clamp(1.f - cmd.diffuseColor.a, 0.f, 1.f);
   float reflCoef = clamp(cmd.reflCoef, 0.f, 1.f);
 
-  //
-  /*if (type == 0) {
-    cmd.rayData.emission.xyz = f16vec3(metallicMult(cmd.rayData.emission.xyz, cmd.diffuseColor.xyz, cmd.PBR.b));
-  } else 
-  if (type == 1) {
-    //cmd.rayData.emission.xyz = f16vec3(metallicMult(cmd.rayData.emission.xyz, cmd.diffuseColor.xyz, cmd.PBR.b));
-  } else {
-    
-  };*/
-
-  //
-  //if (type == 2) {
-    //cmd.rayData.emission.xyz = f16vec3(trueMultColor(cmd.rayData.emission.xyz, cmd.diffuseColor.xyz * (1.f - cmd.emissiveColor.xyz)));
-  //};
-
   // 
   vec4 additional = cmd.rayData.emission;
-  if (type == 0) { additional *= vec4(reflCoef.xxx, 1.f); };
-  if (type == 1) { additional *= vec4(((1.f - reflCoef) ).xxx, 1.f); };
-  if (type == 2) { additional *= vec4(((1.f - reflCoef) ).xxx, 1.f); };
-
-  //
-  // My GPU probably is broken, `hitData` doesn't supported correctly, or not enough memory
-
   uint hitId = cmd.rayData.launchId.x + cmd.rayData.launchId.y * UR(deferredBuf.extent).x;
-  //uint hitId = atomicAdd(counters[HIT_COUNTER], 1u);
-  //RayHitInfoRef hitInfo = getHitInfo(hitId);//getHitInfo(hitId);
   PixelHitInfoRef hitInfo = getNewHit(hitId, type);
 
   //
   if (
-    //hitId < (rayCount.x * rayCount.y) &&
     hitId < (UR(deferredBuf.extent).x * UR(deferredBuf.extent).y) && 
     uint(cmd.rayData.launchId.x) < UR(deferredBuf.extent).x && 
     uint(cmd.rayData.launchId.y) < UR(deferredBuf.extent).y
   ) {
-    //hitInfo.color = clampColW(additional);
     hitInfo.indices[0] = uvec4(cmd.intersection.instanceId, cmd.intersection.geometryId, cmd.intersection.primitiveId, type);
     hitInfo.indices[1] = uvec4(outp.indices.xyz, pack32(cmd.rayData.launchId));
     hitInfo.origin.xyz = rayOrigin;

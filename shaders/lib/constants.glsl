@@ -34,6 +34,7 @@ const uint32_t MAX_MATERIAL_BIND = 4u;
 //
 const uint DIFFUSE_TEX = 0u;
 const uint EMISSION_TEX = 1u;
+const uint PBR_TEX = 2u;
 
 //
 const uint DIFFUSE_TYPE = 2u;
