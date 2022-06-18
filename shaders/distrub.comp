@@ -53,8 +53,8 @@ void readColorNeighbor(in ivec2 uv, in uint type) {
   vec4 center = readColor(uv, type);
   if (center.w < 1.f) {
     center = vec4(0.f.xxxx);
-    for (int x=-3;x<=3;x++) {
-      for (int y=-3;y<=3;y++) {
+    for (int x=-1;x<=1;x++) {
+      for (int y=-1;y<=1;y++) {
         center += readColor(uv + ivec2(x,y), type);
       };
     };

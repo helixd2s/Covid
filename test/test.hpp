@@ -91,6 +91,7 @@ struct RayHitInfo {
 };
 
 //
+// TODO: replace by image buffers
 struct PixelSurfaceInfo {
     glm::vec4 tex[2];
     glm::uvec4 accum[3];
@@ -507,7 +508,7 @@ public:
         //nativeRasterSize = glm::uvec2(float(renderArea.extent.width) / xscale * 1.f, float(renderArea.extent.height) / yscale * 1.f);
         //preRasterSize = glm::uvec2(float(renderArea.extent.width) / xscale * 1.f, float(renderArea.extent.height) / yscale * 1.f);
         reprojectSize = glm::uvec2(float(renderArea.extent.width) / xscale * 2.f, float(renderArea.extent.height) / yscale * 2.f);
-        rayCount = glm::uvec2(float(renderArea.extent.width) / xscale * 1.f, float(renderArea.extent.height) / yscale * 1.f);
+        rayCount = glm::uvec2(float(renderArea.extent.width) / xscale * 2.f, float(renderArea.extent.height) / yscale * 2.f);
 
         // 
         surfaceDataObj = ANAMED::ResourceBufferObj::make(deviceObj, ANAMED::BufferCreateInfo{

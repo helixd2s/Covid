@@ -86,6 +86,7 @@ layout(buffer_reference, scalar, buffer_reference_align = 1) buffer RayHitInfoRe
 };
 
 // but may not to be...
+// TODO: replace by image buffers
 layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer PixelSurfaceInfoRef {
   //uvec4 indices;
   //vec3 origin;
