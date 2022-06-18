@@ -1,45 +1,7 @@
 #pragma once
 
 //
-#include <half.hpp>
-
-//
-//#define GLM_FORCE_QUAT_DATA_XYZW
-#define GLM_FORCE_SWIZZLE
-
-//
 #ifdef __cplusplus
-#ifndef USE_CMAKE_PCH
-#ifdef ALT_ENABLE_GLTF
-#include <tinygltf/tiny_gltf.h>
-#include <tinygltf/stb_image.h>
-#endif
-
-//
-#ifdef _WIN32
-#ifndef VK_USE_PLATFORM_WIN32_KHR
-#define VK_USE_PLATFORM_WIN32_KHR
-#include <windows.h>
-#endif
-#else
-#ifdef __linux__ 
-//FD defaultly
-#endif
-#endif
-
-//
-#include <vulkan/vulkan.h>
-#include <vulkan/vulkan.hpp>
-#include <vulkan/vulkan_raii.hpp>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/quaternion.hpp>
-#include <glm/gtx/quaternion.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <robin_hood.h>
-#else
-#include <cmake_pch.hpp>
-#endif
 
 //
 #ifndef ANAMED
@@ -47,14 +9,7 @@
 #endif
 
 //
-#ifndef VULKAN_HPP_NO_CONSTRUCTORS
-#define VULKAN_HPP_NO_CONSTRUCTORS
-#endif
-
-// 
-#define VKU_ENABLE_INTERVAL
-#include <cpp21.hpp>
-#include <vk-utils.hpp>
+#include <cmake_pch.hpp>
 
 // 
 namespace ANAMED {
