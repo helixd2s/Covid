@@ -107,7 +107,10 @@ void main() {
       PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
       surfaceInfo.tex[EMISSION_TEX] = vec4(cmd.emissiveColor, 1.f);
       surfaceInfo.tex[DIFFUSE_TEX] = cmd.diffuseColor;
-      surfaceInfo.normalDepth.xyz = cmd.normals*toNormalMat(constants.lookAt[0]);
+
+      //
+      imageStore(imagesRgba16F[deferredBuf.images[0][4]], ivec2(gcoord), vec4(cmd.normals * toNormalMat(constants.lookAt[0]), 1.f));
+      imageStore(imagesRgba32F[deferredBuf.images[0][5]], ivec2(gcoord), vec4(cmd.rayData.origin.xyz, 1.f));
 
       //
       for (uint i=0;i<3;i++) {

@@ -29,26 +29,6 @@ vec4 readColor(in ivec2 pixelId, in uint type) {
 };
 
 //
-vec4 readNormal(in ivec2 pixelId, in uint type) {
-  if (pixelId.x < UR(deferredBuf.extent).x && pixelId.y < UR(deferredBuf.extent).y && pixelId.x >= 0 && pixelId.y >= 0) {
-    uint linearId = pixelId.x + pixelId.y * UR(deferredBuf.extent).x;
-    PixelSurfaceInfoRef info = getPixelSurface(linearId);
-    return info.normalDepth;
-  };
-  return vec4(0.f.xxx, 1.f);
-  //vec4 center = vec4(0.f);
-  //if (pixelId.x < UR(deferredBuf.extent).x && pixelId.y < UR(deferredBuf.extent).y && pixelId.x >= 0 && pixelId.y >= 0) {
-    //uint linearId = pixelId.x + pixelId.y * UR(deferredBuf.extent).x;
-    //PixelSurfaceInfoRef info = getPixelSurface(linearId);
-    //PixelHitInfoRef hit = getRpjHit(linearId, type);
-    //center = vec4(hit.normal.xyz, 0.f);
-  //};
-  //return cvtRgb16Acc(center);
-};
-
-
-
-//
 void readColorNeighbor(in ivec2 uv, in uint type) {
   vec4 center = readColor(uv, type);
   if (center.w < 1.f) {
@@ -59,11 +39,7 @@ void readColorNeighbor(in ivec2 uv, in uint type) {
       };
     };
   };
-  if (uv.x < UR(deferredBuf.extent).x && uv.y < UR(deferredBuf.extent).y && uv.x >= 0 && uv.y >= 0) {
-    uint linearId = uv.x + uv.y * UR(deferredBuf.extent).x;
-    PixelSurfaceInfoRef info = getPixelSurface(linearId); 
-    info.denoised[type] = center;
-  };
+  imageStore(imagesRgba16F[deferredBuf.images[0][1+type]], uv, center);
 };
 
 // 
