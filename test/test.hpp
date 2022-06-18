@@ -595,12 +595,7 @@ public:
         //
         //decltype(auto) swch = deferredBufObj->getCurrentSet();
 
-        //
-        //denoiserObj = ANAMED::DenoiserObj::make(deviceObj.with(0u), ANAMED::DenoiserCreateInfo{
-          //.queueFamilyIndices = std::vector<uint32_t>{0u},
-          //.extent = vk::Extent2D{reprojectSize.x, reprojectSize.y}
-          
-        //});
+        
 
     };
 
@@ -625,6 +620,12 @@ protected:
           .physicalDeviceGroupIndex = 0u,
           .physicalDeviceIndex = 0u
             });
+
+        //
+        //denoiserObj = ANAMED::DenoiserObj::make(deviceObj.with(0u), ANAMED::DenoiserCreateInfo{
+          //.queueFamilyIndices = std::vector<uint32_t>{0u},
+          //.extent = vk::Extent2D{reprojectSize.x, reprojectSize.y}
+        //});
 
         //
         memoryAllocatorVma = ANAMED::MemoryAllocatorVma::make(deviceObj, ANAMED::MemoryAllocatorCreateInfo{

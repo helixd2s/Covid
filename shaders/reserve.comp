@@ -47,7 +47,7 @@ vec4 readAndNeighborTex(in ivec2 pixelId, in uint tex) {
 /*
 vec4 getDenoised(in ivec2 pixelId, in uint type) {
   vec4 sum = vec4(0.0);
-  float c_phi = 1.0;
+  float c_phi = 16.0;
   float n_phi = 0.5;
 
   vec4 uval = readColor(pixelId, type);//readColorNeighbor(pixelId, type);
@@ -76,8 +76,7 @@ vec4 getDenoised(in ivec2 pixelId, in uint type) {
 
   //
   return sum/max(cum_w, 0.0001f) * uval.w;
-};
-*/
+};*/
 
 //
 vec4 readColorComp(in ivec2 pixelId) {
