@@ -78,6 +78,10 @@ namespace ANAMED {
         };
 
         //
+        SwapchainSet& getCurrentSet() { return this->sets[this->getCurrentIndex()]; };
+        SwapchainSet const& getCurrentSet() const { return this->sets[this->getCurrentIndex()]; };
+
+        //
         virtual PingPongStateInfo& getStateInfo() { return currentState; };
         virtual PingPongStateInfo const& getStateInfo() const { return currentState; };
         virtual vk::Rect2D const& getRenderArea() const { return renderArea; };
@@ -97,12 +101,12 @@ namespace ANAMED {
         };
 
         //
-        virtual uintptr_t getNextIndex() {
+        virtual uintptr_t getNextIndex() const {
             return ((this->currentState.index + 1) % this->sets.size());
         };
 
         //
-        virtual uintptr_t getCurrentIndex() {
+        virtual uintptr_t getCurrentIndex() const {
             return (this->currentState.index % this->sets.size());
         };
 

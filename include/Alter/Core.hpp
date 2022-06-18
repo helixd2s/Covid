@@ -1606,8 +1606,9 @@ namespace ANAMED {
             return this->registerObj(obj->handle, obj);
         };
 
-
-
+        //
+        std::shared_ptr<MSS>& getInfoMap() { return infoMap; };
+        std::shared_ptr<MSS> const& getInfoMap() const { return infoMap; };
 
         //
         template<class T = BaseObj>

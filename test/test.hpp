@@ -145,6 +145,8 @@ protected:
     ANAMED::WrapShared<ANAMED::ResourceBufferObj> rasterDataObj = {};
     ANAMED::WrapShared<ANAMED::ResourceBufferObj> surfaceDataObj = {};
 
+    ANAMED::WrapShared<ANAMED::DenoiserObj> denoiserObj = {};
+
     //
     UniformData uniformData = {};
     CounterData counterData = {};
@@ -223,8 +225,9 @@ public:
 
         // 
         decltype(auto) acquired = swapchainObj->acquireImage(qfAndQueue);
-        decltype(auto) deferred = deferredBufObj->acquireImage(qfAndQueue);
         decltype(auto) raster = rasterBufObj->acquireImage(qfAndQueue);
+        decltype(auto) deferred = deferredBufObj->acquireImage(qfAndQueue);
+        
 
         //
         for (uint32_t i = 0; i < 2; i++) {
@@ -588,6 +591,17 @@ public:
         uniformData.frameCounter = 0u;
         uniformData.deferredBuf = deferredBufObj->getStateInfo();
         uniformData.rasterBuf = rasterBufObj->getStateInfo();
+
+        //
+        //decltype(auto) swch = deferredBufObj->getCurrentSet();
+
+        //
+        //denoiserObj = ANAMED::DenoiserObj::make(deviceObj.with(0u), ANAMED::DenoiserCreateInfo{
+          //.queueFamilyIndices = std::vector<uint32_t>{0u},
+          //.extent = vk::Extent2D{reprojectSize.x, reprojectSize.y}
+          
+        //});
+
     };
 
     //

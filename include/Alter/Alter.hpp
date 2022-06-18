@@ -28,6 +28,7 @@
 #include "./PingPong.hpp"
 #include "./GeometryLevel.hpp"
 #include "./InstanceLevel.hpp"
+#include "./Denoiser.hpp"
 
 // 
 #ifdef ALT_ENABLE_VMA
