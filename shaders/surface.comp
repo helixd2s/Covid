@@ -19,18 +19,15 @@ void main() {
   const uvec2 ncoord = gl_GlobalInvocationID.xy;
 
   {
-    const vec2 tShift = (vec2(random(ncoord), random(ncoord)) - 0.5f) * 0.5f;
-    const vec2 tCoord = (vec2(ncoord)+0.5f)/vec2(deferredBuf.extent);
-
     // normalized coordinate system
-    const ivec2 gcoord = ivec2(tCoord * UR(deferredBuf.extent));
+    const ivec2 gcoord = ivec2(ncoord);
     const uint pixelId = gcoord.x + UR(deferredBuf.extent).x * gcoord.y;
+    const vec2 tCoord = (vec2(gcoord) + 0.5f) / vec2(UR(deferredBuf.extent));
 
     //
-    const vec4 ssEye = vec4(vec3(tCoord, 0.f) * 2.f - 1.f, 1.f);
-    const vec3 rayBegin = divW(ssEye * constants.perspectiveInverse) * constants.lookAtInverse[0];//fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId);
-    const vec3 rayEnd = divW(vec4(vec3(tCoord, 1.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse[0];
-    const vec3 rayDir = normalize(rayEnd.xyz - rayBegin.xyz);
+    const vec3 rayBegin = divW(vec4(vec3(tCoord, 0.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse[0];//fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId);
+    const vec3 rayEnd   = divW(vec4(vec3(tCoord, 1.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse[0];
+    const vec3 rayDir   = normalize(rayEnd.xyz - rayBegin.xyz);
 
     //
   #define cmd cmds[gl_LocalInvocationID.y][gl_LocalInvocationID.x]
@@ -41,12 +38,14 @@ void main() {
     cmd.rayData.emission = f16vec4(0.f.xxx, 1.f);
 
     //
-    vec4 ssLastPos = ssEye;
     cmd.intersection.barycentric = vec3(0.f.xxx);
     cmd.intersection.hitT = 10000.f;
     cmd.intersection.instanceId = 0u;
     cmd.intersection.geometryId = 0u;
     cmd.intersection.primitiveId = 0u;
+
+    //
+    vec4 ssLastPos = vec4(vec3(tCoord, 0.f) * 2.f - 1.f, 1.f);
     cmd.intersection = rasterizeVector(instancedData, cmd.rayData, 10000.f, ssLastPos, false);
 
     // 

@@ -20,21 +20,17 @@ void main() {
 
   //
   if ((ncoord.x + ncoord.y * rayCount.x) < (rayCount.x * rayCount.y)) {
-    //
-    vec2 tShift = (vec2(random(ncoord), random(ncoord)) - 0.5f) * 0.5f;
     vec2 tCoord = (vec2(ncoord) + vec2(random(ncoord), random(ncoord))) / vec2(rayCount);
     tCoord = (floor(tCoord * vec2(UR(deferredBuf.extent))) + 0.5f) / vec2(UR(deferredBuf.extent));
-    //tCoord += tShift / vec2(UR(deferredBuf.extent));
 
     //
     const ivec2 gcoord = ivec2(tCoord * UR(deferredBuf.extent));
     const uint pixelId = gcoord.x + UR(deferredBuf.extent).x * gcoord.y;
 
     //
-    const vec4 ssEye = vec4(vec3(tCoord, 0.f) * 2.f - 1.f, 1.f);
-    const vec3 rayBegin = divW(ssEye * constants.perspectiveInverse) * constants.lookAtInverse[0];//fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId);
-    const vec3 rayEnd = divW(vec4(vec3(tCoord, 1.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse[0];
-    const vec3 rayDir = normalize(rayEnd.xyz - rayBegin.xyz);
+    const vec3 rayBegin = divW(vec4(vec3(tCoord, 0.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse[0];//fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId);
+    const vec3 rayEnd   = divW(vec4(vec3(tCoord, 1.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse[0];
+    const vec3 rayDir   = normalize(rayEnd.xyz - rayBegin.xyz);
 
     //
     //PathTraceCommand cmd;
@@ -54,7 +50,7 @@ void main() {
     cmd.intersection.primitiveId = 0u;
 
     //
-    vec4 ssLastPos = ssEye;
+    vec4 ssLastPos = vec4(vec3(tCoord, 0.f) * 2.f - 1.f, 1.f);
     cmd.intersection = rasterizeVector(instancedData, cmd.rayData, 10000.f, ssLastPos, false);
 
     // 
@@ -83,7 +79,7 @@ void main() {
       cmd.reflCoef = (float(cmd.PBR.b) + mix(fresnel_schlick(0.f, dot(reflect(cmd.rayData.direction.xyz, vec3(cmd.normals)), vec3(cmd.normals))), 0.f, float(cmd.PBR.g)) * (1.f - float(cmd.PBR.b))) * (1.f - luminance(cmd.emissiveColor.xyz));
 
       //
-      pathTraceCommand(cmd, uint(random(ncoord) * 3));
+      pathTraceCommand(cmd, uint(random(gcoord) * 3));
     };
     
   };
