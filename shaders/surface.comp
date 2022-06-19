@@ -88,8 +88,8 @@ void main() {
       //
       for (uint i=0;i<3;i++) {
         surfaceInfo.flags[i] |= 1u;
-        surfaceInfo.color[i] += vec4(i == 2 ? 1.f.xxx : 0.f.xxx, 1.f);
-        //surfaceInfo.color[i] += vec4(i == 2 ? skyColor.xyz : 0.f.xxx, 1.f);
+        //surfaceInfo.color[i] += vec4(i == 2 ? 1.f.xxx : 0.f.xxx, 1.f);
+        surfaceInfo.color[i] += vec4(i == 2 ? skyColor.xyz : 0.f.xxx, 1.f);
       };
     };
 

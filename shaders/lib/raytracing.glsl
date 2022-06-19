@@ -352,7 +352,7 @@ RayData pathTrace(inout RayData rayData, inout PathTraceOutput outp, inout uint 
 };
 
 //
-PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, inout uint type) {
+PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
   const bool needsDiffuse = cmd.diffuseColor.a >= 0.001f && luminance(cmd.diffuseColor.xyz) > 0.f;
   const bool needsReflection = cmd.reflCoef >= 0.001f;
   const bool needsTransparency = cmd.diffuseColor.a < 1.f;
@@ -393,7 +393,7 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, inout uint type) {
   } else {
     cmd.rayData.direction.xyz = normalize(cosineWeightedPoint(seed2, mat3x3(cmd.tbn[0],cmd.tbn[1],cmd.normals.xyz)));
     cmd.rayData.energy = f16vec4(1.f.xxx, 1.f);
-    //cmd.rayData.energy.xyz = f16vec3(trueMultColor(cmd.rayData.energy.xyz, cmd.diffuseColor.xyz * (1.f - cmd.emissiveColor.xyz)));
+    cmd.rayData.energy.xyz = f16vec3(trueMultColor(cmd.rayData.energy.xyz, cmd.diffuseColor.xyz * (1.f - cmd.emissiveColor.xyz)));
     cmd.rayData.emission = f16vec4(trueMultColor(cmd.rayData.energy.xyz, directLighting(cmd.rayData.origin.xyz, cmd.normals.xyz, cmd.tbn[2], vec3(random(blueNoiseFn(cmd.rayData.launchId.xy)), random(blueNoiseFn(cmd.rayData.launchId.xy)), random(blueNoiseFn(cmd.rayData.launchId.xy))), 10000.f).xyz), 1.f);
   };
 
