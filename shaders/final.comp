@@ -1,0 +1,23 @@
+#version 460 core
+
+// 
+#extension GL_GOOGLE_include_directive : require
+
+//
+#include "lib/native.glsl"
+#include "lib/fresnel.glsl"
+#include "lib/random.glsl"
+#include "lib/rasterizer.glsl"
+
+//
+layout (local_size_x = 32, local_size_y = 4, local_size_z = 1) in;
+
+// 
+void main() {
+  const uvec2 gcoord = gl_GlobalInvocationID.xy;
+  const vec2 tCoord = (vec2(gcoord)+0.5f)/vec2(UR(swapchain.extent));
+
+  // final color
+  const vec4 finalColor = textureBilinear(deferredBuf.images[0][0], tCoord);
+  imageStore(images[swapchain.image], ivec2(gcoord.x, UR(swapchain.extent).y-1-gcoord.y), fromLinear(finalColor));
+};

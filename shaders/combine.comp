@@ -1,0 +1,71 @@
+#version 460 core
+
+// 
+#extension GL_GOOGLE_include_directive : require
+
+//
+#define OUTSOURCE
+
+//
+#include "lib/native.glsl"
+#include "lib/fresnel.glsl"
+#include "lib/random.glsl"
+#include "lib/rasterizer.glsl"
+
+//
+layout (local_size_x = 32, local_size_y = 4, local_size_z = 1) in;
+
+//
+vec4 readColor(in ivec2 pixelId, in uint type) {
+  TYPE center = TYPE(0.f);
+  if (pixelId.x < UR(deferredBuf.extent).x && pixelId.y < UR(deferredBuf.extent).y && pixelId.x >= 0 && pixelId.y >= 0) {
+    uint linearId = pixelId.x + pixelId.y * UR(deferredBuf.extent).x;
+    PixelSurfaceInfoRef info = getPixelSurface(linearId); 
+    if (info.color[type].w > 0) { center += info.color[type]; };
+  };
+  return cvtRgb16Acc(center);
+};
+
+//
+vec4 readColorNeighbor(in ivec2 uv, in uint type) {
+  vec4 center = readColor(uv, type);
+  if (center.w < 1.f) {
+    center = vec4(0.f.xxxx);
+    for (int i=0;i<25;i++) {
+      const vec4 col = readColor(uv + ivec2(offset[i]), type);
+      const vec4 clw = col / max(col.w, 1.f);
+      center += clw * col.w * kernel[i];
+    };
+  };
+  return center;
+};
+
+//
+vec4 readAndNeighborTex(in ivec2 pixelId, in uint tex) {
+  vec4 center = vec4(0.f);
+  if (pixelId.x < UR(deferredBuf.extent).x && pixelId.y < UR(deferredBuf.extent).y && pixelId.x >= 0 && pixelId.y >= 0) {
+    uint linearId = pixelId.x + pixelId.y * UR(deferredBuf.extent).x;
+    PixelSurfaceInfoRef info = getPixelSurface(linearId);
+    center = info.tex[tex];
+  };
+  return center;
+};
+
+//
+vec4 readColorComp(in ivec2 pixelId) {
+  const vec4 resultRefl = clampColW(readColor(pixelId, 0));
+  const vec4 resultTransp = clampColW(readColor(pixelId, 1));
+  const vec4 resultColor = clampColW(readColor(pixelId, 2));
+  const vec4 resultDiffuse = clampColW(readAndNeighborTex(pixelId, DIFFUSE_TEX));
+  const vec4 resultPBR = clampColW(readAndNeighborTex(pixelId, PBR_TEX));
+  const vec4 resultMult = vec4(trueMultColor(resultColor.xyz, resultDiffuse.xyz), resultColor.a);
+  return ((resultTransp * (1.f - resultDiffuse.a) + resultMult * resultDiffuse.a) * (1.f - resultPBR.w) + resultRefl * resultPBR.w);
+};
+
+// 
+void main() {
+  const uvec2 gcoord = gl_GlobalInvocationID.xy;
+  const uint linearId = gcoord.x + UR(deferredBuf.extent).x * gcoord.y;
+  const uint pixelId = linearId % (UR(deferredBuf.extent).x * UR(deferredBuf.extent).y);
+  imageStore(imagesRgba16F[deferredBuf.images[0][0]], ivec2(pixelId), readColorComp(ivec2(pixelId)));
+};

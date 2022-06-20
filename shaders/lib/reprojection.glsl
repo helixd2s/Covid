@@ -13,8 +13,9 @@
 //void reproject3D(in PixelSurfaceInfo surface, in PixelHitInfo data, in uint pixelId, in vec3 srcRayDir, in int type) {
 void reproject3D(in uint pixelId, in uint type) 
 {
+  PixelSurfaceInfoRef SURF_SRC = getPixelSurface(pixelId);
   PixelHitInfoRef data = getRpjHit(pixelId, type);
-  if (any(notEqual(data.origin.xyz, 0.f.xxx))) {
+  if (any(notEqual(data.origin.xyz, 0.f.xxx)) && SURF_SRC.flags[type] > 0) {
     //
     const bool isSurface = data.origin.w > 0.f && data.origin.w < 10000.f && any(greaterThan(abs(data.origin.xyz), 0.f.xxx));
 
@@ -59,7 +60,6 @@ void reproject3D(in uint pixelId, in uint type)
     const bool dstValid = dstInt.x >= 0 && dstInt.y >= 0 && dstInt.x < UR(deferredBuf.extent).x && dstInt.y < UR(deferredBuf.extent).y;
 
     // 
-    PixelSurfaceInfoRef SURF_SRC = getPixelSurface(pixelId);//getPixelSurface(srcId);
     PixelHitInfoRef HIT_SRC = getRpjHit(pixelId, type);//getRpjHit(srcId, type);
     TYPE original = SURF_SRC.accum[type];
 

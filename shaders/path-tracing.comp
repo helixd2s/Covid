@@ -1,0 +1,66 @@
+#version 460 core
+
+// 
+#extension GL_GOOGLE_include_directive : require
+
+//
+#define ENABLE_CHECKERBOARD
+#define USE_RASTERIZE_PASS
+
+//
+#include "lib/raytracing.glsl"
+#include "lib/rasterizer.glsl"
+
+//
+layout (local_size_x = 32, local_size_y = 4, local_size_z = 1) in;
+
+// 
+void main() {
+  const uvec2 ncoord = gl_GlobalInvocationID.xy;
+
+  //
+  if ((ncoord.x + ncoord.y * rayCount.x) < (rayCount.x * rayCount.y)) {
+    vec2 tShift = (vec2(random(ncoord), random(ncoord)) - 0.5f) * 0.5f;
+    vec2 tCoord = (vec2(ncoord) + vec2(random(ncoord), random(ncoord))) / vec2(rayCount);
+    tCoord = (floor(tCoord * vec2(UR(deferredBuf.extent))) + 0.5f) / vec2(UR(deferredBuf.extent));
+
+    //
+    const ivec2 gcoord = ivec2(tCoord * UR(deferredBuf.extent));
+    const uint pixelId = gcoord.x + UR(deferredBuf.extent).x * gcoord.y;
+
+    //
+    const vec4 ssEye = vec4(vec3(tCoord, 0.f) * 2.f - 1.f, 1.f);
+    const vec3 rayBegin = divW(ssEye * constants.perspectiveInverse) * constants.lookAtInverse[0];//fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId);
+    const vec3 rayEnd = divW(vec4(vec3(tCoord, 1.f) * 2.f - 1.f, 1.f) * constants.perspectiveInverse) * constants.lookAtInverse[0];
+    const vec3 rayDir = normalize(rayEnd.xyz - rayBegin.xyz);
+
+    //
+  #define cmd cmds[gl_LocalInvocationID.y][gl_LocalInvocationID.x]
+    cmd.rayData.launchId = u16vec2(gcoord.xy);
+    cmd.rayData.origin = rayBegin.xyz;
+    cmd.rayData.direction = rayDir;
+    cmd.rayData.energy = f16vec4(1.f.xxx, 1.f);
+    cmd.rayData.emission = f16vec4(0.f.xxx, 1.f);
+
+    //
+    cmd.intersection.barycentric = vec3(0.f.xxx);
+    cmd.intersection.hitT = 10000.f;
+    cmd.intersection.instanceId = 0u;
+    cmd.intersection.geometryId = 0u;
+    cmd.intersection.primitiveId = 0u;
+
+    //
+    vec4 ssLastPos = ssEye;
+    cmd.intersection = rasterizeVector(instancedData, cmd.rayData, 10000.f, ssLastPos, false);
+
+    // 
+    if (!all(lessThanEqual(cmd.intersection.barycentric, 0.f.xxx))) {
+      pathTraceCommand(cmd, uint(random(gcoord)*3));
+    } else {
+      pathTraceEnv(cmd);
+    };
+
+    //
+    storeData(cmd);
+  };
+};
