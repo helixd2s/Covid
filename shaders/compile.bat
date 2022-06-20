@@ -3,6 +3,7 @@ glslangValidator --target-env spirv1.6 -t --client vulkan100 reprojection.comp -
 glslangValidator --target-env spirv1.6 -t --client vulkan100 combine.comp -o ../prebuild/shaders/combine.comp.spv
 glslangValidator --target-env spirv1.6 -t --client vulkan100 final.comp -o ../prebuild/shaders/final.comp.spv
 glslangValidator --target-env spirv1.6 -t --client vulkan100 recopy.comp -o ../prebuild/shaders/recopy.comp.spv
+glslangValidator --target-env spirv1.6 -t --client vulkan100 resort.comp -o ../prebuild/shaders/resort.comp.spv
 glslangValidator --target-env spirv1.6 -t --client vulkan100 control.comp -o ../prebuild/shaders/control.comp.spv
 
 glslangValidator --target-env spirv1.6 -t --client vulkan100 triangles.vert               -o ../prebuild/shaders/triangles.vert.spv
