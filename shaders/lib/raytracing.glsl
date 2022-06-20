@@ -395,8 +395,7 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
   outp.surfaceFound = false;
 
   //
-  vec3 rayDirection = cmd.rayData.direction.xyz;
-  vec3 rayOrigin = cmd.rayData.origin.xyz;
+  RayData startRayData = cmd.rayData;
 
   //
   const vec2 seed2 = vec2(random(cmd.rayData.launchId.xy), random(cmd.rayData.launchId.xy));
@@ -441,8 +440,8 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
   ) {
     hitInfo.indices[0] = uvec4(cmd.intersection.instanceId, cmd.intersection.geometryId, cmd.intersection.primitiveId, type);
     hitInfo.indices[1] = uvec4(outp.indices.xyz, pack32(cmd.rayData.launchId));
-    hitInfo.origin.xyz = rayOrigin;
-    hitInfo.direct.xyz = f16vec3(rayDirection);
+    hitInfo.origin.xyz = startRayData.origin;
+    hitInfo.direct.xyz = f16vec3(startRayData.direction);
     hitInfo.normal.xyz = f16vec3(cmd.tbn[2]);
     hitInfo.origin.w = outp.hitT;
 
@@ -452,6 +451,9 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
     accumulate(surfaceInfo, type, clampColW(additional));
     atomicOr(surfaceInfo.flags[type], 1u);
   };
+  
+  //
+  cmd.rayData = startRayData;
 
   // 
   return outp;
@@ -459,8 +461,11 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
 
 // 
 void pathTraceEnv(inout PathTraceCommand cmd) {
-  const uint hitId = cmd.rayData.launchId.x + cmd.rayData.launchId.y * UR(deferredBuf.extent).x;
+  const uint pixelId = cmd.rayData.launchId.x + cmd.rayData.launchId.y * UR(deferredBuf.extent).x;
   const vec4 skyColor = vec4(texture(sampler2D(textures[background], samplers[0]), lcts(cmd.rayData.direction.xyz)).xyz, 0.f);
+  RayData startRayData = cmd.rayData;
+
+  //
   cmd.diffuseColor = f16vec4(vec4(skyColor.xyz, 1.f));
   cmd.emissiveColor = f16vec3(0.f.xxx.xyz);
   cmd.rayData.origin = vec4(0.f.xxx, 1.f) * constants.lookAtInverse[0];
@@ -470,11 +475,25 @@ void pathTraceEnv(inout PathTraceCommand cmd) {
   cmd.reflCoef = 0.f;
 
   //
-  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(hitId);
-  for (uint i=0;i<3;i++) {
-    accumulate(surfaceInfo, i, skyColor);
-    atomicOr(surfaceInfo.flags[i], 1u);
+  if (pixelId < UR(deferredBuf.extent).x * UR(deferredBuf.extent).y && uint(cmd.rayData.launchId.x) < UR(deferredBuf.extent).x && uint(cmd.rayData.launchId.y) < UR(deferredBuf.extent).y) 
+  {
+    PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
+    for (uint i=0;i<3;i++) {
+      accumulate(surfaceInfo, i, vec4(1.f.xxxx));
+      atomicOr(surfaceInfo.flags[i], 1u);
+
+      //
+      PixelHitInfoRef hitInfo = getNewHit(pixelId, i);
+      hitInfo.origin.xyz = cmd.rayData.origin;
+      hitInfo.normal.xyz = f16vec3(cmd.tbn[2]);
+      hitInfo.direct.xyz = f16vec3(cmd.rayData.direction.xyz);
+      hitInfo.indices[0] = uvec4(0u, 0u, 0u, i);
+      hitInfo.origin.w = 10000.f;
+    };
   };
+
+  //
+  cmd.rayData = startRayData;
 };
 
 //
@@ -490,16 +509,6 @@ void storeData(inout PathTraceCommand cmd) {
     //
     imageStore(imagesRgba16F[deferredBuf.images[0][4]], ivec2(cmd.rayData.launchId), vec4(cmd.normals * toNormalMat(constants.lookAt[0]), 1.f));
     imageStore(imagesRgba32F[deferredBuf.images[0][5]], ivec2(cmd.rayData.launchId), vec4(cmd.rayData.origin.xyz, 1.f));
-
-    //
-    for (uint i=0;i<3;i++) {
-      PixelHitInfoRef hitInfo = getNewHit(pixelId, i);
-      hitInfo.origin.xyz = cmd.rayData.origin;
-      hitInfo.normal.xyz = f16vec3(cmd.tbn[2]);
-      hitInfo.direct.xyz = f16vec3(cmd.rayData.direction.xyz);
-      hitInfo.indices[0] = uvec4(cmd.intersection.instanceId, cmd.intersection.geometryId, cmd.intersection.primitiveId, i);
-    };
-    
   };
 };
 

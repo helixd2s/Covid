@@ -21,7 +21,7 @@ vec4 readColor(in ivec2 pixelId, in uint type) {
   if (pixelId.x < UR(deferredBuf.extent).x && pixelId.y < UR(deferredBuf.extent).y && pixelId.x >= 0 && pixelId.y >= 0) {
     uint linearId = pixelId.x + pixelId.y * UR(deferredBuf.extent).x;
     PixelSurfaceInfoRef info = getPixelSurface(linearId); 
-    if (info.color[type].w > 0) { center += info.color[type]; };
+    if (info.accum[type].w > 0) { center += info.accum[type]; };
   };
   return cvtRgb16Acc(center);
 };
@@ -67,5 +67,5 @@ void main() {
   const uvec2 gcoord = gl_GlobalInvocationID.xy;
   const uint linearId = gcoord.x + UR(deferredBuf.extent).x * gcoord.y;
   const uint pixelId = linearId % (UR(deferredBuf.extent).x * UR(deferredBuf.extent).y);
-  imageStore(imagesRgba16F[deferredBuf.images[0][0]], ivec2(pixelId), readColorComp(ivec2(pixelId)));
+  imageStore(imagesRgba16F[deferredBuf.images[0][0]], ivec2(gcoord), readColorComp(ivec2(gcoord)));
 };

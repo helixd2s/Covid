@@ -132,6 +132,20 @@ protected:
     ANAMED::WrapShared<ANAMED::DenoiserObj> denoiserObj = {};
 
     //
+    ANAMED::WrapShared<ANAMED::PipelineObj> overestimatedOpaqueObj = {};
+    ANAMED::WrapShared<ANAMED::PipelineObj> overestimatedTranslucentObj = {};
+    ANAMED::WrapShared<ANAMED::PipelineObj> underestimatedOpaqueObj = {};
+    ANAMED::WrapShared<ANAMED::PipelineObj> underestimatedTranslucentObj = {};
+
+    //
+    ANAMED::WrapShared<ANAMED::PipelineObj> pathTracingObj = {};
+    ANAMED::WrapShared<ANAMED::PipelineObj> finalObj = {};
+    ANAMED::WrapShared<ANAMED::PipelineObj> combineObj = {};
+    ANAMED::WrapShared<ANAMED::PipelineObj> reprojectionObj = {};
+    ANAMED::WrapShared<ANAMED::PipelineObj> recopyObj = {};
+    ANAMED::WrapShared<ANAMED::PipelineObj> controlObj = {};
+
+    //
     UniformData uniformData = {};
     CounterData counterData = {};
 
@@ -260,9 +274,21 @@ public:
             .submission = ANAMED::SubmissionInfo{
               .info = qfAndQueue,
             }
-            });
+        });
 
+        //
+        decltype(auto) controlFence = controlObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{ .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{.dispatch = vk::Extent3D{cpp21::tiled(uniformData.swapchain.extent.x, 32u), cpp21::tiled(uniformData.swapchain.extent.y, 4u), 1u}, .layout = descriptorsObj.as<vk::PipelineLayout>(), .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock) }), .submission = ANAMED::SubmissionInfo{.info = qfAndQueue } });
+        //decltype(auto) underestimatedOpaqueFence      = underestimatedOpaqueObj     ->executePipelineOnce(ANAMED::ExecutePipelineInfo{ .graphics = std::optional<ANAMED::WriteGraphicsInfo>(ANAMED::WriteGraphicsInfo{ .layout = descriptorsObj.as<vk::PipelineLayout>(), .framebuffer = framebufferObj[0].as<uintptr_t>(),  .instanceDraws = modelObj->getDefaultScene()->opaque->instanced->getDrawInfo(), .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock) }),.submission = ANAMED::SubmissionInfo{ .info = qfAndQueue, } });
+        //decltype(auto) underestimatedTranslucentFence = underestimatedTranslucentObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{ .graphics = std::optional<ANAMED::WriteGraphicsInfo>(ANAMED::WriteGraphicsInfo{ .layout = descriptorsObj.as<vk::PipelineLayout>(), .framebuffer = framebufferObj[1].as<uintptr_t>(),  .instanceDraws = modelObj->getDefaultScene()->opaque->instanced->getDrawInfo(), .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock) }),.submission = ANAMED::SubmissionInfo{.info = qfAndQueue, } });
+        //decltype(auto) overestimatedOpaqueFence       = overestimatedOpaqueObj      ->executePipelineOnce(ANAMED::ExecutePipelineInfo{ .graphics = std::optional<ANAMED::WriteGraphicsInfo>(ANAMED::WriteGraphicsInfo{ .layout = descriptorsObj.as<vk::PipelineLayout>(), .framebuffer = nullFBO.as<uintptr_t>(),  .instanceDraws = modelObj->getDefaultScene()->opaque->instanced->getDrawInfo(), .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock) }),.submission = ANAMED::SubmissionInfo{.info = qfAndQueue, } });
+        //decltype(auto) overestimatedTranslucentFence  = overestimatedTranslucentObj ->executePipelineOnce(ANAMED::ExecutePipelineInfo{ .graphics = std::optional<ANAMED::WriteGraphicsInfo>(ANAMED::WriteGraphicsInfo{ .layout = descriptorsObj.as<vk::PipelineLayout>(), .framebuffer = nullFBO.as<uintptr_t>(),  .instanceDraws = modelObj->getDefaultScene()->opaque->instanced->getDrawInfo(), .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock) }),.submission = ANAMED::SubmissionInfo{.info = qfAndQueue, } });
 
+        // 
+        decltype(auto) pathTracingFence  = pathTracingObj ->executePipelineOnce(ANAMED::ExecutePipelineInfo{ .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{ .dispatch = vk::Extent3D{cpp21::tiled(rayCount.x, 32u), cpp21::tiled(rayCount.y, 4u), 1u}, .layout = descriptorsObj.as<vk::PipelineLayout>(), .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock) }), .submission = ANAMED::SubmissionInfo{ .info = qfAndQueue } });
+        //decltype(auto) reprojectionFence = reprojectionObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{ .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{.dispatch = vk::Extent3D{cpp21::tiled(reprojectSize.x, 32u), cpp21::tiled(reprojectSize.y, 4u), 1u}, .layout = descriptorsObj.as<vk::PipelineLayout>(), .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock) }), .submission = ANAMED::SubmissionInfo{.info = qfAndQueue } });
+        decltype(auto) recopyFence       = recopyObj      ->executePipelineOnce(ANAMED::ExecutePipelineInfo{ .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{.dispatch = vk::Extent3D{cpp21::tiled(reprojectSize.x, 32u), cpp21::tiled(reprojectSize.y, 4u), 1u}, .layout = descriptorsObj.as<vk::PipelineLayout>(), .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock) }), .submission = ANAMED::SubmissionInfo{.info = qfAndQueue } });
+        decltype(auto) combineFence      = combineObj     ->executePipelineOnce(ANAMED::ExecutePipelineInfo{ .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{.dispatch = vk::Extent3D{cpp21::tiled(reprojectSize.x, 32u), cpp21::tiled(reprojectSize.y, 4u), 1u}, .layout = descriptorsObj.as<vk::PipelineLayout>(), .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock) }), .submission = ANAMED::SubmissionInfo{.info = qfAndQueue } });
+        decltype(auto) finalFence        = finalObj       ->executePipelineOnce(ANAMED::ExecutePipelineInfo{ .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{.dispatch = vk::Extent3D{cpp21::tiled(uniformData.swapchain.extent.x, 32u), cpp21::tiled(uniformData.swapchain.extent.y, 4u), 1u}, .layout = descriptorsObj.as<vk::PipelineLayout>(), .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock) }), .submission = ANAMED::SubmissionInfo{.info = qfAndQueue } });
 
         //
         deferredBufObj->presentImage(qfAndQueue);
@@ -419,12 +445,6 @@ protected:
             });
 
         //
-        //denoiserObj = ANAMED::DenoiserObj::make(deviceObj.with(0u), ANAMED::DenoiserCreateInfo{
-          //.queueFamilyIndices = std::vector<uint32_t>{0u},
-          //.extent = vk::Extent2D{reprojectSize.x, reprojectSize.y}
-        //});
-
-        //
         memoryAllocatorVma = ANAMED::MemoryAllocatorVma::make(deviceObj, ANAMED::MemoryAllocatorCreateInfo{
 
             });
@@ -438,6 +458,135 @@ protected:
         uploaderObj = ANAMED::UploaderObj::make(deviceObj, ANAMED::UploaderCreateInfo{
 
             }.use(ANAMED::ExtensionName::eMemoryAllocatorVma));
+
+
+
+        //
+        std::unordered_map<vk::ShaderStageFlagBits, cpp21::shared_vector<uint32_t>> overestimatedOpaqueStageMaps = {};
+        overestimatedOpaqueStageMaps[vk::ShaderStageFlagBits::eVertex] = cpp21::readBinaryU32("./shaders/triangles.vert.spv");
+        overestimatedOpaqueStageMaps[vk::ShaderStageFlagBits::eGeometry] = cpp21::readBinaryU32("./shaders/triangles-translucent.geom.spv");
+        overestimatedOpaqueStageMaps[vk::ShaderStageFlagBits::eFragment] = cpp21::readBinaryU32("./shaders/overestimate-translucent.frag.spv");
+        overestimatedOpaqueObj = ANAMED::PipelineObj::make(deviceObj.with(0u), ANAMED::PipelineCreateInfo{
+          .layout = descriptorsObj.as<vk::PipelineLayout>(),
+          .graphics = ANAMED::GraphicsPipelineCreateInfo{
+            .stageCodes = overestimatedOpaqueStageMaps,
+            .attachmentLayout = ANAMED::nullAttachmentLayout,
+            .hasConservativeRaster = true,
+            .dynamicState = std::make_shared<ANAMED::GraphicsDynamicState>(ANAMED::GraphicsDynamicState{
+              .hasDepthTest = false,
+              .hasDepthWrite = false,
+              .reversalDepth = false
+            })
+          }
+        });
+
+        //
+        std::unordered_map<vk::ShaderStageFlagBits, cpp21::shared_vector<uint32_t>> overestimatedTranslucentStageMaps = {};
+        overestimatedTranslucentStageMaps[vk::ShaderStageFlagBits::eVertex] = cpp21::readBinaryU32("./shaders/triangles.vert.spv");
+        overestimatedTranslucentStageMaps[vk::ShaderStageFlagBits::eGeometry] = cpp21::readBinaryU32("./shaders/triangles-translucent.geom.spv");
+        overestimatedTranslucentStageMaps[vk::ShaderStageFlagBits::eFragment] = cpp21::readBinaryU32("./shaders/overestimate-translucent.frag.spv");
+        overestimatedTranslucentObj = ANAMED::PipelineObj::make(deviceObj.with(0u), ANAMED::PipelineCreateInfo{
+          .layout = descriptorsObj.as<vk::PipelineLayout>(),
+          .graphics = ANAMED::GraphicsPipelineCreateInfo{
+            .stageCodes = overestimatedTranslucentStageMaps,
+            .attachmentLayout = ANAMED::nullAttachmentLayout,
+            .hasConservativeRaster = true,
+            .dynamicState = std::make_shared<ANAMED::GraphicsDynamicState>(ANAMED::GraphicsDynamicState{
+              .hasDepthTest = false,
+              .hasDepthWrite = false,
+              .reversalDepth = false
+            })
+          }
+        });
+
+
+        //
+        std::unordered_map<vk::ShaderStageFlagBits, cpp21::shared_vector<uint32_t>> underestimatedOpaqueStageMaps = {};
+        underestimatedOpaqueStageMaps[vk::ShaderStageFlagBits::eVertex] = cpp21::readBinaryU32("./shaders/triangles.vert.spv");
+        underestimatedOpaqueStageMaps[vk::ShaderStageFlagBits::eGeometry] = cpp21::readBinaryU32("./shaders/triangles-opaque.geom.spv");
+        underestimatedOpaqueStageMaps[vk::ShaderStageFlagBits::eFragment] = cpp21::readBinaryU32("./shaders/underestimate-opaque.frag.spv");
+        underestimatedOpaqueObj = ANAMED::PipelineObj::make(deviceObj.with(0u), ANAMED::PipelineCreateInfo{
+          .layout = descriptorsObj.as<vk::PipelineLayout>(),
+          .graphics = ANAMED::GraphicsPipelineCreateInfo{
+            .stageCodes = underestimatedOpaqueStageMaps,
+            .hasConservativeRaster = true,
+            .underestimated = true,
+            .dynamicState = std::make_shared<ANAMED::GraphicsDynamicState>(ANAMED::GraphicsDynamicState{
+              .hasDepthTest = true,
+              .hasDepthWrite = true,
+              .reversalDepth = false
+            })
+          }
+        });
+
+        //
+        std::unordered_map<vk::ShaderStageFlagBits, cpp21::shared_vector<uint32_t>> underestimatedTranslucentStageMaps = {};
+        underestimatedTranslucentStageMaps[vk::ShaderStageFlagBits::eVertex] = cpp21::readBinaryU32("./shaders/triangles.vert.spv");
+        underestimatedTranslucentStageMaps[vk::ShaderStageFlagBits::eGeometry] = cpp21::readBinaryU32("./shaders/triangles-translucent.geom.spv");
+        underestimatedTranslucentStageMaps[vk::ShaderStageFlagBits::eFragment] = cpp21::readBinaryU32("./shaders/underestimate-translucent.frag.spv");
+        underestimatedTranslucentObj = ANAMED::PipelineObj::make(deviceObj.with(0u), ANAMED::PipelineCreateInfo{
+          .layout = descriptorsObj.as<vk::PipelineLayout>(),
+          .graphics = ANAMED::GraphicsPipelineCreateInfo{
+            .stageCodes = underestimatedTranslucentStageMaps,
+            .hasConservativeRaster = true,
+            .underestimated = true,
+            .dynamicState = std::make_shared<ANAMED::GraphicsDynamicState>(ANAMED::GraphicsDynamicState{
+              .hasDepthTest = true,
+              .hasDepthWrite = true,
+              .reversalDepth = false
+            })
+          }
+        });
+
+        //
+        controlObj = ANAMED::PipelineObj::make(deviceObj.with(0u), ANAMED::PipelineCreateInfo{
+          .layout = descriptorsObj.as<vk::PipelineLayout>(),
+          .compute = ANAMED::ComputePipelineCreateInfo{
+            .code = cpp21::readBinaryU32("./shaders/control.comp.spv")
+          }
+        });
+
+        //
+        pathTracingObj = ANAMED::PipelineObj::make(deviceObj.with(0u), ANAMED::PipelineCreateInfo{
+          .layout = descriptorsObj.as<vk::PipelineLayout>(),
+          .compute = ANAMED::ComputePipelineCreateInfo{
+            .code = cpp21::readBinaryU32("./shaders/path-tracing.comp.spv")
+          }
+        });
+
+        //
+        finalObj = ANAMED::PipelineObj::make(deviceObj.with(0u), ANAMED::PipelineCreateInfo{
+          .layout = descriptorsObj.as<vk::PipelineLayout>(),
+          .compute = ANAMED::ComputePipelineCreateInfo{
+            .code = cpp21::readBinaryU32("./shaders/final.comp.spv")
+          }
+        });
+
+        //
+        combineObj = ANAMED::PipelineObj::make(deviceObj.with(0u), ANAMED::PipelineCreateInfo{
+          .layout = descriptorsObj.as<vk::PipelineLayout>(),
+          .compute = ANAMED::ComputePipelineCreateInfo{
+            .code = cpp21::readBinaryU32("./shaders/combine.comp.spv")
+          }
+        });
+
+        //
+        reprojectionObj = ANAMED::PipelineObj::make(deviceObj.with(0u), ANAMED::PipelineCreateInfo{
+          .layout = descriptorsObj.as<vk::PipelineLayout>(),
+          .compute = ANAMED::ComputePipelineCreateInfo{
+            .code = cpp21::readBinaryU32("./shaders/reprojection.comp.spv")
+          }
+        });
+
+        //
+        recopyObj = ANAMED::PipelineObj::make(deviceObj.with(0u), ANAMED::PipelineCreateInfo{
+          .layout = descriptorsObj.as<vk::PipelineLayout>(),
+          .compute = ANAMED::ComputePipelineCreateInfo{
+            .code = cpp21::readBinaryU32("./shaders/recopy.comp.spv")
+          }
+        });
+
+
 
         //
         gltfLoaderObj = ANAMED::GltfLoaderObj::make(deviceObj, ANAMED::GltfLoaderCreateInfo{

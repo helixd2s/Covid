@@ -51,7 +51,9 @@ void main() {
 
     //
     vec4 ssLastPos = ssEye;
-    cmd.intersection = rasterizeVector(instancedData, cmd.rayData, 10000.f, ssLastPos, false);
+    //cmd.intersection = rasterizeVector(instancedData, cmd.rayData, 10000.f, ssLastPos, false);
+    cmd.intersection = traceRaysOpaque(instancedData, cmd.intersection, cmd.rayData, 10000.f);
+    cmd.intersection = traceRaysTransparent(instancedData, cmd.intersection, cmd.rayData, cmd.intersection.hitT, true);
 
     // 
     if (!all(lessThanEqual(cmd.intersection.barycentric, 0.f.xxx))) {
