@@ -14,6 +14,14 @@
 //
 layout (local_size_x = 32, local_size_y = 4, local_size_z = 1) in;
 
+//
+const uint type_map[4][4] = {
+  { 2, 0, 1, 2 },
+  { 0, 2, 2, 1 },
+  { 2, 1, 0, 2 },
+  { 1, 2, 2, 0 }
+};
+
 // 
 void main() {
   const uvec2 ncoord = gl_GlobalInvocationID.xy;
@@ -57,7 +65,7 @@ void main() {
 
     // 
     if (!all(lessThanEqual(cmd.intersection.barycentric, 0.f.xxx))) {
-      pathTraceCommand(cmd, uint(random(gcoord)*3));
+      pathTraceCommand(cmd, type_map[frameCounter&3][(gcoord.x&1)|((gcoord.y&1)<<1)]);
     } else {
       pathTraceEnv(cmd);
     };

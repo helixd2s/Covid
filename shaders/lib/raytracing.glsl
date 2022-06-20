@@ -375,14 +375,14 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
 
   //
   const bool needsDiffuse = cmd.diffuseColor.a >= 0.001f && luminance(cmd.diffuseColor.xyz) > 0.f;
-  const bool needsReflection = cmd.reflCoef >= 0.001f;
+  const bool needsReflection = cmd.reflCoef >= 0.f;
   const bool needsTransparency = cmd.diffuseColor.a < 1.f;
 
   // replace by reflection
   bool validTracing = !all(lessThanEqual(cmd.intersection.barycentric, 0.f.xxx));
-  if (type == 0 && !needsReflection) { type = needsDiffuse ? 2 : 1; };
-  if (type == 1 && !needsTransparency) { type = needsDiffuse ? 2 : 0; };
-  if (type == 2 && !needsDiffuse) { type = needsTransparency ? 1 : 0; };
+  if (type == 0 && !needsReflection  ) { type = needsDiffuse      || !needsTransparency ? 2 : 1; };
+  if (type == 1 && !needsTransparency) { type = needsDiffuse      || !needsReflection   ? 2 : 0; };
+  if (type == 2 && !needsDiffuse     ) { type = needsTransparency && !needsReflection   ? 1 : 0; };
   if (!needsTransparency && !needsReflection && !needsDiffuse) { validTracing = false; };
 
   //
@@ -419,7 +419,7 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
 
   // enforce typic indice
   if (validTracing) {
-    cmd.rayData.origin += outRayNormal(cmd.rayData.direction.xyz, cmd.tbn[2].xyz) * 0.0001f;
+    cmd.rayData.origin += outRayNormal(cmd.rayData.direction.xyz, cmd.tbn[2].xyz) * 0.001f;
     cmd.rayData = pathTrace(cmd.rayData, outp, type);
   };
 

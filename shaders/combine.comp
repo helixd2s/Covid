@@ -57,9 +57,10 @@ vec4 readColorComp(in ivec2 pixelId) {
   const vec4 resultTransp = clampColW(readColor(pixelId, 1));
   const vec4 resultColor = clampColW(readColor(pixelId, 2));
   const vec4 resultDiffuse = clampColW(readAndNeighborTex(pixelId, DIFFUSE_TEX));
+  const vec4 resultEmission = clampColW(readAndNeighborTex(pixelId, EMISSION_TEX));
   const vec4 resultPBR = clampColW(readAndNeighborTex(pixelId, PBR_TEX));
   const vec4 resultMult = vec4(trueMultColor(resultColor.xyz, resultDiffuse.xyz), resultColor.a);
-  return ((resultTransp * (1.f - resultDiffuse.a) + resultMult * resultDiffuse.a) * (1.f - resultPBR.w) + resultRefl * resultPBR.w);
+  return (resultTransp * (1.f - resultDiffuse.a) + resultMult * resultDiffuse.a + resultEmission) * (1.f - resultPBR.w) + resultRefl * resultPBR.w;
 };
 
 // 

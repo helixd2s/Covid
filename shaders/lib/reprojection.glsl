@@ -15,7 +15,7 @@ void reproject3D(in uint pixelId, in uint type)
 {
   PixelSurfaceInfoRef SURF_SRC = getPixelSurface(pixelId);
   PixelHitInfoRef data = getRpjHit(pixelId, type);
-  if (any(notEqual(data.origin.xyz, 0.f.xxx)) && SURF_SRC.flags[type] > 0) {
+  if (any(notEqual(data.origin.xyz, 0.f.xxx))) {
     //
     const bool isSurface = data.origin.w > 0.f && data.origin.w < 10000.f && any(greaterThan(abs(data.origin.xyz), 0.f.xxx));
 
