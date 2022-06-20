@@ -339,7 +339,7 @@ RayData pathTrace(inout RayData rayData, inout PathTraceOutput outp, inout uint 
         outp.indices = lastIndices;
         outp.normal = lastNormal;
         if (R == 0) {
-          outp.hitT = currentT = 10000.f;
+          outp.hitT = currentT = 9999.f;
           rayData.origin.xyz = vec4(0.f.xxx, 1.f) * constants.lookAtInverse[0];
         } else {
           outp.hitT = currentT;
@@ -450,6 +450,7 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
     PixelSurfaceInfoRef surfaceInfo = getPixelSurface(hitId);
     accumulate(surfaceInfo, type, clampColW(additional));
     atomicOr(surfaceInfo.flags[type], 1u);
+    atomicAnd(surfaceInfo.flags[type], ~2u);
   };
   
   //
@@ -468,7 +469,6 @@ void pathTraceEnv(inout PathTraceCommand cmd) {
   //
   cmd.diffuseColor = f16vec4(vec4(skyColor.xyz, 1.f));
   cmd.emissiveColor = f16vec3(0.f.xxx.xyz);
-  cmd.rayData.origin = vec4(0.f.xxx, 1.f) * constants.lookAtInverse[0];
   cmd.normals = f16vec3(vec3(0.f.xx, 1.f) * toNormalMat(constants.lookAtInverse[0]));
   cmd.rayData.origin = vec4(0.f.xxx, 1.f) * constants.lookAtInverse[0] + cmd.rayData.direction * 10000.f;
   cmd.PBR = f16vec3(0.f.xxx);
@@ -480,15 +480,14 @@ void pathTraceEnv(inout PathTraceCommand cmd) {
     PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
     for (uint i=0;i<3;i++) {
       accumulate(surfaceInfo, i, vec4(1.f.xxxx));
-      atomicOr(surfaceInfo.flags[i], 1u);
+      atomicOr(surfaceInfo.flags[i], 1u|2u);
 
       //
       PixelHitInfoRef hitInfo = getNewHit(pixelId, i);
-      hitInfo.origin.xyz = cmd.rayData.origin;
+      hitInfo.origin = vec4(cmd.rayData.origin, 10000.f);
       hitInfo.normal.xyz = f16vec3(cmd.tbn[2]);
       hitInfo.direct.xyz = f16vec3(cmd.rayData.direction.xyz);
       hitInfo.indices[0] = uvec4(0u, 0u, 0u, i);
-      hitInfo.origin.w = 10000.f;
     };
   };
 
@@ -519,6 +518,7 @@ void prepareHit(in uint pixelId, inout uint type) {
   //
   surfaceInfo.accum[type] = cvtRgb16Float(clampCol(cvtRgb16Acc(surfaceInfo.color[type])));
   surfaceInfo.color[type] = (surfaceInfo.flags[type]&1) > 0 ? TYPE(0u) : surfaceInfo.color[type];
+  surfaceInfo.prevf[type] = surfaceInfo.flags[type];
   surfaceInfo.flags[type] = 0;
 
   //

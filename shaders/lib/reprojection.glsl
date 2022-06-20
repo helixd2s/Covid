@@ -16,8 +16,10 @@ void reproject3D(in uint pixelId, in uint type)
   PixelSurfaceInfoRef SURF_SRC = getPixelSurface(pixelId);
   PixelHitInfoRef data = getRpjHit(pixelId, type);
   if (any(notEqual(data.origin.xyz, 0.f.xxx))) {
-    //
-    const bool isSurface = data.origin.w > 0.f && data.origin.w < 10000.f && any(greaterThan(abs(data.origin.xyz), 0.f.xxx));
+
+    // 
+    const bool isSurface = (type == 2 || data.origin.w > 0.f) && data.origin.w < 10000.f;
+    const bool isReflected = isSurface && data.origin.w < 9999.f;
 
     // 
     const vec3 srcPos = data.origin.xyz;
@@ -25,15 +27,15 @@ void reproject3D(in uint pixelId, in uint type)
     const vec3 srcNormal = data.normal.xyz;
 
     //
-    const vec3 dstPos = vec4(vec4(srcPos.xyz, 1.f) 
+    const vec3 dstPos = isSurface ? vec4(vec4(srcPos.xyz, 1.f) 
       * inverse(getInstanceTransform(instancedData, data.indices[0].x, 1)), 1.f) 
-      * getInstanceTransform(instancedData, data.indices[0].x, 0);
-    const vec3 dstHitPos = vec4(vec4(srcHitPos.xyz, 1.f) 
+      * getInstanceTransform(instancedData, data.indices[0].x, 0) : srcPos;
+    const vec3 dstHitPos = isReflected ? vec4(vec4(srcHitPos.xyz, 1.f) 
       * inverse(getInstanceTransform(instancedData, data.indices[1].x, 1)), 1.f) 
-      * getInstanceTransform(instancedData, data.indices[1].x, 0);
-    const vec3 dstNormal = normalize((srcNormal.xyz 
+      * getInstanceTransform(instancedData, data.indices[1].x, 0) : srcHitPos;
+    const vec3 dstNormal = isSurface ? normalize((srcNormal.xyz 
       * toNormalMat(inverse(getInstanceTransform(instancedData, data.indices[0].x, 1))))
-      * toNormalMat(getInstanceTransform(instancedData, data.indices[0].x, 0)));
+      * toNormalMat(getInstanceTransform(instancedData, data.indices[0].x, 0))) : srcNormal;
 
     // DON'T TOUCH!
     vec3 srcHitFoundIntersection = srcPos;
@@ -60,7 +62,6 @@ void reproject3D(in uint pixelId, in uint type)
     const bool dstValid = dstInt.x >= 0 && dstInt.y >= 0 && dstInt.x < UR(deferredBuf.extent).x && dstInt.y < UR(deferredBuf.extent).y;
 
     // 
-    PixelHitInfoRef HIT_SRC = getRpjHit(pixelId, type);//getRpjHit(srcId, type);
     TYPE original = SURF_SRC.accum[type];
 
     // 
@@ -72,7 +73,9 @@ void reproject3D(in uint pixelId, in uint type)
       // fallback
       vec4 dstSamplePos = dstHitPersp/dstHitPersp.w;
       bool dstValidNormal = false;
-      { // 
+
+      //
+      if (isSurface) { // 
         RayData rayData;
         rayData.launchId = u16vec2(dstInt);
         rayData.origin = dstHitFoundIntersection.xyz;
@@ -106,15 +109,16 @@ void reproject3D(in uint pixelId, in uint type)
       };
 
       // sorry, we doesn't save previous raster data
-      const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz-(dstHitPersp.xyz/dstHitPersp.w)), vec3(2.f/vec2(UR(deferredBuf.extent)), 0.008f))) && dstValidNormal;
+      const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz-(dstHitPersp.xyz/dstHitPersp.w)), vec3(2.f/vec2(UR(deferredBuf.extent)), 0.001f))) && (type == 2 ? (dstValidNormal || SURF_DST.color[type].w <= 0.f) : dstValidNormal);
 
       // copy to dest, and nullify source
-      if ( original.w > 0.f && dstValidDist ) 
+      if ( original.w > 0.f && dstValidDist )
       {
-        accumulate(SURF_DST, type, original); atomicOr(SURF_DST.flags[type], 1u); //SURF_SRC.accum[type] = TYPE(0u);
-        //accumulateDebug(SURF_DST, type, original);
+        accumulate(SURF_DST, type, original); atomicOr(SURF_DST.flags[type], SURF_SRC.prevf[type]); //SURF_SRC.accum[type] = TYPE(0u);
+        //for (uint i=0;i<3;i++) { SURF_DST.tex[i] = SURF_SRC.tex[i]; };
+
         HIT_DST.origin     = vec4(dstHitFoundIntersection.xyz, distance(dstHitPos.xyz, dstHitFoundIntersection.xyz));
-        HIT_DST.indices    = HIT_SRC.indices;
+        HIT_DST.indices    = data.indices;
         HIT_DST.direct.xyz = f16vec3(normalize(dstHitPos.xyz-dstHitFoundIntersection.xyz));
         HIT_DST.normal.xyz = f16vec3(dstNormal);
       };

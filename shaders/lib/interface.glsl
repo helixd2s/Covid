@@ -92,6 +92,7 @@ layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer Pix
   TYPE accum[3];
   TYPE color[3];
   uvec4 flags;
+  uvec4 prevf;
 };
 
 //

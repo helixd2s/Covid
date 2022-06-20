@@ -27,6 +27,17 @@ vec4 readColor(in ivec2 pixelId, in uint type) {
 };
 
 //
+uint readFlags(in ivec2 pixelId, in uint type) {
+  uint flags = 0u;
+  if (pixelId.x < UR(deferredBuf.extent).x && pixelId.y < UR(deferredBuf.extent).y && pixelId.x >= 0 && pixelId.y >= 0) {
+    uint linearId = pixelId.x + pixelId.y * UR(deferredBuf.extent).x;
+    PixelSurfaceInfoRef info = getPixelSurface(linearId);
+    flags = info.flags[type];
+  };
+  return flags;
+};
+
+//
 vec4 readColorNeighbor(in ivec2 uv, in uint type) {
   vec4 center = readColor(uv, type);
   if (center.w < 1.f) {
@@ -59,7 +70,7 @@ vec4 readColorComp(in ivec2 pixelId) {
   const vec4 resultDiffuse = clampColW(readAndNeighborTex(pixelId, DIFFUSE_TEX));
   const vec4 resultEmission = clampColW(readAndNeighborTex(pixelId, EMISSION_TEX));
   const vec4 resultPBR = clampColW(readAndNeighborTex(pixelId, PBR_TEX));
-  const vec4 resultMult = vec4(trueMultColor(resultColor.xyz, resultDiffuse.xyz), resultColor.a);
+  const vec4 resultMult = ((readFlags(pixelId, 2)&2)>0) ? resultColor : vec4(trueMultColor(resultColor.xyz, resultDiffuse.xyz), resultColor.a);
   return (resultTransp * (1.f - resultDiffuse.a) + resultMult * resultDiffuse.a + resultEmission) * (1.f - resultPBR.w) + resultRefl * resultPBR.w;
 };
 

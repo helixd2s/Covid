@@ -97,6 +97,7 @@ struct PixelSurfaceInfo {
     glm::uvec4 accum[3];
     glm::uvec4 color[3];
     glm::uvec4 flags = glm::uvec4(0u);
+    glm::uvec4 prevf = glm::uvec4(0u);
 };
 
 //
