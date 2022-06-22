@@ -207,6 +207,18 @@ GeometryInfo getGeometry(in InstanceAddressBlock info, in uint32_t instanceId, i
   return getGeometry(getInstance(info, instanceId), index);
 };
 
+
+//
+struct GeometryExtData {
+  mat3x4 triData[MAX_VERTEX_DATA];
+};
+
+//
+struct GeometryExtAttrib {
+  vec4 data[MAX_VERTEX_DATA];
+};
+
+
 //
 GeometryExtData getGeometryData(in GeometryInfo geometryInfo, in uvec3 indices) {
   GeometryExtData result;
@@ -268,14 +280,14 @@ GeometryExtData getGeometryData(in GeometryInfo geometryInfo, in uvec3 indices) 
 };
 
 // 
-void getTBN(in GeometryExtAttrib attrib, inout vec3 tbn[3]) {
+void getTBN(inout GeometryExtAttrib attrib, inout vec3 tbn[3]) {
   tbn[0] = attrib.data[VERTEX_TANGENT].xyz;
   tbn[1] = attrib.data[VERTEX_BITANGENT].xyz;
   tbn[2] = attrib.data[VERTEX_NORMALS].xyz;
 };
 
 // 
-void getTBN(in GeometryExtAttrib attrib, inout mat3x3 tbn) {
+void getTBN(inout GeometryExtAttrib attrib, inout mat3x3 tbn) {
   tbn[0] = attrib.data[VERTEX_TANGENT].xyz;
   tbn[1] = attrib.data[VERTEX_BITANGENT].xyz;
   tbn[2] = attrib.data[VERTEX_NORMALS].xyz;

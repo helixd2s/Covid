@@ -149,17 +149,6 @@ float r_max_distance(in uint rasterId, in uint previous) {
   return rasterInfo.barycentric.w + qdMax(unpackHalf2x16(rasterInfo.derivatives.w));
 };
 
-
-//
-struct GeometryExtData {
-  mat3x4 triData[MAX_VERTEX_DATA];
-};
-
-//
-struct GeometryExtAttrib {
-  vec4 data[MAX_VERTEX_DATA];
-};
-
 //
 uint blueNoiseFn(in uvec2 coord) {
   return pack32(u16vec2(coord));
