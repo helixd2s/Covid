@@ -45,7 +45,7 @@ struct PathTraceCommand {
   f16vec3 emissiveColor;
   f16vec3 normals;
   f16vec3 PBR;
-  f16mat3x3 tbn;
+  f16vec3 tbn[3];
   float reflCoef;
 };
 
@@ -118,11 +118,11 @@ IntersectionInfo traceRaysTransparent(in InstanceAddressBlock instance, inout In
           const vec2 attribs = rayQueryGetIntersectionBarycentricsEXT(rayQuery, false);
           GeometryExtData geometry = getGeometryData(geometryInfo, primitiveId);
           GeometryExtAttrib interpol = interpolate(geometry, attribs);
-          mat3x3 tbn = getTBN(interpol);
+          vec3 tbn[3]; //getTBN(interpol, tbn);
           tbn[0] = fullTransformNormal(instanceInfo, tbn[0], geometryId, 0);
           tbn[1] = fullTransformNormal(instanceInfo, tbn[1], geometryId, 0);
           tbn[2] = fullTransformNormal(instanceInfo, tbn[2], geometryId, 0);
-          MaterialPixelInfo material = handleMaterial(getMaterialInfo(geometryInfo), interpol.data[VERTEX_TEXCOORD].xy, tbn);
+          MaterialPixelInfo material = handleMaterial(getMaterialInfo(geometryInfo), interpol.data[VERTEX_TEXCOORD].xy, mat3x3(tbn[0], tbn[1], tbn[2]));
 
           if (material.color[MATERIAL_ALBEDO].a < (hasRandom ? random(blueNoiseFn(rays.launchId.xy)) : 0.01f)) {
             isOpaque = false;
@@ -208,14 +208,14 @@ RayData handleIntersection(inout RayData rayData, inout IntersectionInfo interse
   const vec4 vertice = fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId, 0);
 
   //
-  mat3x3 tbn = getTBN(attrib);
+  vec3 tbn[3]; //getTBN(attrib, tbn);
   tbn[0] = fullTransformNormal(instanceInfo, tbn[0], intersection.geometryId, 0);
   tbn[1] = fullTransformNormal(instanceInfo, tbn[1], intersection.geometryId, 0);
   tbn[2] = fullTransformNormal(instanceInfo, tbn[2], intersection.geometryId, 0);
 
   //
   const bool inner = false;//dot(tbn[2], rayData.direction.xyz) > 0.f;
-  MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), texcoord.xy, tbn);
+  MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), texcoord.xy, mat3x3(tbn[0],tbn[1],tbn[2]));
   const vec3 normals = inRayNormal(rayData.direction, materialPix.color[MATERIAL_NORMAL].xyz);//materialPix.color[MATERIAL_NORMAL].xyz;
 
   // 
@@ -353,6 +353,16 @@ RayData pathTrace(inout RayData rayData, inout PathTraceOutput outp, inout uint 
 
 //
 PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
+  PathTraceOutput outp;
+  outp.hitT = 0.f;
+  outp.indices = uvec4(0u);
+  outp.normal = cmd.normals.xyz;
+  outp.indices.w = type;
+  outp.surfaceFound = false;
+  RayData startRayData = cmd.rayData;
+  vec3 originSeedXYZ = vec3(random(blueNoiseFn(cmd.rayData.launchId.xy)), random(blueNoiseFn(cmd.rayData.launchId.xy)), random(blueNoiseFn(cmd.rayData.launchId.xy)));
+
+  //
   InstanceInfo instanceInfo = getInstance(instancedData, cmd.intersection.instanceId);
   GeometryInfo geometryInfo = getGeometry(instanceInfo, cmd.intersection.geometryId);
   GeometryExtData geometry = getGeometryData(geometryInfo, cmd.intersection.primitiveId);
@@ -360,13 +370,15 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
 
   //
   cmd.rayData.origin = fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], cmd.intersection.geometryId, 0).xyz;
-  cmd.tbn = f16mat3x3(getTBN(attrib)); //cmd.rayData.origin += outRayNormal(cmd.rayData.direction.xyz, cmd.tbn[2].xyz) * 0.0001f;
-  cmd.tbn[0] = f16vec3(fullTransformNormal(instanceInfo, cmd.tbn[0], cmd.intersection.geometryId, 0));
-  cmd.tbn[1] = f16vec3(fullTransformNormal(instanceInfo, cmd.tbn[1], cmd.intersection.geometryId, 0));
-  cmd.tbn[2] = f16vec3(fullTransformNormal(instanceInfo, cmd.tbn[2], cmd.intersection.geometryId, 0));
+  vec3 tbn[3]; //getTBN(attrib, tbn);
 
   //
-  const MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), attrib.data[VERTEX_TEXCOORD].xy, cmd.tbn);
+  tbn[0] = fullTransformNormal(instanceInfo, tbn[0], cmd.intersection.geometryId, 0);
+  tbn[1] = fullTransformNormal(instanceInfo, tbn[1], cmd.intersection.geometryId, 0);
+  tbn[2] = fullTransformNormal(instanceInfo, tbn[2], cmd.intersection.geometryId, 0);
+
+  //
+  const MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), attrib.data[VERTEX_TEXCOORD].xy, mat3x3(tbn[0],tbn[1],tbn[2]));
   cmd.normals = f16vec3(inRayNormal(cmd.rayData.direction.xyz, materialPix.color[MATERIAL_NORMAL].xyz));
   cmd.diffuseColor = f16vec4(toLinear(materialPix.color[MATERIAL_ALBEDO]));
   cmd.emissiveColor = f16vec3(toLinear(materialPix.color[MATERIAL_EMISSIVE].xyz) * 4.f);
@@ -386,40 +398,29 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
   if (!needsTransparency && !needsReflection && !needsDiffuse) { validTracing = false; };
 
   //
-  vec3 originSeedXYZ = vec3(random(blueNoiseFn(cmd.rayData.launchId.xy)), random(blueNoiseFn(cmd.rayData.launchId.xy)), random(blueNoiseFn(cmd.rayData.launchId.xy)));
-  PathTraceOutput outp;
-  outp.hitT = 0.f;
-  outp.indices = uvec4(0u);
-  outp.normal = cmd.normals.xyz;
-  outp.indices.w = type;
-  outp.surfaceFound = false;
-
-  //
-  RayData startRayData = cmd.rayData;
-
-  //
   const vec2 seed2 = vec2(random(cmd.rayData.launchId.xy), random(cmd.rayData.launchId.xy));
+
   if (type == 0) {
-    cmd.rayData.direction.xyz = normalize(reflective(seed2, cmd.rayData.direction.xyz, mat3x3(cmd.tbn[0],cmd.tbn[1],cmd.normals.xyz), cmd.PBR.g));;
+    cmd.rayData.direction.xyz = normalize(reflective(seed2, cmd.rayData.direction.xyz, mat3x3(tbn[0],tbn[1],cmd.normals.xyz), cmd.PBR.g));;
     cmd.rayData.energy = f16vec4(1.f.xxx, 1.f);//f16vec4(metallicMult(1.f.xxx, cmd.diffuseColor.xyz, cmd.PBR.b), 1.f);
     cmd.rayData.emission = f16vec4(0.f.xxx, 1.f);
     cmd.rayData.energy.xyz = f16vec3(metallicMult(cmd.rayData.energy.xyz, cmd.diffuseColor.xyz, cmd.PBR.b));
   } else 
   if (type == 1) {
-    //cmd.rayData.direction.xyz = cmd.rayData.direction.xyz;
+    cmd.rayData.direction.xyz = cmd.rayData.direction.xyz;
     cmd.rayData.energy = f16vec4(1.f.xxx, 1.f);//f16vec4(metallicMult(1.f.xxx, materialPix.color[MATERIAL_ALBEDO].xyz, metallicFactor), 1.f);
     cmd.rayData.emission = f16vec4(0.f.xxx, 1.f);
     cmd.rayData.energy.xyz = f16vec3(metallicMult(cmd.rayData.energy.xyz, cmd.diffuseColor.xyz, cmd.PBR.b));
   } else {
-    cmd.rayData.direction.xyz = normalize(cosineWeightedPoint(seed2, mat3x3(cmd.tbn[0],cmd.tbn[1],cmd.normals.xyz)));
+    cmd.rayData.direction.xyz = normalize(cosineWeightedPoint(seed2, mat3x3(tbn[0],tbn[1],cmd.normals.xyz)));
     cmd.rayData.energy = f16vec4(1.f.xxx, 1.f);
-    //cmd.rayData.energy.xyz = f16vec3(trueMultColor(cmd.rayData.energy.xyz, cmd.diffuseColor.xyz * (1.f - cmd.emissiveColor.xyz)));
-    cmd.rayData.emission = f16vec4(trueMultColor(cmd.rayData.energy.xyz, directLighting(cmd.rayData.origin.xyz, cmd.normals.xyz, cmd.tbn[2], vec3(random(blueNoiseFn(cmd.rayData.launchId.xy)), random(blueNoiseFn(cmd.rayData.launchId.xy)), random(blueNoiseFn(cmd.rayData.launchId.xy))), 10000.f).xyz), 1.f);
+    cmd.rayData.energy.xyz = f16vec3(trueMultColor(cmd.rayData.energy.xyz, cmd.diffuseColor.xyz * (1.f - cmd.emissiveColor.xyz)));
+    cmd.rayData.emission = f16vec4(trueMultColor(cmd.rayData.energy.xyz, directLighting(cmd.rayData.origin.xyz, cmd.normals.xyz, tbn[2], vec3(random(blueNoiseFn(cmd.rayData.launchId.xy)), random(blueNoiseFn(cmd.rayData.launchId.xy)), random(blueNoiseFn(cmd.rayData.launchId.xy))), 10000.f).xyz), 1.f);
   };
 
   // enforce typic indice
   if (validTracing) {
-    cmd.rayData.origin += outRayNormal(cmd.rayData.direction.xyz, cmd.tbn[2].xyz) * 0.001f;
+    cmd.rayData.origin += outRayNormal(cmd.rayData.direction.xyz, tbn[2].xyz) * 0.001f;
     cmd.rayData = pathTrace(cmd.rayData, outp, type);
   };
 
@@ -430,7 +431,6 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
   // 
   vec4 additional = cmd.rayData.emission;
   uint hitId = cmd.rayData.launchId.x + cmd.rayData.launchId.y * UR(deferredBuf.extent).x;
-  PixelHitInfoRef hitInfo = getNewHit(hitId, type);
 
   //
   if (
@@ -438,11 +438,12 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
     uint(cmd.rayData.launchId.x) < UR(deferredBuf.extent).x && 
     uint(cmd.rayData.launchId.y) < UR(deferredBuf.extent).y
   ) {
+    PixelHitInfoRef hitInfo = getNewHit(hitId, type);
     hitInfo.indices[0] = uvec4(cmd.intersection.instanceId, cmd.intersection.geometryId, cmd.intersection.primitiveId, type);
     hitInfo.indices[1] = uvec4(outp.indices.xyz, pack32(cmd.rayData.launchId));
     hitInfo.origin.xyz = startRayData.origin;
     hitInfo.direct.xyz = f16vec3(startRayData.direction);
-    hitInfo.normal.xyz = f16vec3(cmd.tbn[2]);
+    hitInfo.normal.xyz = f16vec3(tbn[2]);
     hitInfo.origin.w = outp.hitT;
 
     // dedicated distribution broken, no enough memory or GPU was broken, or `hitData` broken
@@ -485,7 +486,7 @@ void pathTraceEnv(inout PathTraceCommand cmd) {
       //
       PixelHitInfoRef hitInfo = getNewHit(pixelId, i);
       hitInfo.origin = vec4(cmd.rayData.origin, 10000.f);
-      hitInfo.normal.xyz = f16vec3(cmd.tbn[2]);
+      hitInfo.normal.xyz = f16vec3(vec3(0.f.xx, 1.f) * toNormalMat(constants.lookAtInverse[0]));
       hitInfo.direct.xyz = f16vec3(cmd.rayData.direction.xyz);
       hitInfo.indices[0] = uvec4(0u, 0u, 0u, i);
     };

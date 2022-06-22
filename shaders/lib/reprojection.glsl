@@ -93,13 +93,13 @@ void reproject3D(in uint pixelId, in uint type)
           GeometryExtAttrib attrib = interpolate(geometry, dstIntersection.barycentric);
 
           //
-          mat3x3 tbn = f16mat3x3(getTBN(attrib)); //cmd.rayData.origin += outRayNormal(cmd.rayData.direction.xyz, cmd.tbn[2].xyz) * 0.0001f;
-          tbn[0] = f16vec3(fullTransformNormal(instanceInfo, tbn[0], dstIntersection.geometryId, 0));
-          tbn[1] = f16vec3(fullTransformNormal(instanceInfo, tbn[1], dstIntersection.geometryId, 0));
-          tbn[2] = f16vec3(fullTransformNormal(instanceInfo, tbn[2], dstIntersection.geometryId, 0));
+          vec3 tbn[3]; //getTBN(attrib, tbn);
+          tbn[0] = fullTransformNormal(instanceInfo, tbn[0], dstIntersection.geometryId, 0);
+          tbn[1] = fullTransformNormal(instanceInfo, tbn[1], dstIntersection.geometryId, 0);
+          tbn[2] = fullTransformNormal(instanceInfo, tbn[2], dstIntersection.geometryId, 0);
 
           //
-          const MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), attrib.data[VERTEX_TEXCOORD].xy, tbn);
+          const MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), attrib.data[VERTEX_TEXCOORD].xy, mat3x3(tbn[0],tbn[1],tbn[2]));
           const bool inner = false;//dot(vec3(cmd.tbn[2]), cmd.rayData.direction.xyz) > 0.f;
 
           //

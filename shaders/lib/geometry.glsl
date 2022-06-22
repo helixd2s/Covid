@@ -268,12 +268,17 @@ GeometryExtData getGeometryData(in GeometryInfo geometryInfo, in uvec3 indices) 
 };
 
 // 
-mat3x3 getTBN(in GeometryExtAttrib attrib) {
-  return mat3(
-    attrib.data[VERTEX_TANGENT].xyz,
-    attrib.data[VERTEX_BITANGENT].xyz,
-    attrib.data[VERTEX_NORMALS].xyz
-  );
+void getTBN(in GeometryExtAttrib attrib, inout vec3 tbn[3]) {
+  tbn[0] = attrib.data[VERTEX_TANGENT].xyz;
+  tbn[1] = attrib.data[VERTEX_BITANGENT].xyz;
+  tbn[2] = attrib.data[VERTEX_NORMALS].xyz;
+};
+
+// 
+void getTBN(in GeometryExtAttrib attrib, inout mat3x3 tbn) {
+  tbn[0] = attrib.data[VERTEX_TANGENT].xyz;
+  tbn[1] = attrib.data[VERTEX_BITANGENT].xyz;
+  tbn[2] = attrib.data[VERTEX_NORMALS].xyz;
 };
 
 //
