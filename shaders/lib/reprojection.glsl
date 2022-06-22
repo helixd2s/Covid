@@ -93,7 +93,7 @@ void reproject3D(in uint pixelId, in uint type)
           GeometryExtAttrib attrib = interpolate(geometry, dstIntersection.barycentric);
 
           //
-          vec3 tbn[3]; //getTBN(attrib, tbn);
+          vec3 tbn[3]; getTBN(attrib, tbn);
           tbn[0] = fullTransformNormal(instanceInfo, tbn[0], dstIntersection.geometryId, 0);
           tbn[1] = fullTransformNormal(instanceInfo, tbn[1], dstIntersection.geometryId, 0);
           tbn[2] = fullTransformNormal(instanceInfo, tbn[2], dstIntersection.geometryId, 0);
@@ -109,7 +109,7 @@ void reproject3D(in uint pixelId, in uint type)
       };
 
       // sorry, we doesn't save previous raster data
-      const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz-(dstHitPersp.xyz/dstHitPersp.w)), vec3(2.f/vec2(UR(deferredBuf.extent)), 0.001f))) && (type == 2 ? (dstValidNormal || SURF_DST.color[type].w <= 0.f) : dstValidNormal);
+      const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz-(dstHitPersp.xyz/dstHitPersp.w)), vec3(2.f/vec2(UR(deferredBuf.extent)), 0.008f))) && (type == 2 ? (dstValidNormal || SURF_DST.color[type].w <= 0.f) : dstValidNormal);
 
       // copy to dest, and nullify source
       if ( original.w > 0.f && dstValidDist )

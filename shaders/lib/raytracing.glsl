@@ -118,7 +118,7 @@ IntersectionInfo traceRaysTransparent(in InstanceAddressBlock instance, inout In
           const vec2 attribs = rayQueryGetIntersectionBarycentricsEXT(rayQuery, false);
           GeometryExtData geometry = getGeometryData(geometryInfo, primitiveId);
           GeometryExtAttrib interpol = interpolate(geometry, attribs);
-          vec3 tbn[3]; //getTBN(interpol, tbn);
+          vec3 tbn[3]; getTBN(interpol, tbn);
           tbn[0] = fullTransformNormal(instanceInfo, tbn[0], geometryId, 0);
           tbn[1] = fullTransformNormal(instanceInfo, tbn[1], geometryId, 0);
           tbn[2] = fullTransformNormal(instanceInfo, tbn[2], geometryId, 0);
@@ -208,7 +208,7 @@ RayData handleIntersection(inout RayData rayData, inout IntersectionInfo interse
   const vec4 vertice = fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId, 0);
 
   //
-  vec3 tbn[3]; //getTBN(attrib, tbn);
+  vec3 tbn[3]; getTBN(attrib, tbn);
   tbn[0] = fullTransformNormal(instanceInfo, tbn[0], intersection.geometryId, 0);
   tbn[1] = fullTransformNormal(instanceInfo, tbn[1], intersection.geometryId, 0);
   tbn[2] = fullTransformNormal(instanceInfo, tbn[2], intersection.geometryId, 0);
@@ -370,7 +370,7 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
 
   //
   cmd.rayData.origin = fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], cmd.intersection.geometryId, 0).xyz;
-  vec3 tbn[3]; //getTBN(attrib, tbn);
+  vec3 tbn[3]; getTBN(attrib, tbn);
 
   //
   tbn[0] = fullTransformNormal(instanceInfo, tbn[0], cmd.intersection.geometryId, 0);
