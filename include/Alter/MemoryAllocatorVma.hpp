@@ -6,11 +6,6 @@
 #include "./Instance.hpp"
 #include "./Device.hpp"
 
-//
-#ifdef ALT_ENABLE_VMA
-#include <vk_mem_alloc.h>
-#endif
-
 // 
 namespace ANAMED {
 

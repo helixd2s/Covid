@@ -119,3 +119,8 @@
 #include <cpp21.hpp>
 #include <vk-utils.hpp>
 #endif
+
+//
+#ifdef ALT_ENABLE_VMA
+#include <vk_mem_alloc.h>
+#endif

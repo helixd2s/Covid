@@ -280,85 +280,97 @@ namespace ANAMED {
         virtual vk::CommandBuffer const& writeBuildStructureCmd(vk::CommandBuffer const& cmdBuf = {}, vk::Buffer const& instanceDevOffset = {}, vk::Buffer const& instanceOffset = {}) {
             decltype(auto) device = this->base.as<vk::Device>();
             decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
-            decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(Handle(this->cInfo->uploader, HandleType::eUploader));
-            decltype(auto) accelInstInfo = infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR);
-            decltype(auto) accelInfo = infoMap->get<vk::AccelerationStructureCreateInfoKHR>(vk::StructureType::eAccelerationStructureCreateInfoKHR);
-            decltype(auto) accelGeomInfo = infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR);
-            decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelGeomInfo->setGeometries(this->instances), this->cInfo->limit, deviceObj->getDispatch()));
-            decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
-            decltype(auto) accessMask = vk::AccessFlagBits2(vku::getAccessMaskByImageUsage(deviceObj->get<ResourceBufferObj>(this->instanceBuild)->getBufferUsage()));
-
-            // 
-            uploaderObj->writeUploadToResourceCmd(UploadCommandWriteInfo{
-              .cmdBuf = cmdBuf,
-              .bunchBuffer = instanceDevOffset,
-              .dstBuffer = BufferRegion{this->instanceBuffer, DataRegion{ 0ull, sizeof(InstanceDevInfo), cpp21::bytesize(*this->instanceDevInfo) }}
-                });
-
-            // parallelize by offset
-            uploaderObj->writeUploadToResourceCmd(UploadCommandWriteInfo{
-              .cmdBuf = cmdBuf,
-              .bunchBuffer = instanceOffset,
-              .dstBuffer = BufferRegion{this->instanceExtBuffer, DataRegion{ 0ull, sizeof(InstanceInfo), cpp21::bytesize(*this->instanceInfo) }}
-                });
 
             //
-            decltype(auto) bufferBarriersBegin = std::vector<vk::BufferMemoryBarrier2>{
-              vk::BufferMemoryBarrier2{
-                .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(accessMask) | (accessMask & vk::AccessFlagBits2(AccessFlagBitsSet::eShaderReadWrite) ? vk::PipelineStageFlagBits2::eAllCommands : vk::PipelineStageFlagBits2{}),
-                .srcAccessMask = accessMask,
-                .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(vk::AccessFlagBits2::eAccelerationStructureWriteKHR | vk::AccessFlagBits2::eAccelerationStructureReadKHR),
-                .dstAccessMask = vk::AccessFlagBits2::eAccelerationStructureWriteKHR | vk::AccessFlagBits2::eAccelerationStructureReadKHR,
-                .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
-                .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
-                .buffer = this->instanceBuild,
-                .offset = 0ull,
-                .size = std::min(accelSizes->accelerationStructureSize, accelInfo->size)
-              },
+            const bool supportAS = deviceObj->getPhysicalDeviceInfoMap()->get<vk::PhysicalDeviceAccelerationStructureFeaturesKHR>(vk::StructureType::ePhysicalDeviceAccelerationStructureFeaturesKHR)->accelerationStructure && deviceObj->getDispatch().vkGetAccelerationStructureBuildSizesKHR;;
+
+            //
+            if (supportAS) {
+
+                //
+                decltype(auto) uploaderObj = deviceObj->get<UploaderObj>(Handle(this->cInfo->uploader, HandleType::eUploader));
+                decltype(auto) accelInstInfo = infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR);
+                decltype(auto) accelInfo = infoMap->get<vk::AccelerationStructureCreateInfoKHR>(vk::StructureType::eAccelerationStructureCreateInfoKHR);
+                decltype(auto) accelGeomInfo = infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR);
+                decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, supportAS ? device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelInstInfo->setGeometries(this->instances), this->cInfo->limit, deviceObj->getDispatch()) : vk::AccelerationStructureBuildSizesInfoKHR{});
+                decltype(auto) depInfo = vk::DependencyInfo{ .dependencyFlags = vk::DependencyFlagBits::eByRegion };
+                decltype(auto) accessMask = vk::AccessFlagBits2(vku::getAccessMaskByImageUsage(deviceObj->get<ResourceBufferObj>(this->instanceBuild)->getBufferUsage()));
+
+
+                // 
+                uploaderObj->writeUploadToResourceCmd(UploadCommandWriteInfo{
+                  .cmdBuf = cmdBuf,
+                  .bunchBuffer = instanceDevOffset,
+                  .dstBuffer = BufferRegion{this->instanceBuffer, DataRegion{ 0ull, sizeof(InstanceDevInfo), cpp21::bytesize(*this->instanceDevInfo) }}
+                    });
+
+                // parallelize by offset
+                uploaderObj->writeUploadToResourceCmd(UploadCommandWriteInfo{
+                  .cmdBuf = cmdBuf,
+                  .bunchBuffer = instanceOffset,
+                  .dstBuffer = BufferRegion{this->instanceExtBuffer, DataRegion{ 0ull, sizeof(InstanceInfo), cpp21::bytesize(*this->instanceInfo) }}
+                    });
+
+                //
+                decltype(auto) bufferBarriersBegin = std::vector<vk::BufferMemoryBarrier2>{
+                  vk::BufferMemoryBarrier2{
+                    .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(accessMask) | (accessMask & vk::AccessFlagBits2(AccessFlagBitsSet::eShaderReadWrite) ? vk::PipelineStageFlagBits2::eAllCommands : vk::PipelineStageFlagBits2{}),
+                    .srcAccessMask = accessMask,
+                    .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(vk::AccessFlagBits2::eAccelerationStructureWriteKHR | vk::AccessFlagBits2::eAccelerationStructureReadKHR),
+                    .dstAccessMask = vk::AccessFlagBits2::eAccelerationStructureWriteKHR | vk::AccessFlagBits2::eAccelerationStructureReadKHR,
+                    .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
+                    .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
+                    .buffer = this->instanceBuild,
+                    .offset = 0ull,
+                    .size = std::min(accelSizes->accelerationStructureSize, accelInfo->size)
+                  },
+                };
+
+                //
+                decltype(auto) bufferBarriersEnd = std::vector<vk::BufferMemoryBarrier2>{
+                  vk::BufferMemoryBarrier2{
+                    .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(vk::AccessFlagBits2::eAccelerationStructureWriteKHR | vk::AccessFlagBits2::eAccelerationStructureReadKHR),
+                    .srcAccessMask = vk::AccessFlagBits2::eAccelerationStructureWriteKHR | vk::AccessFlagBits2::eAccelerationStructureReadKHR,
+                    .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(accessMask) | (accessMask & vk::AccessFlagBits2(AccessFlagBitsSet::eShaderReadWrite) ? vk::PipelineStageFlagBits2::eAllCommands : vk::PipelineStageFlagBits2{}),
+                    .dstAccessMask = accessMask,
+                    .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
+                    .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
+                    .buffer = this->instanceBuild,
+                    .offset = 0ull,
+                    .size = std::min(accelSizes->accelerationStructureSize, accelInfo->size)
+                  }
+                };
+
+                //
+                decltype(auto) memoryBarriersBegin = std::vector<vk::MemoryBarrier2>{
+                  vk::MemoryBarrier2{
+                    .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
+                    .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite),
+                    .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(vk::AccessFlagBits2::eAccelerationStructureWriteKHR | vk::AccessFlagBits2::eAccelerationStructureReadKHR),
+                    .dstAccessMask = vk::AccessFlagBits2::eAccelerationStructureWriteKHR | vk::AccessFlagBits2::eAccelerationStructureReadKHR
+                  }
+                };
+
+                //
+                decltype(auto) memoryBarriersEnd = std::vector<vk::MemoryBarrier2>{
+                  vk::MemoryBarrier2{
+                    .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(vk::AccessFlagBits2::eAccelerationStructureWriteKHR | vk::AccessFlagBits2::eAccelerationStructureReadKHR),
+                    .srcAccessMask = vk::AccessFlagBits2::eAccelerationStructureWriteKHR | vk::AccessFlagBits2::eAccelerationStructureReadKHR,
+                    .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
+                    .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite)
+                  }
+                };
+
+                // 
+                cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersBegin).setMemoryBarriers(memoryBarriersBegin));
+                if (supportAS) {
+                    cmdBuf.buildAccelerationStructuresKHR(1u, &accelInstInfo->setGeometries(this->instances).setMode(accelInstInfo->srcAccelerationStructure ? vk::BuildAccelerationStructureModeKHR::eUpdate : vk::BuildAccelerationStructureModeKHR::eBuild), cpp21::rvalue_to_ptr(instanceRanges.data()), deviceObj->getDispatch());
+                };
+                cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersEnd).setMemoryBarriers(memoryBarriersEnd));
+
+                //
+                accelInstInfo->srcAccelerationStructure = accelInstInfo->dstAccelerationStructure;
             };
-
-            //
-            decltype(auto) bufferBarriersEnd = std::vector<vk::BufferMemoryBarrier2>{
-              vk::BufferMemoryBarrier2{
-                .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(vk::AccessFlagBits2::eAccelerationStructureWriteKHR | vk::AccessFlagBits2::eAccelerationStructureReadKHR),
-                .srcAccessMask = vk::AccessFlagBits2::eAccelerationStructureWriteKHR | vk::AccessFlagBits2::eAccelerationStructureReadKHR,
-                .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(accessMask) | (accessMask & vk::AccessFlagBits2(AccessFlagBitsSet::eShaderReadWrite) ? vk::PipelineStageFlagBits2::eAllCommands : vk::PipelineStageFlagBits2{}),
-                .dstAccessMask = accessMask,
-                .srcQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
-                .dstQueueFamilyIndex = this->cInfo->info->queueFamilyIndex,
-                .buffer = this->instanceBuild,
-                .offset = 0ull,
-                .size = std::min(accelSizes->accelerationStructureSize, accelInfo->size)
-              }
-            };
-
-            //
-            decltype(auto) memoryBarriersBegin = std::vector<vk::MemoryBarrier2>{
-              vk::MemoryBarrier2{
-                .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
-                .srcAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite),
-                .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(vk::AccessFlagBits2::eAccelerationStructureWriteKHR | vk::AccessFlagBits2::eAccelerationStructureReadKHR),
-                .dstAccessMask = vk::AccessFlagBits2::eAccelerationStructureWriteKHR | vk::AccessFlagBits2::eAccelerationStructureReadKHR
-              }
-            };
-
-            //
-            decltype(auto) memoryBarriersEnd = std::vector<vk::MemoryBarrier2>{
-              vk::MemoryBarrier2{
-                .srcStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(vk::AccessFlagBits2::eAccelerationStructureWriteKHR | vk::AccessFlagBits2::eAccelerationStructureReadKHR),
-                .srcAccessMask = vk::AccessFlagBits2::eAccelerationStructureWriteKHR | vk::AccessFlagBits2::eAccelerationStructureReadKHR,
-                .dstStageMask = vku::getCorrectPipelineStagesByAccessMask<vk::PipelineStageFlagBits2>(AccessFlagBitsSet::eGeneralReadWrite),
-                .dstAccessMask = vk::AccessFlagBits2(AccessFlagBitsSet::eGeneralReadWrite)
-              }
-            };
-
-            // 
-            cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersBegin).setMemoryBarriers(memoryBarriersBegin));
-            cmdBuf.buildAccelerationStructuresKHR(1u, &accelInstInfo->setGeometries(this->instances).setMode(accelInstInfo->srcAccelerationStructure ? vk::BuildAccelerationStructureModeKHR::eUpdate : vk::BuildAccelerationStructureModeKHR::eBuild), cpp21::rvalue_to_ptr(instanceRanges.data()), deviceObj->getDispatch());
-            cmdBuf.pipelineBarrier2(depInfo.setBufferMemoryBarriers(bufferBarriersEnd).setMemoryBarriers(memoryBarriersEnd));
-
-            //
-            accelInstInfo->srcAccelerationStructure = accelInstInfo->dstAccelerationStructure;
 
             //
             return cmdBuf;
@@ -439,8 +451,13 @@ namespace ANAMED {
             // 
             decltype(auto) device = this->base.as<vk::Device>();
             decltype(auto) deviceObj = ANAMED::context->get<DeviceObj>(this->base);
+
+            //
+            const bool supportAS = deviceObj->getPhysicalDeviceInfoMap()->get<vk::PhysicalDeviceAccelerationStructureFeaturesKHR>(vk::StructureType::ePhysicalDeviceAccelerationStructureFeaturesKHR)->accelerationStructure && deviceObj->getDispatch().vkGetAccelerationStructureBuildSizesKHR;;
+
+            //
             decltype(auto) accelInstInfo = infoMap->get<vk::AccelerationStructureBuildGeometryInfoKHR>(vk::StructureType::eAccelerationStructureBuildGeometryInfoKHR);
-            decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelInstInfo->setGeometries(this->instances), this->cInfo->limit, deviceObj->getDispatch()));
+            decltype(auto) accelSizes = infoMap->set(vk::StructureType::eAccelerationStructureBuildSizesInfoKHR, supportAS ? device.getAccelerationStructureBuildSizesKHR(vk::AccelerationStructureBuildTypeKHR::eDevice, accelInstInfo->setGeometries(this->instances), this->cInfo->limit, deviceObj->getDispatch()) : vk::AccelerationStructureBuildSizesInfoKHR{});
             decltype(auto) accelInfo = infoMap->get<vk::AccelerationStructureCreateInfoKHR>(vk::StructureType::eAccelerationStructureCreateInfoKHR);
 
             // 
@@ -449,23 +466,25 @@ namespace ANAMED {
                   .type = BufferType::eStorage
             })).as<vk::Buffer>();
 
-            //
-            this->instanceScratch = (this->bindInstanceScratch = ResourceBufferObj::make(this->base, BufferCreateInfo{
-                  .size = std::max(accelSizes->buildScratchSize, accelSizes->updateScratchSize),
-                  .type = BufferType::eStorage
-            })).as<vk::Buffer>();
-
-            //
-            this->instanceBuild = (this->bindInstanceBuild = ResourceBufferObj::make(this->base, BufferCreateInfo{
-                  .size = accelSizes->accelerationStructureSize,
-                  .type = BufferType::eStorage
-            })).as<vk::Buffer>();
-
             // 
             this->instanceExtBuffer = (this->bindInstanceExtBuffer = ResourceBufferObj::make(this->base, BufferCreateInfo{
-                  .size = cpp21::bytesize(*this->instanceInfo),
-                  .type = BufferType::eStorage
+                .size = cpp21::bytesize(*this->instanceInfo),
+                .type = BufferType::eStorage
             })).as<vk::Buffer>();
+
+            //
+            if (supportAS) {
+                this->instanceScratch = (this->bindInstanceScratch = ResourceBufferObj::make(this->base, BufferCreateInfo{
+                    .size = std::max(accelSizes->buildScratchSize, accelSizes->updateScratchSize),
+                    .type = BufferType::eStorage
+                })).as<vk::Buffer>();
+
+                //
+                this->instanceBuild = (this->bindInstanceBuild = ResourceBufferObj::make(this->base, BufferCreateInfo{
+                    .size = accelSizes->accelerationStructureSize,
+                    .type = BufferType::eStorage
+                })).as<vk::Buffer>();
+            };
 
             //
             //accelInfo->type = vk::AccelerationStructureTypeKHR::eBottomLevel;
@@ -475,12 +494,24 @@ namespace ANAMED {
 
             //
             accelInstInfo->type = accelInfo->type;
-            accelInstInfo->scratchData = reinterpret_cast<vk::DeviceOrHostAddressKHR&>(this->bindInstanceScratch->getDeviceAddress());
+            if (supportAS) {
+                accelInstInfo->scratchData = reinterpret_cast<vk::DeviceOrHostAddressKHR&>(this->bindInstanceScratch->getDeviceAddress());
+            };
             accelInstInfo->srcAccelerationStructure = vk::AccelerationStructureKHR{};
-            accelInstInfo->dstAccelerationStructure = (this->accelStruct = handleResult(device.createAccelerationStructureKHR(accelInfo.value(), nullptr, deviceObj->getDispatch())));
 
             //
-            this->handle = device.getAccelerationStructureAddressKHR(vk::AccelerationStructureDeviceAddressInfoKHR{ .accelerationStructure = this->accelStruct }, deviceObj->getDispatch());
+            if (supportAS) {
+                accelInstInfo->dstAccelerationStructure = (this->accelStruct = handleResult(device.createAccelerationStructureKHR(accelInfo.value(), nullptr, deviceObj->getDispatch())));
+            };
+
+            //
+            if (supportAS) {
+                this->handle = device.getAccelerationStructureAddressKHR(vk::AccelerationStructureDeviceAddressInfoKHR{ .accelerationStructure = this->accelStruct }, deviceObj->getDispatch());
+            } else {
+                this->handle = uintptr_t(this);
+            };
+
+            //
             this->addressInfo = InstanceAddressInfo{ .data = this->getInstanceInfoDeviceAddress(), .accelStruct = this->accelStruct ? this->handle.as<uintptr_t>() : 0ull, .instanceCount = uint32_t(std::max(cInfo->instances->size(), size_t(cInfo->limit))) };
 
             //
