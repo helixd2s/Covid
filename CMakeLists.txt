@@ -67,6 +67,10 @@ file(GLOB_RECURSE _source_list
   "${_src_root_path}/include/Alter/*.inl"
   "${_src_root_path}/include/Alter/*.hpp"
   "${_src_root_path}/include/Alter/*.h"
+  "${_src_root_path}/include/Aftermath/*.cpp"
+  "${_src_root_path}/include/Aftermath/*.inl"
+  "${_src_root_path}/include/Aftermath/*.hpp"
+  "${_src_root_path}/include/Aftermath/*.h"
   "${_src_root_path}/src/Alter/*.inl"
   "${_src_root_path}/src/Alter/*.cpp"
   "${_src_root_path}/src/Alter/*.c"
@@ -92,6 +96,7 @@ add_executable(${PROJECT_NAME} ${_source_list})
 target_compile_definitions(${PROJECT_NAME} PUBLIC ALT_USE_ROBIN_HOOD USE_CMAKE_PCH VULKAN_HPP_NO_CONSTRUCTORS NOMINMAX ALT_ENABLE_VMA ALT_ENABLE_GLTF CPP21_DEBUG_MEMORY TINYGLTF_USE_CPP14 ANAMED=alter ${PLATFORM_DEF})
 target_include_directories(${PROJECT_NAME} PUBLIC 
   ${PROJECT_SOURCE_DIR}/include/Alter 
+  ${PROJECT_SOURCE_DIR}/include/Aftermath 
   ${PROJECT_SOURCE_DIR}/include 
   ${PROJECT_SOURCE_DIR}/../vk-utils/
   ${PROJECT_SOURCE_DIR}/../vk-utils/interval-tree/include

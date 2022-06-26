@@ -272,12 +272,12 @@ namespace ANAMED {
     #endif
         };
         cpp21::shared_vector<std::string> layerList = std::vector<std::string>{
-            //"VK_LAYER_KHRONOS_synchronization2",
+            "VK_LAYER_KHRONOS_synchronization2",
             "VK_LAYER_KHRONOS_validation",
-            //"VK_LAYER_KHRONOS_profiles",
-            //"VK_LAYER_LUNARG_parameter_validation",
-            //"VK_LAYER_LUNARG_core_validation",
-            //"VK_LAYER_LUNARG_object_tracker",
+            "VK_LAYER_KHRONOS_profiles",
+            "VK_LAYER_LUNARG_parameter_validation",
+            "VK_LAYER_LUNARG_core_validation",
+            "VK_LAYER_LUNARG_object_tracker",
             //"VK_LAYER_LUNARG_api_dump"
         };
     };
@@ -1186,36 +1186,7 @@ namespace ANAMED {
         std::optional<QueueGetInfo> info = {};
     };
 
-    //
-    inline std::string to_string(GFSDK_Aftermath_Result result)
-    {
-        return std::string("0x") + cpp21::to_hex_string(static_cast<uint32_t>(result));
-    };
-
-    //
-    inline std::string to_string(const GFSDK_Aftermath_ShaderDebugInfoIdentifier& identifier)
-    {
-        return cpp21::to_hex_string(identifier.id[0]) + "-" + cpp21::to_hex_string(identifier.id[1]);
-    };
-
-    //
-    inline std::string to_string(const GFSDK_Aftermath_ShaderBinaryHash& hash)
-    {
-        return cpp21::to_hex_string(hash.hash);
-    };
-
-    //
-    inline std::string  AftermathErrorMessage(GFSDK_Aftermath_Result result)
-    {
-        switch (result)
-        {
-        case GFSDK_Aftermath_Result_FAIL_DriverVersionNotSupported:
-            return "Unsupported driver version - requires an NVIDIA R495 display driver or newer.";
-        default:
-            return "Aftermath Error 0x" + cpp21::to_hex_string(result);
-        }
-    };
-
+    /*
     //
     inline void AFTERMATH_CHECK_ERROR(GFSDK_Aftermath_Result const& result) {
         if (!GFSDK_Aftermath_SUCCEED(result)) {
@@ -1227,10 +1198,11 @@ namespace ANAMED {
     inline void ERR_EXIT(std::string const& error, std::string const& msg) {
         std::cerr << msg << std::endl;
         std::cerr << error << std::endl;
-    };
+    };*/
 
     //
     inline vk::Result handleDeviceLost(vk::Result const& result) {
+#if defined(USE_NSIGHT_AFTERMATH)
         if (result == vk::Result::eErrorDeviceLost)
         {
             // Device lost notification is asynchronous to the NVIDIA display
@@ -1255,7 +1227,7 @@ namespace ANAMED {
                 tElapsed = std::chrono::duration_cast<std::chrono::milliseconds>(tEnd - tStart);
 
                 //
-                if (status == GFSDK_Aftermath_CrashDump_Status_NotStarted) { break; };
+                //if (status == GFSDK_Aftermath_CrashDump_Status_NotStarted) { break; };
             };
 
             //
@@ -1263,9 +1235,11 @@ namespace ANAMED {
             {
                 std::stringstream err_msg;
                 err_msg << "Unexpected crash dump status: " << status;
-                ERR_EXIT(err_msg.str(), "Aftermath Error");
+                ERR_EXIT(err_msg.str().c_str(), "Aftermath Error");
             };
         };
+#endif
+
         assert(result == vk::Result::eSuccess || result == vk::Result::eNotReady);
         return result;
     };

@@ -14,6 +14,7 @@
 #define USE_NSIGHT_AFTERMATH 1
 
 //
+#if defined(USE_NSIGHT_AFTERMATH)
 #ifdef VULKAN_HPP_ASSERT_ON_RESULT
 #undef VULKAN_HPP_ASSERT_ON_RESULT
 #endif
@@ -22,19 +23,17 @@
 #ifndef VULKAN_HPP_ASSERT_ON_RESULT
 #define VULKAN_HPP_ASSERT_ON_RESULT(result)  
 #endif
+#endif
 
 //
-//
-
-//
-//namespace vku {
-    //inline bool handleResult(bool const& result) { assert(result); return true; };
-//};
-
-//
+#if defined(USE_NSIGHT_AFTERMATH)
 #include <GFSDK_Aftermath.h>
 #include <GFSDK_Aftermath_GpuCrashDump.h>
 #include <GFSDK_Aftermath_GpuCrashDumpDecoding.h>
+#include <NsightAftermathHelpers.h>
+#include <NsightAftermathGpuCrashTracker.h>
+#include <NsightAftermathShaderDatabase.h>
+#endif
 
 //
 #include <cassert>
@@ -59,7 +58,7 @@
 #include <span>
 #include <numeric>
 
-
+//
 #ifdef _MSC_VER 
 #include <experimental/generator>
 #else

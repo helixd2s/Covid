@@ -15,6 +15,11 @@ namespace ANAMED {
         using BaseObj::BaseObj;
         //using SFT = shared_from_this;
 
+        // GPU crash dump tracker using Nsight Aftermath instrumentation
+        GpuCrashTracker::MarkerMap markerMap;
+        GpuCrashTracker gpuCrashTracker;
+        uint64_t frameNumber;
+
     protected:
         std::optional<ContextCreateInfo> cInfo = ContextCreateInfo{};
 
@@ -25,7 +30,7 @@ namespace ANAMED {
     public:
 
         // 
-        ContextObj(Handle const& handle = Handle(0ull, HandleType::eUnknown), cpp21::optional_ref<ContextCreateInfo> cInfo = ContextCreateInfo{}) : BaseObj(handle), cInfo(cInfo) {
+        ContextObj(Handle const& handle = Handle(0ull, HandleType::eUnknown), cpp21::optional_ref<ContextCreateInfo> cInfo = ContextCreateInfo{}) : BaseObj(handle), cInfo(cInfo), markerMap{}, gpuCrashTracker{ markerMap } {
             //this->construct(cInfo);
         };
 
@@ -53,28 +58,6 @@ namespace ANAMED {
 
     //
     inline extern WrapShared<ContextObj> context = {};
-
-    //
-    inline void GpuCrashDumpCallback(const void* pGpuCrashDump, const uint32_t gpuCrashDumpSize, void* pUserData)
-    {
-
-    };
-
-    //
-    inline void ShaderDebugInfoCallback(const void* pShaderDebugInfo, const uint32_t shaderDebugInfoSize, void* pUserData) {
-
-    };
-
-    //
-    inline void CrashDumpDescriptionCallback(PFN_GFSDK_Aftermath_AddGpuCrashDumpDescription addDescription, void* pUserData)
-    {
-
-    };
-
-    //
-    inline void ResolveMarkerCallback(const void* pMarker, void* pUserData, void** resolvedMarkerData, uint32_t* markerSize) {
-
-    };
 
     // 
     inline static decltype(auto) initialize(cpp21::optional_ref<ContextCreateInfo> cInfo = ContextCreateInfo{}) {
