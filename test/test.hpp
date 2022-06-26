@@ -228,7 +228,6 @@ public:
         decltype(auto) raster = rasterBufObj->acquireImage(qfAndQueue);
         decltype(auto) deferred = deferredBufObj->acquireImage(qfAndQueue);
         
-
         //
         for (uint32_t i = 0; i < 2; i++) {
             uniformData.framebuffers[i] = framebufferObj[i]->getStateInfo();
@@ -257,9 +256,6 @@ public:
             displayFPS(frameCount);
             previousTime = currentTime;
         };
-
-        //
-
 
         // wait ready for filling
         auto& fence = (*fences)[acquired];

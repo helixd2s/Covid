@@ -323,8 +323,8 @@ namespace ANAMED {
 
             //
             auto getStatus = [device, fence]() {
-                if (fence && *fence) { return device.getFenceStatus(*fence) != vk::Result::eNotReady; };
-                return true;
+                if (fence && *fence) { return device.getFenceStatus(*fence); };
+                return vk::Result::eSuccess;
             };
 
             // 
@@ -417,7 +417,9 @@ namespace ANAMED {
               .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceRayTracingMaintenance1FeaturesKHR, vk::PhysicalDeviceRayTracingMaintenance1FeaturesKHR{
               .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceFragmentShaderInterlockFeaturesEXT, vk::PhysicalDeviceFragmentShaderInterlockFeaturesEXT{
               .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceTransformFeedbackFeaturesEXT, vk::PhysicalDeviceTransformFeedbackFeaturesEXT{
+              .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceDiagnosticsConfigFeaturesNV, vk::PhysicalDeviceDiagnosticsConfigFeaturesNV{
               .pNext = nullptr
+              })
               })
               })
               })
@@ -454,7 +456,9 @@ namespace ANAMED {
               .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceFragmentShaderBarycentricPropertiesKHR, vk::PhysicalDeviceFragmentShaderBarycentricPropertiesKHR{
               .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDevicePushDescriptorPropertiesKHR, vk::PhysicalDevicePushDescriptorPropertiesKHR{
               .pNext = PDInfoMap->set(vk::StructureType::ePhysicalDeviceTransformFeedbackPropertiesEXT, vk::PhysicalDeviceTransformFeedbackPropertiesEXT{
+              .pNext = PDInfoMap->set(vk::StructureType::eQueueFamilyCheckpointPropertiesNV, vk::QueueFamilyCheckpointPropertiesNV{
               .pNext = nullptr
+              })
               })
               })
               })
@@ -471,9 +475,15 @@ namespace ANAMED {
             auto& properties = properties2->properties;
 
             // device group support was broken...
-            decltype(auto) deviceInfo = infoMap->set(vk::StructureType::eDeviceCreateInfo, vk::DeviceCreateInfo{ .pNext = features2.get() });
-
-
+            decltype(auto) diagnosInfo = infoMap->set(vk::StructureType::eDeviceDiagnosticsConfigCreateInfoNV, vk::DeviceDiagnosticsConfigCreateInfoNV{ 
+                .pNext = features2.get(), 
+                .flags = 
+                    vk::DeviceDiagnosticsConfigFlagBitsNV::eEnableShaderDebugInfo | 
+                    vk::DeviceDiagnosticsConfigFlagBitsNV::eEnableResourceTracking | 
+                    vk::DeviceDiagnosticsConfigFlagBitsNV::eEnableAutomaticCheckpoints |
+                    vk::DeviceDiagnosticsConfigFlagBitsNV::eEnableShaderErrorReporting
+            });
+            decltype(auto) deviceInfo = infoMap->set(vk::StructureType::eDeviceCreateInfo, vk::DeviceCreateInfo{ .pNext = diagnosInfo.get() });
 
             //
             {

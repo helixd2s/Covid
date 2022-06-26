@@ -197,8 +197,8 @@ namespace ANAMED {
 
       //
       fences.push_back(std::make_shared<FenceStatus>([device, fence]() {
-        if (fence && *fence) { return device.getFenceStatus(*fence) != vk::Result::eNotReady; };
-        return true;
+        if (fence && *fence) { return device.getFenceStatus(*fence); };
+        return vk::Result::eSuccess;
       }, onDone));
       decltype(auto) status = fences.back();
       if (bindSparseInfo) {

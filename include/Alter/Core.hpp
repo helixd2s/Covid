@@ -9,6 +9,11 @@
 #endif
 
 //
+#include <GFSDK_Aftermath.h>
+#include <GFSDK_Aftermath_GpuCrashDump.h>
+#include <GFSDK_Aftermath_GpuCrashDumpDecoding.h>
+
+//
 #include <cmake_pch.hpp>
 
 // 
@@ -333,7 +338,9 @@ namespace ANAMED {
           "VK_KHR_ray_tracing_maintenance1",
           "VK_EXT_fragment_shader_interlock",
           "VK_KHR_push_descriptor",
-          "VK_EXT_transform_feedback"
+          "VK_EXT_transform_feedback",
+          "VK_NV_device_diagnostic_checkpoints",
+          "VK_NV_device_diagnostics_config"
         };
         cpp21::shared_vector<std::string> layerList = std::vector<std::string>{
         };
@@ -1189,19 +1196,30 @@ namespace ANAMED {
     //
     class FenceStatus {
     protected:
-        std::function<bool()> getStatus = {};
         std::function<void()> onDone = {};
+        std::function<vk::Result()> getStatus = {};
 
         //
     public:
-        bool checkStatus() {
-            if (this->getStatus()) { if (this->onDone) { this->onDone(); }; this->onDone = {}; return true; };
+        //
+        virtual bool check() {
+            if (this->getStatus) {
+                return this->getStatus() != vk::Result::eNotReady;
+            };
+            return true;
+        };
+
+        //
+        virtual bool checkStatus() {
+            if (this->check()) { if (this->onDone) { this->onDone(); }; this->onDone = {}; return true; };
             return false;
         };
 
         // 
-        FenceStatus(std::function<bool()> getStatus, std::function<void()> onDone = {}) : getStatus(getStatus), onDone(onDone) {};
+        FenceStatus(std::function<vk::Result()> getStatus, std::function<void()> onDone = {}) : getStatus(getStatus), onDone(onDone) {};
     };
+
+
 
     //
     using FenceTypeRaw = std::shared_ptr<FenceStatus>;
