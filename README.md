@@ -1,5 +1,8 @@
 # 🌋 Alter 🌋
 
+## 💬 [Обсуждения/Discussions](https://github.com/helixd2s/about/discussions) 💬
+## 🐞 [Баг-Репорты/Bug-Tracker](https://github.com/helixd2s/about/issues) 🐞
+
 The most ambitious rendering project, and at the same time a future mod for Minecraft. 
 
 ## Screenshots
