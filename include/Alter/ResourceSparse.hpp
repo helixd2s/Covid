@@ -212,6 +212,7 @@ namespace ANAMED {
 
   };
 
+  /*
   //
   inline vk::Buffer& PipelineLayoutObj::createCacheBuffer() {
       this->cacheBuffer = (this->cacheBufferObj = ResourceSparseObj::make(this->base, BufferCreateInfo{
@@ -232,7 +233,7 @@ namespace ANAMED {
 
       //
       return this->cacheBuffer;
-  };
+  };*/
 
   
 };

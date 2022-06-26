@@ -71,6 +71,9 @@ int main(int argc, char** argv) {
 #endif
 
     //
+    system("PAUSE");
+
+    //
     ANAMED::initialize();
     decltype(auto) app = std::make_shared<App>();
     app->loadModel(args::get(modelflag), args::get(scaleflag));

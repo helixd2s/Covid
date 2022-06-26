@@ -293,6 +293,22 @@ namespace ANAMED {
     };
 
     //
+    inline vk::Buffer& PipelineLayoutObj::createCacheBuffer() {
+        this->cacheBuffer = (this->cacheBufferObj = ResourceBufferObj::make(this->base, BufferCreateInfo{
+            .size = this->cachePages * this->cachePageSize,
+            .type = BufferType::eStorage
+        })).as<vk::Buffer>();
+
+        //
+        for (uint32_t i = 0; i < this->cachePages; i++) {
+            this->cacheBufferDescs.push_back(vk::DescriptorBufferInfo{ this->cacheBuffer, i * this->cachePageSize, this->cachePageSize });
+        };
+
+        //
+        return this->cacheBuffer;
+    };
+
+    //
     inline vk::Buffer& PipelineLayoutObj::createUniformBuffer() {
         this->uniformBuffer = (this->uniformBufferObj = ResourceBufferObj::make(this->base, BufferCreateInfo{
             .size = uniformSize,

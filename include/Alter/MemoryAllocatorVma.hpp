@@ -72,6 +72,8 @@ namespace ANAMED {
             vmaCreateInfo.physicalDevice = deviceObj->getPhysicalDevice();
             vmaCreateInfo.device = deviceObj->getHandle().as<VkDevice>();
             vmaCreateInfo.instance = deviceObj->getBase().as<VkInstance>();
+            //vmaCreateInfo.pVulkanFunctions = nullptr;
+            vmaCreateInfo.pVulkanFunctions = &vulkanFunctions;
 
             // 
             vmaCreateAllocator(&vmaCreateInfo, &this->handle.as<VmaAllocator>());
@@ -159,7 +161,7 @@ namespace ANAMED {
             };
 
             //
-            device.setMemoryPriorityEXT(allocated->memory, 1.f, deviceObj->getDispatch());
+            //device.setMemoryPriorityEXT(allocated->memory, 1.f, deviceObj->getDispatch());
 
             //
             allocated->destructor = std::make_shared<std::function<DFun>>([device, allocator = this->handle.as<VmaAllocator>(), &allocation = allocated->allocation](BaseObj const*) {

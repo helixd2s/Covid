@@ -177,7 +177,7 @@ namespace ANAMED {
                 };
 
                 //
-                device.setMemoryPriorityEXT(allocated->memory, 1.f, deviceObj->getDispatch());
+                //device.setMemoryPriorityEXT(allocated->memory, 1.f, deviceObj->getDispatch());
 
                 //
                 if (requirements->dedicated) {
