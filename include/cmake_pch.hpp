@@ -20,7 +20,7 @@
 //#endif
 
 //
-//#include <cassert>
+//
 
 //
 //namespace vku {
@@ -33,6 +33,7 @@
 #include <GFSDK_Aftermath_GpuCrashDumpDecoding.h>
 
 //
+#include <cassert>
 #include <vector>
 #include <string>
 #include <memory>

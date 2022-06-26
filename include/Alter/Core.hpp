@@ -1193,8 +1193,10 @@ namespace ANAMED {
     };
 
     //
-    inline void ERR_EXIT(void const* error, void const* msg) {
-
+    inline void ERR_EXIT(std::string const& error, std::string const& msg) {
+        std::cerr << msg << std::endl;
+        std::cerr << error << std::endl;
+        exit(1);
     };
 
     //
@@ -1227,7 +1229,7 @@ namespace ANAMED {
             {
                 std::stringstream err_msg;
                 err_msg << "Unexpected crash dump status: " << status;
-                ERR_EXIT(err_msg.str().c_str(), "Aftermath Error");
+                ERR_EXIT(err_msg.str(), "Aftermath Error");
             };
         }
         return result;
@@ -1235,7 +1237,9 @@ namespace ANAMED {
 
     //
     inline vk::Result handleResult(vk::Result const& result) {
-        return handleDeviceLost(result);
+        handleDeviceLost(result);
+        assert(result == vk::Result::eSuccess || result == vk::Result::eNotReady);
+        return result;
     };
 
     //
