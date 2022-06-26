@@ -176,10 +176,10 @@ namespace ANAMED {
             //
             auto& physicalDevice = deviceObj->getPhysicalDevice();
             auto PDInfoMap = deviceObj->getPhysicalDeviceInfoMap();
-            capInfo.capabilities2 = physicalDevice.getSurfaceCapabilities2KHR(vk::PhysicalDeviceSurfaceInfo2KHR{ .surface = cInfo->surface });
+            capInfo.capabilities2 = handleResult(physicalDevice.getSurfaceCapabilities2KHR(vk::PhysicalDeviceSurfaceInfo2KHR{ .surface = cInfo->surface }));
             capInfo.capabilities = cpp21::opt_ref(capInfo.capabilities2.surfaceCapabilities);
-            capInfo.formats2 = physicalDevice.getSurfaceFormats2KHR(vk::PhysicalDeviceSurfaceInfo2KHR{ .surface = cInfo->surface });
-            capInfo.presentModes = physicalDevice.getSurfacePresentModesKHR(cInfo->surface);
+            capInfo.formats2 = handleResult(physicalDevice.getSurfaceFormats2KHR(vk::PhysicalDeviceSurfaceInfo2KHR{ .surface = cInfo->surface }));
+            capInfo.presentModes = handleResult(physicalDevice.getSurfacePresentModesKHR(cInfo->surface));
 
             // TODO: search needed surface format
             decltype(auto) surfaceFormat2 = capInfo.formats2.back();
@@ -219,7 +219,7 @@ namespace ANAMED {
             };
 
             //
-            images = device.getSwapchainImagesKHR(this->swapchain = device.createSwapchainKHR(infoMap->set(vk::StructureType::eSwapchainCreateInfoKHR, vk::SwapchainCreateInfoKHR{
+            images = handleResult(device.getSwapchainImagesKHR(this->swapchain = handleResult(device.createSwapchainKHR(infoMap->set(vk::StructureType::eSwapchainCreateInfoKHR, vk::SwapchainCreateInfoKHR{
               .surface = cInfo->surface,
               .minImageCount = std::max(capInfo.capabilities->minImageCount, capInfo.capabilities->maxImageCount),
               .imageFormat = surfaceFormat2.surfaceFormat.format,
@@ -231,7 +231,7 @@ namespace ANAMED {
               .compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque,
               .presentMode = presentMode,
               .clipped = true
-                })->setQueueFamilyIndices(deviceObj->getQueueFamilies().indices)));
+                })->setQueueFamilyIndices(deviceObj->getQueueFamilies().indices)))));
 
             // 
             uint32_t imageIndex = 0u;

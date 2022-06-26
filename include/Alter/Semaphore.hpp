@@ -81,7 +81,7 @@ namespace ANAMED {
             decltype(auto) semExport = infoMap->set(vk::StructureType::eExportSemaphoreCreateInfoKHR, vk::ExportSemaphoreCreateInfoKHR{ .handleTypes = extSemFlags });
             decltype(auto) semType = infoMap->set(vk::StructureType::eSemaphoreTypeCreateInfo, vk::SemaphoreTypeCreateInfo{ .pNext = cInfo->hasExport ? semExport.get() : nullptr, .semaphoreType = vk::SemaphoreType::eBinary, .initialValue = 0ull });
             decltype(auto) semInfo = infoMap->set(vk::StructureType::eSemaphoreCreateInfo, vk::SemaphoreCreateInfo{ .pNext = semType.get(), .flags = {} });
-            decltype(auto) semSubmit = infoMap->set(vk::StructureType::eSemaphoreSubmitInfo, vk::SemaphoreSubmitInfo{ .semaphore = (this->handle = this->base.as<vk::Device>().createSemaphore(semInfo.value())).as<vk::Semaphore>(), .value = semType->initialValue, .stageMask = vk::PipelineStageFlagBits2::eAllCommands });
+            decltype(auto) semSubmit = infoMap->set(vk::StructureType::eSemaphoreSubmitInfo, vk::SemaphoreSubmitInfo{ .semaphore = (this->handle = handleResult(this->base.as<vk::Device>().createSemaphore(semInfo.value()))).as<vk::Semaphore>(), .value = semType->initialValue, .stageMask = vk::PipelineStageFlagBits2::eAllCommands });
 
             //
             //this->handle = device.createSemaphore(semInfo.value());
@@ -89,10 +89,10 @@ namespace ANAMED {
             // 
             if (cInfo->hasExport) {
 #ifdef _WIN32
-                this->extHandle = device.getSemaphoreWin32HandleKHR(vk::SemaphoreGetWin32HandleInfoKHR{ .semaphore = this->handle.as<vk::Semaphore>(), .handleType = extSemFlagBits }, deviceObj->getDispatch());
+                this->extHandle = handleResult(device.getSemaphoreWin32HandleKHR(vk::SemaphoreGetWin32HandleInfoKHR{ .semaphore = this->handle.as<vk::Semaphore>(), .handleType = extSemFlagBits }, deviceObj->getDispatch()));
 #else
 #ifdef __linux__ 
-                this->extHandle = device.getSemaphoreFdKHR(vk::SemaphoreGetFdInfoKHR{ .semaphore = this->handle.as<vk::Semaphore>(), .handleType = extSemFlagBits }, deviceObj->getDispatch());
+                this->extHandle = handleResult(device.getSemaphoreFdKHR(vk::SemaphoreGetFdInfoKHR{ .semaphore = this->handle.as<vk::Semaphore>(), .handleType = extSemFlagBits }, deviceObj->getDispatch()));
 #endif
 #endif
             };

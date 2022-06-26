@@ -151,13 +151,13 @@ namespace ANAMED {
 
             // 
             decltype(auto) components = this->componentMapping(info->componentMapping);
-            decltype(auto) imageView = device.createImageView(vk::ImageViewCreateInfo{
+            decltype(auto) imageView = handleResult(device.createImageView(vk::ImageViewCreateInfo{
               .image = this->handle.as<vk::Image>(),
               .viewType = info->viewType,
               .format = imageInfo->format,
               .components = components,
               .subresourceRange = vk::ImageSubresourceRange(info->subresourceRange ? info->subresourceRange.value() : this->subresourceRange(0u,imageInfo->layerCount,0u,imageInfo->mipLevelCount)).setAspectMask(this->aspectMask())
-                });
+                }));
 
             //
             this->imageViews.push_back(imageView);

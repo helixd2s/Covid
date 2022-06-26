@@ -330,7 +330,7 @@ namespace ANAMED {
             accelGeomInfo->type = accelInfo->type;
             accelGeomInfo->scratchData = reinterpret_cast<vk::DeviceOrHostAddressKHR&>(ANAMED::context->get<DeviceObj>(this->base)->get<ResourceBufferObj>(this->geometryScratch)->getDeviceAddress());
             accelGeomInfo->srcAccelerationStructure = vk::AccelerationStructureKHR{};
-            accelGeomInfo->dstAccelerationStructure = (this->accelStruct = device.createAccelerationStructureKHR(accelInfo.value(), nullptr, deviceObj->getDispatch()));
+            accelGeomInfo->dstAccelerationStructure = (this->accelStruct = handleResult(device.createAccelerationStructureKHR(accelInfo.value(), nullptr, deviceObj->getDispatch())));
 
             // 
             this->handle = device.getAccelerationStructureAddressKHR(vk::AccelerationStructureDeviceAddressInfoKHR{ .accelerationStructure = this->accelStruct }, deviceObj->getDispatch());

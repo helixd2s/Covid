@@ -7,6 +7,32 @@
 #define GLM_FORCE_SWIZZLE
 
 //
+#define VULKAN_HPP_NO_EXCEPTIONS
+
+//
+//#ifdef VULKAN_HPP_ASSERT_ON_RESULT
+//#undef VULKAN_HPP_ASSERT_ON_RESULT
+//#endif
+
+//
+//#ifndef VULKAN_HPP_ASSERT_ON_RESULT
+//#define VULKAN_HPP_ASSERT_ON_RESULT(result) vku::handleResult(result)
+//#endif
+
+//
+//#include <cassert>
+
+//
+//namespace vku {
+    //inline bool handleResult(bool const& result) { assert(result); return true; };
+//};
+
+//
+#include <GFSDK_Aftermath.h>
+#include <GFSDK_Aftermath_GpuCrashDump.h>
+#include <GFSDK_Aftermath_GpuCrashDumpDecoding.h>
+
+//
 #include <vector>
 #include <string>
 #include <memory>

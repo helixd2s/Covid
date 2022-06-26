@@ -477,7 +477,7 @@ namespace ANAMED {
             accelInstInfo->type = accelInfo->type;
             accelInstInfo->scratchData = reinterpret_cast<vk::DeviceOrHostAddressKHR&>(this->bindInstanceScratch->getDeviceAddress());
             accelInstInfo->srcAccelerationStructure = vk::AccelerationStructureKHR{};
-            accelInstInfo->dstAccelerationStructure = (this->accelStruct = device.createAccelerationStructureKHR(accelInfo.value(), nullptr, deviceObj->getDispatch()));
+            accelInstInfo->dstAccelerationStructure = (this->accelStruct = handleResult(device.createAccelerationStructureKHR(accelInfo.value(), nullptr, deviceObj->getDispatch())));
 
             //
             this->handle = device.getAccelerationStructureAddressKHR(vk::AccelerationStructureDeviceAddressInfoKHR{ .accelerationStructure = this->accelStruct }, deviceObj->getDispatch());

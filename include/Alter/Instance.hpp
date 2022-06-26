@@ -94,7 +94,7 @@ namespace ANAMED {
         virtual std::vector<vk::PhysicalDeviceGroupProperties>& enumeratePhysicalDeviceGroups() {
             if (this->physicalDeviceGroups.size() > 0) {
                 //try {
-                this->physicalDeviceGroups = this->handle.as<vk::Instance>().enumeratePhysicalDeviceGroups();
+                this->physicalDeviceGroups = handleResult(this->handle.as<vk::Instance>().enumeratePhysicalDeviceGroups());
                 //}
                 //catch (std::exception e) {
                   //std::cerr << "Failed to get physical device group, probably not supported..." << std::endl;
@@ -107,7 +107,7 @@ namespace ANAMED {
         //
         virtual std::vector<vk::PhysicalDeviceGroupProperties> enumeratePhysicalDeviceGroups() const {
             //try {
-            return (this->physicalDeviceGroups.size() > 0 ? this->physicalDeviceGroups : this->handle.as<vk::Instance>().enumeratePhysicalDeviceGroups());
+            return (this->physicalDeviceGroups.size() > 0 ? this->physicalDeviceGroups : handleResult(this->handle.as<vk::Instance>().enumeratePhysicalDeviceGroups()));
             //}
             //catch (std::exception e) {
               //std::cerr << "Failed to get physical device group, probably not supported..." << std::endl;
@@ -118,19 +118,19 @@ namespace ANAMED {
 
         //
         virtual std::vector<vk::PhysicalDevice>& enumeratePhysicalDevices() {
-            return (this->physicalDevices = (this->physicalDevices.size() > 0 ? this->physicalDevices : this->handle.as<vk::Instance>().enumeratePhysicalDevices()));
+            return (this->physicalDevices = (this->physicalDevices.size() > 0 ? this->physicalDevices : handleResult(this->handle.as<vk::Instance>().enumeratePhysicalDevices())));
         };
 
         //
         virtual std::vector<vk::PhysicalDevice>  enumeratePhysicalDevices() const {
-            return (this->physicalDevices.size() > 0 ? this->physicalDevices : this->handle.as<vk::Instance>().enumeratePhysicalDevices());
+            return (this->physicalDevices.size() > 0 ? this->physicalDevices : handleResult(this->handle.as<vk::Instance>().enumeratePhysicalDevices()));
         };
 
         //
         virtual std::vector<char const*>& filterExtensions(cpp21::optional_ref<std::vector<std::string>> names) {
             //std::vector<vk::ExtensionProperties> props(1024u); uint32_t size = 0ull;
             //vk::enumerateInstanceExtensionProperties("", &size, props.data()); props.resize(size);
-            decltype(auto) props = vk::enumerateInstanceExtensionProperties(std::string(""));
+            decltype(auto) props = handleResult(vk::enumerateInstanceExtensionProperties(std::string("")));
             auto& selected = (this->extensionNames);
 
             // 
@@ -156,7 +156,7 @@ namespace ANAMED {
         virtual std::vector<char const*>& filterLayers(cpp21::optional_ref<std::vector<std::string>> names) {
             //std::vector<vk::LayerProperties> props(1024u); uint32_t size = 0ull;
             //vk::enumerateInstanceLayerProperties(&size, props.data()); props.resize(size);
-            decltype(auto) props = vk::enumerateInstanceLayerProperties();
+            decltype(auto) props = handleResult(vk::enumerateInstanceLayerProperties());
             auto& selected = (this->layerNames);
 
             // 
@@ -207,17 +207,17 @@ namespace ANAMED {
             instanceInfo->setPEnabledLayerNames(this->filterLayers(this->cInfo->layerList.value()));
 
             //
-            this->handle = vk::createInstance(instanceInfo.value());
+            this->handle = handleResult(vk::createInstance(instanceInfo.value()));
             this->dispatch = vk::DispatchLoaderDynamic(this->handle.as<vk::Instance>(), vkGetInstanceProcAddr);
             //VULKAN_HPP_DEFAULT_DISPATCHER.init(this->handle.as<vk::Instance>());
 
             // 
-            this->debugMessenger = this->handle.as<vk::Instance>().createDebugUtilsMessengerEXT(vk::DebugUtilsMessengerCreateInfoEXT{
+            this->debugMessenger = handleResult(this->handle.as<vk::Instance>().createDebugUtilsMessengerEXT(vk::DebugUtilsMessengerCreateInfoEXT{
               .messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo,
               .messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation,
               .pfnUserCallback = &callbackFn,
               .pUserData = this
-                }, nullptr, this->dispatch);
+                }, nullptr, this->dispatch));
 
             // 
             //return SFT();

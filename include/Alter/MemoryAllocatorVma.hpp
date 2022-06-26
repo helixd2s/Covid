@@ -150,10 +150,10 @@ namespace ANAMED {
             //
             if (requirements->memoryUsage == MemoryUsage::eGpuOnly) {
 #ifdef _WIN32
-                allocated->extHandle = device.getMemoryWin32HandleKHR(vk::MemoryGetWin32HandleInfoKHR{ .memory = allocated->memory, .handleType = extMemFlagBits }, deviceObj->getDispatch());
+                allocated->extHandle = handleResult(device.getMemoryWin32HandleKHR(vk::MemoryGetWin32HandleInfoKHR{ .memory = allocated->memory, .handleType = extMemFlagBits }, deviceObj->getDispatch()));
 #else
 #ifdef __linux__ 
-                allocated->extHandle = device.getMemoryFdKHR(vk::MemoryGetFdInfoKHR{ .memory = allocated->memory, .handleType = extMemFlagBits }, deviceObj->getDispatch());
+                allocated->extHandle = handleResult(device.getMemoryFdKHR(vk::MemoryGetFdInfoKHR{ .memory = allocated->memory, .handleType = extMemFlagBits }, deviceObj->getDispatch()));
 #endif
 #endif
             };

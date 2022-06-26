@@ -175,7 +175,7 @@ namespace ANAMED {
 
       // 
       decltype(auto) fences = deviceObj->getFences();
-      decltype(auto) fence = std::make_shared<vk::Fence>(device.createFence(vk::FenceCreateInfo{ .flags = {} }));
+      decltype(auto) fence = std::make_shared<vk::Fence>(handleResult(device.createFence(vk::FenceCreateInfo{ .flags = {} })));
 
       // 
       auto deAllocation = [device, fence]() {
@@ -189,16 +189,16 @@ namespace ANAMED {
       auto onDone = [device, fence, callstack = std::weak_ptr<CallStack>(deviceObj->getCallstack()), submission, deAllocation]() {
         auto cl = callstack.lock();
         for (auto fn : submission.onDone) {
-          auto status = device.getFenceStatus(*fence);
-          if (fn) { cl->add(std::bind(fn, status)); };
+          if (fn) { cl->add(std::bind(fn, handleResult(device.getFenceStatus(*fence)))); };
         };
         cl->add(deAllocation);
       };
 
       //
       fences.push_back(std::make_shared<FenceStatus>([device, fence]() {
-        if (fence && *fence) { return device.getFenceStatus(*fence); };
-        return vk::Result::eSuccess;
+        vk::Result status = vk::Result::eSuccess;
+        if (fence && *fence) { status = device.getFenceStatus(*fence); };
+        return handleResult(status);
       }, onDone));
       decltype(auto) status = fences.back();
       if (bindSparseInfo) {

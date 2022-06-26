@@ -74,7 +74,7 @@ namespace ANAMED {
             // 
             decltype(auto) device = this->base.as<vk::Device>();
             decltype(auto) samplerInfo = infoMap->set(vk::StructureType::eSamplerCreateInfo, this->cInfo->native);
-            this->handle = device.createSampler(this->cInfo->native.value());
+            this->handle = handleResult(device.createSampler(this->cInfo->native.value()));
 
             //
             decltype(auto) descriptorsObj = this->cInfo->descriptors ? deviceObj->get<PipelineLayoutObj>(this->cInfo->descriptors) : WrapShared<PipelineLayoutObj>{};

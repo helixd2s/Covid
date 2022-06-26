@@ -83,7 +83,7 @@ namespace ANAMED {
             decltype(auto) externalInfo = infoMap->get<vk::ExternalMemoryBufferCreateInfo>(vk::StructureType::eExternalMemoryBufferCreateInfo);
             if (externalInfo) { bufferInfo->pNext = externalInfo.get(); } else { bufferInfo->pNext = nullptr;};
 
-            decltype(auto) handle = device.createBuffer(bufferInfo.value());
+            decltype(auto) handle = handleResult(device.createBuffer(bufferInfo.value()));
             destructors.push_back(std::make_shared<std::function<DFun>>([device, buffer = handle](BaseObj const*) {
                 device.destroyBuffer(buffer);
                 }));
@@ -93,7 +93,7 @@ namespace ANAMED {
         //
         virtual vk::Image createImage(std::shared_ptr<MSS> infoMap, std::vector<std::shared_ptr<std::function<DFun>>>& destructors) {
             auto& device = this->base.as<vk::Device>();
-            decltype(auto) handle = device.createImage(infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo));
+            decltype(auto) handle = handleResult(device.createImage(infoMap->get<vk::ImageCreateInfo>(vk::StructureType::eImageCreateInfo)));
             destructors.push_back(std::make_shared<std::function<DFun>>([device, image = handle](BaseObj const*) {
                 device.destroyImage(image);
                 }));
@@ -160,7 +160,7 @@ namespace ANAMED {
                 auto memTypeHeap = deviceObj->findMemoryTypeAndHeapIndex(*requirements);
                 //auto& allocated = (this->allocated = AllocatedMemory{}).value();
                 *allocated = AllocatedMemory{
-                  .memory = device.allocateMemory(infoMap->set(vk::StructureType::eMemoryAllocateInfo, vk::MemoryAllocateInfo{
+                  .memory = handleResult(device.allocateMemory(infoMap->set(vk::StructureType::eMemoryAllocateInfo, vk::MemoryAllocateInfo{
                     .pNext = infoMap->set(vk::StructureType::eMemoryAllocateFlagsInfo, vk::MemoryAllocateFlagsInfo{
                       .pNext = infoMap->set(vk::StructureType::eMemoryDedicatedAllocateInfo, vk::MemoryDedicatedAllocateInfo{
                         .pNext = requirements->memoryUsage == MemoryUsage::eGpuOnly ? exportMemory.get() : nullptr,
@@ -171,7 +171,7 @@ namespace ANAMED {
                     }).get(),
                     .allocationSize = requirements->requirements->size,
                     .memoryTypeIndex = std::get<0>(memTypeHeap)
-                  }).value()),
+                  }).value())),
                   .offset = 0ull,
                   .size = requirements->requirements->size
                 };
@@ -198,17 +198,17 @@ namespace ANAMED {
                 //
                 if (requirements->memoryUsage == MemoryUsage::eGpuOnly) {
 #ifdef _WIN32
-                    allocated->extHandle = device.getMemoryWin32HandleKHR(vk::MemoryGetWin32HandleInfoKHR{ .memory = allocated->memory, .handleType = extMemFlagBits }, deviceObj->getDispatch());
+                    allocated->extHandle = handleResult(device.getMemoryWin32HandleKHR(vk::MemoryGetWin32HandleInfoKHR{ .memory = allocated->memory, .handleType = extMemFlagBits }, deviceObj->getDispatch()));
 #else
 #ifdef __linux__ 
-                    allocated->extHandle = device.getMemoryFdKHR(vk::MemoryGetFdInfoKHR{ .memory = allocated->memory, .handleType = extMemFlagBits }, deviceObj->getDispatch());
+                    allocated->extHandle = handleResult(device.getMemoryFdKHR(vk::MemoryGetFdInfoKHR{ .memory = allocated->memory, .handleType = extMemFlagBits }, deviceObj->getDispatch()));
 #endif
 #endif
                 };
 
                 //
                 if (requirements->memoryUsage != MemoryUsage::eGpuOnly) {
-                    allocated->mapped = device.mapMemory(allocated->memory, allocated->offset, requirements->requirements->size);
+                    allocated->mapped = handleResult(device.mapMemory(allocated->memory, allocated->offset, requirements->requirements->size));
                 };
 
                 //

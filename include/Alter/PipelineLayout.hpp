@@ -163,7 +163,7 @@ namespace ANAMED {
               })->setBindingFlags(layoutBindingStack->bindingFlags)),
                 .flags = vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool /*| vk::DescriptorSetLayoutCreateFlagBits::ePushDescriptorKHR*/
                 })->setBindings(layoutBindingStack->bindings);
-            this->layouts.push_back(device.createDescriptorSetLayout(layoutInfo));
+            this->layouts.push_back(handleResult(device.createDescriptorSetLayout(layoutInfo)));
             this->descriptorCounts.push_back(count);
         };
 
@@ -185,7 +185,7 @@ namespace ANAMED {
               })->setBindingFlags(layoutBindingStack->bindingFlags)),
                 .flags = vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool /*| vk::DescriptorSetLayoutCreateFlagBits::ePushDescriptorKHR*/
                 })->setBindings(layoutBindingStack->bindings);
-            this->layouts.push_back(device.createDescriptorSetLayout(layoutInfo));
+            this->layouts.push_back(handleResult(device.createDescriptorSetLayout(layoutInfo)));
             this->descriptorCounts.push_back(maxPageCount);
         };
 
@@ -224,22 +224,22 @@ namespace ANAMED {
             this->pushConstantRanges.push_back(vk::PushConstantRange{ vk::ShaderStageFlagBits::eAll, 0ull, sizeof(InstanceDrawInfo) + sizeof(InstanceAddressBlock) });
 
             //
-            this->sets = device.allocateDescriptorSets(this->infoMap->set(vk::StructureType::eDescriptorSetAllocateInfo, vk::DescriptorSetAllocateInfo{
+            this->sets = handleResult(device.allocateDescriptorSets(this->infoMap->set(vk::StructureType::eDescriptorSetAllocateInfo, vk::DescriptorSetAllocateInfo{
              .pNext = &this->infoMap->set(vk::StructureType::eDescriptorSetVariableDescriptorCountAllocateInfo, vk::DescriptorSetVariableDescriptorCountAllocateInfo{
 
               })->setDescriptorCounts(this->descriptorCounts),
-              .descriptorPool = (this->pool = device.createDescriptorPool(DPI))
-                })->setSetLayouts(this->layouts));
+              .descriptorPool = (this->pool = handleResult(device.createDescriptorPool(DPI)))
+                })->setSetLayouts(this->layouts)));
 
             //
-            this->handle = device.createPipelineLayout(infoMap->set(vk::StructureType::ePipelineLayoutCreateInfo, vk::PipelineLayoutCreateInfo{
+            this->handle = handleResult(device.createPipelineLayout(infoMap->set(vk::StructureType::ePipelineLayoutCreateInfo, vk::PipelineLayoutCreateInfo{
 
-                })->setSetLayouts(this->layouts).setPushConstantRanges(this->pushConstantRanges));
+                })->setSetLayouts(this->layouts).setPushConstantRanges(this->pushConstantRanges)));
 
             //
-            this->cache = device.createPipelineCache(infoMap->set(vk::StructureType::ePipelineCacheCreateInfo, vk::PipelineCacheCreateInfo{
+            this->cache = handleResult(device.createPipelineCache(infoMap->set(vk::StructureType::ePipelineCacheCreateInfo, vk::PipelineCacheCreateInfo{
 
-                })->setInitialData<char8_t>(this->initialData));
+                })->setInitialData<char8_t>(this->initialData)));
 
             //
             //ANAMED::context->get(this->base)->registerObj(this->handle, shared_from_this());

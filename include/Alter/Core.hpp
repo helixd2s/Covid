@@ -9,11 +9,6 @@
 #endif
 
 //
-#include <GFSDK_Aftermath.h>
-#include <GFSDK_Aftermath_GpuCrashDump.h>
-#include <GFSDK_Aftermath_GpuCrashDumpDecoding.h>
-
-//
 #include <cmake_pch.hpp>
 
 // 
@@ -1203,7 +1198,7 @@ namespace ANAMED {
     };
 
     //
-    inline void handleDeviceLost(vk::Result const& result) {
+    inline vk::Result handleDeviceLost(vk::Result const& result) {
         if (result == vk::Result::eErrorDeviceLost)
         {
             // Device lost notification is asynchronous to the NVIDIA display
@@ -1234,12 +1229,18 @@ namespace ANAMED {
                 err_msg << "Unexpected crash dump status: " << status;
                 ERR_EXIT(err_msg.str().c_str(), "Aftermath Error");
             };
-        };
+        }
+        return result;
     };
 
     //
-    template<class T> auto handleResult(vk::ResultValue<T> const& rvalue) {
-        handleDeviceLost(rvalue.result);
+    inline vk::Result handleResult(vk::Result const& result) {
+        return handleDeviceLost(result);
+    };
+
+    //
+    template<class T> inline auto handleResult(vk::ResultValue<T> const& rvalue) {
+        handleResult(rvalue.result);
         return rvalue.value;
     };
 
@@ -1253,7 +1254,7 @@ namespace ANAMED {
         //
         virtual bool check() {
             if (this->getStatus) {
-                decltype(auto) result = this->getStatus(); handleDeviceLost(result);
+                decltype(auto) result = this->getStatus();
                 return result != vk::Result::eNotReady;
             };
             return true;
@@ -1339,7 +1340,7 @@ namespace ANAMED {
           .pName = entry.value(),
           .pSpecializationInfo = nullptr
         };
-        if (code->size() > 0u && (!spi.module)) { spi.module = createShaderModule(device, code); };
+        if (code->size() > 0u && (!spi.module)) { spi.module = handleResult(createShaderModule(device, code)); };
         return spi;
     };
 
@@ -1348,7 +1349,7 @@ namespace ANAMED {
         decltype(auto) f = ComputeStageCreateInfo{};
         f.spi = makePipelineStageInfo(device, code, vk::ShaderStageFlagBits::eCompute, entry);
         f.spi.flags = vk::PipelineShaderStageCreateFlags{ vk::PipelineShaderStageCreateFlagBits::eRequireFullSubgroups };
-        f.spi.module = createShaderModule(device, eTempCode = code);
+        f.spi.module = handleResult(createShaderModule(device, eTempCode = code));
         if (subgroupSize) {
             f.sgmp = vk::PipelineShaderStageRequiredSubgroupSizeCreateInfoEXT{};
             f.sgmp.pNext = nullptr;

@@ -135,7 +135,7 @@ namespace ANAMED {
 
         //
         virtual std::vector<char const*>& filterLayers(cpp21::optional_ref<vk::PhysicalDevice> physicalDevice, cpp21::optional_ref<std::vector<std::string>> names) {
-            decltype(auto) props = physicalDevice->enumerateDeviceLayerProperties();
+            decltype(auto) props = handleResult(physicalDevice->enumerateDeviceLayerProperties());
             auto& selected = this->layerNames;
 
             // 
@@ -159,7 +159,7 @@ namespace ANAMED {
 
         //
         virtual std::vector<char const*>& filterExtensions(cpp21::optional_ref<vk::PhysicalDevice> physicalDevice, cpp21::optional_ref<std::vector<std::string>> names) {
-            decltype(auto) props = physicalDevice->enumerateDeviceExtensionProperties(std::string(""));
+            decltype(auto) props = handleResult(physicalDevice->enumerateDeviceExtensionProperties(std::string("")));
             auto& selected = (this->extensionNames);
 
             // 
@@ -249,7 +249,7 @@ namespace ANAMED {
                       .flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
                       .queueFamilyIndex = qfIndex,
                         });
-                    qfCommandPools.push_back(device.createCommandPool(qfCmdPoolInfo.value()));
+                    qfCommandPools.push_back(handleResult(device.createCommandPool(qfCmdPoolInfo.value())));
                     for (decltype(auto) i = 0u; i < qfInfoVk->queueCount; i++) {
                         qfQueues.push_back(device.getQueue(qfIndex, i));
                     };
@@ -294,16 +294,16 @@ namespace ANAMED {
             uintptr_t indexOfQF = std::distance(qfIndices.begin(), std::find(qfIndices.begin(), qfIndices.end(), submission.info->queueFamilyIndex));
             auto& queue = this->getQueue(submission.info.value());
             auto& commandPool = qfCommandPools[indexOfQF];
-            auto commandBuffers = device.allocateCommandBuffers(vk::CommandBufferAllocateInfo{
+            auto commandBuffers = handleResult(device.allocateCommandBuffers(vk::CommandBufferAllocateInfo{
               .commandPool = commandPool,
               .level = vk::CommandBufferLevel::ePrimary,
               .commandBufferCount = (uint32_t)submissionRef->commandInits.size()
-                });
+                }));
 
             //
             auto cmdInfos = std::vector<vk::CommandBufferSubmitInfo >{};
             auto submitInfo = vk::SubmitInfo2{};
-            auto cIndex = 0u; for (auto& fn : submissionRef->commandInits) {
+            uintptr_t cIndex = 0u; for (auto& fn : submissionRef->commandInits) {
                 auto& cmdBuf = commandBuffers[cIndex++];
                 cmdBuf.begin(vk::CommandBufferBeginInfo{ .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit, .pInheritanceInfo = cpp21::pointer(submission.inheritanceInfo) });
                 auto result = fn(cmdBuf);
@@ -315,7 +315,7 @@ namespace ANAMED {
             };
 
             // 
-            auto fence = std::make_shared<vk::Fence>(device.createFence(vk::FenceCreateInfo{ .flags = {} }));
+            auto fence = std::make_shared<vk::Fence>(handleResult(device.createFence(vk::FenceCreateInfo{ .flags = {} })));
             auto submits = std::vector<vk::SubmitInfo2>{
               submitInfo.setCommandBufferInfos(cmdInfos).setWaitSemaphoreInfos(*submission.waitSemaphores).setSignalSemaphoreInfos(*submission.signalSemaphores)
             };
@@ -323,8 +323,9 @@ namespace ANAMED {
 
             //
             auto getStatus = [device, fence]() {
-                if (fence && *fence) { return device.getFenceStatus(*fence); };
-                return vk::Result::eSuccess;
+                vk::Result status = vk::Result::eSuccess;
+                if (fence && *fence) { status = device.getFenceStatus(*fence); };
+                return handleResult(status);
             };
 
             // 
@@ -339,7 +340,7 @@ namespace ANAMED {
             auto onDone = [device, fence, callstack = std::weak_ptr<CallStack>(this->callstack), submissionRef, deAllocation]() {
                 auto cl = callstack.lock();
                 for (auto& fn : submissionRef->submission.onDone) {
-                    cl->add(std::bind(fn, device.getFenceStatus(*fence)));
+                    cl->add(std::bind(fn, handleResult(device.getFenceStatus(*fence))));
                 };
                 cl->add(deAllocation);
             };
@@ -503,7 +504,7 @@ namespace ANAMED {
                 // 
                 if (deviceInfo) {
                     //try {
-                    this->handle = physicalDevice.createDevice(deviceInfo.value(), nullptr, instanceObj->dispatch);
+                    this->handle = handleResult(physicalDevice.createDevice(deviceInfo.value(), nullptr, instanceObj->dispatch));
                     //}
                     //catch (std::exception e) {
                       //std::cerr << "Unable to create device..." << std::endl;
