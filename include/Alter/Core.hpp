@@ -1192,6 +1192,56 @@ namespace ANAMED {
     };
 
 
+    //
+    inline void AFTERMATH_CHECK_ERROR(GFSDK_Aftermath_Result const& result) {
+
+    };
+
+    //
+    inline void ERR_EXIT(void const* error, void const* msg) {
+
+    };
+
+    //
+    inline void handleDeviceLost(vk::Result const& result) {
+        if (result == vk::Result::eErrorDeviceLost)
+        {
+            // Device lost notification is asynchronous to the NVIDIA display
+            // driver's GPU crash handling. Give the Nsight Aftermath GPU crash dump
+            // thread some time to do its work before terminating the process.
+            auto tdrTerminationTimeout = std::chrono::seconds(3);
+            auto tStart = std::chrono::steady_clock::now();
+            auto tElapsed = std::chrono::milliseconds::zero();
+
+            GFSDK_Aftermath_CrashDump_Status status = GFSDK_Aftermath_CrashDump_Status_Unknown;
+            AFTERMATH_CHECK_ERROR(GFSDK_Aftermath_GetCrashDumpStatus(&status));
+
+            while (status != GFSDK_Aftermath_CrashDump_Status_CollectingDataFailed &&
+                status != GFSDK_Aftermath_CrashDump_Status_Finished &&
+                tElapsed < tdrTerminationTimeout)
+            {
+                // Sleep 50ms and poll the status again until timeout or Aftermath finished processing the crash dump.
+                std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                AFTERMATH_CHECK_ERROR(GFSDK_Aftermath_GetCrashDumpStatus(&status));
+
+                auto tEnd = std::chrono::steady_clock::now();
+                tElapsed = std::chrono::duration_cast<std::chrono::milliseconds>(tEnd - tStart);
+            };
+
+            if (status != GFSDK_Aftermath_CrashDump_Status_Finished)
+            {
+                std::stringstream err_msg;
+                err_msg << "Unexpected crash dump status: " << status;
+                ERR_EXIT(err_msg.str().c_str(), "Aftermath Error");
+            };
+        };
+    };
+
+    //
+    template<class T> auto handleResult(vk::ResultValue<T> const& rvalue) {
+        handleDeviceLost(rvalue.result);
+        return rvalue.value;
+    };
 
     //
     class FenceStatus {
@@ -1199,12 +1249,12 @@ namespace ANAMED {
         std::function<void()> onDone = {};
         std::function<vk::Result()> getStatus = {};
 
-        //
     public:
         //
         virtual bool check() {
             if (this->getStatus) {
-                return this->getStatus() != vk::Result::eNotReady;
+                decltype(auto) result = this->getStatus(); handleDeviceLost(result);
+                return result != vk::Result::eNotReady;
             };
             return true;
         };
@@ -1687,14 +1737,6 @@ namespace ANAMED {
         inline decltype(auto) getExt(ExtensionName const& hValue) const {
             return this->get<T>(Handle(uintptr_t(hValue), HandleType::eExtension));
         };
-    };
-
-
-
-    //
-    template<class T> auto handleResult(vk::ResultValue<T> const& rvalue) {
-        rvalue.result;
-        return rvalue.value;
     };
 
 };
