@@ -2,7 +2,6 @@
 #define RASTERIZER_DEF
 
 #include "./native.glsl"
-#include "./raytracing.glsl"
 
 // too expensive method of rasterization
 // vector sampling is generally expensive

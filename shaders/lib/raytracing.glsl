@@ -7,49 +7,6 @@
 #include "./random.glsl"
 
 //
-const vec4 sunSphere = vec4(1000.f, 5000.f, 1000.f, 200.f);
-const vec3 sunColor = vec3(0.95f, 0.9f, 0.8f) * 10000.f;
-const vec4 skyColor = vec4(vec3(135.f,206.f,235.f)/vec3(255.f,255.f,255.f), 1.f);
-
-// 
-struct PassData {
-  vec4 alphaColor;
-  bool alphaPassed;
-  bool diffusePass;
-  vec3 normals;
-  bool validRay;
-  //vec3 origin;
-};
-
-// 
-struct RayData
-{
-    vec3 origin; u16vec2 launchId;
-    vec3 direction; u16vec2 reserved;
-    f16vec4 energy; f16vec4 emission;
-};
-
-// 
-struct IntersectionInfo 
-{
-    vec3 barycentric; float hitT;
-    uint instanceId, geometryId, primitiveId;
-};
-
-//
-struct PathTraceCommand {
-  RayData rayData;
-  PixelSurfaceInfoRef surface;
-  IntersectionInfo intersection;
-  f16vec4 diffuseColor;
-  f16vec3 emissiveColor;
-  f16vec3 normals;
-  f16vec3 PBR;
-  f16vec3 tbn[3];
-  float reflCoef;
-};
-
-//
 layout(scalar) shared PathTraceCommand cmds[4][32];
 
 //
@@ -59,6 +16,7 @@ struct PathTraceOutput {
 };
 
 // 
+#ifdef ENABLE_KHR_RAY_TRACING
 IntersectionInfo traceRaysOpaque(in InstanceAddressBlock instance, inout IntersectionInfo result, in RayData rays, in float maxT) {
   // 
   float currentT = 10000.f;
@@ -151,6 +109,7 @@ IntersectionInfo traceRaysTransparent(in InstanceAddressBlock instance, inout In
   // 
   return result;
 };
+#endif
 
 //
 vec4 directLighting(in vec3 O, in vec3 N, in vec3 tN, in vec3 r, in float t) {
@@ -182,10 +141,12 @@ vec4 directLighting(in vec3 O, in vec3 N, in vec3 tN, in vec3 r, in float t) {
   const float BRDF = hasIntersection ? (weight * clamp(dot( rayData.direction.xyz, N ), 0.f, 1.f)) : 0.f;
 
   //
+#ifdef ENABLE_KHR_RAY_TRACING
   if (BRDF > 0.f && hasIntersection) {
     intersection = traceRaysOpaque(instancedData, intersection, rayData, t);
     intersection = traceRaysTransparent(instancedData, intersection, rayData, intersection.hitT, true);
   };
+#endif
 
   //
   if (hasIntersection && (intersection.hitT + 0.0001f) >= t && t >= 0.f) {
@@ -197,6 +158,7 @@ vec4 directLighting(in vec3 O, in vec3 N, in vec3 tN, in vec3 r, in float t) {
 };
 
 // 
+#ifdef ENABLE_KHR_RAY_TRACING
 RayData handleIntersection(inout RayData rayData, inout IntersectionInfo intersection, inout PassData passed, inout uint type) {
   InstanceInfo instanceInfo = getInstance(instancedData, intersection.instanceId);
   GeometryInfo geometryInfo = getGeometry(instanceInfo, intersection.geometryId);
@@ -350,6 +312,7 @@ RayData pathTrace(inout RayData rayData, inout PathTraceOutput outp, inout uint 
   };
   return rayData;
 };
+#endif
 
 //
 PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
@@ -370,10 +333,10 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
 
   //
   cmd.rayData.origin = fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], cmd.intersection.geometryId, 0).xyz;
-  vec3 tbn[3]; //getTBN(attrib, tbn);
-  //tbn[0] = fullTransformNormal(instanceInfo, tbn[0], cmd.intersection.geometryId, 0);
-  //tbn[1] = fullTransformNormal(instanceInfo, tbn[1], cmd.intersection.geometryId, 0);
-  //tbn[2] = fullTransformNormal(instanceInfo, tbn[2], cmd.intersection.geometryId, 0);
+  vec3 tbn[3]; getTBN(attrib, tbn);
+  tbn[0] = fullTransformNormal(instanceInfo, tbn[0], cmd.intersection.geometryId, 0);
+  tbn[1] = fullTransformNormal(instanceInfo, tbn[1], cmd.intersection.geometryId, 0);
+  tbn[2] = fullTransformNormal(instanceInfo, tbn[2], cmd.intersection.geometryId, 0);
 
   //
   const MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), attrib.data[VERTEX_TEXCOORD].xy, mat3x3(tbn[0],tbn[1],tbn[2]));
@@ -420,7 +383,9 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
   // enforce typic indice
   if (validTracing) {
     cmd.rayData.origin += outRayNormal(cmd.rayData.direction.xyz, tbn[2].xyz) * 0.001f;
+#ifdef ENABLE_KHR_RAY_TRACING
     cmd.rayData = pathTrace(cmd.rayData, outp, type);
+#endif
   };
 
   //
@@ -510,25 +475,5 @@ void storeData(inout PathTraceCommand cmd) {
     imageStore(imagesRgba32F[deferredBuf.images[0][5]], ivec2(cmd.rayData.launchId), vec4(cmd.rayData.origin.xyz, 1.f));
   };
 };
-
-// 
-void prepareHit(in uint pixelId, inout uint type) {
-  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
-
-  //
-  surfaceInfo.accum[type] = cvtRgb16Float(clampCol(cvtRgb16Acc(surfaceInfo.color[type])));
-  surfaceInfo.color[type] = (surfaceInfo.flags[type]&1) > 0 ? TYPE(0u) : surfaceInfo.color[type];
-  surfaceInfo.prevf[type] = surfaceInfo.flags[type];
-  surfaceInfo.flags[type] = 0;
-
-  //
-  PixelHitInfoRef hitInfo = getNewHit(pixelId, type);
-  PixelHitInfoRef newHitInfo = getRpjHit(pixelId, type);
-  newHitInfo.indices = hitInfo.indices; hitInfo.indices[0] = uvec4(0u), hitInfo.indices[1] = uvec4(0u);
-  newHitInfo.origin = hitInfo.origin; hitInfo.origin = vec4(0.f);
-  newHitInfo.direct = hitInfo.direct; hitInfo.direct = f16vec3(0.f);
-  newHitInfo.normal = hitInfo.normal; hitInfo.normal = f16vec3(0.f);
-};
-
 
 #endif

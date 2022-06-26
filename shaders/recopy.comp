@@ -7,10 +7,28 @@
 #include "lib/native.glsl"
 #include "lib/fresnel.glsl"
 #include "lib/random.glsl"
-#include "lib/rasterizer.glsl"
 
 //
 layout (local_size_x = 32, local_size_y = 12, local_size_z = 1) in;
+
+// 
+void prepareHit(in uint pixelId, inout uint type) {
+  PixelSurfaceInfoRef surfaceInfo = getPixelSurface(pixelId);
+
+  //
+  surfaceInfo.accum[type] = cvtRgb16Float(clampCol(cvtRgb16Acc(surfaceInfo.color[type])));
+  surfaceInfo.color[type] = (surfaceInfo.flags[type]&1) > 0 ? TYPE(0u) : surfaceInfo.color[type];
+  surfaceInfo.prevf[type] = surfaceInfo.flags[type];
+  surfaceInfo.flags[type] = 0;
+
+  //
+  PixelHitInfoRef hitInfo = getNewHit(pixelId, type);
+  PixelHitInfoRef newHitInfo = getRpjHit(pixelId, type);
+  newHitInfo.indices = hitInfo.indices; hitInfo.indices[0] = uvec4(0u), hitInfo.indices[1] = uvec4(0u);
+  newHitInfo.origin = hitInfo.origin; hitInfo.origin = vec4(0.f);
+  newHitInfo.direct = hitInfo.direct; hitInfo.direct = f16vec3(0.f);
+  newHitInfo.normal = hitInfo.normal; hitInfo.normal = f16vec3(0.f);
+};
 
 // 
 void main() {

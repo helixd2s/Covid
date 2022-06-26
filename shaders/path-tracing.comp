@@ -4,12 +4,19 @@
 #extension GL_GOOGLE_include_directive : require
 
 //
+#ifdef ENABLE_KHR_RAY_TRACING
+#extension GL_EXT_ray_query : enable
+#extension GL_EXT_ray_tracing : enable
+#endif
+
+//
 #define ENABLE_CHECKERBOARD
 #define USE_RASTERIZE_PASS
 
 //
 #include "lib/raytracing.glsl"
 #include "lib/rasterizer.glsl"
+
 
 //
 layout (local_size_x = 32, local_size_y = 4, local_size_z = 1) in;

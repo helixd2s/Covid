@@ -107,6 +107,51 @@ layout(buffer_reference, scalar, buffer_reference_align = 1) readonly buffer Tra
   mat3x4 transform[];
 };
 
+
+//
+const vec4 sunSphere = vec4(1000.f, 5000.f, 1000.f, 200.f);
+const vec3 sunColor = vec3(0.95f, 0.9f, 0.8f) * 10000.f;
+const vec4 skyColor = vec4(vec3(135.f,206.f,235.f)/vec3(255.f,255.f,255.f), 1.f);
+
+// 
+struct PassData {
+  vec4 alphaColor;
+  bool alphaPassed;
+  bool diffusePass;
+  vec3 normals;
+  bool validRay;
+  //vec3 origin;
+};
+
+// 
+struct RayData
+{
+    vec3 origin; u16vec2 launchId;
+    vec3 direction; u16vec2 reserved;
+    f16vec4 energy; f16vec4 emission;
+};
+
+// 
+struct IntersectionInfo 
+{
+    vec3 barycentric; float hitT;
+    uint instanceId, geometryId, primitiveId;
+};
+
+//
+struct PathTraceCommand {
+  RayData rayData;
+  PixelSurfaceInfoRef surface;
+  IntersectionInfo intersection;
+  f16vec4 diffuseColor;
+  f16vec3 emissiveColor;
+  f16vec3 normals;
+  f16vec3 PBR;
+  f16vec3 tbn[3];
+  float reflCoef;
+};
+
+
 //
 //const uvec2 rayCount = uvec2(1280, 720);
 
