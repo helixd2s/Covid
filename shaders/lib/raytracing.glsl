@@ -370,12 +370,10 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
 
   //
   cmd.rayData.origin = fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], cmd.intersection.geometryId, 0).xyz;
-  vec3 tbn[3]; getTBN(attrib, tbn);
-
-  //
-  tbn[0] = fullTransformNormal(instanceInfo, tbn[0], cmd.intersection.geometryId, 0);
-  tbn[1] = fullTransformNormal(instanceInfo, tbn[1], cmd.intersection.geometryId, 0);
-  tbn[2] = fullTransformNormal(instanceInfo, tbn[2], cmd.intersection.geometryId, 0);
+  vec3 tbn[3]; //getTBN(attrib, tbn);
+  //tbn[0] = fullTransformNormal(instanceInfo, tbn[0], cmd.intersection.geometryId, 0);
+  //tbn[1] = fullTransformNormal(instanceInfo, tbn[1], cmd.intersection.geometryId, 0);
+  //tbn[2] = fullTransformNormal(instanceInfo, tbn[2], cmd.intersection.geometryId, 0);
 
   //
   const MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), attrib.data[VERTEX_TEXCOORD].xy, mat3x3(tbn[0],tbn[1],tbn[2]));
@@ -400,6 +398,7 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
   //
   const vec2 seed2 = vec2(random(cmd.rayData.launchId.xy), random(cmd.rayData.launchId.xy));
 
+  //
   if (type == 0) {
     cmd.rayData.direction.xyz = normalize(reflective(seed2, cmd.rayData.direction.xyz, mat3x3(tbn[0],tbn[1],cmd.normals.xyz), cmd.PBR.g));;
     cmd.rayData.energy = f16vec4(1.f.xxx, 1.f);//f16vec4(metallicMult(1.f.xxx, cmd.diffuseColor.xyz, cmd.PBR.b), 1.f);

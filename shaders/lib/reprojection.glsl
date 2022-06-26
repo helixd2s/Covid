@@ -93,7 +93,7 @@ void reproject3D(in uint pixelId, in uint type)
           GeometryExtAttrib attrib = interpolate(geometry, dstIntersection.barycentric);
 
           //
-          vec3 tbn[3]; getTBN(attrib, tbn);
+          vec3 tbn[3]; //getTBN(attrib, tbn);
           tbn[0] = fullTransformNormal(instanceInfo, tbn[0], dstIntersection.geometryId, 0);
           tbn[1] = fullTransformNormal(instanceInfo, tbn[1], dstIntersection.geometryId, 0);
           tbn[2] = fullTransformNormal(instanceInfo, tbn[2], dstIntersection.geometryId, 0);
