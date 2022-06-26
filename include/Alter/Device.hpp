@@ -385,7 +385,9 @@ namespace ANAMED {
         virtual void construct(std::shared_ptr<InstanceObj> instanceObj = {}, cpp21::optional_ref<DeviceCreateInfo> cInfo = DeviceCreateInfo{}) {
 
             // 
+#if defined(USE_NSIGHT_AFTERMATH)
             ANAMED::context->gpuCrashTracker.Initialize();
+#endif
 
             //this->instanceObj = instanceObj;
             this->physicalDevices = {};

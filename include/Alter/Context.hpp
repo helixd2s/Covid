@@ -16,8 +16,10 @@ namespace ANAMED {
         //using SFT = shared_from_this;
 
         // GPU crash dump tracker using Nsight Aftermath instrumentation
+#if defined(USE_NSIGHT_AFTERMATH)
         GpuCrashTracker::MarkerMap markerMap;
         GpuCrashTracker gpuCrashTracker;
+#endif
         uint64_t frameNumber;
 
     protected:
@@ -30,7 +32,11 @@ namespace ANAMED {
     public:
 
         // 
-        ContextObj(Handle const& handle = Handle(0ull, HandleType::eUnknown), cpp21::optional_ref<ContextCreateInfo> cInfo = ContextCreateInfo{}) : BaseObj(handle), cInfo(cInfo), markerMap{}, gpuCrashTracker{ markerMap } {
+        ContextObj(Handle const& handle = Handle(0ull, HandleType::eUnknown), cpp21::optional_ref<ContextCreateInfo> cInfo = ContextCreateInfo{}) : BaseObj(handle), cInfo(cInfo) 
+#if defined(USE_NSIGHT_AFTERMATH)
+            , markerMap{}, gpuCrashTracker{ markerMap }
+#endif
+        {
             //this->construct(cInfo);
         };
 
