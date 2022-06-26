@@ -274,10 +274,10 @@ namespace ANAMED {
 
             // 
             if (this->cInfo && this->handle.type == HandleType::eBuffer) {
-                info->commandInits.push_back([this, bufferInfo, depInfo, bufferBarriersBegin, bufferBarriersEnd](vk::CommandBuffer const& cmdBuf) {
+                info->commandInits.push_back([this, bufferInfo, depInfo, bufferBarriersBegin, bufferBarriersEnd, dispatch=deviceObj->getDispatch(), buffer = this->handle.as<vk::Buffer>()](vk::CommandBuffer const& cmdBuf) {
                     auto _depInfo = depInfo;
                     cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersBegin));
-                    cmdBuf.fillBuffer(this->handle.as<vk::Buffer>(), 0ull, bufferInfo->size, 0u);
+                    cmdBuf.fillBuffer(buffer, 0ull, bufferInfo->size, 0u, dispatch);
                     cmdBuf.pipelineBarrier2(_depInfo.setBufferMemoryBarriers(bufferBarriersEnd));
                     return cmdBuf;
                     });

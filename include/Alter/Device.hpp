@@ -319,7 +319,7 @@ namespace ANAMED {
             auto submits = std::vector<vk::SubmitInfo2>{
               submitInfo.setCommandBufferInfos(cmdInfos).setWaitSemaphoreInfos(*submission.waitSemaphores).setSignalSemaphoreInfos(*submission.signalSemaphores)
             };
-            queue.submit2(submits, *fence);
+            handleResult(queue.submit2(submits, *fence));
 
             //
             auto getStatus = [device, fence]() {
@@ -521,6 +521,16 @@ namespace ANAMED {
 
             };
 
+            //
+            AFTERMATH_CHECK_ERROR(GFSDK_Aftermath_EnableGpuCrashDumps(
+                GFSDK_Aftermath_Version_API,
+                GFSDK_Aftermath_GpuCrashDumpWatchedApiFlags_Vulkan,
+                GFSDK_Aftermath_GpuCrashDumpFeatureFlags_DeferDebugInfoCallbacks, // Let the Nsight Aftermath library cache shader debug information.
+                GpuCrashDumpCallback,                                             // Register callback for GPU crash dumps.
+                ShaderDebugInfoCallback,                                          // Register callback for shader debug information.
+                CrashDumpDescriptionCallback,                                     // Register callback for GPU crash dump description.
+                ResolveMarkerCallback,                                            // Register callback for resolving application-managed markers.
+                ANAMED::context.get()));                                          // Set the GpuCrashTracker object as user data for the above callbacks.
 
             // 
             //return SFT();

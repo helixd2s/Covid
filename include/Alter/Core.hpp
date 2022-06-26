@@ -1186,17 +1186,47 @@ namespace ANAMED {
         std::optional<QueueGetInfo> info = {};
     };
 
+    //
+    inline std::string to_string(GFSDK_Aftermath_Result result)
+    {
+        return std::string("0x") + cpp21::to_hex_string(static_cast<uint32_t>(result));
+    };
+
+    //
+    inline std::string to_string(const GFSDK_Aftermath_ShaderDebugInfoIdentifier& identifier)
+    {
+        return cpp21::to_hex_string(identifier.id[0]) + "-" + cpp21::to_hex_string(identifier.id[1]);
+    };
+
+    //
+    inline std::string to_string(const GFSDK_Aftermath_ShaderBinaryHash& hash)
+    {
+        return cpp21::to_hex_string(hash.hash);
+    };
+
+    //
+    inline std::string  AftermathErrorMessage(GFSDK_Aftermath_Result result)
+    {
+        switch (result)
+        {
+        case GFSDK_Aftermath_Result_FAIL_DriverVersionNotSupported:
+            return "Unsupported driver version - requires an NVIDIA R495 display driver or newer.";
+        default:
+            return "Aftermath Error 0x" + cpp21::to_hex_string(result);
+        }
+    };
 
     //
     inline void AFTERMATH_CHECK_ERROR(GFSDK_Aftermath_Result const& result) {
-
+        if (!GFSDK_Aftermath_SUCCEED(result)) {
+            std::cerr << AftermathErrorMessage(result) << std::endl;
+        };
     };
 
     //
     inline void ERR_EXIT(std::string const& error, std::string const& msg) {
         std::cerr << msg << std::endl;
         std::cerr << error << std::endl;
-        exit(1);
     };
 
     //
@@ -1210,35 +1240,39 @@ namespace ANAMED {
             auto tStart = std::chrono::steady_clock::now();
             auto tElapsed = std::chrono::milliseconds::zero();
 
+            //
             GFSDK_Aftermath_CrashDump_Status status = GFSDK_Aftermath_CrashDump_Status_Unknown;
             AFTERMATH_CHECK_ERROR(GFSDK_Aftermath_GetCrashDumpStatus(&status));
 
-            while (status != GFSDK_Aftermath_CrashDump_Status_CollectingDataFailed &&
-                status != GFSDK_Aftermath_CrashDump_Status_Finished &&
-                tElapsed < tdrTerminationTimeout)
-            {
+            //
+            while (status != GFSDK_Aftermath_CrashDump_Status_CollectingDataFailed && status != GFSDK_Aftermath_CrashDump_Status_Finished && tElapsed < tdrTerminationTimeout) {
                 // Sleep 50ms and poll the status again until timeout or Aftermath finished processing the crash dump.
                 std::this_thread::sleep_for(std::chrono::milliseconds(50));
                 AFTERMATH_CHECK_ERROR(GFSDK_Aftermath_GetCrashDumpStatus(&status));
 
+                //
                 auto tEnd = std::chrono::steady_clock::now();
                 tElapsed = std::chrono::duration_cast<std::chrono::milliseconds>(tEnd - tStart);
+
+                //
+                if (status == GFSDK_Aftermath_CrashDump_Status_NotStarted) { break; };
             };
 
+            //
             if (status != GFSDK_Aftermath_CrashDump_Status_Finished)
             {
                 std::stringstream err_msg;
                 err_msg << "Unexpected crash dump status: " << status;
                 ERR_EXIT(err_msg.str(), "Aftermath Error");
             };
-        }
+        };
+        assert(result == vk::Result::eSuccess || result == vk::Result::eNotReady);
         return result;
     };
 
     //
     inline vk::Result handleResult(vk::Result const& result) {
         handleDeviceLost(result);
-        assert(result == vk::Result::eSuccess || result == vk::Result::eNotReady);
         return result;
     };
 
