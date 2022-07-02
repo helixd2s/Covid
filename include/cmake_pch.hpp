@@ -122,5 +122,5 @@
 
 //
 #ifdef ALT_ENABLE_VMA
-#include <vk_mem_alloc.h>
+#include <vma/vk_mem_alloc.h>
 #endif

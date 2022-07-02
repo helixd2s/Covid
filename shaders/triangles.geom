@@ -58,11 +58,12 @@ void main() {
   #endif
 
     //
-    pTbn = mat3x3(
-      fullTransformNormal(instanceInfo, geometry.triData[VERTEX_TANGENT][i].xyz, geometryIndex, 0),
-      fullTransformNormal(instanceInfo, geometry.triData[VERTEX_BITANGENT][i].xyz, geometryIndex, 0), 
-      fullTransformNormal(instanceInfo, geometry.triData[VERTEX_NORMALS][i].xyz, geometryIndex, 0)
-    );
+    fullTransformNormal(instanceInfo, geometry.triData[VERTEX_TANGENT][i].xyz, geometryIndex, 0);
+    fullTransformNormal(instanceInfo, geometry.triData[VERTEX_BITANGENT][i].xyz, geometryIndex, 0); 
+    fullTransformNormal(instanceInfo, geometry.triData[VERTEX_NORMALS][i].xyz, geometryIndex, 0);
+
+    //
+    pTbn = mat3x3(geometry.triData[VERTEX_TANGENT][i].xyz, geometry.triData[VERTEX_BITANGENT][i].xyz, geometry.triData[VERTEX_NORMALS][i].xyz);
 
     //
     pColor = vec4(0.f.xxx, 0.f);

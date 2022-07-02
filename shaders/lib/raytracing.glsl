@@ -333,18 +333,18 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
 
   //
   cmd.rayData.origin = fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], cmd.intersection.geometryId, 0).xyz;
-  vec3 tbn[3]; getTBN(attrib, tbn);
-  tbn[0] = fullTransformNormal(instanceInfo, tbn[0], cmd.intersection.geometryId, 0);
-  tbn[1] = fullTransformNormal(instanceInfo, tbn[1], cmd.intersection.geometryId, 0);
-  tbn[2] = fullTransformNormal(instanceInfo, tbn[2], cmd.intersection.geometryId, 0);
+  //fullTransformNormal(instanceInfo, attrib.data[VERTEX_TANGENT].xyz, cmd.intersection.geometryId, 0);
+  //fullTransformNormal(instanceInfo, attrib.data[VERTEX_BITANGENT].xyz, cmd.intersection.geometryId, 0);
+  //fullTransformNormal(instanceInfo, attrib.data[VERTEX_NORMALS].xyz, cmd.intersection.geometryId, 0);
 
   //
-  const MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), attrib.data[VERTEX_TEXCOORD].xy, mat3x3(tbn[0],tbn[1],tbn[2]));
+  const MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), attrib.data[VERTEX_TEXCOORD].xy, mat3x3(attrib.data[VERTEX_TANGENT].xyz,attrib.data[VERTEX_BITANGENT].xyz,attrib.data[VERTEX_NORMALS].xyz));
+  //const MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), attrib.data[VERTEX_TEXCOORD].xy, mat3x3(1.f));
   cmd.normals = f16vec3(inRayNormal(cmd.rayData.direction.xyz, materialPix.color[MATERIAL_NORMAL].xyz));
   cmd.diffuseColor = f16vec4(toLinear(materialPix.color[MATERIAL_ALBEDO]));
   cmd.emissiveColor = f16vec3(toLinear(materialPix.color[MATERIAL_EMISSIVE].xyz) * 4.f);
   cmd.PBR = f16vec3(materialPix.color[MATERIAL_PBR].xyz);
-  cmd.reflCoef = (float(cmd.PBR.b) + mix(fresnel_schlick(0.f, dot(reflect(cmd.rayData.direction.xyz, vec3(cmd.normals)), vec3(cmd.normals))), 0.f, float(cmd.PBR.g)) * (1.f - float(cmd.PBR.b))) * (1.f - luminance(cmd.emissiveColor.xyz));
+  cmd.reflCoef = (float(cmd.PBR.b) + mix(fresnel_schlick(0.f, dot(reflect(cmd.rayData.direction.xyz, vec3(attrib.data[VERTEX_NORMALS].xyz)), vec3(attrib.data[VERTEX_NORMALS].xyz))), 0.f, float(cmd.PBR.g)) * (1.f - float(cmd.PBR.b))) * (1.f - luminance(cmd.emissiveColor.xyz));
 
   //
   const bool needsDiffuse = cmd.diffuseColor.a >= 0.001f && luminance(cmd.diffuseColor.xyz) > 0.f;
@@ -363,7 +363,7 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
 
   //
   if (type == 0) {
-    cmd.rayData.direction.xyz = normalize(reflective(seed2, cmd.rayData.direction.xyz, mat3x3(tbn[0],tbn[1],cmd.normals.xyz), cmd.PBR.g));;
+    cmd.rayData.direction.xyz = normalize(reflective(seed2, cmd.rayData.direction.xyz, mat3x3(attrib.data[VERTEX_TANGENT].xyz,attrib.data[VERTEX_BITANGENT].xyz,cmd.normals.xyz), cmd.PBR.g));;
     cmd.rayData.energy = f16vec4(1.f.xxx, 1.f);//f16vec4(metallicMult(1.f.xxx, cmd.diffuseColor.xyz, cmd.PBR.b), 1.f);
     cmd.rayData.emission = f16vec4(0.f.xxx, 1.f);
     cmd.rayData.energy.xyz = f16vec3(metallicMult(cmd.rayData.energy.xyz, cmd.diffuseColor.xyz, cmd.PBR.b));
@@ -374,15 +374,15 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
     cmd.rayData.emission = f16vec4(0.f.xxx, 1.f);
     cmd.rayData.energy.xyz = f16vec3(metallicMult(cmd.rayData.energy.xyz, cmd.diffuseColor.xyz, cmd.PBR.b));
   } else {
-    cmd.rayData.direction.xyz = normalize(cosineWeightedPoint(seed2, mat3x3(tbn[0],tbn[1],cmd.normals.xyz)));
+    cmd.rayData.direction.xyz = normalize(cosineWeightedPoint(seed2, mat3x3(attrib.data[VERTEX_TANGENT].xyz,attrib.data[VERTEX_BITANGENT].xyz,cmd.normals.xyz)));
     cmd.rayData.energy = f16vec4(1.f.xxx, 1.f);
     cmd.rayData.energy.xyz = f16vec3(trueMultColor(cmd.rayData.energy.xyz, cmd.diffuseColor.xyz * (1.f - cmd.emissiveColor.xyz)));
-    cmd.rayData.emission = f16vec4(trueMultColor(cmd.rayData.energy.xyz, directLighting(cmd.rayData.origin.xyz, cmd.normals.xyz, tbn[2], vec3(random(blueNoiseFn(cmd.rayData.launchId.xy)), random(blueNoiseFn(cmd.rayData.launchId.xy)), random(blueNoiseFn(cmd.rayData.launchId.xy))), 10000.f).xyz), 1.f);
+    //cmd.rayData.emission = f16vec4(trueMultColor(cmd.rayData.energy.xyz, directLighting(cmd.rayData.origin.xyz, cmd.normals.xyz, attrib.data[VERTEX_NORMALS].xyz, vec3(random(blueNoiseFn(cmd.rayData.launchId.xy)), random(blueNoiseFn(cmd.rayData.launchId.xy)), random(blueNoiseFn(cmd.rayData.launchId.xy))), 10000.f).xyz), 1.f);
   };
 
   // enforce typic indice
   if (validTracing) {
-    cmd.rayData.origin += outRayNormal(cmd.rayData.direction.xyz, tbn[2].xyz) * 0.001f;
+    cmd.rayData.origin += outRayNormal(cmd.rayData.direction.xyz, attrib.data[VERTEX_NORMALS].xyz) * 0.001f;
 #ifdef ENABLE_KHR_RAY_TRACING
     cmd.rayData = pathTrace(cmd.rayData, outp, type);
 #endif
@@ -407,7 +407,7 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
     hitInfo.indices[1] = uvec4(outp.indices.xyz, pack32(cmd.rayData.launchId));
     hitInfo.origin.xyz = startRayData.origin;
     hitInfo.direct.xyz = f16vec3(startRayData.direction);
-    hitInfo.normal.xyz = f16vec3(tbn[2]);
+    hitInfo.normal.xyz = f16vec3(attrib.data[VERTEX_NORMALS].xyz);
     hitInfo.origin.w = outp.hitT;
 
     // dedicated distribution broken, no enough memory or GPU was broken, or `hitData` broken

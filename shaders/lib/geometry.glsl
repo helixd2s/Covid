@@ -279,20 +279,6 @@ GeometryExtData getGeometryData(in GeometryInfo geometryInfo, in uvec3 indices) 
   return result;
 };
 
-// 
-void getTBN(inout GeometryExtAttrib attrib, inout vec3 tbn[3]) {
-  tbn[0] = attrib.data[VERTEX_TANGENT].xyz;
-  tbn[1] = attrib.data[VERTEX_BITANGENT].xyz;
-  tbn[2] = attrib.data[VERTEX_NORMALS].xyz;
-};
-
-// 
-void getTBN(inout GeometryExtAttrib attrib, inout mat3x3 tbn) {
-  tbn[0] = attrib.data[VERTEX_TANGENT].xyz;
-  tbn[1] = attrib.data[VERTEX_BITANGENT].xyz;
-  tbn[2] = attrib.data[VERTEX_NORMALS].xyz;
-};
-
 //
 GeometryExtData getGeometryData(in GeometryInfo geometryInfo, in uint32_t primitiveId) {
   return getGeometryData(geometryInfo, readTriangleIndices(geometryInfo.indices, primitiveId));
@@ -349,9 +335,14 @@ vec4 fullTransform(in InstanceInfo instance, in vec4 vertices, in uint32_t geome
 };
 
 //
-vec3 fullTransformNormal(in InstanceInfo instance, in vec3 normals, in uint32_t geometryId, in uint previous) {
+void fullTransformNormal(in InstanceInfo instance, inout vec3 normals, in uint32_t geometryId, in uint previous) {
   GeometryInfo geometry = getGeometry(instance, geometryId);
-  return normalize((normalize(normals) * toNormalMat(getGeometryTransform(geometry)) * toNormalMat(getInstanceTransform(instance, previous))));
+  mat3x3 geometryTransformNormal, instanceTransformNormal;
+  mat3x4 geometryTransform = getGeometryTransform(geometry);
+  mat3x4 instanceTransform = getInstanceTransform(instance, previous);
+  toNormalMat(geometryTransform, geometryTransformNormal);
+  toNormalMat(instanceTransform, instanceTransformNormal);
+  normals = normalize(normalize(normals) * geometryTransformNormal * instanceTransformNormal);
 };
 
 #endif

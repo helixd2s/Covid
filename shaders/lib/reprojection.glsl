@@ -94,9 +94,9 @@ void reproject3D(in uint pixelId, in uint type)
 
           //
           vec3 tbn[3]; //getTBN(attrib, tbn);
-          tbn[0] = fullTransformNormal(instanceInfo, tbn[0], dstIntersection.geometryId, 0);
-          tbn[1] = fullTransformNormal(instanceInfo, tbn[1], dstIntersection.geometryId, 0);
-          tbn[2] = fullTransformNormal(instanceInfo, tbn[2], dstIntersection.geometryId, 0);
+          fullTransformNormal(instanceInfo, tbn[0], dstIntersection.geometryId, 0);
+          fullTransformNormal(instanceInfo, tbn[1], dstIntersection.geometryId, 0);
+          fullTransformNormal(instanceInfo, tbn[2], dstIntersection.geometryId, 0);
 
           //
           const MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), attrib.data[VERTEX_TEXCOORD].xy, mat3x3(tbn[0],tbn[1],tbn[2]));

@@ -45,6 +45,12 @@ mat3x4 inverse(in mat3x4 inmat) {
 };
 
 //
+void toNormalMat(in mat3x4 inmat, inout mat3x3 outmat) {
+  //return transpose(inverse(transpose(mat3x3(inmat))));
+  outmat = inverse(transpose(mat3x3(inmat)));
+};
+
+//
 mat3x3 toNormalMat(in mat3x4 inmat) {
   //return transpose(inverse(transpose(mat3x3(inmat))));
   return inverse(transpose(mat3x3(inmat)));
