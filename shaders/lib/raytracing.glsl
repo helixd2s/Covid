@@ -76,11 +76,10 @@ IntersectionInfo traceRaysTransparent(in InstanceAddressBlock instance, inout In
           const vec2 attribs = rayQueryGetIntersectionBarycentricsEXT(rayQuery, false);
           GeometryExtData geometry = getGeometryData(geometryInfo, primitiveId);
           GeometryExtAttrib interpol = interpolate(geometry, attribs);
-          vec3 tbn[3]; getTBN(interpol, tbn);
-          tbn[0] = fullTransformNormal(instanceInfo, tbn[0], geometryId, 0);
-          tbn[1] = fullTransformNormal(instanceInfo, tbn[1], geometryId, 0);
-          tbn[2] = fullTransformNormal(instanceInfo, tbn[2], geometryId, 0);
-          MaterialPixelInfo material = handleMaterial(getMaterialInfo(geometryInfo), interpol.data[VERTEX_TEXCOORD].xy, mat3x3(tbn[0], tbn[1], tbn[2]));
+          fullTransformNormal(instanceInfo, interpol.data[VERTEX_TANGENT].xyz, geometryId, 0);
+          fullTransformNormal(instanceInfo, interpol.data[VERTEX_BITANGENT].xyz, geometryId, 0);
+          fullTransformNormal(instanceInfo, interpol.data[VERTEX_NORMALS].xyz, geometryId, 0);
+          MaterialPixelInfo material = handleMaterial(getMaterialInfo(geometryInfo), interpol.data[VERTEX_TEXCOORD].xy, mat3x3(interpol.data[VERTEX_TANGENT].xyz, interpol.data[VERTEX_BITANGENT].xyz, interpol.data[VERTEX_NORMALS].xyz));
 
           if (material.color[MATERIAL_ALBEDO].a < (hasRandom ? random(blueNoiseFn(rays.launchId.xy)) : 0.01f)) {
             isOpaque = false;
@@ -167,17 +166,16 @@ RayData handleIntersection(inout RayData rayData, inout IntersectionInfo interse
 
   //
   const vec4 texcoord = attrib.data[VERTEX_TEXCOORD];
-  const vec4 vertice = fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId, 0);
 
   //
-  vec3 tbn[3]; getTBN(attrib, tbn);
-  tbn[0] = fullTransformNormal(instanceInfo, tbn[0], intersection.geometryId, 0);
-  tbn[1] = fullTransformNormal(instanceInfo, tbn[1], intersection.geometryId, 0);
-  tbn[2] = fullTransformNormal(instanceInfo, tbn[2], intersection.geometryId, 0);
+  fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], intersection.geometryId, 0);
+  fullTransformNormal(instanceInfo, attrib.data[VERTEX_TANGENT].xyz, intersection.geometryId, 0);
+  fullTransformNormal(instanceInfo, attrib.data[VERTEX_BITANGENT].xyz, intersection.geometryId, 0);
+  fullTransformNormal(instanceInfo, attrib.data[VERTEX_NORMALS].xyz, intersection.geometryId, 0);
 
   //
   const bool inner = false;//dot(tbn[2], rayData.direction.xyz) > 0.f;
-  MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), texcoord.xy, mat3x3(tbn[0],tbn[1],tbn[2]));
+  MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), texcoord.xy, mat3x3(attrib.data[VERTEX_TANGENT].xyz,attrib.data[VERTEX_BITANGENT].xyz,attrib.data[VERTEX_NORMALS].xyz));
   const vec3 normals = inRayNormal(rayData.direction, materialPix.color[MATERIAL_NORMAL].xyz);//materialPix.color[MATERIAL_NORMAL].xyz;
 
   // 
@@ -194,15 +192,15 @@ RayData handleIntersection(inout RayData rayData, inout IntersectionInfo interse
   //
   passed.alphaColor = vec4(mix(diffuseColor.xyz, 1.f.xxx, diffuseColor.a), diffuseColor.a);
   passed.normals = normals;
-  //passed.origin = vertice.xyz;
+  //passed.origin = attrib.data[VERTEX_VERTICES].xyz;
 
   //
-  rayData.origin.xyz += rayData.direction.xyz * intersection.hitT;//vertice.xyz;
+  rayData.origin.xyz += rayData.direction.xyz * intersection.hitT;//attrib.data[VERTEX_VERTICES].xyz;
 
   //
   const vec2 seed2 = vec2(random(rayData.launchId.xy), random(rayData.launchId.xy));
   if (random(blueNoiseFn(rayData.launchId.xy)) <= clamp(reflFactor, 0.f, 1.f) && transpCoef < 1.f) { // I currently, have no time for fresnel
-    rayData.direction.xyz = reflective(seed2, rayData.direction.xyz, mat3x3(tbn[0],tbn[1],normals), roughnessFactor);
+    rayData.direction.xyz = reflective(seed2, rayData.direction.xyz, mat3x3(attrib.data[VERTEX_TANGENT].xyz,attrib.data[VERTEX_BITANGENT].xyz,normals), roughnessFactor);
     rayData.energy.xyz = f16vec3(metallicMult(rayData.energy.xyz, diffuseColor.xyz, metallicFactor));
     if (reflFactor < 0.1f || type == 1) { passed.diffusePass = true; };
     //passed.diffusePass = true;
@@ -217,16 +215,16 @@ RayData handleIntersection(inout RayData rayData, inout IntersectionInfo interse
       rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, max(1.f-emissiveColor.xyz, 0.f.xxx)));
     };
     passed.diffusePass = true;
-    rayData.direction.xyz = cosineWeightedPoint(seed2, mat3x3(tbn[0],tbn[1],normals));
+    rayData.direction.xyz = cosineWeightedPoint(seed2, mat3x3(attrib.data[VERTEX_TANGENT].xyz,attrib.data[VERTEX_BITANGENT].xyz,normals));
     rayData.energy.xyz = f16vec3(trueMultColor(rayData.energy.xyz, diffuseColor.xyz));
-    rayData.emission.xyz += f16vec3(trueMultColor(rayData.energy.xyz, directLighting(rayData.origin.xyz, normals, tbn[2], vec3(random(blueNoiseFn(rayData.launchId.xy)), random(blueNoiseFn(rayData.launchId.xy)), random(blueNoiseFn(rayData.launchId.xy))), 10000.f).xyz).xyz);
+    rayData.emission.xyz += f16vec3(trueMultColor(rayData.energy.xyz, directLighting(rayData.origin.xyz, normals, attrib.data[VERTEX_NORMALS].xyz, vec3(random(blueNoiseFn(rayData.launchId.xy)), random(blueNoiseFn(rayData.launchId.xy)), random(blueNoiseFn(rayData.launchId.xy))), 10000.f).xyz).xyz);
   };
 
   //
-  rayData.origin.xyz += outRayNormal(rayData.direction.xyz, tbn[2]) * 0.0001f;
+  rayData.origin.xyz += outRayNormal(rayData.direction.xyz, attrib.data[VERTEX_NORMALS].xyz) * 0.0001f;
 
   //
-  passed.validRay = passed.alphaPassed ? true : dot(rayData.direction.xyz, tbn[2]) > 0.f;
+  passed.validRay = passed.alphaPassed ? true : dot(rayData.direction.xyz, attrib.data[VERTEX_NORMALS].xyz) > 0.f;
 
   // 
   return rayData;
@@ -322,7 +320,6 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
   outp.normal = cmd.normals.xyz;
   outp.indices.w = type;
   outp.surfaceFound = false;
-  RayData startRayData = cmd.rayData;
   vec3 originSeedXYZ = vec3(random(blueNoiseFn(cmd.rayData.launchId.xy)), random(blueNoiseFn(cmd.rayData.launchId.xy)), random(blueNoiseFn(cmd.rayData.launchId.xy)));
 
   //
@@ -332,14 +329,17 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
   GeometryExtAttrib attrib = interpolate(geometry, cmd.intersection.barycentric);
 
   //
-  cmd.rayData.origin = fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], cmd.intersection.geometryId, 0).xyz;
-  //fullTransformNormal(instanceInfo, attrib.data[VERTEX_TANGENT].xyz, cmd.intersection.geometryId, 0);
-  //fullTransformNormal(instanceInfo, attrib.data[VERTEX_BITANGENT].xyz, cmd.intersection.geometryId, 0);
-  //fullTransformNormal(instanceInfo, attrib.data[VERTEX_NORMALS].xyz, cmd.intersection.geometryId, 0);
+  fullTransform(instanceInfo, attrib.data[VERTEX_VERTICES], cmd.intersection.geometryId, 0);
+  fullTransformNormal(instanceInfo, attrib.data[VERTEX_TANGENT].xyz, cmd.intersection.geometryId, 0);
+  fullTransformNormal(instanceInfo, attrib.data[VERTEX_BITANGENT].xyz, cmd.intersection.geometryId, 0);
+  fullTransformNormal(instanceInfo, attrib.data[VERTEX_NORMALS].xyz, cmd.intersection.geometryId, 0);
+
+  //
+  cmd.rayData.origin = attrib.data[VERTEX_VERTICES].xyz;
+  RayData startRayData = cmd.rayData;
 
   //
   const MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), attrib.data[VERTEX_TEXCOORD].xy, mat3x3(attrib.data[VERTEX_TANGENT].xyz,attrib.data[VERTEX_BITANGENT].xyz,attrib.data[VERTEX_NORMALS].xyz));
-  //const MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), attrib.data[VERTEX_TEXCOORD].xy, mat3x3(1.f));
   cmd.normals = f16vec3(inRayNormal(cmd.rayData.direction.xyz, materialPix.color[MATERIAL_NORMAL].xyz));
   cmd.diffuseColor = f16vec4(toLinear(materialPix.color[MATERIAL_ALBEDO]));
   cmd.emissiveColor = f16vec3(toLinear(materialPix.color[MATERIAL_EMISSIVE].xyz) * 4.f);
@@ -377,7 +377,7 @@ PathTraceOutput pathTraceCommand(inout PathTraceCommand cmd, in uint type) {
     cmd.rayData.direction.xyz = normalize(cosineWeightedPoint(seed2, mat3x3(attrib.data[VERTEX_TANGENT].xyz,attrib.data[VERTEX_BITANGENT].xyz,cmd.normals.xyz)));
     cmd.rayData.energy = f16vec4(1.f.xxx, 1.f);
     cmd.rayData.energy.xyz = f16vec3(trueMultColor(cmd.rayData.energy.xyz, cmd.diffuseColor.xyz * (1.f - cmd.emissiveColor.xyz)));
-    //cmd.rayData.emission = f16vec4(trueMultColor(cmd.rayData.energy.xyz, directLighting(cmd.rayData.origin.xyz, cmd.normals.xyz, attrib.data[VERTEX_NORMALS].xyz, vec3(random(blueNoiseFn(cmd.rayData.launchId.xy)), random(blueNoiseFn(cmd.rayData.launchId.xy)), random(blueNoiseFn(cmd.rayData.launchId.xy))), 10000.f).xyz), 1.f);
+    cmd.rayData.emission = f16vec4(trueMultColor(cmd.rayData.energy.xyz, directLighting(cmd.rayData.origin.xyz, cmd.normals.xyz, attrib.data[VERTEX_NORMALS].xyz, vec3(random(blueNoiseFn(cmd.rayData.launchId.xy)), random(blueNoiseFn(cmd.rayData.launchId.xy)), random(blueNoiseFn(cmd.rayData.launchId.xy))), 10000.f).xyz), 1.f);
   };
 
   // enforce typic indice

@@ -101,7 +101,7 @@ int main(int argc, char** argv) {
     uint32_t SC_WIDTH = WIDTH * xscale, SC_HEIGHT = HEIGHT * yscale;
 
     //
-    std::string title = "Alter.Scale.2x";
+    std::string title = "Covid.Scale.2x";
     decltype(auto) window = glfwCreateWindow(SC_WIDTH, SC_HEIGHT, title.c_str(), nullptr, nullptr);
 
     //

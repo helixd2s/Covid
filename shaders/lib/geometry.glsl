@@ -25,7 +25,7 @@ struct BufferViewInfo {
 };
 
 
-// starts from 1u, count as Id-1u, alter  are Null
+// starts from 1u, count as Id-1u, covid  are Null
 struct CTexture { uint32_t textureId, samplerId; };
 struct TexOrDef { CTexture texture; vec4 defValue; };
 
@@ -302,22 +302,29 @@ GeometryExtAttrib interpolate(in GeometryExtData data, in vec2 barycentric) {
 };
 
 
-
 //
 mat3x4 getInstanceTransform(in InstanceInfo info, in uint previous) {
-  return uint64_t(info) > 0 ? info.transform[previous] : mat3x4(1.f);
+  if (uint64_t(info) > 0) {
+    return info.transform[previous];
+  };
+  return mat3x4(1.f);
 };
 
 //
 mat3x4 getPreviousInstanceTransform(in InstanceInfo info, in uint previous) {
-  return uint64_t(info) > 0 ? info.transform[previous] : mat3x4(1.f);
+  if (uint64_t(info) > 0) {
+    return info.transform[previous];
+  };
+  return mat3x4(1.f);
 };
 
 //
 mat3x4 getGeometryTransform(in GeometryInfo info) {
   TransformBlock tblock = TransformBlock(info.transform.region.deviceAddress);
   if (uint64_t(info) > 0) {
-    return info.transform.region.deviceAddress > 0ul ? tblock.transform[0u] : mat3x4(1.f);
+    if (info.transform.region.deviceAddress > 0ul) {
+      return tblock.transform[0u];
+    };
   };
   return mat3x4(1.f);
 };
@@ -325,20 +332,26 @@ mat3x4 getGeometryTransform(in GeometryInfo info) {
 //
 mat3x4 getInstanceTransform(in InstanceAddressBlock addressInfo, in uint32_t instanceId, in uint previous) {
   InstanceInfo instanceInfo = getInstance(addressInfo, instanceId);
-  return uint64_t(instanceInfo) > 0 ? instanceInfo.transform[previous] : mat3x4(1.f);
+  if (uint64_t(instanceInfo) > 0) {
+    return instanceInfo.transform[previous];
+  };
+  return mat3x4(1.f);
 };
 
 //
-vec4 fullTransform(in InstanceInfo instance, in vec4 vertices, in uint32_t geometryId, in uint previous) {
+void fullTransform(in InstanceInfo instance, inout vec4 vertices, in uint32_t geometryId, in uint previous) {
   GeometryInfo geometry = getGeometry(instance, geometryId);
-  return vec4(vec4(vertices * getGeometryTransform(geometry), 1.f) * getInstanceTransform(instance, previous), 1.f);
+  mat3x3 geometryTransformNormal, instanceTransformNormal;
+  mat3x4 geometryTransform = mat3x4(1.f);//getGeometryTransform(geometry);
+  mat3x4 instanceTransform = getInstanceTransform(instance, previous);
+  vertices = vec4(vec4(vertices * geometryTransform, 1.f) * instanceTransform, 1.f);
 };
 
 //
 void fullTransformNormal(in InstanceInfo instance, inout vec3 normals, in uint32_t geometryId, in uint previous) {
   GeometryInfo geometry = getGeometry(instance, geometryId);
   mat3x3 geometryTransformNormal, instanceTransformNormal;
-  mat3x4 geometryTransform = getGeometryTransform(geometry);
+  mat3x4 geometryTransform = mat3x4(1.f);//getGeometryTransform(geometry);
   mat3x4 instanceTransform = getInstanceTransform(instance, previous);
   toNormalMat(geometryTransform, geometryTransformNormal);
   toNormalMat(instanceTransform, instanceTransformNormal);

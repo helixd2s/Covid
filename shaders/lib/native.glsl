@@ -40,7 +40,7 @@ struct InstanceAddressInfo {
   uint32_t reserved;
 };
 
-// ALWAYS USE Alter INDEX OF `InstanceDrawDatas`
+// ALWAYS USE Covid INDEX OF `InstanceDrawDatas`
 struct InstanceDrawInfo {
   //InstanceData data;
   uint32_t instanceCount;
@@ -56,10 +56,8 @@ struct InstanceAddressBlock {
 
 //
 struct PingPongStateInfo {
-  uvec2 extent;
+  uvec2 extent; uint32_t previous; uint32_t index;
   uint32_t images[2][6];
-  uint32_t previous;
-  uint32_t index;
 };
 
 //

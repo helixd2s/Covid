@@ -1,5 +1,8 @@
 #version 460 core
 
+//
+#define ENABLE_KHR_RAY_TRACING
+
 // 
 #extension GL_GOOGLE_include_directive : require
 

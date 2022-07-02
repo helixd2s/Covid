@@ -93,34 +93,33 @@ void reproject3D(in uint pixelId, in uint type)
           GeometryExtAttrib attrib = interpolate(geometry, dstIntersection.barycentric);
 
           //
-          vec3 tbn[3]; //getTBN(attrib, tbn);
-          fullTransformNormal(instanceInfo, tbn[0], dstIntersection.geometryId, 0);
-          fullTransformNormal(instanceInfo, tbn[1], dstIntersection.geometryId, 0);
-          fullTransformNormal(instanceInfo, tbn[2], dstIntersection.geometryId, 0);
+          fullTransformNormal(instanceInfo, attrib.data[VERTEX_TANGENT].xyz, dstIntersection.geometryId, 0);
+          fullTransformNormal(instanceInfo, attrib.data[VERTEX_BITANGENT].xyz, dstIntersection.geometryId, 0);
+          fullTransformNormal(instanceInfo, attrib.data[VERTEX_NORMALS].xyz, dstIntersection.geometryId, 0);
 
           //
-          const MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), attrib.data[VERTEX_TEXCOORD].xy, mat3x3(tbn[0],tbn[1],tbn[2]));
+          const MaterialPixelInfo materialPix = handleMaterial(getMaterialInfo(geometryInfo), attrib.data[VERTEX_TEXCOORD].xy, mat3x3(attrib.data[VERTEX_TANGENT].xyz,attrib.data[VERTEX_BITANGENT].xyz,attrib.data[VERTEX_NORMALS].xyz));
           const bool inner = false;//dot(vec3(cmd.tbn[2]), cmd.rayData.direction.xyz) > 0.f;
 
           //
-          dstValidNormal = abs(dot(normalize(tbn[2]), dstNormal)) > 0.9999f;
+          dstValidNormal = abs(dot(normalize(attrib.data[VERTEX_NORMALS].xyz), dstNormal)) > 0.9999f;
         };
 
-      };
+        // sorry, we doesn't save previous raster data
+        const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz-(dstHitPersp.xyz/dstHitPersp.w)), vec3(2.f/vec2(UR(deferredBuf.extent)), 0.001f))) && (type == 2 ? (dstValidNormal || SURF_DST.color[type].w <= 0.f) : dstValidNormal);
 
-      // sorry, we doesn't save previous raster data
-      const bool dstValidDist = all(lessThan(abs(dstSamplePos.xyz-(dstHitPersp.xyz/dstHitPersp.w)), vec3(2.f/vec2(UR(deferredBuf.extent)), 0.008f))) && (type == 2 ? (dstValidNormal || SURF_DST.color[type].w <= 0.f) : dstValidNormal);
+        // copy to dest, and nullify source
+        if ( original.w > 0.f && dstValidDist )
+        {
+          accumulate(SURF_DST, type, original); atomicOr(SURF_DST.flags[type], SURF_SRC.prevf[type]); //SURF_SRC.accum[type] = TYPE(0u);
+          //for (uint i=0;i<3;i++) { SURF_DST.tex[i] = SURF_SRC.tex[i]; };
 
-      // copy to dest, and nullify source
-      if ( original.w > 0.f && dstValidDist )
-      {
-        accumulate(SURF_DST, type, original); atomicOr(SURF_DST.flags[type], SURF_SRC.prevf[type]); //SURF_SRC.accum[type] = TYPE(0u);
-        //for (uint i=0;i<3;i++) { SURF_DST.tex[i] = SURF_SRC.tex[i]; };
+          HIT_DST.origin     = vec4(dstHitFoundIntersection.xyz, distance(dstHitPos.xyz, dstHitFoundIntersection.xyz));
+          HIT_DST.indices    = data.indices;
+          HIT_DST.direct.xyz = f16vec3(normalize(dstHitPos.xyz-dstHitFoundIntersection.xyz));
+          HIT_DST.normal.xyz = f16vec3(dstNormal);
+        };
 
-        HIT_DST.origin     = vec4(dstHitFoundIntersection.xyz, distance(dstHitPos.xyz, dstHitFoundIntersection.xyz));
-        HIT_DST.indices    = data.indices;
-        HIT_DST.direct.xyz = f16vec3(normalize(dstHitPos.xyz-dstHitFoundIntersection.xyz));
-        HIT_DST.normal.xyz = f16vec3(dstNormal);
       };
     };
   };

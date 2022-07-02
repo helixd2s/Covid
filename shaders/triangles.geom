@@ -42,9 +42,10 @@ void main() {
 
   //
   [[unroll]] for (uint i=0;i<3;i++) {
-    const vec4 vertice = vec4(geometry.triData[VERTEX_VERTICES][i].xyz, 1.f);
-    const vec4 texcoord = vec4(geometry.triData[VERTEX_TEXCOORD][i].xyz, 1.f);
-    const vec4 position = vec4(fullTransform(instanceInfo, vertice, geometryIndex, 0) * constants.lookAt[0], 1.f) * constants.perspective;
+    vec4 vertice = vec4(geometry.triData[VERTEX_VERTICES][i].xyz, 1.f);
+    vec4 texcoord = vec4(geometry.triData[VERTEX_TEXCOORD][i].xyz, 1.f);
+    fullTransform(instanceInfo, vertice, geometryIndex, 0);
+    vec4 position = vec4(vertice * constants.lookAt[0], 1.f) * constants.perspective;
 
     //
     gl_Position = position;

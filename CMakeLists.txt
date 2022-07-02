@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
-project(Alter VERSION 0.1.0)
-set(PROJECT_NAME Alter)
+project(Covid VERSION 0.1.0)
+set(PROJECT_NAME Covid)
 
 #
 MACRO(ADD_MSVC_PRECOMPILED_HEADER PrecompiledHeader PrecompiledSource SourcesVar)
@@ -64,16 +64,16 @@ file(GLOB_RECURSE _source_list
   "${_src_root_path}/include/*.cpp"
   "${_src_root_path}/include/*.hxx"
   "${_src_root_path}/include/*.cxx"
-  "${_src_root_path}/include/Alter/*.inl"
-  "${_src_root_path}/include/Alter/*.hpp"
-  "${_src_root_path}/include/Alter/*.h"
+  "${_src_root_path}/include/Covid/*.inl"
+  "${_src_root_path}/include/Covid/*.hpp"
+  "${_src_root_path}/include/Covid/*.h"
   "${_src_root_path}/include/Aftermath/*.cpp"
   "${_src_root_path}/include/Aftermath/*.inl"
   "${_src_root_path}/include/Aftermath/*.hpp"
   "${_src_root_path}/include/Aftermath/*.h"
-  "${_src_root_path}/src/Alter/*.inl"
-  "${_src_root_path}/src/Alter/*.cpp"
-  "${_src_root_path}/src/Alter/*.c"
+  "${_src_root_path}/src/Covid/*.inl"
+  "${_src_root_path}/src/Covid/*.cpp"
+  "${_src_root_path}/src/Covid/*.c"
   "${_src_root_path}/test/test.cpp"
   "${_src_root_path}/test/hdrloader.cpp"
   "${_src_root_path}/test/*.cpp"
@@ -93,9 +93,9 @@ ENDIF()
 
 # 
 add_executable(${PROJECT_NAME} ${_source_list})
-target_compile_definitions(${PROJECT_NAME} PUBLIC ALT_USE_ROBIN_HOOD USE_CMAKE_PCH VULKAN_HPP_NO_CONSTRUCTORS NOMINMAX ALT_ENABLE_VMA ALT_ENABLE_GLTF CPP21_DEBUG_MEMORY TINYGLTF_USE_CPP14 ANAMED=alter ${PLATFORM_DEF})
+target_compile_definitions(${PROJECT_NAME} PUBLIC ALT_USE_ROBIN_HOOD USE_CMAKE_PCH VULKAN_HPP_NO_CONSTRUCTORS NOMINMAX ALT_ENABLE_VMA ALT_ENABLE_GLTF CPP21_DEBUG_MEMORY TINYGLTF_USE_CPP14 ANAMED=covid ${PLATFORM_DEF})
 target_include_directories(${PROJECT_NAME} PUBLIC 
-  ${PROJECT_SOURCE_DIR}/include/Alter 
+  ${PROJECT_SOURCE_DIR}/include/Covid 
   ${PROJECT_SOURCE_DIR}/include/Aftermath 
   ${PROJECT_SOURCE_DIR}/include 
   ${PROJECT_SOURCE_DIR}/../vk-utils/
@@ -119,7 +119,7 @@ target_link_directories(${PROJECT_NAME} PUBLIC
 )
 
 #
-set (HSOURCES "${PROJECT_SOURCE_DIR}/../vk-utils/cpp21/core.hpp" "${PROJECT_SOURCE_DIR}/include/Alter/Core.hpp")
+set (HSOURCES "${PROJECT_SOURCE_DIR}/../vk-utils/cpp21/core.hpp" "${PROJECT_SOURCE_DIR}/include/Covid/Core.hpp")
 
 #
 ADD_MSVC_PRECOMPILED_HEADER(

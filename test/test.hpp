@@ -29,7 +29,7 @@
 #endif
 
 //
-#include <Alter/Alter.hpp>
+#include <Covid/Covid.hpp>
 #include "lib/controller.hpp"
 
 //
@@ -198,7 +198,7 @@ public:
 
     //
     virtual void displayFPS(uint32_t& frameCount) {
-        glfwSetWindowTitle(window, (std::string("Alter.TEON.A; FPS: ") + std::to_string(frameCount)).c_str()); frameCount = 0;
+        glfwSetWindowTitle(window, (std::string("Covid.TEON.A; FPS: ") + std::to_string(frameCount)).c_str()); frameCount = 0;
     };
 
     // 
@@ -283,8 +283,8 @@ public:
         decltype(auto) resortFence                    = resortObj                   ->executePipelineOnce(ANAMED::ExecutePipelineInfo{ .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{.dispatch = vk::Extent3D{cpp21::tiled(preRasterSize.x, 32u), cpp21::tiled(preRasterSize.y, 4u), 1u}, .layout = descriptorsObj.as<vk::PipelineLayout>(), .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock) }), .submission = ANAMED::SubmissionInfo{.info = qfAndQueue } });
 
         // 
-        decltype(auto) pathTracingFence  = pathTracingObj ->executePipelineOnce(ANAMED::ExecutePipelineInfo{ .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{ .dispatch = vk::Extent3D{cpp21::tiled(rayCount.x, 32u), cpp21::tiled(rayCount.y, 4u), 1u}, .layout = descriptorsObj.as<vk::PipelineLayout>(), .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock) }), .submission = ANAMED::SubmissionInfo{ .info = qfAndQueue } });
         decltype(auto) reprojectionFence = reprojectionObj->executePipelineOnce(ANAMED::ExecutePipelineInfo{ .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{.dispatch = vk::Extent3D{cpp21::tiled(reprojectSize.x, 32u), cpp21::tiled(reprojectSize.y, 4u), 1u}, .layout = descriptorsObj.as<vk::PipelineLayout>(), .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock) }), .submission = ANAMED::SubmissionInfo{.info = qfAndQueue } });
+        decltype(auto) pathTracingFence  = pathTracingObj ->executePipelineOnce(ANAMED::ExecutePipelineInfo{ .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{ .dispatch = vk::Extent3D{cpp21::tiled(rayCount.x, 32u), cpp21::tiled(rayCount.y, 4u), 1u}, .layout = descriptorsObj.as<vk::PipelineLayout>(), .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock) }), .submission = ANAMED::SubmissionInfo{ .info = qfAndQueue } });
         decltype(auto) recopyFence       = recopyObj      ->executePipelineOnce(ANAMED::ExecutePipelineInfo{ .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{.dispatch = vk::Extent3D{cpp21::tiled(reprojectSize.x, 32u), cpp21::tiled(reprojectSize.y, 4u), 1u}, .layout = descriptorsObj.as<vk::PipelineLayout>(), .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock) }), .submission = ANAMED::SubmissionInfo{.info = qfAndQueue } });
         decltype(auto) combineFence      = combineObj     ->executePipelineOnce(ANAMED::ExecutePipelineInfo{ .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{.dispatch = vk::Extent3D{cpp21::tiled(reprojectSize.x, 32u), cpp21::tiled(reprojectSize.y, 4u), 1u}, .layout = descriptorsObj.as<vk::PipelineLayout>(), .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock) }), .submission = ANAMED::SubmissionInfo{.info = qfAndQueue } });
         decltype(auto) finalFence        = finalObj       ->executePipelineOnce(ANAMED::ExecutePipelineInfo{ .compute = std::optional<ANAMED::WriteComputeInfo>(ANAMED::WriteComputeInfo{.dispatch = vk::Extent3D{cpp21::tiled(uniformData.swapchain.extent.x, 32u), cpp21::tiled(uniformData.swapchain.extent.y, 4u), 1u}, .layout = descriptorsObj.as<vk::PipelineLayout>(), .instanceAddressBlock = std::optional<ANAMED::InstanceAddressBlock>(instanceAddressBlock) }), .submission = ANAMED::SubmissionInfo{.info = qfAndQueue } });

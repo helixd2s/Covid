@@ -194,7 +194,7 @@ namespace ANAMED {
                 .applicationVersion = this->cInfo->appVersion,
 
                 // TODO: updating this data before commit
-                .pEngineName = "Alter",
+                .pEngineName = "Covid",
                 .engineVersion = VK_MAKE_VERSION(1,0,0),
 
                 // 

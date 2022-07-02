@@ -618,6 +618,9 @@ namespace ANAMED
                     decltype(auto) meshObj = isTranslucent ? translucentMesh : opaqueMesh;
 
                     //
+                    
+
+                    //
                     meshObj->geometries->push_back(ANAMED::GeometryInfo{
                       .indices = primitive.indices >= 0 ? indices : nullView,
                       .materialRef = materialAddress + materialId * sizeof(ANAMED::MaterialInfo),//gltf->materials[materialId],
@@ -627,6 +630,7 @@ namespace ANAMED
 
                     //
                     auto& extension = meshObj->geometries->back();
+                    extension.transform = nullView;
                     extension.bufferViews[std::to_underlying(ANAMED::BufferBind::eVertices)] = handleAccessor(primitive.attributes.at("POSITION"));
                     extension.bufferViews[std::to_underlying(ANAMED::BufferBind::eTexcoord)] = nullView;
                     extension.bufferViews[std::to_underlying(ANAMED::BufferBind::eNormals)] = nullView;

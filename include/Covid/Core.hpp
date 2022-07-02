@@ -5,7 +5,7 @@
 
 //
 #ifndef ANAMED
-#define ANAMED alter 
+#define ANAMED covid 
 #endif
 
 //
@@ -261,7 +261,7 @@ namespace ANAMED {
 
     // 
     struct InstanceCreateInfo : BaseCreateInfo {
-        std::string appName = "Alter_APP";
+        std::string appName = "Covid_APP";
         uint32_t appVersion = VK_MAKE_VERSION(1, 0, 0);
         cpp21::shared_vector<std::string> extensionList = std::vector<std::string>{
           "VK_KHR_surface",
@@ -445,9 +445,9 @@ namespace ANAMED {
     __declspec(align(1))
         struct PingPongStateInfo {
         glm::uvec2 extent = glm::uvec2(0u);
-        uint32_t images[2u][6u] = { 0u };
         uint32_t previous = uint32_t(-1);
         uint32_t index = uint32_t(-1);
+        uint32_t images[2u][6u] = { 0u };
     };
 #pragma pack(pop)
 
